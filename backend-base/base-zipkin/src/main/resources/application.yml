@@ -1,0 +1,17 @@
+server:
+  port: 9987
+
+# zipkin config
+zipkin:
+  storage:
+    type: mysql
+
+eureka:
+  client:
+    serviceUrl:
+      defaultZone: http://localhost:8761/eureka/
+
+#ribbon config
+ribbon.ConnectTimeout: 5000
+ribbon.ReadTimeout: 10000
+

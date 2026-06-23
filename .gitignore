@@ -1,0 +1,47 @@
+# Backend
+backend/target/
+backend/.idea/
+backend/*.iml
+backend/.settings/
+backend/.project
+backend/.classpath
+backend/.factorypath
+backend/*/target/
+backend/*/*.iml
+backend-base/target/
+backend-base/.idea/
+backend-base/*.iml
+backend-base/*/target/
+backend-base/*/*.iml
+
+# Frontend
+frontend/node_modules/
+frontend/dist/
+frontend/.hbuilderx/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/
+
+# Maven
+.mvn/wrapper/maven-wrapper.jar
+
+# Gradle
+.gradle/
+build/
+
+# Environment
+.env
+.env.local
+.env.*.local

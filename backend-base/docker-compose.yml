@@ -1,0 +1,4 @@
+base-eureka:
+  build: ./base-eureka
+  ports:
+   - "8761:8761"

@@ -1,0 +1,37 @@
+server:
+  port: 8081
+  tomcat:
+    max-http-post-size: -1
+spring:
+  redis:
+    host: 172.24.127.136
+    port: 6379
+    #password: 123456
+    pool:
+      max-idle: 8
+      min-idle: 0
+      max-active: 8
+      max-wait: -1
+  jackson:
+    time-zone: GMT+8
+  http:
+    multipart:
+      max-file-size: 100Mb
+      max-request-size: 100Mb
+eureka:
+  client:
+    serviceUrl:
+      defaultZone: http://172.24.127.136:8761/eureka/
+  instance:
+    preferIpAddress: true
+
+
+##FeignClient超时设置
+---
+spring.cloud.loadbalancer.retry.enabled: false
+#hystrix.command.default.execution.isolation.thread.timeoutInMilliseconds: 10000
+ribbon.ConnectTimeout: 250
+ribbon.ReadTimeout: 5000
+ribbon.OkToRetryOnAllOperations: false
+ribbon.MaxAutoRetriesNextServer: 0
+ribbon.MaxAutoRetries: 0

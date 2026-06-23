@@ -1,0 +1,6 @@
+system:
+  web:
+    third:
+        bd_api : https://aip.baidubce.com/rest/2.0/ocr/v1/idcard
+        bd_ak : RRTZ2Dten6A4CWLvIZqdqnB4
+        bd_sk : p9MvCfxz2Orihy5NigQdVyj0xn8FWfC8

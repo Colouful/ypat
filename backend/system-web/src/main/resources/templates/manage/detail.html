@@ -1,0 +1,136 @@
+<link th:href="@{/scripts/viewer/pictureViewer.css}" rel="stylesheet" type="text/css" />
+<script th:src="@{/scripts/manage/detail.js}" xmlns:th="http://www.w3.org/1999/html"></script>
+<script th:src="@{/scripts/viewer/jquery.mousewheel.min.js}"></script>
+<script th:src="@{/scripts/viewer/pictureViewer.js}"></script>
+<script th:src="@{/scripts/slider/jquery.slider.js}"></script>
+<script type="text/javascript">
+	$(function () {
+		$(".slider").slideshow({
+			width: 700,
+			height: 267,
+			transition: ['bar', 'Rain', 'square', 'squareRandom', 'explode']
+		});
+        $('.slider').on('click', '.cover', function () {
+            var this_ = $(this);
+            var images = this_.parents('.slider').find('.cover');
+            var imagesArr = new Array();
+            $.each(images, function (i, image) {
+                imagesArr.push($(image).children('img').attr('src'));
+            });
+            $.pictureViewer({
+                images: imagesArr,
+                initImageIndex: this_.index() + 1,
+                scrollSwitch: true //鼠标滚轮切换图片
+            });
+        });
+
+		var status = $("#status").val();
+		if(status=='3'){
+            $("#tg").hide();
+            $("#btg").hide();
+        }
+	});
+</script>
+<form id="saveForm" method="post">
+    <input type="hidden" name="id" id="id" th:value="${detail.id}"/>
+    <input type="hidden" name="status" id="status" th:value="${detail.status}"/>
+    <div style="width:322px;margin:10 auto;margin-top: 15px">
+        <div class="slider" >
+             <div class="cover" th:each="pic:${detail.pics}">
+                <img style="width: 300px;height: 300px" th:attr="src=${pic}"/>
+             </div>
+        </div>
+    </div>
+<div class="addInfBtn">
+    <h3 class="itemTit"><span>详细信息</span></h3>
+    <table class="addNewInfList">
+        <tr>
+            <th>描述</th>
+            <td colspan="3">
+                <textarea class="inp-list w-200 clear-mr f-left" type="textarea" th:text="${detail.describ}" readonly="true"/>
+            </td>
+        </tr>
+        <tr>
+            <th>约拍对象</th>
+            <td>
+                <input class="inp-list w-200 clear-mr f-left" type="text" th:value="${detail.targetTxt}" readonly="true"/>
+            </td>
+            <th>约拍时间</th>
+            <td>
+                <input class="inp-list w-200 clear-mr f-left" type="text" th:value="${detail.patdate} ? ${#dates.format(detail.patdate,'yyyy-MM-dd')} :''" readonly="true"/>
+            </td>
+        </tr>
+        <tr>
+            <th>约拍地区</th>
+            <td>
+                <input class="inp-list w-200 clear-mr f-left" type="text" th:value="${detail.city}" readonly="true" />
+            </td>
+            <th>收费方式</th>
+            <td>
+                <input class="inp-list w-200 clear-mr f-left" type="text" th:value="${detail.chargewayTxt}" readonly="true" />
+            </td>
+        </tr>
+        <tr>
+            <th>约拍成片</th>
+            <td>
+                <input class="inp-list w-200 clear-mr f-left" type="text" th:value="${detail.patslice}" readonly="true" />
+            </td>
+            <th>约拍地点</th>
+            <td>
+                <input class="inp-list w-200 clear-mr f-left" type="text" th:value="${detail.patarea}" readonly="true" />
+            </td>
+        </tr>
+        <tr>
+            <th>是否要求实名</th>
+            <td>
+                <input class="inp-list w-200 clear-mr f-left" type="text" th:if="${detail.realnameflag==''}"  th:value="" readonly="true"/>
+                <input class="inp-list w-200 clear-mr f-left" type="text" th:if="${detail.realnameflag=='0'}" th:value="否" readonly="true"/>
+                <input class="inp-list w-200 clear-mr f-left" type="text" th:if="${detail.realnameflag=='1'}" th:value="是" readonly="true"/>
+            </td>
+            <th>是否要求对方信用担保</th>
+            <td>
+                <input class="inp-list w-200 clear-mr f-left" type="text" th:if="${detail.creditflag==''}"  th:value="" readonly="true"/>
+                <input class="inp-list w-200 clear-mr f-left" type="text" th:if="${detail.creditflag=='0'}" th:value="否" readonly="true"/>
+                <input class="inp-list w-200 clear-mr f-left" type="text" th:if="${detail.creditflag=='1'}" th:value="是" readonly="true"/>
+            </td>
+        </tr>
+        <tr>
+            <th>拍摄风格</th>
+            <td>
+                <input class="inp-list w-240 clear-mr f-left" type="text" th:value="${detail.patstyleTxt}" readonly="true"/>
+            </td>
+            <th>收费金额</th>
+            <td>
+                <input class="inp-list w-200 clear-mr f-left" type="text" th:value="${detail.chargeamt}" readonly="true" />
+            </td>
+        </tr>
+        <tr>
+            <th>是否上推荐</th>
+            <td>
+                <select class="inp-list w-200 clear-mr f-left" name="recomflag" id="recomflag" th:value="${detail.recomflag}">
+                    <option th:value="1" th:text="是" th:field="${detail.recomflag}" ></option>
+                    <option th:value="0" th:text="否" th:field="${detail.recomflag}" ></option>
+                </select>
+            </td>
+            <th>是否短信通知</th>
+            <td>
+                <select class="inp-list w-200 clear-mr f-left" name="messflag" id="messflag">
+                    <option th:value="0" th:text="否" ></option>
+                    <option th:value="1" th:text="是" ></option>
+                </select>
+            </td>
+        </tr>
+        <tr>
+            <th>拒绝理由</th>
+            <td colspan="3">
+                <textarea maxlength="20" class="inp-list w-200 clear-mr f-left" name="reason" type="textarea" th:text="${detail.reason}"/>
+            </td>
+        </tr>
+    </table>
+    <div class="bottomBtnBox">
+        <a id="tg" class="btn-93X38 tgBtn" href="javascript:void(0)">通过</a>
+        <a id="btg" class="btn-93X38 btgBtn" href="javascript:void(0)">不通过</a>
+        <a class="btn-93X38 backBtn" href="javascript:closeDialog(0)">返回</a>
+    </div>
+</div>
+</form>

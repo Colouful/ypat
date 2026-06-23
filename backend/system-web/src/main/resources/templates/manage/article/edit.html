@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns="http://www.w3.org/1999/html" layout:decorator="fragments/layout">
+<head>
+    <title>审核系统</title>
+    <script th:src="@{/scripts/manage/article/edit.js}" ></script>
+    <script th:src="@{/ueditor/ueditor.config.js}"></script>
+    <script th:src="@{/ueditor/ueditor.all.min.js}"></script>
+</head>
+<body>
+<div class="locationLine" layout:fragment="prompt">
+    当前位置：首页 &gt; <em >文章编辑</em>
+</div>
+<div class="statisticBox w-782"  layout:fragment="content">
+    <form id="saveForm" action="./save" method="post" enctype="multipart/form-data">
+        <input type="hidden" name="id" id="id" th:value="${article.id}"/>
+        <input type="hidden" name="content" id="content" th:value="${article.content}"/>
+        <table style="border-collapse:separate; border-spacing:10px;">
+            <tr>
+                <th>标题:</th>
+                <td >
+                    <input class="inp-list w-200 clear-mr f-left" type="text" th:value="${article.title}" name="title" id="name" maxlength="20" />
+                    <span class="tipStar f-left">*</span>
+                </td>
+            </tr>
+            <tr>
+                <th>描述:</th>
+                <td >
+                    <textarea class="inp-list w-200 clear-mr f-left" name="describ" id="describ"
+                              style="width: 680px; height: 120px;" type="textarea" th:text="${article.describ}" maxlength="200"/>
+                    <span class="tipStar f-left">*</span>
+                </td>
+            </tr>
+            <tr>
+                <th>状态:</th>
+                <td>
+                    <select class="inp-list w-200 clear-mr f-left" name="status" id="status" th:value="${article.status}">
+                        <option th:value="0" th:text="暂存" th:field="${article.status}" ></option>
+                        <option th:value="1" th:text="发布" th:field="${article.status}" ></option>
+                        <option th:value="2" th:text="撤回" th:field="${article.status}" ></option>
+                    </select>
+                </td>
+            </tr>
+            <tr>
+                <th>是否热门:</th>
+                <td>
+                    <select class="inp-list w-200 clear-mr f-left" name="flag" id="flag" th:value="${article.flag}">
+                        <option th:value="0" th:text="否" th:field="${article.flag}" ></option>
+                        <option th:value="1" th:text="是" th:field="${article.flag}" ></option>
+                    </select>
+                </td>
+            </tr>
+            <tr>
+                <th>封面:</th>
+                <td>
+                    <input type="file" name="file" accept="image/*" class="inp-list w-200 clear-mr f-left"
+                           onchange="changImg(event)"/>
+                </td>
+            </tr>
+            <tr>
+                <td></td>
+                <td>
+                    <div id="viewImg"></div>
+                    <input id="imgpath" type="hidden" th:value="${article.imgpath}"></input>
+                </td>
+            </tr>
+            <tr>
+                <th>内容:</th>
+                <script id="editor" type="text/plain" style="width:700px;height:500px;"></script>
+            </tr>
+        </table>
+        <div class="bottomBtnBox">
+            <a class="btn-93X38 saveBtn" href="javascript:void(0)">确定</a>
+            <a class="btn-93X38 backBtn" href="javascript:backBtn()">返回</a>
+        </div>
+    </form>
+</div>
+</body>
+</html>

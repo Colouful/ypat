@@ -1,0 +1,39 @@
+<script th:src="@{/scripts/manage/product/edit.js}"></script>
+<form id="saveForm" action="./save" method="post">
+    <input type="hidden" name="id" id="id" th:value="${product.id}"/>
+    <table class="addNewInfList">
+        <tr>
+            <th>名称</th>
+            <td width="240">
+                <input class="inp-list w-200 clear-mr f-left" type="text" th:value="${product.name}" name="name" id="name" maxlength="32" />
+                <span class="tipStar f-left">*</span>
+            </td>
+            <th>原价格</th>
+            <td width="240">
+                <input class="inp-list w-200 clear-mr f-left" type="text" th:value="${product.currval}" name="currval" id="currval" maxlength="32" />
+                <span class="tipStar f-left">*</span>
+            </td>
+        </tr>
+
+        <tr>
+            <th>优惠价格</th>
+            <td width="240">
+                <input class="inp-list w-200 clear-mr f-left" type="text" th:value="${product.oldval}" name="oldval" id="oldval" maxlength="32" />
+                <span class="tipStar f-left">*</span>
+            </td>
+            <th>是否下架</th>
+            <td width="240">
+                <div >
+                    <select class="inp-list w-200 clear-mr f-left" name="status" id="status" th:value="${product.status}">
+                        <option th:value="0" th:text="上架" th:field="${product.status}" ></option>
+                        <option th:value="1" th:text="下架" th:field="${product.status}" ></option>
+                    </select>
+                </div>
+            </td>
+        </tr>
+    </table>
+    <div class="bottomBtnBox">
+        <a class="btn-93X38 saveBtn" href="javascript:void(0)">确定</a>
+        <a class="btn-93X38 backBtn" href="javascript: closeDialog()">返回</a>
+    </div>
+</form>

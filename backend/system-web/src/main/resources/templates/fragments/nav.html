@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html>
+<body>
+<div th:fragment="nav">
+    <div class="columnLeftMenu">
+        <h6 ><span class="f-right"></span>审核系统</h6>
+        <ul >
+            <li><a th:href="@{/manage/index}">申请列表</a></li>
+            <li><a th:href="@{/manage/user/index}">实名列表</a></li>
+            <li><a th:href="@{/manage/product/index}">产品列表</a></li>
+            <li><a th:href="@{/article/index}">文章列表</a></li>
+            <li><a th:href="@{/banner/index}">横幅列表</a></li>
+            <li><a th:href="@{/ypat/edit}">发布作品</a></li>
+        </ul>
+    </div>
+</div>
+
+
+<div th:fragment="nav2">
+    <div class="columnLeftMenu">
+        <h6 ><span class="f-right"></span>查询系统</h6>
+        <ul >
+            <li><a th:href="@{/manage/query/index}">用户列表</a></li>
+            <li><a th:href="@{/manage/query/ypat/appindex}">约拍列表</a></li>
+            <li><a th:href="@{/manage/query/mess/messindex}">消息列表</a></li>
+            <li><a th:href="@{/pubevent/index}">公众号关注</a></li>
+        </ul>
+    </div>
+</div>
+
+
+<div th:fragment="nav3">
+    <div class="columnLeftMenu">
+        <h6 ><span class="f-right"></span>订单系统</h6>
+        <ul >
+            <li><a th:href="@{/manage/order/index}">订单列表</a></li>
+        </ul>
+    </div>
+</div>
+</body>
+</html>

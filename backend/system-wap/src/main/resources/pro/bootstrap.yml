@@ -1,0 +1,9 @@
+spring:
+  application:
+    name: system-wap
+  profiles:
+    active: @profiles.active@
+
+encrypt:
+  failOnError: false
+

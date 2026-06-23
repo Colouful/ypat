@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns="http://www.w3.org/1999/html" layout:decorator="fragments/layout">
+<head>
+    <title>发布作品</title>
+
+    <link th:href="@{/scripts/My97DatePicker/skin/WdatePicker.css}" rel="stylesheet" type="text/css" />
+
+    <script th:src="@{/scripts/manage/ypatinfo/edit.js}" ></script>
+    <script th:src="@{/scripts/My97DatePicker/WdatePicker.js}"></script>
+</head>
+<body>
+<div class="locationLine" layout:fragment="prompt">
+    当前位置：首页 &gt; <em >发布作品</em>
+</div>
+<div class="statisticBox w-782"  layout:fragment="content">
+    <form id="saveForm" method="post" enctype="multipart/form-data">
+            <h3 class="itemTit"><span>用户信息</span></h3>
+            <table class="addNewInfList">
+                <tr>
+                    <th>昵称</th>
+                    <td>
+                        <input class="inp-list w-200 clear-mr f-left" type="text" id="nickname" name="nickname"/>
+                    </td>
+                    <th>性别</th>
+                    <td>
+                        <select class="inp-list w-200 clear-mr f-left" name="gender" id="gender" >
+                            <option th:value="0" th:text="未知" ></option>
+                            <option th:value="1" th:text="男"   ></option>
+                            <option th:value="2" th:text="女"   ></option>
+                        </select>
+                    </td>
+                </tr>
+                <tr>
+                    <th>职业</th>
+                    <td>
+                        <select class="inp-list w-200 clear-mr f-left" name="profess" id="profess" >
+                            <option th:value="0" th:text="摄影师" ></option>
+                            <option th:value="1" th:text="模特"   ></option>
+                            <option th:value="7" th:text="其他"   ></option>
+                        </select>
+                    </td>
+                    <th>头像</th>
+                    <td>
+                        <input type="file" name="file" accept="image/*" multiple="multiple"/>
+                    </td>
+                </tr>
+            </table>
+
+            <h3 class="itemTit"><span>详细信息</span></h3>
+            <table class="addNewInfList">
+                <tr>
+                    <th>描述</th>
+                    <td colspan="3">
+                        <textarea class="inp-list w-200 clear-mr f-left" name="describ" id="describ"
+                                  style="width: 580px; height: 60px;" type="textarea" th:text="${describ}" />
+                    </td>
+                </tr>
+                <tr>
+                    <th>约拍对象</th>
+                    <td>
+                        <select class="inp-list w-200 clear-mr f-left" name="target" id="target" >
+                            <option th:value="0" th:text="约摄影师" ></option>
+                            <option th:value="1" th:text="约模特"   ></option>
+                        </select>
+                    </td>
+                    <th>约拍时间</th>
+                    <td>
+                        <input onfocus="WdatePicker({startDate:'%y-%M-%d',dateFmt:'yyyy-MM-dd'})" type="text" class="inp-list w-200 clear-mr f-left" id="patdate" name="patdate"/>
+                    </td>
+                </tr>
+                <tr>
+                    <th>约拍地区</th>
+                    <td>
+                        <input class="inp-list w-200 clear-mr f-left" type="text" id="city" name="city"/>
+                    </td>
+                    <th>收费方式</th>
+                    <td>
+                        <select class="inp-list w-200 clear-mr f-left" name="chargeway" id="chargeway" >
+                            <option th:value="0" th:text="希望互勉" ></option>
+                            <option th:value="1" th:text="我要收费" ></option>
+                            <option th:value="2" th:text="约模特"   ></option>
+                            <option th:value="3" th:text="费用协商" ></option>
+                        </select>
+                    </td>
+                </tr>
+                <tr>
+                    <th>约拍成片</th>
+                    <td>
+                        <input class="inp-list w-200 clear-mr f-left" type="text" id="patslice" name="patslice" />
+                    </td>
+                    <th>约拍地点</th>
+                    <td>
+                        <input class="inp-list w-200 clear-mr f-left" type="text" id="patarea" name="patarea" />
+                    </td>
+                </tr>
+                <tr>
+                    <th>是否要求实名</th>
+                    <td>
+                        <select class="inp-list w-200 clear-mr f-left" name="realnameflag" id="realnameflag" >
+                            <option th:value="0" th:text="否" ></option>
+                            <option th:value="1" th:text="是" ></option>
+                        </select>
+                    </td>
+                    <th>是否要求对方信用担保</th>
+                    <td>
+                        <select class="inp-list w-200 clear-mr f-left" name="creditflag" id="creditflag" >
+                            <option th:value="0" th:text="否" ></option>
+                            <option th:value="1" th:text="是" ></option>
+                        </select>
+                    </td>
+                </tr>
+                <tr>
+                    <th>拍摄风格</th>
+                    <td>
+                        <input
+                               th:each="patstyle:${patstyleList}" type="checkbox" th:value="${patstyle.value}"
+                               th:text="${patstyle.name}" th:name="patstyle" />
+                    </td>
+                    <th>收费金额</th>
+                    <td>
+                        <input class="inp-list w-200 clear-mr f-left" type="text" id="chargeamt" name="chargeamt" />
+                    </td>
+                </tr>
+                <tr>
+                    <th>是否上推荐</th>
+                    <td>
+                        <select class="inp-list w-200 clear-mr f-left" name="recomflag" id="recomflag" >
+                            <option th:value="1" th:text="是" ></option>
+                            <option th:value="0" th:text="否" ></option>
+                        </select>
+                    </td>
+                    <th>是否短信通知</th>
+                    <td>
+                        <select class="inp-list w-200 clear-mr f-left" name="messflag" id="messflag">
+                            <option th:value="0" th:text="否" ></option>
+                            <option th:value="1" th:text="是" ></option>
+                        </select>
+                    </td>
+                </tr>
+                <tr>
+                    <th>作品:</th>
+                    <td>
+                        <input type="file" name="files" accept="image/*" multiple="multiple"/>
+                    </td>
+                </tr>
+            </table>
+            <div class="bottomBtnBox">
+                <a class="btn-93X38 saveBtn" href="javascript:void(0)">提交</a>
+            </div>
+    </form>
+</div>
+</body>
+</html>

@@ -1,0 +1,55 @@
+<script th:src="@{/scripts/manage/detail.js}" xmlns:th="http://www.w3.org/1999/html"></script>
+<style>
+	body{background-color: #212121}
+    .imgZoom{
+        width:300px;
+        cursor: pointer;
+    }
+</style>
+<script type="text/javascript">
+	$(function () {
+		$(".slider").slideshow({
+			width: 700,
+			height: 267,
+			transition: ['bar', 'Rain', 'square', 'squareRandom', 'explode']
+		});
+        $(".imgZoom").imgZoom();
+        var status = $("#status").val();
+        if(status=='2' || status=='3'){
+            $("#tg").hide();
+            $("#btg").hide();
+        }
+	});
+</script>
+<form id="saveForm" method="post">
+    <input type="hidden" name="id" id="id" th:value="${user.userid}"/>
+    <input type="hidden" name="status" id="status" th:value="${user.status}"/>
+
+    <div style="width:322px;margin:10 auto;margin-top: 15px">
+        <div class="slider" >
+             <div th:each="pic:${user.pics}">
+                <a href="#"><img class='imgZoom' style="width: 300px;height: 300px" th:attr="src=${pic}"/></a>
+             </div>
+        </div>
+    </div>
+<div class="addInfBtn">
+    <h3 class="itemTit"><span>详细信息</span></h3>
+    <table class="addNewInfList">
+        <tr>
+            <th>姓名</th>
+            <td>
+                <input class="inp-list w-200 clear-mr f-left" type="text" th:value="${user.name}" readonly="true" />
+            </td>
+            <th>证件号码</th>
+            <td>
+                <input class="inp-list w-200 clear-mr f-left" type="text" th:value="${user.certcode}" readonly="true" />
+            </td>
+        </tr>
+    </table>
+    <div class="bottomBtnBox">
+        <a id="tg" class="btn-93X38 tgBtn" href="javascript:void(0)">通过</a>
+        <a id="btg" class="btn-93X38 btgBtn" href="javascript:void(0)">不通过</a>
+        <a class="btn-93X38 backBtn" href="javascript:closeDialog(0)">返回</a>
+    </div>
+</div>
+</form>
