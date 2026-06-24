@@ -22,25 +22,21 @@
     </view>
 
     <view class="section">
-      <text class="title">拍摄城市</text>
-      <!-- #ifdef MP-WEIXIN -->
-      <view class="picker" @tap="chooseLocation">{{ model.city || '请选择城市' }}</view>
-      <!-- #endif -->
-      <!-- #ifndef MP-WEIXIN -->
-      <view class="city-row">
-        <input v-model="model.province" class="input" placeholder="省份" />
-        <input v-model="model.city" class="input" placeholder="城市" />
-      </view>
-      <!-- #endif -->
+      <text class="title">拍摄地区</text>
+      <picker mode="region" :value="regionValue" @change="changeRegion">
+        <view class="picker">{{ regionText || '请选择省、市、区' }}</view>
+      </picker>
+      <input v-model="model.patarea" class="input address-input" maxlength="100" placeholder="详细拍摄地点（选填）" />
     </view>
 
     <view class="section">
       <text class="title">收费方式</text>
       <view class="options">
-        <view v-for="item in chargeWays" :key="item.value" class="option" :class="{ active: model.chargeway === item.value }" @tap="model.chargeway = item.value">
+        <view v-for="item in chargeWays" :key="item.value" class="option" :class="{ active: model.chargeway === item.value }" @tap="selectChargeWay(item.value)">
           {{ item.label }}
         </view>
       </view>
+      <input v-if="model.chargeway === '1' || model.chargeway === '2'" v-model.number="model.chargeamt" class="input price-input" type="digit" placeholder="请输入参考金额" />
     </view>
 
     <view class="section">
@@ -79,9 +75,9 @@ const base64Cache = ref<string[]>([])
 const targets = [{ value: '0', label: '约摄影师' }, { value: '1', label: '约模特' }]
 const chargeWays = [
   { value: '0', label: '互免' },
-  { value: '1', label: '收费' },
-  { value: '2', label: '可付费' },
-  { value: '3', label: '协商' },
+  { value: '1', label: '我要收费' },
+  { value: '2', label: '可以付费' },
+  { value: '3', label: '费用协商' },
 ]
 
 const model = reactive({
@@ -91,6 +87,7 @@ const model = reactive({
   province: '',
   city: '',
   area: '',
+  patarea: '',
   chargeway: '0',
   chargeamt: 0,
   patstyle: '',
@@ -98,19 +95,35 @@ const model = reactive({
   creditflag: '0',
 })
 
-const canSubmit = computed(() => Boolean(model.describ.trim() && model.patdate && model.city.trim() && localPaths.value.length))
+const regionValue = computed(() => [model.province, model.city, model.area])
+const regionText = computed(() => [model.province, model.city, model.area].filter(Boolean).join(' '))
+const chargeAmountValid = computed(() => {
+  if (model.chargeway !== '1' && model.chargeway !== '2') return true
+  return Number(model.chargeamt) > 0
+})
+const canSubmit = computed(() => Boolean(
+  model.describ.trim()
+  && model.patdate
+  && model.province.trim()
+  && model.city.trim()
+  && localPaths.value.length
+  && chargeAmountValid.value
+))
 
 function changeDate(event: { detail: { value: string } }): void {
   model.patdate = event.detail.value
 }
 
-function chooseLocation(): void {
-  uni.chooseLocation({
-    success: (result) => {
-      model.city = result.name || result.address || ''
-      model.area = result.address || ''
-    },
-  })
+function changeRegion(event: { detail: { value: string[] } }): void {
+  const [province = '', city = '', area = ''] = event.detail.value
+  model.province = province
+  model.city = city
+  model.area = area
+}
+
+function selectChargeWay(value: string): void {
+  model.chargeway = value
+  if (value === '0' || value === '3') model.chargeamt = 0
 }
 
 function chooseImages(): void {
@@ -172,7 +185,10 @@ async function submit(): Promise<void> {
 }
 
 function reset(): void {
-  Object.assign(model, { target: '1', describ: '', patdate: '', province: '', city: '', area: '', chargeway: '0', chargeamt: 0, patstyle: '', realnameflag: '0', creditflag: '0' })
+  Object.assign(model, {
+    target: '1', describ: '', patdate: '', province: '', city: '', area: '', patarea: '',
+    chargeway: '0', chargeamt: 0, patstyle: '', realnameflag: '0', creditflag: '0',
+  })
   localPaths.value = []
   base64Cache.value = []
   processedCount.value = 0
@@ -188,7 +204,7 @@ function reset(): void {
 .option.active { color: #fff; background: #23c268; }
 .textarea, .picker, .input { box-sizing: border-box; width: 100%; padding: 20rpx; border-radius: 16rpx; background: #f7f8fa; }
 .textarea { min-height: 210rpx; }
-.city-row { display: flex; gap: 14rpx; }
+.address-input, .price-input { margin-top: 16rpx; }
 .images { display: flex; flex-wrap: wrap; gap: 14rpx; }
 .image-item, .add { position: relative; width: 190rpx; height: 190rpx; overflow: hidden; border-radius: 18rpx; background: #eef1f4; }
 .image-item image { width: 100%; height: 100%; }
