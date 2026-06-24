@@ -4,24 +4,16 @@ export interface EnvConfig {
   env: 'development' | 'staging' | 'production'
 }
 
-const configs: Record<string, EnvConfig> = {
-  development: {
-    apiBaseUrl: 'https://www.91qupaier.com',
-    imageBaseUrl: 'https://www.91qupaier.com/',
-    env: 'development',
-  },
-  staging: {
-    apiBaseUrl: 'https://www.91qupaier.com',
-    imageBaseUrl: 'https://www.91qupaier.com/',
-    env: 'staging',
-  },
-  production: {
-    apiBaseUrl: 'https://www.91qupaier.com',
-    imageBaseUrl: 'https://www.91qupaier.com/',
-    env: 'production',
-  },
+function getEnvConfig(): EnvConfig {
+  const env = import.meta.env.VITE_APP_ENV || 'development'
+  const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'https://www.91qupaier.com'
+  const imageBaseUrl = import.meta.env.VITE_IMAGE_BASE_URL || 'https://www.91qupaier.com/'
+
+  return {
+    apiBaseUrl,
+    imageBaseUrl,
+    env: env as EnvConfig['env'],
+  }
 }
 
-const currentEnv = import.meta.env.VITE_APP_ENV || 'development'
-
-export const envConfig: EnvConfig = configs[currentEnv] || configs.development
+export const envConfig = getEnvConfig()

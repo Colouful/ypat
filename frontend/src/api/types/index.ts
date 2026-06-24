@@ -23,145 +23,163 @@ export interface PageParams {
 
 // ===== User 相关类型 =====
 
-export interface WxLoginParams {
-  code: string
+export interface UserInfo {
+  id: number
+  gender: string
+  nickname: string
+  profess: string
+  mobile: string
+  wx: string
+  qq: string
+  wb: string
+  name: string
+  certcode: string
+  ppd: number
+  avatarurl: string
+  realnameflag: string
+  creditflag: string
+  pubtimes: number
+  rectimes: number
+  coltimes: number
+  recmobile: string
+  status: string
+  province: string
+  city: string
+  area: string
+  openid: string
+  birthday: string
+  imgpath: string
+  channel: string
 }
 
 export interface LoginParams {
-  phone: string
-  code: string
-  openId?: string
-  unionId?: string
-  nickName?: string
-  avatarUrl?: string
+  openid?: string
+  encryptedData?: string
+  sessionKey?: string
+  iv?: string
+  nickname?: string
+  avatarurl?: string
+  gender?: string
+  channel?: string
+  recmobile?: string
+  mobile?: string
 }
 
 export interface LoginResult {
   token: string
-  refreshToken: string
-  userId: number
-  isNew: boolean
-}
-
-export interface UserInfo {
-  id: number
-  phone: string
-  nickName: string
-  avatarUrl: string
-  gender: number
-  city: string
-  province: string
-  country: string
-  openId: string
-  unionId: string
-  status: number
-  role: number
-  balance: number
-  credit: number
-  verified: boolean
-  createTime: string
-  updateTime: string
-}
-
-export interface UpdateUserParams {
-  id: number
-  nickName?: string
-  avatarUrl?: string
-  gender?: number
-  city?: string
-  province?: string
-  phone?: string
+  userInfo: UserInfo
 }
 
 export interface LinkWay {
-  id: number
-  userId: number
-  messId: number
-  type: number
-  value: string
-  label: string
+  nickname: string
+  profess: string
+  mobile: string
+  wx: string
+  qq: string
+  wb: string
+  name: string
 }
 
 // ===== YpatInfo 相关类型 =====
 
 export interface YpatInfo {
   id: number
-  userId: number
-  title: string
-  content: string
-  images: string
+  describ: string
+  target: string
+  patdate: string
+  patarea: string
+  patslice: string
+  chargeway: string
+  chargeamt: number
+  province: string
   city: string
   area: string
-  address: string
-  profess: string
-  price: number
-  priceType: number
-  contactWay: number
-  status: number
-  readCount: number
-  favoriteCount: number
-  applyCount: number
-  createTime: string
-  updateTime: string
-  nickName?: string
-  avatarUrl?: string
-  verified?: boolean
+  creditflag: string
+  realnameflag: string
+  patstyle: string
+  status: string
+  longitude: number
+  latitude: number
+  pubdate: string
+  readtimes: number
+  pattimes: number
+  coltimes: number
+  userQo: UserInfo | null
+  userid: number
+  timeStr: string
+  pics: string[]
+  colflag: string
+  recomflag: string
+  reason: string
+  chargewayTxt: string
+  targetTxt: string
+  patstyleTxt: string
+  statusTxt: string
 }
 
 export interface YpatListParams extends PageParams {
+  status?: string
   city?: string
-  profess?: string
-  userId?: number
+  target?: string
+  chargeway?: string
+  patstyle?: string
+  recomflag?: string
+  userid?: number
 }
 
 export interface YpatSubmitParams {
-  id?: number
-  userId: number
-  title: string
-  content: string
-  images: string
+  userid: number
+  describ: string
+  target: string
+  patdate: string
+  province?: string
   city: string
-  area: string
-  address: string
-  profess: string
-  price: number
-  priceType: number
-  contactWay: number
+  area?: string
+  chargeway: string
+  chargeamt?: number
+  patstyle?: string
+  creditflag?: string
+  realnameflag?: string
+  pics: string[]
 }
 
 export interface YpatApplyParams {
-  userId: number
-  ypatId: number
-  messId?: number
+  sendperid: number
+  recperid: number
+  ypatid: number
   content?: string
 }
 
 export interface YpatMyListParams extends PageParams {
-  userId: number
-  status?: number
+  userid: number
+  status?: string
 }
 
-export interface UnreadCountResult {
-  total: number
-  rec: number
-  send: number
-}
+export type UnreadCountResult = number
 
 // ===== MessInfo 消息相关类型 =====
 
 export interface MessInfo {
   id: number
-  fromUserId: number
-  toUserId: number
-  ypatId: number
+  type: string
   content: string
-  type: number
-  status: number
-  read: boolean
-  createTime: string
-  fromNickName?: string
-  fromAvatarUrl?: string
-  ypatTitle?: string
+  status: string
+  sendperid: number
+  recperid: number
+  messviewflag: string
+  linkwayflag: string
+  credate: string
+  nickname: string
+  imgpath: string
+  ypatid: number
+  timeStr: string
+  city: string
+}
+
+export interface MessListParams extends PageParams {
+  sendperid?: number
+  recperid?: number
+  type?: string
 }
 
 // ===== Product 商品相关类型 =====
@@ -169,81 +187,63 @@ export interface MessInfo {
 export interface Product {
   id: number
   name: string
-  description: string
-  price: number
-  originalPrice: number
-  type: number
-  credit: number
-  status: number
-  sort: number
-  createTime: string
+  currval: number
+  oldval: number
+  status: string
 }
 
 export interface ProductListParams extends PageParams {
-  type?: number
-  status?: number
+  type?: string
+  status?: string
 }
 
 // ===== Order 订单相关类型 =====
 
-export interface Order {
-  id: number
-  orderNo: string
-  userId: number
-  productId: number
-  productName: string
-  amount: number
-  payAmount: number
-  payType: number
-  status: number
-  payTime: string
-  createTime: string
-}
-
 export interface CreateOrderParams {
-  userId: number
-  productId: number
-  payType: number
+  type: string
+  userid: number
+  productid: number
+  total_fee: number
 }
 
 export interface CreateOrderResult {
-  orderNo: string
-  payParams: Record<string, string>
+  prepay_id: string
+  out_trade_no: string
+  [key: string]: any
 }
 
 // ===== Bill 账单相关类型 =====
 
 export interface Bill {
   id: number
-  userId: number
-  type: number
-  amount: number
-  balance: number
-  description: string
-  orderNo: string
-  createTime: string
+  type: string
+  credate: string
+  openid: string
+  total_fee: number
+  out_trade_no: string
+  return_code: string
+  result_code: string
 }
 
 export interface BillListParams extends PageParams {
-  userId: number
-  type?: number
+  userid?: number
+  type?: string
 }
 
 // ===== Record 记录相关类型 =====
 
 export interface RecordInfo {
   id: number
-  userId: number
-  type: number
-  targetId: number
-  targetType: number
-  content: string
-  createTime: string
+  type: string
+  credate: string
+  ppd: number
+  userid: number
+  typeTxt: string
 }
 
 export interface RecordListParams extends PageParams {
-  userId: number
-  type?: number
+  userid?: number
+  type?: string
 }
 
 // ===== Banner 轮播相关类型 =====
@@ -251,17 +251,14 @@ export interface RecordListParams extends PageParams {
 export interface Banner {
   id: number
   title: string
-  imageUrl: string
-  linkUrl: string
-  type: number
-  sort: number
-  status: number
-  createTime: string
+  imgpath: string
+  credate: string
+  userid: number
+  status: string
 }
 
 export interface BannerListParams extends PageParams {
-  type?: number
-  status?: number
+  status?: string
 }
 
 // ===== Article 文章相关类型 =====
@@ -269,71 +266,41 @@ export interface BannerListParams extends PageParams {
 export interface Article {
   id: number
   title: string
+  describ: string
   content: string
-  coverUrl: string
-  summary: string
-  category: number
-  author: string
-  readCount: number
-  status: number
-  createTime: string
-  updateTime: string
+  credate: string
+  status: string
+  flag: string
+  plat: string
+  readtimes: number
+  imgpath: string
+  timeStr: string
 }
 
 export interface ArticleListParams extends PageParams {
-  category?: number
-  status?: number
+  flag?: string
+  status?: string
 }
 
 // ===== Oauth 认证相关类型 =====
 
 export interface OcrResult {
   name: string
-  idCard: string
-  address: string
-  gender: string
-  nation: string
-  birth: string
+  certcode: string
 }
 
 export interface OauthSubmitParams {
-  userId: number
-  realName: string
-  idCard: string
-  idCardFront: string
-  idCardBack: string
-  holdIdCard: string
+  userid: number
+  name: string
+  certcode: string
+  pics: string[]
 }
 
 export interface OauthInfo {
-  id: number
-  userId: number
-  realName: string
-  idCard: string
-  idCardFront: string
-  idCardBack: string
-  holdIdCard: string
-  status: number
-  reason: string
-  createTime: string
-  updateTime: string
-}
-
-// ===== Area 地区相关类型 =====
-
-export interface AreaInfo {
-  id: number
+  userid: number
   name: string
-  parentId: number
-  level: number
-  children?: AreaInfo[]
-}
-
-// ===== Param 参数相关类型 =====
-
-export interface ParamInfo {
-  id: number
-  key: string
-  value: string
-  description: string
+  certcode: string
+  pics: string[]
+  status: string
+  statusTxt: string
 }

@@ -93,7 +93,7 @@ import { useAppStore } from '@/stores/app'
 import * as ypatApi from '@/api/modules/ypat'
 import * as contentApi from '@/api/modules/content'
 import { PROFESS_LABELS } from '@/constants/enums'
-import type { YpatInfo, Banner } from '@/api/types'
+import type { YpatInfo, Banner } from '@/api/types/index'
 
 const userStore = useUserStore()
 const appStore = useAppStore()
@@ -123,8 +123,8 @@ function getProfessLabel(code?: string): string {
 
 async function loadBanners() {
   try {
-    const res = await contentApi.getBannerList({ page: 0, size: 5, status: '1' })
-    if (res.success) {
+    const res = await contentApi.getBannerList({ page: 0, size: 5, status: '1' } as any)
+    if (res.success && res.data) {
       bannerList.value = res.data.content || []
     }
   } catch (_) {}

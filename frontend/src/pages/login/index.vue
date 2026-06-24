@@ -74,12 +74,20 @@ async function handleWxLogin() {
 
   try {
     submitting.value = true
+
     // #ifdef MP-WEIXIN
     const loginRes = await new Promise<UniApp.LoginRes>((resolve, reject) => {
       uni.login({ provider: 'weixin', success: resolve, fail: reject })
     })
-
     await userStore.login({ code: loginRes.code, channel: '0' })
+    handleLoginSuccess()
+    // #endif
+
+    // #ifdef APP-PLUS
+    const loginRes2 = await new Promise<UniApp.LoginRes>((resolve, reject) => {
+      uni.login({ provider: 'weixin', success: resolve, fail: reject })
+    })
+    await userStore.login({ code: loginRes2.code, channel: '0' })
     handleLoginSuccess()
     // #endif
   } catch (err: any) {

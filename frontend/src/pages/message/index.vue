@@ -59,7 +59,7 @@ import { onPullDownRefresh, onReachBottom, onShow } from '@dcloudio/uni-app'
 import { useUserStore } from '@/stores/user'
 import * as ypatApi from '@/api/modules/ypat'
 import * as messageApi from '@/api/modules/message'
-import type { MessInfo } from '@/api/types'
+import type { MessInfo } from '@/api/types/index'
 
 const userStore = useUserStore()
 

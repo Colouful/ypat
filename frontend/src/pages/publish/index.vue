@@ -37,12 +37,20 @@
 
       <view class="form-section">
         <text class="form-section__title">拍摄城市</text>
+        <!-- #ifdef MP-WEIXIN -->
         <view class="form-picker" @tap="handleCityPick">
           <text class="form-picker__text" :class="{ 'form-picker__text--placeholder': !form.city }">
             {{ form.city ? `${form.province} ${form.city}` : '请选择城市' }}
           </text>
           <text class="form-picker__arrow">›</text>
         </view>
+        <!-- #endif -->
+        <!-- #ifndef MP-WEIXIN -->
+        <view class="form-city-input">
+          <input v-model="form.province" class="form-city-input__field" placeholder="省份" />
+          <input v-model="form.city" class="form-city-input__field" placeholder="城市" />
+        </view>
+        <!-- #endif -->
       </view>
 
       <view class="form-section">
@@ -66,15 +74,21 @@
       <view class="form-section">
         <text class="form-section__title">约拍图片</text>
         <view class="image-upload">
-          <view v-for="(img, idx) in form.pics" :key="idx" class="image-upload__item">
+          <view v-for="(img, idx) in previewPics" :key="idx" class="image-upload__item">
             <image class="image-upload__image" :src="img" mode="aspectFill" />
             <view class="image-upload__remove" @tap="removeImage(idx)">
               <text class="image-upload__remove-icon">×</text>
             </view>
           </view>
-          <view v-if="form.pics.length < 9" class="image-upload__add" @tap="chooseImage">
+          <view v-if="previewPics.length < 9" class="image-upload__add" @tap="chooseImage">
             <text class="image-upload__add-icon">+</text>
-            <text class="image-upload__add-text">{{ form.pics.length }}/9</text>
+            <text class="image-upload__add-text">{{ previewPics.length }}/9</text>
+          </view>
+        </view>
+        <view v-if="uploading" class="image-upload__progress">
+          <text class="image-upload__progress-text">上传中 {{ uploadedCount }}/{{ previewPics.length }}</text>
+          <view class="image-upload__progress-bar">
+            <view class="image-upload__progress-fill" :style="{ width: uploadProgress + '%' }" />
           </view>
         </view>
       </view>
@@ -98,8 +112,8 @@
         <text class="form-tip__text">发布约拍将消耗 3 拍拍豆（当前余额：{{ userPPD }} 豆）</text>
       </view>
 
-      <button class="submit-btn" :disabled="!canSubmit || submitting" @tap="handleSubmit">
-        <text class="submit-btn__text">{{ submitting ? '提交中...' : '发布约拍' }}</text>
+      <button class="submit-btn" :disabled="!canSubmit || submitting || uploading" @tap="handleSubmit">
+        <text class="submit-btn__text">{{ submitting ? '提交中...' : uploading ? '图片上传中...' : '发布约拍' }}</text>
       </button>
     </view>
   </view>
@@ -109,6 +123,7 @@
 import { ref, reactive, computed } from 'vue'
 import { onShow } from '@dcloudio/uni-app'
 import { useUserStore } from '@/stores/user'
+import { upload } from '@/api/request'
 import * as ypatApi from '@/api/modules/ypat'
 import { PHOTO_STYLES } from '@/constants/enums'
 
@@ -119,6 +134,12 @@ const userPPD = computed(() => userStore.userInfo?.ppd || 0)
 
 const today = new Date().toISOString().split('T')[0]
 const submitting = ref(false)
+const uploading = ref(false)
+const uploadedCount = ref(0)
+const uploadProgress = computed(() => {
+  if (previewPics.value.length === 0) return 0
+  return Math.round((uploadedCount.value / previewPics.value.length) * 100)
+})
 
 const form = reactive({
   target: '1',
@@ -133,6 +154,9 @@ const form = reactive({
   realnameflag: '0',
   creditflag: '0',
 })
+
+const previewPics = ref<string[]>([])
+const uploadedPics = ref<string[]>([])
 
 const selectedStyles = ref<string[]>([])
 const photoStyles = PHOTO_STYLES
@@ -150,7 +174,7 @@ const chargeOptions = [
 ]
 
 const canSubmit = computed(() => {
-  return form.target && form.describ.trim() && form.patdate && form.city && form.chargeway && form.pics.length > 0
+  return form.target && form.describ.trim() && form.patdate && form.city && form.chargeway && previewPics.value.length > 0
 })
 
 function toggleStyle(style: string) {
@@ -168,37 +192,70 @@ function handleDateChange(e: any) {
 }
 
 function handleCityPick() {
-  // #ifdef MP-WEIXIN
   uni.chooseLocation({
     success(res) {
       form.city = res.name || res.address || ''
       form.province = ''
     },
   })
-  // #endif
-  // #ifndef MP-WEIXIN
-  uni.showToast({ title: '请手动输入城市', icon: 'none' })
-  // #endif
 }
 
 function chooseImage() {
-  const remaining = 9 - form.pics.length
+  const remaining = 9 - previewPics.value.length
   uni.chooseImage({
     count: remaining,
     sizeType: ['compressed'],
     sourceType: ['album', 'camera'],
     success(res) {
-      form.pics.push(...res.tempFilePaths)
+      previewPics.value.push(...res.tempFilePaths)
     },
   })
 }
 
 function removeImage(idx: number) {
-  form.pics.splice(idx, 1)
+  previewPics.value.splice(idx, 1)
+  if (uploadedPics.value.length > idx) {
+    uploadedPics.value.splice(idx, 1)
+  }
+}
+
+async function uploadImage(filePath: string): Promise<string> {
+  const res = await upload<{ url: string }>({
+    url: '/upload',
+    filePath,
+    name: 'file',
+    showLoading: false,
+    showError: false,
+  })
+  return res.data.url
+}
+
+async function uploadAllImages(): Promise<string[]> {
+  uploading.value = true
+  uploadedCount.value = 0
+  const urls: string[] = []
+
+  for (let i = 0; i < previewPics.value.length; i++) {
+    const filePath = previewPics.value[i]
+
+    if (uploadedPics.value[i]) {
+      urls.push(uploadedPics.value[i])
+      uploadedCount.value++
+      continue
+    }
+
+    const url = await uploadImage(filePath)
+    urls.push(url)
+    uploadedPics.value[i] = url
+    uploadedCount.value++
+  }
+
+  uploading.value = false
+  return urls
 }
 
 async function handleSubmit() {
-  if (!canSubmit.value || submitting.value) return
+  if (!canSubmit.value || submitting.value || uploading.value) return
   if (userPPD.value < 3) {
     uni.showModal({
       title: '拍拍豆不足',
@@ -218,6 +275,26 @@ async function handleSubmit() {
     const userId = userStore.userInfo?.id
     if (!userId) return
 
+    let imageUrls: string[]
+    try {
+      imageUrls = await uploadAllImages()
+    } catch (uploadErr: any) {
+      uni.showModal({
+        title: '图片上传失败',
+        content: uploadErr?.message || '部分图片上传失败，是否重试？',
+        confirmText: '重试',
+        cancelText: '取消',
+        success(modalRes) {
+          if (modalRes.confirm) {
+            handleSubmit()
+          }
+        },
+      })
+      return
+    }
+
+    form.pics = imageUrls
+
     const res = await ypatApi.submit({
       ...form,
       userid: userId,
@@ -227,6 +304,8 @@ async function handleSubmit() {
       uni.showToast({ title: '发布成功，等待审核', icon: 'success' })
       setTimeout(() => {
         Object.assign(form, { target: '1', describ: '', patdate: '', province: '', city: '', area: '', chargeway: '0', patstyle: '', pics: [], realnameflag: '0', creditflag: '0' })
+        previewPics.value = []
+        uploadedPics.value = []
         selectedStyles.value = []
       }, 1500)
     } else {
@@ -376,6 +455,21 @@ onShow(() => {
   }
 }
 
+.form-city-input {
+  display: flex;
+  gap: $spacing-sm;
+
+  &__field {
+    flex: 1;
+    height: 72rpx;
+    border: 2rpx solid $color-border;
+    border-radius: $radius-sm;
+    padding: 0 $spacing-md;
+    font-size: $font-size-base;
+    color: $color-text-primary;
+  }
+}
+
 .image-upload {
   display: flex;
   flex-wrap: wrap;
@@ -433,6 +527,32 @@ onShow(() => {
     font-size: $font-size-xs;
     color: $color-text-helper;
     margin-top: $spacing-xs;
+  }
+
+  &__progress {
+    width: 100%;
+    margin-top: $spacing-sm;
+  }
+
+  &__progress-text {
+    font-size: $font-size-xs;
+    color: $color-text-secondary;
+    margin-bottom: $spacing-xs;
+  }
+
+  &__progress-bar {
+    width: 100%;
+    height: 8rpx;
+    background-color: $color-bg-page;
+    border-radius: 4rpx;
+    overflow: hidden;
+  }
+
+  &__progress-fill {
+    height: 100%;
+    background-color: $color-primary;
+    border-radius: 4rpx;
+    transition: width 0.3s ease;
   }
 }
 

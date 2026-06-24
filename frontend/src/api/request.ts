@@ -1,6 +1,13 @@
 import { envConfig } from '@/config/env'
 import type { ApiResult } from './types'
 
+/** 后端原始响应结构 */
+interface BackendResponse {
+  code: number
+  message: string
+  result: any
+}
+
 /** 错误码映射 */
 const ERROR_CODE_MAP: Record<string | number, string> = {
   200: '请求成功',
@@ -12,20 +19,20 @@ const ERROR_CODE_MAP: Record<string | number, string> = {
   502: '网关错误',
   503: '服务不可用',
   1001: '认证失败，请重新登录',
-  1002: '账号已被禁用',
+  1002: '参数错误',
   1003: '验证码错误',
   1004: '验证码已过期',
-  1005: '手机号格式错误',
+  1005: '数据不存在',
   1006: '用户不存在',
   1007: '密码错误',
-  1008: '操作频繁，请稍后再试',
+  1008: '识别失败',
   1009: '余额不足',
   1010: '未实名认证',
   1011: '信用分不足',
   1012: '订单不存在',
-  1013: '订单已支付',
-  1014: '订单已取消',
-  1015: '商品已下架',
+  1013: '实名失败',
+  1014: '识别超限',
+  1015: '水印失败',
 }
 
 /** 请求配置 */
@@ -77,28 +84,17 @@ function generateRequestKey(config: RequestConfig): string {
 
 /** 获取 Token */
 function getToken(): string {
-  return uni.getStorageSync('token') || ''
-}
-
-/** 获取 Refresh Token */
-function getRefreshToken(): string {
-  return uni.getStorageSync('refreshToken') || ''
+  return uni.getStorageSync('ypat_token') || ''
 }
 
 /** 设置 Token */
 function setToken(token: string): void {
-  uni.setStorageSync('token', token)
-}
-
-/** 设置 Refresh Token */
-function setRefreshToken(refreshToken: string): void {
-  uni.setStorageSync('refreshToken', refreshToken)
+  uni.setStorageSync('ypat_token', token)
 }
 
 /** 清除登录信息 */
 function clearAuth(): void {
-  uni.removeStorageSync('token')
-  uni.removeStorageSync('refreshToken')
+  uni.removeStorageSync('ypat_token')
   uni.removeStorageSync('userInfo')
 }
 
@@ -108,6 +104,16 @@ function redirectToLogin(): void {
   uni.reLaunch({
     url: '/pages/login/index',
   })
+}
+
+/** 将后端原始响应映射为 ApiResult */
+function mapResponse<T>(raw: BackendResponse): ApiResult<T> {
+  return {
+    success: raw.code === 200,
+    data: raw.result as T,
+    code: String(raw.code),
+    message: raw.message,
+  }
 }
 
 /** 处理 token 过期 - 尝试刷新 */
@@ -122,10 +128,10 @@ async function handleTokenExpired(config: RequestConfig): Promise<ApiResult> {
   isRefreshing = true
 
   try {
-    const refreshTokenValue = getRefreshToken()
-    if (!refreshTokenValue) {
+    const tokenValue = getToken()
+    if (!tokenValue) {
       redirectToLogin()
-      return Promise.reject(new Error('No refresh token'))
+      return Promise.reject(new Error('No token'))
     }
 
     // 调用刷新 token 接口
@@ -134,19 +140,17 @@ async function handleTokenExpired(config: RequestConfig): Promise<ApiResult> {
         url: `${envConfig.apiBaseUrl}/user/token`,
         method: 'GET',
         header: {
-          Token: refreshTokenValue,
+          Token: tokenValue,
         },
         success: resolve,
         fail: reject,
       })
     })
 
-    const result = res.data as ApiResult
+    const raw = res.data as BackendResponse
+    const result = mapResponse(raw)
     if (result.success && result.data?.token) {
       setToken(result.data.token)
-      if (result.data.refreshToken) {
-        setRefreshToken(result.data.refreshToken)
-      }
 
       // 重新发送队列中的请求
       requestQueue.forEach(({ resolve, config: pendingConfig }) => {
@@ -242,7 +246,6 @@ export function request<T = any>(config: RequestConfig): Promise<ApiResult<T>> {
       timeout,
       success: async (res) => {
         const statusCode = res.statusCode
-        const result = res.data as ApiResult<T>
 
         // HTTP 状态码非 200
         if (statusCode !== 200) {
@@ -254,10 +257,14 @@ export function request<T = any>(config: RequestConfig): Promise<ApiResult<T>> {
           return
         }
 
-        // 业务状态码处理
-        const code = String(result.code)
+        // 将后端原始响应映射为 ApiResult
+        const raw = res.data as BackendResponse
+        const result = mapResponse<T>(raw)
 
-        if (code === '200' || result.success) {
+        // 业务状态码处理
+        const code = result.code
+
+        if (code === '200') {
           resolve(result)
           return
         }
@@ -282,7 +289,7 @@ export function request<T = any>(config: RequestConfig): Promise<ApiResult<T>> {
             confirmText: '去认证',
             success: (modalRes) => {
               if (modalRes.confirm) {
-                uni.navigateTo({ url: '/pages/auth/index' })
+                uni.navigateTo({ url: '/pages-sub/user/realname' })
               }
             },
           })
@@ -298,7 +305,7 @@ export function request<T = any>(config: RequestConfig): Promise<ApiResult<T>> {
             confirmText: '去充值',
             success: (modalRes) => {
               if (modalRes.confirm) {
-                uni.navigateTo({ url: '/pages/recharge/index' })
+                uni.navigateTo({ url: '/pages-sub/user/recharge' })
               }
             },
           })
@@ -389,8 +396,9 @@ export function upload<T = any>(config: UploadConfig): Promise<ApiResult<T>> {
         }
 
         try {
-          const result = JSON.parse(res.data) as ApiResult<T>
-          if (result.success || String(result.code) === '200') {
+          const raw = JSON.parse(res.data) as BackendResponse
+          const result = mapResponse<T>(raw)
+          if (result.success) {
             resolve(result)
           } else {
             const errorMessage = result.message || '上传失败'

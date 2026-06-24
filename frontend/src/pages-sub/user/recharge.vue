@@ -24,12 +24,8 @@
         <view v-if="selectedProductId === product.id" class="check-icon">
           <text class="check-mark">&#10003;</text>
         </view>
-        <text class="product-ppd">{{ product.credit }} PPD</text>
-        <text class="product-price">&#165;{{ product.price.toFixed(2) }}</text>
-        <text
-          v-if="product.originalPrice > product.price"
-          class="product-original-price"
-        >&#165;{{ product.originalPrice.toFixed(2) }}</text>
+        <text class="product-ppd">{{ product.currval }} 拍拍豆</text>
+        <text class="product-price">&#165;{{ (product.oldval / 100).toFixed(2) }}</text>
       </view>
     </view>
 
@@ -42,7 +38,7 @@
           :loading="paying"
           @tap="handlePay"
         >
-          {{ paying ? '支付中...' : `立即支付 ¥${selectedProduct ? selectedProduct.price.toFixed(2) : '0.00'}` }}
+          {{ paying ? '支付中...' : `立即支付 ¥${selectedProduct ? (selectedProduct.oldval / 100).toFixed(2) : '0.00'}` }}
         </button>
       </view>
     </view>
@@ -58,14 +54,9 @@ import * as paymentApi from '@/api/modules/payment'
 interface Product {
   id: number
   name: string
-  description: string
-  price: number
-  originalPrice: number
-  type: number
-  credit: number
-  status: number
-  sort: number
-  createTime: string
+  currval: number   // PPD amount
+  oldval: number    // price in fen
+  status: string
 }
 
 const userStore = useUserStore()
@@ -88,7 +79,7 @@ function selectProduct(product: Product) {
 async function fetchProducts() {
   loading.value = true
   try {
-    const res = await paymentApi.getProductList({ page: 1, size: 20, status: 1 })
+    const res = await paymentApi.getProductList({ page: 0, size: 20, status: '1' })
     if (res.data?.content) {
       productList.value = res.data.content
       // 默认选中第一个商品
@@ -103,7 +94,22 @@ async function fetchProducts() {
   }
 }
 
-/** 支付 */
+async function pollOrderStatus(outTradeNo: string, maxAttempts = 6): Promise<boolean> {
+  for (let i = 0; i < maxAttempts; i++) {
+    await new Promise((resolve) => setTimeout(resolve, 2000))
+    try {
+      const userInfo = await import('@/api/modules/user').then((m) => m.getUserInfo(Number(userStore.userInfo!.id)))
+      if (userInfo.success && userInfo.data) {
+        userStore.updateUserInfo(userInfo.data as any)
+        return true
+      }
+    } catch {
+      // continue polling
+    }
+  }
+  return false
+}
+
 async function handlePay() {
   if (!selectedProduct.value || paying.value) return
 
@@ -115,37 +121,43 @@ async function handlePay() {
   paying.value = true
   try {
     const res = await paymentApi.createOrder({
-      userId: Number(userStore.userInfo.id),
-      productId: selectedProduct.value.id,
-      payType: 0,
+      type: '0',
+      userid: Number(userStore.userInfo.id),
+      productid: selectedProduct.value.id,
+      total_fee: selectedProduct.value.oldval,
     })
 
-    if (res.data?.payParams) {
-      // 调用微信支付
+    if (res.success && res.data?.prepay_id) {
+      // #ifdef MP-WEIXIN
       await uni.requestPayment({
         provider: 'wxpay',
-        timeStamp: res.data.payParams.timeStamp,
-        nonceStr: res.data.payParams.nonceStr,
-        package: res.data.payParams.package,
-        signType: res.data.payParams.signType || 'MD5',
-        paySign: res.data.payParams.paySign,
+        timeStamp: res.data.timeStamp || '',
+        nonceStr: res.data.nonceStr || '',
+        package: `prepay_id=${res.data.prepay_id}`,
+        signType: res.data.signType || 'MD5',
+        paySign: res.data.paySign || '',
       })
+      // #endif
 
-      // 支付成功
-      uni.showToast({ title: '支付成功', icon: 'success' })
+      uni.showLoading({ title: '确认支付结果...' })
+      const confirmed = await pollOrderStatus(res.data.out_trade_no)
+      uni.hideLoading()
 
-      // 刷新用户余额
-      const ppdNum = Number(userStore.userInfo.ppd || 0) + selectedProduct.value.credit
-      userStore.updateUserInfo({ ppd: String(ppdNum) })
-
-      setTimeout(() => {
-        uni.navigateBack()
-      }, 1500)
+      if (confirmed) {
+        uni.showToast({ title: '充值成功', icon: 'success' })
+        setTimeout(() => { uni.navigateBack() }, 1500)
+      } else {
+        uni.showModal({
+          title: '提示',
+          content: '支付结果确认中，请稍后查看余额变化',
+          showCancel: false,
+        })
+      }
     } else {
-      uni.showToast({ title: '创建订单失败', icon: 'none' })
+      uni.showToast({ title: res.message || '创建订单失败', icon: 'none' })
     }
   } catch (e: any) {
-    if (e?.errMsg?.includes('cancel')) {
+    if (e?.errMsg?.includes('cancel') || e?.message?.includes('cancel')) {
       uni.showToast({ title: '已取消支付', icon: 'none' })
     } else {
       uni.showToast({ title: '支付失败，请重试', icon: 'none' })
