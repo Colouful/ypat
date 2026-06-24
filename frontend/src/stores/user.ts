@@ -59,7 +59,11 @@ export const useUserStore = defineStore('user', () => {
       throw new Error('缺少微信手机号授权信息，请重新授权')
     }
 
-    const session = await get<WxSessionResult>('/user/code', { code: input.code }, { withToken: false, showError: false })
+    const session = await get<WxSessionResult>(
+      '/user/code',
+      { code: input.code },
+      { withToken: false, showError: false },
+    )
     if (!session.data?.openid || !session.data?.session_key) {
       throw new Error(session.data?.errmsg || '微信登录凭证换取失败')
     }
@@ -76,7 +80,10 @@ export const useUserStore = defineStore('user', () => {
       recmobile: input.recmobile,
     }
 
-    const result = await post<LoginResult>('/user/login', params, { withToken: false, showError: false })
+    const result = await post<LoginResult>('/user/login', params, {
+      withToken: false,
+      showError: false,
+    })
     if (!result.data?.token || !result.data?.id) {
       throw new Error(result.message || '登录响应缺少用户凭证')
     }
@@ -112,11 +119,11 @@ export const useUserStore = defineStore('user', () => {
     uni.switchTab({ url: '/pages/home/index' })
   }
 
-  async function updateUserInfo(localPatch?: Record<string, unknown>): Promise<UserInfo | null> {
+  async function updateUserInfo(localPatch?: Partial<UserInfo>): Promise<UserInfo | null> {
     if (!token.value || !userInfo.value?.id) return null
 
     if (localPatch) {
-      userInfo.value = { ...userInfo.value, ...localPatch } as UserInfo
+      userInfo.value = { ...userInfo.value, ...localPatch }
       setStoredUserInfo(userInfo.value)
     }
 
@@ -135,8 +142,12 @@ export const useUserStore = defineStore('user', () => {
   async function refreshUnreadCount(): Promise<number> {
     if (!isLoggedIn.value || !userInfo.value?.id) return 0
     try {
-      const result = await get<number>('/my/ypat/unread/count', { userid: userInfo.value.id })
-      unreadCount.value = Number(result.data || 0)
+      const params = { type: '0', userid: userInfo.value.id }
+      const [received, sent] = await Promise.all([
+        get<number>('/my/ypat/rec/unread/count', params),
+        get<number>('/my/ypat/send/unread/count', params),
+      ])
+      unreadCount.value = Number(received.data || 0) + Number(sent.data || 0)
     } catch {
       unreadCount.value = 0
     }
