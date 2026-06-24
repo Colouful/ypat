@@ -1,0 +1,90 @@
+page {
+  background-color: #f7f9f9;
+}
+.white-box {
+  background: #fff;
+  border-radius: 5px;
+  padding: 40upx 24upx;
+  margin: 0px 20upx 20upx;
+  position: relative;
+  z-index: 1;
+  margin-top: 120upx;
+  & + .white-box {
+    margin-top: 0upx;
+    .active {
+      color: #f5a455;
+      padding: 20upx 0;
+    }
+  }
+}
+.check-item {
+  padding: 20upx;
+}
+.black-bg {
+  height: 290 * 2upx;
+  position: absolute;
+  width: 100%;
+  top: -150upx;
+  left: 0;
+  z-index: 0;
+}
+
+.container {
+  position: relative;
+}
+
+.credit-btn {
+  position: relative;
+  color: #ffcfa0;
+  font-weight: 500;
+  opacity: 0.6;
+  font-size: 32upx;
+  text-align: center;
+  margin: 40upx 30upx 10upx;
+  height: 120upx;
+  border-radius: 60upx;
+  /* #ifdef MP-BAIDU*/
+  line-height: 90upx;
+  /* #endif */
+  /* #ifdef MP-WEIXIN*/
+  line-height: 120upx;
+  /* #endif */
+
+  &.active {
+    opacity: 1;
+  }
+  .money {
+    font-size: 60upx;
+  }
+  .btn_bg {
+    position: absolute;
+    z-index: -1;
+    left: 50%;
+    transform: translate(-50%, 0);
+  }
+  .dw {
+    margin-left: 10upx;
+    font-weight: normal;
+  }
+}
+.title-list {
+  font-size: 28upx;
+  font-weight: 600;
+  color: #2c2d2d;
+}
+.cell-item {
+  font-size: 24upx;
+  color: #646666;
+}
+.checkbox-box {
+  padding: 30upx 20upx 10upx;
+  vertical-align: middle;
+  color: #2e2f2f;
+  font-size: 28upx;
+  line-height: 40upx;
+  .active {
+    color: #f5a455;
+    font-weight: 500;
+    padding: 20upx 20upx 20upx 0;
+  }
+}

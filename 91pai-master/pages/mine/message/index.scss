@@ -1,0 +1,45 @@
+.zx-tab {
+  display: flex;
+  position: fixed;
+  top: 0;
+  width: 100%;
+  z-index: 100;
+  background-color: #FFF;
+  .tab-item {
+    color: #b4b9b9;
+    font-size: 32rpx;
+    font-weight: 600;
+    margin-left: 40rpx;
+    padding: 40upx 0;
+    line-height: 40rpx;
+    transition: all .05s;
+
+    position: relative;
+    &.active {
+      color: #2c2d2d;
+      font-size: 44rpx;
+    }
+    .dot-msg-tab {
+      position: absolute;
+      top: 30rpx;
+      right: -10rpx;
+    }
+  }
+  &::after {
+    content: "";
+    position: absolute;
+    border-bottom: 2upx solid #eaeef1;
+    -webkit-transform: scaleY(0.5);
+    transform: scaleY(0.5);
+    bottom: 0;
+    right: 0;
+    left: 0;
+  }
+}
+.home-container {
+  padding-top: 120upx;
+}
+
+.tui-badge {
+  width: auto;
+}

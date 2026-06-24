@@ -1,0 +1,28 @@
+.jilu {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  justify-content: space-between;
+}
+.tui-list-cell-name {
+  color: #2c2d2d;
+  font-size: 28rpx;
+  font-weight: 700;
+}
+.tui-desc {
+  color: #b4b9b9;
+  font-size: 24rpx;
+}
+.add {
+  font-size: 28rpx;
+  font-weight: 600;
+  color: #ff5e3f;
+}
+.subtraction {
+  color: #21c2c2;
+  font-size: 28rpx;
+  font-weight: 600;
+}
+.container {
+  padding-bottom: 100upx;
+}

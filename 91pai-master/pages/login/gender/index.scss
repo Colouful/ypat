@@ -1,0 +1,42 @@
+page {
+  background: #fff;
+}
+.container {
+  padding: 120upx 20upx;
+  .title {
+    font-size: 36upx;
+    font-weight: 600;
+    text-align: center;
+    margin-bottom: 60upx;
+    .info {
+      font-size: 24upx;
+      color: #b4b9b9;
+      font-weight: normal;
+    }
+  }
+}
+.item-box {
+  margin: auto;
+  width: 540upx;
+  flex-wrap: wrap;
+  justify-content: space-around;
+  align-items: center;
+  display: flex;
+}
+.item-man {
+  text-align: center;
+  color: #2c2d2d;
+  font-size: 28upx;
+  margin-top: 10upx;
+  .tx {
+    width: 200upx;
+    height: 200upx;
+  }
+  .active {
+    color: #1bb6b6;
+  }
+}
+.disactive{
+    color: #fff;
+    background-color: #DEE0E0;
+}

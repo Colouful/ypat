@@ -1,0 +1,108 @@
+.tui-msg-box {
+  display: flex;
+  align-items: center;
+  padding: 30upx 40upx 60upx;
+}
+
+.tui-msg-pic {
+  width: 100rpx;
+  height: 100rpx;
+  border-radius: 50%;
+  display: block;
+  margin-right: 24rpx;
+}
+.location {
+  color: #b4b9b9;
+  font-size: 24rpx;
+  position: absolute;
+  right: 30upx;
+  top: 30rpx;
+}
+.tui-msg-item {
+  max-width: 500rpx;
+  margin-left: 20rpx;
+  min-height: 80rpx;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+.msg-pic-box {
+  position: relative;
+}
+.msg-dot-list {
+  position: absolute;
+  right: 10rpx;
+  top: 10rpx;
+}
+
+.tui-msg-name {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  font-size: 28rpx;
+  line-height: 1;
+  font-weight: 500;
+  color: #2c2d2d;
+}
+.look-tel {
+  color: #b4b9b9;
+  font-size: 24rpx;
+  text-align: right;
+  padding-top: 20rpx;
+  font-weight: 600;
+  position: absolute;
+  bottom: 20upx;
+  right: 30upx;
+  &.active {
+    color: #21c2c2;
+  }
+}
+.nickname {
+  color: #2c2d2d;
+  font-size: 24upx;
+  font-weight: 600;
+}
+.cell-item {
+  margin-bottom: 20rpx;
+  background: #fff;
+  padding: 0;
+  position: relative;
+}
+.time {
+  color: #b4b9b9;
+  font-size: 24rpx;
+  padding-right: 15rpx;
+}
+
+.tui-msg-content {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  font-size: 24rpx;
+  line-height: 1;
+  color: #646666;
+}
+
+.tui-msg-right {
+  max-width: 120rpx;
+  height: 88rpx;
+  margin-left: auto;
+  text-align: left;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  align-items: flex-start;
+}
+
+.tui-msg-right.tui-right-dot {
+  height: 76rpx;
+  padding-bottom: 10rpx;
+}
+
+.tui-msg-time {
+  width: 100%;
+  font-size: 24rpx;
+  line-height: 24rpx;
+  color: #9397a4;
+}

@@ -1,0 +1,148 @@
+.name-box {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+}
+.qr-img {
+  width: 80upx;
+  height: 80upx;
+}
+.bottom-view {
+  background: #fff;
+  padding: 24upx 24upx 10upx;
+}
+.bottom-view .name {
+  font-size: 24upx;
+  font-weight: normal;
+  color: #2c2d2d;
+  margin-bottom: 5upx;
+}
+.bottom-view .title {
+  font-size: 28upx;
+  font-weight: 500;
+  color: #2c2d2d;
+}
+.logo-img {
+  height: 22upx;
+  width: 176upx;
+}
+.logo-img-box {
+  margin-top: 40upx;
+  text-align: center;
+  transform: scale(1.2);
+}
+.close-img-box {
+  display: block;
+  position: absolute;
+  right: 20upx;
+  top: -86upx;
+}
+.close-img {
+  width: 48upx;
+  height: 86upx;
+}
+.hideCanvasView {
+  position: relative;
+}
+
+.hideCanvas {
+  position: fixed;
+  top: -99999upx;
+  left: -99999upx;
+  z-index: -99999;
+}
+
+.flex_row_c_c {
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  align-items: center;
+}
+
+.modalView {
+  width: 100%;
+  height: 100%;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  opacity: 0;
+  outline: 0;
+  transform: scale(1.2);
+  perspective: 2500upx;
+  background: rgba(0, 0, 0, 0.6);
+  transition: all 0.3s ease-in-out;
+  pointer-events: none;
+  backface-visibility: hidden;
+  z-index: 999;
+}
+
+.modalView.show {
+  opacity: 1;
+  transform: scale(1);
+  pointer-events: auto;
+}
+
+.flex_column {
+  display: flex;
+  flex-direction: column;
+}
+
+.backgroundColor-white {
+  background-color: transparent;
+}
+
+.border_radius_10px {
+}
+
+.padding1vh {
+  padding: 1vh;
+}
+.posterImage-box {
+  position: relative;
+  margin-top: 60upx;
+}
+.posterImage {
+  width: 80vw;
+  display: block;
+}
+.posterImageCopy-box {
+  max-height: 60vh;
+  overflow: hidden;
+}
+.posterImageCopy {
+  width: 80vw;
+  display: block;
+}
+
+.flex_row {
+  display: flex;
+  flex-direction: row;
+}
+
+.marginTop2vh {
+  margin-top: 2vh;
+}
+
+.nextBtn {
+  flex: 1;
+  margin-right: 30upx;
+  color: #21c2c2;
+  border-radius: 8upx;
+  background-color: transparent;
+  border: 2upx solid #21c2c2;
+  margin-left: 2upx;
+}
+
+.saveBtn {
+  flex: 1;
+  border-radius: 8upx;
+  background-color: #21c2c2;
+  color: #fff;
+  border: 2upx solid #21c2c2;
+}
+
+.btn-hover{
+  opacity: .6;
+}

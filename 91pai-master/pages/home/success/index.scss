@@ -1,0 +1,115 @@
+page {
+  background: #f7f9f9;
+}
+.logo-box {
+  width: 72 * 2rpx;
+  height: 72 * 2rpx;
+  margin-bottom: 40rpx;
+  background: #21c2c2;
+  border-radius: 50%;
+  line-height: 84 * 2rpx;
+}
+.logo.success {
+  width: 36 * 2rpx;
+  height: 26 * 2rpx;
+}
+.logo.fail {
+  width: 40 * 2rpx;
+  height: 22 * 2rpx;
+}
+.logo.ing {
+  width: 40 * 2rpx;
+  height: 22 * 2rpx;
+}
+.title {
+  color: #2c2d2d;
+  font-size: 36rpx;
+  font-weight: 600;
+  line-height: 60rpx;
+}
+.subtitle {
+  color: #b4b9b9;
+  font-size: 28rpx;
+  line-height: 60rpx;
+  margin-bottom: 80rpx;
+}
+.success-btn {
+  background-color: #21c2c2;
+  width: 300rpx;
+  border-radius: 0;
+}
+.box {
+  text-align: center;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-direction: column;
+  padding-top: 300rpx;
+}
+
+.realname-icon {
+  width: 36upx;
+  vertical-align: text-bottom;
+}
+.realname {
+  margin: 0 28upx;
+  box-sizing: border-box;
+}
+.realname-box {
+  background: linear-gradient(
+    135deg,
+    rgba(65, 66, 66, 1) 0%,
+    rgba(31, 35, 35, 1) 100%
+  );
+  display: flex;
+  box-sizing: border-box;
+  align-items: center;
+  justify-content: space-between;
+  padding: 28upx;
+  border-radius: 8upx;
+  width: 100%;
+  flex-direction: row;
+  font-size: 24upx;
+  font-weight: normal;
+  color: #ffcfa0;
+}
+.left-box {
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  flex-direction: column;
+  text-align: left;
+}
+.left-top {
+  text-align: left;
+  display: inline-block;
+}
+.text-realname {
+  font-size: 36upx;
+  color: #ffcfa0;
+  font-weight: 500;
+  padding: 0 10upx;
+}
+.text-bottom {
+  margin-top: 12upx;
+}
+.btn {
+  background-color: #ffcfa0;
+  width: 152upx;
+  height: 48upx;
+  border-radius: 24upx;
+  color: #2c2d2d;
+  line-height: 48upx;
+}
+.btn-home {
+  position: fixed;
+  bottom: 80upx;
+  height: 48upx;
+  line-height: 48upx;
+  left: 50%;
+  transform: translate(-50%, 0%);
+  border-radius: 24upx;
+  font-size: 24upx;
+  color: #b4b9b9;
+  border: 2upx solid #b4b9b9;
+}

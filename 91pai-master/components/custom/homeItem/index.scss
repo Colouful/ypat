@@ -1,0 +1,256 @@
+.img-constainer {
+  min-width: 100%;
+  min-height: 100 * 2upx;
+}
+.image-box {
+  width: 100%;
+  height: 375 * 2upx;
+  display: block;
+}
+.image-box2 {
+  width: 100%;
+  height: 187 * 2upx;
+  display: block;
+}
+.image-box3 {
+  width: 100%;
+  height: 249 * 2upx;
+  display: block;
+}
+.image-box4 {
+  width: 100%;
+  height: 187 * 2upx;
+  display: block;
+}
+.image-box5 {
+  width: 100%;
+  height: 187 * 2upx;
+  display: block;
+}
+.image-box6 {
+  width: 100%;
+  height: 249 * 2upx;
+  display: block;
+}
+.image-box110 {
+  width: 100%;
+  height: 125px;
+  display: block;
+}
+.one {
+  min-width: 100%;
+  display: block;
+}
+.three {
+  display: block;
+  overflow: hidden;
+  position: relative;
+  &::before {
+    content: " ";
+    width: 100%;
+    position: absolute;
+    border: 2upx solid #fff;
+    top: 0;
+    z-index: 10;
+    right: 0;
+  }
+  &::after {
+    content: " ";
+    height: 100%;
+    position: absolute;
+    border: 2upx solid #fff;
+    bottom: 0;
+    right: 0;
+  }
+  &:last-child {
+    &::after {
+      border: none;
+    }
+  }
+}
+.three-r-before {
+  position: relative;
+  &::before {
+    content: " ";
+    height: 100%;
+    position: absolute;
+    border: 2upx solid #fff;
+    top: 0;
+    z-index: 10;
+    right: 0;
+  }
+}
+.two {
+  min-width: 50%;
+  max-width: 50%;
+  overflow: hidden;
+  width: 50%;
+  display: block;
+  position: relative;
+  &::after {
+    content: " ";
+    height: 100%;
+    position: absolute;
+    border: 2upx solid #fff;
+    bottom: 0;
+    right: 0;
+  }
+  &:last-child {
+    &::after {
+      border: none;
+    }
+  }
+}
+.overhidden {
+  overflow: hidden;
+}
+.three-l {
+  position: relative;
+  &::after {
+    content: " ";
+    height: 100%;
+    position: absolute;
+    border: 2upx solid #fff;
+    bottom: 0;
+    right: 0;
+  }
+}
+.three-r {
+  width: 100%;
+  height: 50%;
+  position: relative;
+  &:last-child {
+    &::after {
+      border: none;
+    }
+  }
+  &::after {
+    content: " ";
+    width: 100%;
+    position: absolute;
+    border: 2upx solid #fff;
+    bottom: 0;
+    right: 0;
+  }
+}
+.four-l-r {
+  position: relative;
+  &::before {
+    content: " ";
+    height: 100%;
+    position: absolute;
+    border: 2upx solid #fff;
+    z-index: 10;
+    bottom: 0;
+    right: 0;
+  }
+}
+.four-l {
+  width: 100%;
+  position: relative;
+  &:last-child {
+    &::after {
+      border: none;
+    }
+  }
+  &::after {
+    content: " ";
+    width: 100%;
+    position: absolute;
+    border: 2upx solid #fff;
+    bottom: 0;
+    right: 0;
+  }
+}
+.four-r {
+  position: relative;
+  &:last-child {
+    &::after {
+      border: none;
+    }
+  }
+  &::after {
+    content: " ";
+    width: 100%;
+    position: absolute;
+    border: 2upx solid #fff;
+    bottom: 0;
+    right: 0;
+  }
+}
+
+.box {
+  background: #fff;
+  margin-bottom: 20rpx;
+}
+.title-rect {
+  display: flex;
+  justify-content: space-between;
+}
+.title {
+  font-size: 32rpx;
+  color: #2c2d2d;
+  font-weight: 600;
+}
+.adress {
+  font-size: 24rpx;
+  color: #b4b9b9;
+}
+.subtitle {
+  margin: 15rpx 0;
+  font-size: 28rpx;
+  line-height: 40rpx;
+  color: #646666;
+  font-weight: normal;
+  display: -webkit-box;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  word-wrap: break-word;
+  white-space: normal !important;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+.title-box {
+  padding: 20rpx 40rpx 10rpx;
+}
+.img-box {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+.img-bottom {
+  position: absolute;
+  bottom: 0;
+  width: 100%;
+  height: 56rpx;
+  background: rgba(0, 0, 0, 0.4);
+}
+.tag-box {
+  display: flex;
+  justify-content: start;
+  flex-direction: row;
+  align-items: center;
+  line-height: 56rpx;
+  .item {
+    margin-left: 80rpx;
+  }
+}
+.look {
+  vertical-align: middle;
+  width: 28rpx;
+  height: 26rpx;
+  margin-right: 10rpx;
+}
+.small-title {
+  color: #fff;
+  font-size: 20rpx;
+}
+.sh-status {
+  color: #1bb6b6;
+  font-size: 24upx;
+  background-color: #e5fafa;
+  margin-left: 20upx;
+  font-weight: normal;
+  padding: 0upx 10upx;
+  border-radius: 4upx;
+}

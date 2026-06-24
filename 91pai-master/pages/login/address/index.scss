@@ -1,0 +1,58 @@
+page {
+  background: #fff;
+}
+.container {
+  padding: 120upx 20upx;
+  .title {
+    font-size: 36upx;
+    font-weight: 600;
+    text-align: center;
+    margin-bottom: 60upx;
+    .info {
+      font-size: 24upx;
+      color: #b4b9b9;
+      font-weight: normal;
+    }
+  }
+}
+.item-box {
+  margin: auto;
+  width: 540upx;
+  flex-wrap: wrap;
+  justify-content: space-around;
+  align-items: center;
+  display: flex;
+}
+
+.mr {
+  margin-right: 30upx;
+}
+.birthday {
+  text-align: center;
+  font-size: 36upx;
+  color: #b4b9b9;
+}
+.birthday-text {
+  display: inline-block;
+  font-size: 28upx;
+  padding: 20upx 0;
+  &.active {
+    font-size: 28upx;
+    color: #21c2c2;
+    font-weight: 600;
+    border-bottom: none;
+  }
+}
+.birthday-img {
+  width: 120upx;
+  height: 120upx;
+}
+.text-center {
+  text-align: center;
+  margin: 0 auto;
+}
+.disactive {
+    color: #fff;
+    background-color: #dee0e0;
+  }
+  

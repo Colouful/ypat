@@ -1,0 +1,96 @@
+.uni-textarea {
+  height: 240upx;
+  background: #fff;
+  padding: 40upx;
+}
+uni-textarea {
+  height: 230upx;
+}
+.uni-textarea-placeholder {
+  color: 28upx;
+  color: #b4b9b9;
+}
+.phcolor-pic {
+    color: #b4b9b9;
+    font-size: 24upx;
+  }
+  
+.contact-box {
+  margin-top: 20upx;
+  background: #fff;
+  .contact-title {
+    padding: 30upx 40upx;
+    color: #2c2d2d;
+    font-size: 28upx;
+    font-weight: 600;
+    position: relative;
+    &::after {
+      content: " ";
+      position: absolute;
+      left: 40upx;
+      bottom: 0;
+      right: 40upx;
+      height: 1px;
+      border-bottom: 1px solid #eaeef1;
+      -webkit-transform-origin: 0 100%;
+      transform-origin: 0 100%;
+      -webkit-transform: scaleY(0.5);
+      transform: scaleY(0.5);
+    }
+  }
+  .cell-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    line-height: 60upx;
+  }
+  .cell-label {
+    color: #b4b9b9;
+    font-size: 28upx;
+    font-weight: 700;
+    width: 100%;
+    position: relative;
+  }
+  .cell-value {
+    padding-left: 80upx;
+    color: #2c2d2d;
+    font-size: 28upx;
+    font-weight: 700;
+  }
+  .action {
+    color: #21c2c2;
+    font-weight: 700;
+  }
+  .cell-box {
+    padding: 30upx 40upx;
+  }
+}
+.tui-input {
+  position: absolute;
+  top: 10upx;
+  left: 165upx;
+  color: #2c2d2d;
+  font-size: 28upx;
+}
+
+.user-info-box {
+  background: #fff;
+  padding: 30upx 40upx;
+  .subtitle {
+    background: #f7f9f9;
+    padding: 20upx;
+    font-size: 24upx;
+    color: #2c2d2d;
+  }
+}
+.header{
+    margin-top: auto;
+}
+.disactive {
+  color: #fff;
+  background-color: #dee0e0;
+}
+.activeText {
+  color: #ff5e3f;
+  padding: 0 5upx;
+}

@@ -1,0 +1,227 @@
+page {
+  background-color: #f7f9f9;
+}
+.tab-box {
+  background-color: #fff;
+  padding: 40rpx;
+  display: flex;
+  flex-direction: row;
+  justify-content: space-around;
+  align-items: center;
+  .item {
+    text-align: center;
+    .tab-icon-man {
+      margin: auto;
+      width: 40rpx;
+      height: 40rpx !important;
+    }
+    .tab-icon-price {
+      margin: auto;
+      width: 42rpx;
+      height: 38rpx !important;
+    }
+    .tab-icon-location {
+      margin: auto;
+      width: 32rpx;
+      height: 40rpx !important;
+    }
+    .tab-text {
+      font-size: 32rpx;
+      color: #2c2d2d;
+      font-weight: 700;
+      margin-top: 10rpx;
+    }
+  }
+}
+
+.user-info-box {
+  background-color: #fff;
+  margin-top: 20rpx;
+  .subtitle {
+    padding: 20rpx 40rpx;
+    font-size: 28rpx;
+    color: #646666;
+    font-weight: normal;
+    display: -webkit-box;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    word-wrap: break-word;
+    white-space: normal !important;
+    -webkit-box-orient: vertical;
+  }
+}
+.user-info-desc {
+  margin-top: 20rpx;
+  padding: 20rpx 40rpx;
+  background-color: #fff;
+  font-size: 24rpx;
+  color: #878888;
+  .item-text {
+    padding: 5rpx 0;
+  }
+}
+.style {
+  display: flex;
+  flex-direction: row;
+  justify-content: start;
+  align-items: center;
+  flex-wrap: wrap;
+  margin-left: -20rpx;
+  .item {
+    text-align: center;
+    border: 1rpx solid #878888;
+    border-radius: 30rpx;
+    padding: 8rpx 15rpx;
+    line-height: 25rpx;
+    margin-top: 15rpx;
+    margin-left: 20rpx;
+  }
+}
+.user-info-img {
+  margin-top: 20rpx;
+  .img-active {
+    width: 100%;
+  }
+}
+
+.tui-banner-swiper {
+  position: relative;
+  padding: 15upx;
+}
+
+.tui-slide-image {
+  width: 100%;
+  display: block;
+  margin-bottom: 15upx;
+}
+.tui-slide-image-item {
+  height: 56 * 2rpx;
+  width: 56 * 2rpx;
+  margin-right: 12rpx;
+  position: relative;
+  min-width: 56 * 2rpx;
+  &.active {
+    height: 52 * 2rpx;
+    width: 52 * 2rpx;
+    border: 4rpx solid #21c2c2;
+  }
+}
+
+.tui-slide-image-box {
+  margin: 12rpx 30rpx;
+  display: flex;
+  flex-direction: row;
+  justify-content: start;
+  align-items: center;
+  overflow: scroll;
+  &.img {
+    padding: 12rpx 30rpx 12rpx 0;
+  }
+}
+.person-num-box {
+  flex-direction: row;
+  justify-content: start;
+  align-items: center;
+  overflow: scroll;
+  margin-top: 20rpx;
+  padding: 24rpx 40rpx;
+  width: 100%;
+  .tui-slide-image-round {
+    height: 40 * 2rpx;
+    width: 40 * 2rpx;
+    border-radius: 50%;
+    margin-right: 28rpx;
+    position: relative;
+    min-width: 40 * 2rpx;
+  }
+}
+
+.user-info-num {
+  margin-top: 20rpx;
+  padding: 12rpx 30rpx;
+  .text {
+    color: #878888;
+    font-size: 24rpx;
+    font-weight: 600;
+    .active {
+      color: #21c2c2;
+    }
+  }
+  .tui-slide-image-box {
+    display: flex;
+    flex-direction: row;
+    justify-content: start;
+    align-items: center;
+    overflow: scroll;
+  }
+  .tui-slide-image-item2 {
+    height: 40 * 2rpx;
+    width: 40 * 2rpx;
+    margin-right: 25rpx;
+    position: relative;
+    border-radius: 50%;
+    min-width: 40 * 2rpx;
+  }
+}
+.button-fixed {
+  position: fixed;
+  bottom: 0;
+  width: 100%;
+  text-align: center;
+  z-index: 30;
+  height: 90upx;
+  line-height: 1.4;
+  background: #f7f9f9;
+  padding-bottom: env(safe-area-inset-bottom);
+  .button-box {
+    display: flex;
+    padding-bottom: env(safe-area-inset-bottom);
+    padding-bottom: 100px;
+    .icon-box {
+      flex: 1;
+      background: #fff;
+      .text {
+        margin-top: 5upx;
+        color: #646666;
+        font-size: 24upx;
+      }
+      .save {
+        color: #21c2c2;
+      }
+    }
+    .btn-box:nth-child(odd) {
+      line-height: 90upx;
+      flex: 4;
+      font-size: 28upx;
+      background: #21c2c2;
+      color: #fff;
+    }
+    .btn-box:nth-child(even) {
+      line-height: 90upx;
+      flex: 4;
+      font-size: 28upx;
+      background: #fff;
+      color: #21c2c2;
+    }
+  }
+}
+.btn-box-active {
+  line-height: 90upx;
+  flex: 4;
+  font-size: 28upx;
+  background: #21c2c2;
+  color: #fff;
+}
+.container {
+  padding-bottom: 280upx;
+}
+
+.activeText {
+  color: #ff5e3f;
+  padding: 0 5upx;
+}
+.shareimg {
+  height: 32upx;
+  width: 32upx;
+  vertical-align: middle;
+}

@@ -1,0 +1,57 @@
+.my-canvas {
+  display: flex;
+  position: fixed !important;
+  background: #000000;
+  left: 0;
+  z-index: 100;
+  width: 100%;
+}
+
+.my-avatar {
+  width: 100vw;
+  height: 100vw;
+}
+
+.oper-canvas {
+  display: flex;
+  position: fixed !important;
+  left: 0;
+  z-index: 101;
+  width: 100%;
+}
+
+.oper-wrapper {
+  height: 71px;
+  position: fixed !important;
+  box-sizing: border-box;
+  width: 100%;
+  left: 0;
+  bottom: 0;
+  z-index: 200;
+  flex-direction: row;
+}
+
+.btn-wrapper {
+  background-color: #000000;
+  color: #ffffff;
+  display: flex;
+  height: 100%;
+  width: 100%;
+  justify-content: space-around;
+  align-items: center;
+}
+
+.btn-wrapper view {
+  width: 160rpx;
+  height: 80rpx;
+  line-height: 80rpx;
+  text-align: center;
+  font-size: 16px;
+  color: #ffffff;
+  z-index: 300;
+}
+.btn-action {
+}
+.opacity {
+  opacity: 0.6;
+}

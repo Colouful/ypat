@@ -1,0 +1,39 @@
+.gridFour {
+  .item-box {
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    margin-top: 20upx;
+    .item {
+      margin-right: 20upx;
+      background-color: #fffaf2;
+      border: 2upx solid #ffeed6;
+      padding: 20upx;
+      width: 50%;
+      &:last-child {
+        margin-right: 0upx;
+      }
+      .item-icon {
+        width: 32upx;
+        margin-right: 10upx;
+        vertical-align: middle;
+      }
+      .title {
+        font-size: 24upx;
+        font-weight: 700;
+        margin-bottom: 6upx;
+      }
+      .desc {
+        font-size: 24upx;
+        color: #646666;
+      }
+    }
+  }
+  .top-title {
+    font-size: 32upx;
+    color: #2c2d2d;
+    font-weight: 700;
+    text-align: center;
+    margin-bottom: 30upx;
+  }
+}

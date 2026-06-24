@@ -1,0 +1,137 @@
+.uni-textarea {
+  height: 240upx;
+  background: #fff;
+  padding: 40upx;
+}
+uni-textarea {
+  height: 180upx;
+}
+.uni-textarea-placeholder {
+  color: 28upx;
+  color: #b4b9b9;
+}
+
+.contact-box {
+  margin-top: 20upx;
+  background: #fff;
+  .contact-title {
+    padding: 30upx 40upx;
+    color: #2c2d2d;
+    font-size: 28upx;
+    font-weight: 600;
+    position: relative;
+    &::after {
+      content: " ";
+      position: absolute;
+      left: 40upx;
+      bottom: 0;
+      right: 40upx;
+      height: 1px;
+      border-bottom: 1px solid #eaeef1;
+      -webkit-transform-origin: 0 100%;
+      transform-origin: 0 100%;
+      -webkit-transform: scaleY(0.5);
+      transform: scaleY(0.5);
+    }
+  }
+  .cell-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    line-height: 60upx;
+  }
+  .cell-label {
+    color: #b4b9b9;
+    font-size: 28upx;
+    font-weight: 700;
+  }
+  .cell-value {
+    padding-left: 80upx;
+    color: #2c2d2d;
+    font-size: 28upx;
+    font-weight: 700;
+  }
+  .action {
+    color: #21c2c2;
+    font-weight: 700;
+  }
+  .cell-box {
+    padding: 30upx 40upx;
+  }
+}
+
+.user-info-box {
+  background: #fff;
+  padding: 0upx 40upx 30upx;
+  .subtitle {
+    background: #f7f9f9;
+    padding: 20upx;
+    font-size: 24upx;
+    color: #2c2d2d;
+  }
+}
+
+.tui-msg-box {
+  display: flex;
+  align-items: center;
+}
+
+.tui-msg-pic {
+  width: 100rpx;
+  height: 100rpx;
+  border-radius: 50%;
+  display: block;
+  margin-right: 24rpx;
+}
+.location {
+  color: #b4b9b9;
+  font-size: 24rpx;
+  position: absolute;
+  right: 0;
+  top: 30rpx;
+}
+.tui-msg-item {
+  max-width: 500rpx;
+  margin-left: 20rpx;
+  min-height: 80rpx;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+.msg-pic-box {
+  position: relative;
+}
+
+.cell-item {
+    background: #fff;
+    padding: 0 40upx 0upx 0;
+  }
+  .time {
+    color: #b4b9b9;
+    font-size: 24rpx;
+    padding-right: 15rpx;
+  }
+  
+  .tui-msg-content {
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    font-size: 28rpx;
+    line-height: 1;
+    color: #646666;
+  }
+  
+  .disactive {
+    color: #fff;
+    background-color: #dee0e0;
+  }
+  .activeText{
+      color: #FF5E3F;
+      padding: 0 5upx;
+  }
+  .nickname {
+    color: #2c2d2d;
+    font-size: 28upx;
+    font-weight: 600;
+  }

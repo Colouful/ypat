@@ -1,0 +1,125 @@
+page {
+  background-color: #fff;
+}
+.white-box {
+  position: relative;
+  z-index: 1;
+  margin-top: 60upx;
+}
+.black-bg {
+    height: 290*2upx;
+    position: absolute;
+    width: 100%;
+    top: -150upx;
+    left: 0;
+    z-index: 0;
+  }
+
+.container {
+  position: relative;
+}
+.sharebtn{
+    background-color: transparent;
+}
+.box-img {
+  width: 100%;
+}
+.box {
+  position: absolute;
+  top: 140upx;
+  line-height: 50upx;
+  left: 50%;
+  transform: translate(-50%, 0);
+  width: 450upx;
+  .top {
+    text-align: center;
+    color: #2c2d2d;
+    font-size: 32upx;
+    font-weight: 700;
+    .num {
+      color: #ff5e3f;
+      font-size: 56upx;
+      font-weight: 800;
+    }
+  }
+  .title {
+    text-align: center;
+    position: relative;
+    margin: 40upx 0 15upx;
+    .title-img {
+      width: 178 * 2upx;
+    }
+    .text {
+      left: 50%;
+      font-size: 28upx;
+      font-weight: 700;
+      color: #2c2d2d;
+      line-height: 60upx;
+      position: absolute;
+      transform: translate(-50%, 0);
+    }
+  }
+  .list-item-img {
+    width: 32upx;
+    margin-right: 10upx;
+    vertical-align: middle;
+  }
+  .list-item {
+    line-height: 50upx;
+    color: #2c2d2d;
+    font-size: 28upx;
+  }
+}
+.btn-box {
+  margin: 30upx auto;
+  position: relative;
+  .btn-text {
+    position: absolute;
+    left: 50%;
+    line-height: 100upx;
+    transform: translate(-50%, 0);
+    color: #ffffff;
+    font-size: 32upx;
+  }
+}
+.invitation-list {
+  padding: 0upx 40upx;
+  .list {
+    margin: 40upx 0;
+    display: flex;
+    justify-content: space-between;
+    align-content: center;
+    font-size: 24upx;
+    .list-img {
+      width: 48upx;
+      height: 48upx;
+      margin-right: 20upx;
+      border-radius: 50%;
+      vertical-align: middle;
+    }
+    .time {
+      color: #b4b9b9;
+    }
+    .active{
+        font-weight: 600;
+        color: #ff5e3f;
+        margin-left: 10upx;
+    }
+  }
+  .total{
+    font-weight: normal;
+    margin-left: 10upx;
+    font-size: 24upx;
+    .ppd{
+        color: #ff5e3f;
+        font-weight: 600;
+        padding: 0 6upx;
+
+    }
+  }
+  .list-title {
+    font-size: 28upx;
+    font-weight: 600;
+    color: #878888;
+  }
+}

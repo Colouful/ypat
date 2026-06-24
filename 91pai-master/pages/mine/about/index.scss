@@ -1,0 +1,40 @@
+.portrait {
+  width: 120upx;
+  height: 120upx;
+}
+page {
+  background-color: #f7f9f9;
+}
+.top-box {
+  background-color: #fff;
+  text-align: center;
+  padding: 70upx 20upx;
+  position: relative;
+  &::after {
+    content: "";
+    position: absolute;
+    border-bottom: 2upx solid #eaecec;
+    -webkit-transform: scaleY(0.5);
+    transform: scaleY(0.5);
+    bottom: 0;
+    right: 0;
+    left: 0rpx;
+  }
+}
+.tui-right {
+  margin-left: auto;
+  margin-right: 20upx;
+  font-size: 26upx;
+  line-height: 1;
+  color: #999;
+}
+
+.logout {
+  margin-top: 20upx;
+  font-size: 28upx;
+  font-weight: 600;
+  color: #2c2d2d;
+  text-align: center;
+  background: #fff;
+  padding: 20upx;
+}

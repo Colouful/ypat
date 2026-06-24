@@ -1,0 +1,325 @@
+{
+  "permission": {
+    "scope.userLocation": {
+      "desc": "你的位置信息将用于爱去拍定位城市。"
+    }
+  },
+  "tabBar": {
+    "color": "#ccc",
+    "selectedColor": "#E84351",
+    "borderStyle": "black",
+    "backgroundColor": "#fff",
+    "position": "bottom",
+    "list": [
+      {
+        "pagePath": "pages/home/home/index",
+        "text": "首页",
+        "iconPath": "/static/images/tabbar/home@2x.png",
+        "selectedIconPath": "/static/images/tabbar/home_ac@2x.png"
+      },
+      {
+        "pagePath": "pages/mine/mine/index",
+        "text": "我的",
+        "iconPath": "/static/images/tabbar/mine@2x.png",
+        "selectedIconPath": "/static/images/tabbar/mine_ac@2x.png"
+      }
+    ]
+  },
+  "pages": [
+    {
+      "path": "pages/home/home/index",
+      "style": {
+        "navigationBarBackgroundColor": "#fff",
+        "navigationBarTextStyle": "black",
+        "backgroundColorTop": "#F7F7F7",
+        "backgroundColorBottom": "#F7F7F7",
+        "navigationBarTitleText": "爱去拍",
+        "enablePullDownRefresh": true,
+        "onReachBottomDistance": 50
+      }
+    },
+    {
+      "path": "pages/home/introduce/index",
+      "style": {
+        "navigationBarBackgroundColor": "#fff",
+        "navigationBarTextStyle": "black",
+        "backgroundColorTop": "#F7F7F7",
+        "backgroundColorBottom": "#F7F7F7",
+        "navigationBarTitleText": "完善您的信息"
+      }
+    },
+    // #ifndef H5
+    {
+      "path": "pages/mine/invitationdesc/index",
+      "style": {
+        "navigationBarBackgroundColor": "#2d3030",
+        "navigationBarTextStyle": "white",
+        "backgroundColorTop": "#F7F7F7",
+        "backgroundColorBottom": "#F7F7F7",
+        "navigationBarTitleText": "邀请好友"
+      }
+    },
+    {
+      "path": "pages/mine/helpcenter/index",
+      "style": {
+        "navigationBarBackgroundColor": "#fff",
+        "navigationBarTextStyle": "black",
+        "backgroundColorTop": "#fff",
+        "backgroundColorBottom": "#fff",
+        "navigationBarTitleText": "帮助中心"
+      }
+    },
+    {
+      "path": "pages/mine/invitation/index",
+      "style": {
+        "navigationBarBackgroundColor": "#2d3030",
+        "navigationBarTextStyle": "white",
+        "backgroundColorTop": "#F7F7F7",
+        "enablePullDownRefresh": true,
+        "backgroundColorBottom": "#F7F7F7",
+        "navigationBarTitleText": "邀请好友"
+      }
+    },
+    {
+      "path": "pages/login/gender/index",
+      "style": {
+        "navigationBarBackgroundColor": "#fff",
+        "navigationBarTextStyle": "black",
+        "backgroundColorTop": "#fff",
+        "backgroundColorBottom": "#fff",
+        "navigationBarTitleText": "完善您的信息"
+      }
+    },
+    {
+      "path": "pages/home/publish/index",
+      "style": {
+        "navigationBarBackgroundColor": "#fff",
+        "navigationBarTextStyle": "black",
+        "backgroundColorTop": "#F7F7F7",
+        "backgroundColorBottom": "#F7F7F7",
+        "navigationBarTitleText": "发布"
+      }
+    },
+    {
+      "path": "pages/home/success/index",
+      "style": {
+        "navigationBarBackgroundColor": "#fff",
+        "navigationBarTextStyle": "black",
+        "backgroundColorTop": "#F7F7F7",
+        "backgroundColorBottom": "#F7F7F7",
+        "navigationBarTitleText": "发布",
+        "onReachBottomDistance": 50
+      }
+    },
+    {
+      "path": "pages/home/linkway/index",
+      "style": {
+        "navigationBarBackgroundColor": "#fff",
+        "navigationBarTextStyle": "black",
+        "backgroundColorTop": "#F7F7F7",
+        "backgroundColorBottom": "#F7F7F7",
+        "navigationBarTitleText": "约拍请求"
+      }
+    },
+    {
+      "path": "pages/home/orderShe/index",
+      "style": {
+        "navigationBarBackgroundColor": "#fff",
+        "navigationBarTextStyle": "black",
+        "backgroundColorTop": "#F7F7F7",
+        "backgroundColorBottom": "#F7F7F7",
+        "navigationBarTitleText": "约拍她",
+        "onReachBottomDistance": 50
+      }
+    },
+    // #endif
+    {
+      "path": "pages/home/desc/index",
+      "style": {
+        "navigationBarBackgroundColor": "#fff",
+        "navigationBarTextStyle": "black",
+        "backgroundColorTop": "#F7F7F7",
+        "backgroundColorBottom": "#F7F7F7",
+        "navigationBarTitleText": "约拍详情",
+        "onReachBottomDistance": 50
+      }
+    },
+    {
+      "path": "pages/mine/mine/index",
+      "style": {
+        "navigationBarBackgroundColor": "#21C2C2",
+        "navigationBarTextStyle": "white",
+        "backgroundColorTop": "#21C2C2",
+        "backgroundColor": "#F7F7F7",
+        "backgroundColorBottom": "#F7F7F7",
+        "navigationBarTitleText": "我的",
+        "enablePullDownRefresh": true
+      }
+    },
+    // #ifndef H5
+    {
+      "path": "pages/mine/userInfo/index",
+      "style": {
+        "navigationBarBackgroundColor": "#fff",
+        "navigationBarTextStyle": "black",
+        "backgroundColorTop": "#F7F7F7",
+        "backgroundColorBottom": "#F7F7F7",
+        "navigationBarTitleText": "个人信息"
+      }
+    },
+    {
+      "path": "pages/mine/about/index",
+      "style": {
+        "navigationBarBackgroundColor": "#fff",
+        "navigationBarTextStyle": "black",
+        "backgroundColorTop": "#F7F7F7",
+        "backgroundColorBottom": "#F7F7F7",
+        "navigationBarTitleText": "关于我们"
+      }
+    },
+    {
+      "path": "pages/mine/message/index",
+      "style": {
+        "navigationBarBackgroundColor": "#fff",
+        "navigationBarTextStyle": "black",
+        "backgroundColorTop": "#F7F7F7",
+        "backgroundColorBottom": "#F7F7F7",
+        "navigationBarTitleText": "我的消息列表",
+        "enablePullDownRefresh": true,
+        "onReachBottomDistance": 50
+      }
+    },
+    {
+      "path": "pages/mine/credit/index",
+      "style": {
+        "navigationBarBackgroundColor": "#2d3030",
+        "navigationBarTextStyle": "white",
+        "backgroundColorTop": "#F7F7F7",
+        "backgroundColorBottom": "#F7F7F7",
+        "navigationBarTitleText": "信用担保"
+      }
+    },
+    {
+      "path": "pages/mine/realname/index",
+      "style": {
+        "navigationBarBackgroundColor": "#fff",
+        "navigationBarTextStyle": "black",
+        "backgroundColorTop": "#F7F7F7",
+        "backgroundColorBottom": "#F7F7F7",
+        "navigationBarTitleText": "实名认证",
+        "onReachBottomDistance": 50
+      }
+    },
+    {
+      "path": "pages/mine/ppd/index",
+      "style": {
+        "navigationBarBackgroundColor": "#2d3030",
+        "navigationBarTextStyle": "white",
+        "backgroundColorTop": "#F7F7F7",
+        "backgroundColorBottom": "#F7F7F7",
+        "navigationBarTitleText": "我的拍拍豆",
+        "enablePullDownRefresh": true,
+        "onReachBottomDistance": 50
+      }
+    },
+    {
+      "path": "pages/mine/creditagreement/index",
+      "style": {
+        "navigationBarBackgroundColor": "#fff",
+        "navigationBarTextStyle": "black",
+        "backgroundColorTop": "#F7F7F7",
+        "backgroundColorBottom": "#F7F7F7",
+        "navigationBarTitleText": "保证金协议",
+        "onReachBottomDistance": 50
+      }
+    },
+    {
+      "path": "pages/mine/records/index",
+      "style": {
+        "navigationBarBackgroundColor": "#fff",
+        "navigationBarTextStyle": "black",
+        "backgroundColorTop": "#F7F7F7",
+        "backgroundColorBottom": "#F7F7F7",
+        "navigationBarTitleText": "收支记录",
+        "enablePullDownRefresh": true,
+        "onReachBottomDistance": 50
+      }
+    },
+    {
+      "path": "pages/mine/infoaudit/index",
+      "style": {
+        "navigationBarBackgroundColor": "#fff",
+        "navigationBarTextStyle": "black",
+        "backgroundColorTop": "#F7F7F7",
+        "backgroundColorBottom": "#F7F7F7",
+        "navigationBarTitleText": "发布信息审核",
+        "enablePullDownRefresh": true,
+        "onReachBottomDistance": 120
+      }
+    },
+    {
+      "path": "pages/mine/yplist/index",
+      "style": {
+        "navigationBarBackgroundColor": "#fff",
+        "navigationBarTextStyle": "black",
+        "backgroundColorTop": "#F7F7F7",
+        "backgroundColorBottom": "#F7F7F7",
+        "navigationBarTitleText": "爱去拍",
+        "enablePullDownRefresh": true,
+        "onReachBottomDistance": 120
+      }
+    },
+    {
+      "path": "pages/login/login/index",
+      "style": {
+        "navigationBarBackgroundColor": "#fff",
+        "navigationBarTextStyle": "black",
+        "backgroundColorTop": "#fff",
+        "backgroundColorBottom": "#fff",
+        "navigationBarTitleText": "登录"
+      }
+    },
+    {
+      "path": "pages/login/logininfo/index",
+      "style": {
+        "navigationBarBackgroundColor": "#fff",
+        "navigationBarTextStyle": "black",
+        "backgroundColorTop": "#fff",
+        "backgroundColorBottom": "#fff",
+        "navigationBarTitleText": "登录"
+      }
+    },
+    {
+      "path": "pages/login/agreement/index",
+      "style": {
+        "navigationBarBackgroundColor": "#fff",
+        "navigationBarTextStyle": "black",
+        "backgroundColorTop": "#F7F7F7",
+        "backgroundColorBottom": "#F7F7F7",
+        "navigationBarTitleText": "注册协议"
+      }
+    },
+    // #endif
+    {
+      "path": "pages/mine/homepage/index",
+      "style": {
+        "navigationBarBackgroundColor": "#fff",
+        "navigationBarTextStyle": "black",
+        "backgroundColorTop": "#F7F7F7",
+        "backgroundColorBottom": "#F7F7F7",
+        "navigationBarTitleText": "个人主页",
+        "enablePullDownRefresh": true,
+        "onReachBottomDistance": 50
+      }
+    }
+  ],
+  "globalStyle": {
+    "app-plus": {
+      "contentAjust": false
+    },
+    "navigationBarTextStyle": "black",
+    "navigationBarBackgroundColor": "#F8F8F8",
+    "navigationBarTitleText": "爱去拍",
+    "backgroundColor": "#F8F8F8"
+  }
+}

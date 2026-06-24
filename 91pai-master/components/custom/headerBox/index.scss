@@ -1,0 +1,47 @@
+.sex {
+  width: 24rpx;
+  margin-left: 10rpx;
+  height: 24rpx;
+}
+.head-box {
+  padding: 15rpx 40rpx;
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+}
+.head-item {
+  display: flex;
+  flex-direction: row;
+  justify-content: start;
+  align-items: center;
+  vertical-align: middle;
+}
+.name-box {
+  margin-left: 20rpx;
+}
+.name {
+  color: #2c2d2d;
+  font-size: 28rpx;
+}
+.profession {
+  color: #b4b9b9;
+  font-size: 24rpx;
+  font-weight: normal;
+}
+.time {
+  font-size: 24rpx;
+  color: #b4b9b9;
+  height: 36rpx;
+}
+.tag {
+  background-color: #e5fafa;
+  color: #1bb6b6;
+  font-size: 20rpx;
+  margin-left: 10rpx;
+  padding: 0 6rpx;
+}
+.head {
+  width: 70rpx;
+  height: 70rpx;
+  border-radius: 70rpx;
+}
