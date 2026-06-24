@@ -38,6 +38,8 @@ interface UploadConfig {
   withToken?: boolean
 }
 
+type RequestBody = string | ArrayBuffer | Record<string, unknown> | undefined
+
 const ERROR_CODE_MAP: Record<string, string> = {
   '400': '请求参数错误',
   '401': '登录已过期，请重新登录',
@@ -73,6 +75,10 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value)
 }
 
+function isArrayBuffer(value: unknown): value is ArrayBuffer {
+  return typeof ArrayBuffer !== 'undefined' && value instanceof ArrayBuffer
+}
+
 function parseResponsePayload(raw: unknown): unknown {
   if (typeof raw !== 'string') return raw
   const text = raw.trim()
@@ -84,14 +90,8 @@ function parseResponsePayload(raw: unknown): unknown {
   }
 }
 
-/**
- * 同时兼容两种后端返回：
- * 1. 网关包装结构 { code, message, result }
- * 2. 历史 Controller 直接返回对象、数组、数字或字符串
- */
 export function mapBackendResponse<T>(raw: unknown): ApiResult<T> {
   const payload = parseResponsePayload(raw)
-
   if (isRecord(payload) && Object.prototype.hasOwnProperty.call(payload, 'code')) {
     const response = payload as unknown as BackendResponse<T>
     const code = String(response.code ?? '-1')
@@ -102,13 +102,7 @@ export function mapBackendResponse<T>(raw: unknown): ApiResult<T> {
       message: response.message || ERROR_CODE_MAP[code] || '',
     }
   }
-
-  return {
-    success: true,
-    data: payload as T,
-    code: '200',
-    message: '',
-  }
+  return { success: true, data: payload as T, code: '200', message: '' }
 }
 
 function flattenFormValue(
@@ -117,19 +111,16 @@ function flattenFormValue(
   value: unknown,
 ): void {
   if (value === undefined || value === null || value === '') return
-
   if (Array.isArray(value)) {
     value.forEach((item, index) => flattenFormValue(output, `${key}[${index}]`, item))
     return
   }
-
   if (isRecord(value)) {
     Object.entries(value).forEach(([childKey, childValue]) => {
       flattenFormValue(output, key ? `${key}.${childKey}` : childKey, childValue)
     })
     return
   }
-
   if (typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean') {
     output[key] = value
   }
@@ -140,6 +131,13 @@ function toFormData(data: unknown): Record<string, string | number | boolean> {
   const output: Record<string, string | number | boolean> = {}
   Object.entries(data).forEach(([key, value]) => flattenFormValue(output, key, value))
   return output
+}
+
+function normalizeJsonData(data: unknown): RequestBody {
+  if (data === undefined) return undefined
+  if (typeof data === 'string' || isArrayBuffer(data)) return data
+  if (isRecord(data)) return data
+  return {}
 }
 
 function buildUrl(url: string, params?: Record<string, unknown>): string {
@@ -161,26 +159,19 @@ function redirectToLogin(): void {
   redirectingToLogin = true
   uni.reLaunch({
     url: '/pages/login/index',
-    complete: () => {
-      setTimeout(() => {
-        redirectingToLogin = false
-      }, 300)
-    },
+    complete: () => setTimeout(() => { redirectingToLogin = false }, 300),
   })
 }
 
 function refreshToken(): Promise<string> {
   if (refreshPromise) return refreshPromise
-
   refreshPromise = new Promise<string>((resolve, reject) => {
     const currentToken = getToken()
     const currentUser = getStoredUserInfo()
-
     if (!currentToken || !currentUser?.mobile) {
       reject(new Error('登录状态已失效'))
       return
     }
-
     uni.request({
       url: buildUrl(`${envConfig.apiBaseUrl}/user/token`, { mobile: currentUser.mobile }),
       method: 'GET',
@@ -190,8 +181,8 @@ function refreshToken(): Promise<string> {
           reject(new Error('刷新登录状态失败'))
           return
         }
-        const result = mapBackendResponse<{ token?: string }>(res.data)
-        const nextToken = result.data?.token
+        const result = mapBackendResponse<{ token?: string } | string>(res.data)
+        const nextToken = typeof result.data === 'string' ? result.data : result.data?.token
         if (!result.success || !nextToken) {
           reject(new Error(result.message || '刷新登录状态失败'))
           return
@@ -206,10 +197,7 @@ function refreshToken(): Promise<string> {
       redirectToLogin()
       throw error
     })
-    .finally(() => {
-      refreshPromise = null
-    })
-
+    .finally(() => { refreshPromise = null })
   return refreshPromise
 }
 
@@ -219,18 +207,14 @@ function showBusinessGuide(code: string): void {
       title: '需要实名认证',
       content: '完成实名认证后才能继续当前操作。',
       confirmText: '去认证',
-      success: ({ confirm }) => {
-        if (confirm) uni.navigateTo({ url: '/pages-sub/user/realname' })
-      },
+      success: ({ confirm }) => confirm && uni.navigateTo({ url: '/pages-sub/user/realname' }),
     })
   } else if (code === '1009') {
     uni.showModal({
       title: '拍拍豆不足',
       content: '当前拍拍豆余额不足，请先充值。',
       confirmText: '去充值',
-      success: ({ confirm }) => {
-        if (confirm) uni.navigateTo({ url: '/pages-sub/user/recharge' })
-      },
+      success: ({ confirm }) => confirm && uni.navigateTo({ url: '/pages-sub/user/recharge' }),
     })
   } else if (code === '1011') {
     uni.showToast({ title: '请先缴纳保证金', icon: 'none' })
@@ -254,28 +238,24 @@ export function request<T = unknown>(config: RequestConfig): Promise<ApiResult<T
 
   const fullUrl = buildUrl(url.startsWith('http') ? url : `${envConfig.apiBaseUrl}${url}`, params)
   const requestKey = createRequestKey(config)
-
   if (!skipDuplicateCheck && pendingRequests.has(requestKey)) {
     return Promise.reject(new Error('请求正在处理中，请勿重复操作'))
   }
   pendingRequests.add(requestKey)
 
   const headers: Record<string, string> = {
-    'Content-Type': contentType === 'json'
-      ? 'application/json'
-      : 'application/x-www-form-urlencoded',
+    'Content-Type': contentType === 'json' ? 'application/json' : 'application/x-www-form-urlencoded',
     ...header,
   }
-
   if (withToken) {
     const token = getToken()
     if (token) headers.Token = token
   }
 
-  const requestData = method === 'GET'
+  const requestData: RequestBody = method === 'GET'
     ? undefined
     : contentType === 'json'
-      ? data
+      ? normalizeJsonData(data)
       : toFormData(data)
 
   if (showLoading) uni.showLoading({ title: '加载中...', mask: true })
@@ -320,9 +300,7 @@ export function request<T = unknown>(config: RequestConfig): Promise<ApiResult<T
         reject(new Error(message))
       },
       fail: (error) => {
-        const message = error.errMsg?.includes('timeout')
-          ? '请求超时，请稍后重试'
-          : '网络异常，请检查网络连接'
+        const message = error.errMsg?.includes('timeout') ? '请求超时，请稍后重试' : '网络异常，请检查网络连接'
         if (showError) uni.showToast({ title: message, icon: 'none' })
         reject(new Error(message))
       },
@@ -351,7 +329,6 @@ export function upload<T = unknown>(config: UploadConfig): Promise<ApiResult<T>>
     const token = getToken()
     if (token) headers.Token = token
   }
-
   if (showLoading) uni.showLoading({ title: '上传中...', mask: true })
 
   return new Promise<ApiResult<T>>((resolve, reject) => {
@@ -375,42 +352,24 @@ export function upload<T = unknown>(config: UploadConfig): Promise<ApiResult<T>>
         if (showError) uni.showToast({ title: message, icon: 'none' })
         reject(new Error(message))
       },
-      complete: () => {
-        if (showLoading) uni.hideLoading()
-      },
+      complete: () => { if (showLoading) uni.hideLoading() },
     })
   })
 }
 
-export function get<T = unknown>(
-  url: string,
-  params?: Record<string, unknown>,
-  options?: Partial<RequestConfig>,
-): Promise<ApiResult<T>> {
+export function get<T = unknown>(url: string, params?: Record<string, unknown>, options?: Partial<RequestConfig>): Promise<ApiResult<T>> {
   return request<T>({ url, method: 'GET', params, ...options })
 }
 
-export function post<T = unknown>(
-  url: string,
-  data?: unknown,
-  options?: Partial<RequestConfig>,
-): Promise<ApiResult<T>> {
+export function post<T = unknown>(url: string, data?: unknown, options?: Partial<RequestConfig>): Promise<ApiResult<T>> {
   return request<T>({ url, method: 'POST', data, ...options })
 }
 
-export function put<T = unknown>(
-  url: string,
-  data?: unknown,
-  options?: Partial<RequestConfig>,
-): Promise<ApiResult<T>> {
+export function put<T = unknown>(url: string, data?: unknown, options?: Partial<RequestConfig>): Promise<ApiResult<T>> {
   return request<T>({ url, method: 'PUT', data, ...options })
 }
 
-export function del<T = unknown>(
-  url: string,
-  params?: Record<string, unknown>,
-  options?: Partial<RequestConfig>,
-): Promise<ApiResult<T>> {
+export function del<T = unknown>(url: string, params?: Record<string, unknown>, options?: Partial<RequestConfig>): Promise<ApiResult<T>> {
   return request<T>({ url, method: 'DELETE', params, ...options })
 }
 
