@@ -9,12 +9,7 @@ import {
   setStoredUserInfo,
   setToken,
 } from '@/services/auth-storage'
-import type {
-  LoginParams,
-  LoginResult,
-  UserInfo,
-  WxSessionResult,
-} from '@/api/types'
+import type { LoginParams, LoginResult, UserInfo, WxSessionResult } from '@/api/types'
 
 export interface WechatLoginInput {
   code: string
@@ -31,7 +26,6 @@ export const useUserStore = defineStore('user', () => {
   const userInfo = ref<UserInfo | null>(null)
   const token = ref('')
   const unreadCount = ref(0)
-
   const isLoggedIn = computed(() => Boolean(token.value && userInfo.value?.id))
 
   function resetMemoryState(): void {
@@ -49,40 +43,31 @@ export const useUserStore = defineStore('user', () => {
     setStoredUserInfo(nextUser)
   }
 
-  function createFallbackUser(loginResult: LoginResult): UserInfo {
+  function createFallbackUser(result: LoginResult): UserInfo {
     return {
-      id: Number(loginResult.id),
-      token: loginResult.token,
-      mobile: loginResult.mobile,
-      nickname: loginResult.nickname,
-      gender: loginResult.gender,
-      profess: loginResult.profess,
+      id: Number(result.id),
+      token: result.token,
+      mobile: result.mobile,
+      nickname: result.nickname,
+      gender: result.gender,
+      profess: result.profess,
     }
   }
 
-  /**
-   * 真实微信登录链路：
-   * uni.login code -> /user/code -> encryptedData/sessionKey/iv -> /user/login。
-   */
   async function login(input: WechatLoginInput): Promise<UserInfo> {
     if (!input.code || !input.encryptedData || !input.iv) {
       throw new Error('缺少微信手机号授权信息，请重新授权')
     }
 
-    const sessionResult = await get<WxSessionResult>(
-      '/user/code',
-      { code: input.code },
-      { withToken: false, showError: false },
-    )
-
-    if (!sessionResult.data?.openid || !sessionResult.data?.session_key) {
-      throw new Error(sessionResult.data?.errmsg || '微信登录凭证换取失败')
+    const session = await get<WxSessionResult>('/user/code', { code: input.code }, { withToken: false, showError: false })
+    if (!session.data?.openid || !session.data?.session_key) {
+      throw new Error(session.data?.errmsg || '微信登录凭证换取失败')
     }
 
-    const loginParams: LoginParams = {
-      openid: sessionResult.data.openid,
+    const params: LoginParams = {
+      openid: session.data.openid,
       encryptedData: input.encryptedData,
-      sessionKey: sessionResult.data.session_key,
+      sessionKey: session.data.session_key,
       iv: input.iv,
       channel: input.channel || '0',
       nickname: input.nickname,
@@ -91,28 +76,23 @@ export const useUserStore = defineStore('user', () => {
       recmobile: input.recmobile,
     }
 
-    const loginResult = await post<LoginResult>(
-      '/user/login',
-      loginParams,
-      { withToken: false, showError: false },
-    )
-
-    if (!loginResult.data?.token || !loginResult.data?.id) {
-      throw new Error(loginResult.message || '登录响应缺少用户凭证')
+    const result = await post<LoginResult>('/user/login', params, { withToken: false, showError: false })
+    if (!result.data?.token || !result.data?.id) {
+      throw new Error(result.message || '登录响应缺少用户凭证')
     }
 
-    setToken(loginResult.data.token)
-    token.value = loginResult.data.token
+    setToken(result.data.token)
+    token.value = result.data.token
 
-    let completeUser = createFallbackUser(loginResult.data)
+    let completeUser = createFallbackUser(result.data)
     try {
-      const detailResult = await get<UserInfo>('/user/get', { id: Number(loginResult.data.id) })
-      if (detailResult.data?.id) completeUser = detailResult.data
+      const detail = await get<UserInfo>('/user/get', { id: Number(result.data.id) })
+      if (detail.data?.id) completeUser = detail.data
     } catch {
-      // 获取完整资料失败时保留登录接口返回的基础资料，不影响本次登录。
+      // 完整资料可在进入个人中心时再次刷新。
     }
 
-    persistSession(loginResult.data.token, completeUser)
+    persistSession(result.data.token, completeUser)
     return completeUser
   }
 
@@ -132,12 +112,22 @@ export const useUserStore = defineStore('user', () => {
     uni.switchTab({ url: '/pages/home/index' })
   }
 
-  async function updateUserInfo(): Promise<UserInfo | null> {
+  async function updateUserInfo(localPatch?: Record<string, unknown>): Promise<UserInfo | null> {
     if (!token.value || !userInfo.value?.id) return null
-    const result = await get<UserInfo>('/user/get', { id: userInfo.value.id })
-    if (result.data?.id) {
-      userInfo.value = result.data
-      setStoredUserInfo(result.data)
+
+    if (localPatch) {
+      userInfo.value = { ...userInfo.value, ...localPatch } as UserInfo
+      setStoredUserInfo(userInfo.value)
+    }
+
+    try {
+      const result = await get<UserInfo>('/user/get', { id: userInfo.value.id })
+      if (result.data?.id) {
+        userInfo.value = result.data
+        setStoredUserInfo(result.data)
+      }
+    } catch {
+      // 服务端刷新失败时保留已确认保存成功的本地补丁。
     }
     return userInfo.value
   }
@@ -145,9 +135,7 @@ export const useUserStore = defineStore('user', () => {
   async function refreshUnreadCount(): Promise<number> {
     if (!isLoggedIn.value || !userInfo.value?.id) return 0
     try {
-      const result = await get<number>('/my/ypat/unread/count', {
-        userid: userInfo.value.id,
-      })
+      const result = await get<number>('/my/ypat/unread/count', { userid: userInfo.value.id })
       unreadCount.value = Number(result.data || 0)
     } catch {
       unreadCount.value = 0
