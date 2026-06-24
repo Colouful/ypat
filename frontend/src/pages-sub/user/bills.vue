@@ -1,268 +1,105 @@
 <template>
-  <view class="bills-page">
-    <!-- 页面标题 -->
-    <view class="bills-header">
-      <text class="bills-header__title">账单明细</text>
-    </view>
-
-    <!-- 账单列表 -->
-    <view v-if="billList.length > 0" class="bills-list">
-      <view
-        v-for="item in billList"
-        :key="item.id"
-        class="bill-item"
-      >
-        <view class="bill-item__left">
-          <text class="bill-item__desc">{{ item.description }}</text>
-          <text class="bill-item__time">{{ formatTime(item.credate) }}</text>
+  <view class="page">
+    <view v-if="items.length" class="list">
+      <view v-for="item in items" :key="item.id" class="item">
+        <view>
+          <text class="item__title">{{ item.typeTxt || orderTypeText(item.type) }}</text>
+          <text class="item__time">{{ formatTime(item.credate) }}</text>
+          <text class="item__number">订单号：{{ item.out_trade_no }}</text>
         </view>
-        <view class="bill-item__right">
-          <text
-            class="bill-item__amount"
-            :class="{
-              'bill-item__amount--positive': item.amount > 0,
-              'bill-item__amount--negative': item.amount < 0,
-            }"
-          >
-            {{ item.amount > 0 ? '+' : '' }}{{ item.amount }}
-          </text>
-          <text class="bill-item__balance">余额: {{ item.balance }}</text>
+        <view class="item__right">
+          <text class="item__amount">¥{{ formatPrice(item.total_fee) }}</text>
+          <text class="item__status">{{ statusText(item) }}</text>
         </view>
       </view>
     </view>
-
-    <!-- 空状态 -->
-    <view v-else-if="!loading" class="bills-empty">
-      <text class="bills-empty__icon">📋</text>
-      <text class="bills-empty__text">暂无账单记录</text>
-    </view>
-
-    <!-- 加载状态 -->
-    <view v-if="loading" class="bills-loading">
-      <text class="bills-loading__text">加载中...</text>
-    </view>
-
-    <!-- 底部提示 -->
-    <view v-if="billList.length > 0 && !hasMore" class="bills-footer">
-      <text class="bills-footer__text">没有更多了</text>
-    </view>
+    <view v-else-if="!loading" class="empty">暂无账单记录</view>
+    <view v-if="loading" class="loading">加载中...</view>
+    <view v-if="items.length && !hasMore" class="footer">没有更多了</view>
   </view>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
-import { onPullDownRefresh, onReachBottom } from '@dcloudio/uni-app'
+import { ref } from 'vue'
+import { onLoad, onPullDownRefresh, onReachBottom } from '@dcloudio/uni-app'
 import { useUserStore } from '@/stores/user'
 import * as paymentApi from '@/api/modules/payment'
-
-interface Bill {
-  id: number
-  type: number
-  total_fee: number
-  out_trade_no: string
-  credate: string
-}
+import type { Bill } from '@/api/types'
 
 const userStore = useUserStore()
-
-const billList = ref<Bill[]>([])
+const items = ref<Bill[]>([])
 const loading = ref(false)
 const hasMore = ref(true)
-const currentPage = ref(1)
-const pageSize = 20
+const page = ref(0)
+const size = 20
 
-/** 格式化时间 */
-function formatTime(timeStr: string): string {
-  if (!timeStr) return ''
-  const date = new Date(timeStr)
-  const year = date.getFullYear()
-  const month = String(date.getMonth() + 1).padStart(2, '0')
-  const day = String(date.getDate()).padStart(2, '0')
-  const hours = String(date.getHours()).padStart(2, '0')
-  const minutes = String(date.getMinutes()).padStart(2, '0')
-  return `${year}-${month}-${day} ${hours}:${minutes}`
-}
+async function load(refresh = false): Promise<void> {
+  if (loading.value || (!refresh && !hasMore.value)) return
+  if (!userStore.userInfo?.id) {
+    uni.showToast({ title: '请先登录', icon: 'none' })
+    return
+  }
 
-/** 加载账单列表 */
-async function loadBills(isRefresh = false) {
-  if (loading.value) return
-  if (!isRefresh && !hasMore.value) return
-
-  loading.value = true
-
-  if (isRefresh) {
-    currentPage.value = 1
+  if (refresh) {
+    page.value = 0
     hasMore.value = true
   }
 
+  loading.value = true
   try {
-    const userId = Number(userStore.userInfo?.id)
-    if (!userId) {
-      uni.showToast({ title: '请先登录', icon: 'none' })
-      return
-    }
-
-    const res = await paymentApi.getBillList({
-      page: currentPage.value,
-      size: pageSize,
-      userId,
+    const result = await paymentApi.getBillList({
+      page: page.value,
+      size,
+      userid: userStore.userInfo.id,
     })
-
-    if (res.data) {
-      const { content, totalPages, number } = res.data
-      if (isRefresh) {
-        billList.value = content
-      } else {
-        billList.value = [...billList.value, ...content]
-      }
-      currentPage.value = number + 2
-      hasMore.value = number + 1 < totalPages
-    }
+    const content = result.data?.content || []
+    items.value = refresh ? content : [...items.value, ...content]
+    const current = result.data?.number ?? page.value
+    hasMore.value = current + 1 < (result.data?.totalPages || 0)
+    page.value = current + 1
   } catch (error) {
-    uni.showToast({ title: '加载失败，请重试', icon: 'none' })
+    uni.showToast({ title: error instanceof Error ? error.message : '账单加载失败', icon: 'none' })
   } finally {
     loading.value = false
   }
 }
 
-/** 下拉刷新 */
+function formatPrice(value: number): string {
+  return (Number(value || 0) / 100).toFixed(2)
+}
+
+function formatTime(value?: string): string {
+  if (!value) return ''
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return value
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')} ${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`
+}
+
+function orderTypeText(type: string): string {
+  return ({ '0': '拍拍豆充值', '1': '实名认证', '2': '保证金' } as Record<string, string>)[type] || '订单'
+}
+
+function statusText(item: Bill): string {
+  if (item.result_code === 'SUCCESS' || item.status === '0') return '支付成功'
+  if (item.result_code === 'FAIL') return '支付失败'
+  return '待支付'
+}
+
+onLoad(() => load(true))
 onPullDownRefresh(async () => {
-  await loadBills(true)
+  await load(true)
   uni.stopPullDownRefresh()
 })
-
-/** 上拉加载更多 */
-onReachBottom(() => {
-  if (hasMore.value && !loading.value) {
-    loadBills()
-  }
-})
-
-onMounted(() => {
-  loadBills()
-})
+onReachBottom(() => load())
 </script>
 
-<style lang="scss">
-@import '@/styles/tokens.scss';
-
-.bills-page {
-  min-height: 100vh;
-  background-color: $color-bg-page;
-  padding-bottom: $safe-area-inset-bottom;
-}
-
-.bills-header {
-  background-color: $color-bg-card;
-  padding: $spacing-lg;
-  border-bottom: 1rpx solid $color-border;
-
-  &__title {
-    font-size: $font-size-xl;
-    font-weight: $font-weight-bold;
-    color: $color-text-primary;
-  }
-}
-
-.bills-list {
-  padding: $spacing-md;
-}
-
-.bill-item {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  background-color: $color-bg-card;
-  padding: $spacing-lg;
-  margin-bottom: $spacing-sm;
-  border-radius: $radius-md;
-  box-shadow: $shadow-sm;
-
-  &__left {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    margin-right: $spacing-md;
-  }
-
-  &__desc {
-    font-size: $font-size-base;
-    font-weight: $font-weight-medium;
-    color: $color-text-primary;
-    margin-bottom: $spacing-xs;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-
-  &__time {
-    font-size: $font-size-sm;
-    color: $color-text-helper;
-  }
-
-  &__right {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-end;
-  }
-
-  &__amount {
-    font-size: $font-size-lg;
-    font-weight: $font-weight-bold;
-
-    &--positive {
-      color: $color-primary;
-    }
-
-    &--negative {
-      color: $color-accent-red;
-    }
-  }
-
-  &__balance {
-    font-size: $font-size-xs;
-    color: $color-text-helper;
-    margin-top: 4rpx;
-  }
-}
-
-.bills-empty {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding-top: 200rpx;
-
-  &__icon {
-    font-size: 100rpx;
-    margin-bottom: $spacing-lg;
-  }
-
-  &__text {
-    font-size: $font-size-base;
-    color: $color-text-helper;
-  }
-}
-
-.bills-loading {
-  display: flex;
-  justify-content: center;
-  padding: $spacing-lg;
-
-  &__text {
-    font-size: $font-size-sm;
-    color: $color-text-secondary;
-  }
-}
-
-.bills-footer {
-  display: flex;
-  justify-content: center;
-  padding: $spacing-lg;
-
-  &__text {
-    font-size: $font-size-sm;
-    color: $color-text-helper;
-  }
-}
+<style scoped lang="scss">
+.page { min-height: 100vh; padding: 24rpx; background: #f7f8fa; }
+.item { display: flex; justify-content: space-between; margin-bottom: 18rpx; padding: 28rpx; border-radius: 22rpx; background: #fff; }
+.item__title { display: block; color: #1d2433; font-size: 29rpx; font-weight: 600; }
+.item__time, .item__number, .item__status { display: block; margin-top: 10rpx; color: #8b94a3; font-size: 23rpx; }
+.item__right { text-align: right; }
+.item__amount { color: #f26a3d; font-size: 30rpx; font-weight: 600; }
+.empty, .loading, .footer { padding: 180rpx 20rpx; color: #8b94a3; text-align: center; }
+.footer { padding: 30rpx; }
 </style>
