@@ -91,7 +91,7 @@
           >
             <image
               class="work-cover"
-              :src="getFirstImage(item.images)"
+              :src="getFirstImage(item.pics)"
               mode="aspectFill"
             />
             <view class="work-info">
@@ -183,21 +183,21 @@ async function loadUserData() {
       // 将 API 返回的 UserInfo 映射到本地 store 的 UserInfo 格式
       profileUser.value = {
         id: String(res.data.id),
-        nickname: res.data.nickName,
+        nickname: res.data.nickname,
         gender: res.data.gender,
-        profess: '',
-        mobile: res.data.phone,
-        ppd: '0',
-        avatarurl: res.data.avatarUrl,
-        realnameflag: res.data.verified ? 1 : 0,
-        creditflag: 0,
-        pubtimes: 0,
-        rectimes: 0,
-        coltimes: 0,
+        profess: res.data.profess || '',
+        mobile: res.data.mobile,
+        ppd: String(res.data.ppd || '0'),
+        avatarurl: res.data.imgpath,
+        realnameflag: res.data.realnameflag || 0,
+        creditflag: res.data.creditflag || 0,
+        pubtimes: res.data.pubtimes || 0,
+        rectimes: res.data.rectimes || 0,
+        coltimes: res.data.coltimes || 0,
         status: res.data.status,
         province: res.data.province,
         city: res.data.city,
-        openid: res.data.openId,
+        openid: res.data.openid,
       }
       await loadWorks()
     } else {
@@ -251,10 +251,9 @@ async function loadMoreWorks() {
 }
 
 // 获取第一张图片
-function getFirstImage(images: string): string {
-  if (!images) return '/static/images/default-cover.png'
-  const list = images.split(',')
-  return list[0] || '/static/images/default-cover.png'
+function getFirstImage(pics: string[]): string {
+  if (!pics || pics.length === 0) return '/static/images/default-cover.png'
+  return pics[0] || '/static/images/default-cover.png'
 }
 
 // 跳转详情

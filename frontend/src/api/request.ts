@@ -1,11 +1,12 @@
 import { envConfig } from '@/config/env'
+import { getToken, setToken, clearAuth } from '@/services/auth-storage'
 import type { ApiResult } from './types'
 
 /** 后端原始响应结构 */
 interface BackendResponse {
-  code: number
-  message: string
-  result: any
+  code: number | string
+  message?: string
+  result?: unknown
 }
 
 /** 错误码映射 */
@@ -18,21 +19,23 @@ const ERROR_CODE_MAP: Record<string | number, string> = {
   500: '服务器内部错误',
   502: '网关错误',
   503: '服务不可用',
-  1001: '认证失败，请重新登录',
+  1001: '鉴权失败',
   1002: '参数错误',
-  1003: '验证码错误',
-  1004: '验证码已过期',
+  1003: 'JSON错误',
+  1004: '非法字符串',
   1005: '数据不存在',
-  1006: '用户不存在',
-  1007: '密码错误',
-  1008: '识别失败',
-  1009: '余额不足',
+  1006: '数据已存在',
+  1008: 'OCR识别失败',
+  1009: '拍拍豆余额不足',
   1010: '未实名认证',
-  1011: '信用分不足',
-  1012: '订单不存在',
+  1011: '未缴纳保证金',
+  1012: '密码错误',
   1013: '实名失败',
-  1014: '识别超限',
+  1014: 'OCR识别超限',
   1015: '水印失败',
+  2001: '微信通信失败',
+  2002: '下单失败',
+  2003: '支付失败',
 }
 
 /** 请求配置 */
@@ -82,22 +85,6 @@ function generateRequestKey(config: RequestConfig): string {
   return `${method || 'GET'}_${url}_${JSON.stringify(data || '')}_${JSON.stringify(params || '')}`
 }
 
-/** 获取 Token */
-function getToken(): string {
-  return uni.getStorageSync('ypat_token') || ''
-}
-
-/** 设置 Token */
-function setToken(token: string): void {
-  uni.setStorageSync('ypat_token', token)
-}
-
-/** 清除登录信息 */
-function clearAuth(): void {
-  uni.removeStorageSync('ypat_token')
-  uni.removeStorageSync('userInfo')
-}
-
 /** 跳转到登录页 */
 function redirectToLogin(): void {
   clearAuth()
@@ -107,19 +94,32 @@ function redirectToLogin(): void {
 }
 
 /** 将后端原始响应映射为 ApiResult */
-function mapResponse<T>(raw: BackendResponse): ApiResult<T> {
+function mapResponse<T>(raw: unknown): ApiResult<T> {
+  if (!raw || typeof raw !== 'object') {
+    return {
+      success: false,
+      data: null as unknown as T,
+      code: '-1',
+      message: '响应数据格式异常',
+    }
+  }
+
+  const response = raw as BackendResponse
+  const code = response.code !== undefined && response.code !== null
+    ? String(response.code)
+    : '-1'
+
   return {
-    success: raw.code === 200,
-    data: raw.result as T,
-    code: String(raw.code),
-    message: raw.message,
+    success: code === '200',
+    data: (response.result ?? null) as T,
+    code,
+    message: response.message || '',
   }
 }
 
 /** 处理 token 过期 - 尝试刷新 */
 async function handleTokenExpired(config: RequestConfig): Promise<ApiResult> {
   if (isRefreshing) {
-    // 正在刷新 token，将请求加入队列
     return new Promise((resolve, reject) => {
       requestQueue.push({ resolve, reject, config })
     })
@@ -134,7 +134,7 @@ async function handleTokenExpired(config: RequestConfig): Promise<ApiResult> {
       return Promise.reject(new Error('No token'))
     }
 
-    // 调用刷新 token 接口
+    // 调用刷新 token 接口 GET /user/token
     const res = await new Promise<UniApp.RequestSuccessCallbackResult>((resolve, reject) => {
       uni.request({
         url: `${envConfig.apiBaseUrl}/user/token`,
@@ -148,7 +148,7 @@ async function handleTokenExpired(config: RequestConfig): Promise<ApiResult> {
     })
 
     const raw = res.data as BackendResponse
-    const result = mapResponse(raw)
+    const result = mapResponse<{ token: string }>(raw)
     if (result.success && result.data?.token) {
       setToken(result.data.token)
 
@@ -258,8 +258,7 @@ export function request<T = any>(config: RequestConfig): Promise<ApiResult<T>> {
         }
 
         // 将后端原始响应映射为 ApiResult
-        const raw = res.data as BackendResponse
-        const result = mapResponse<T>(raw)
+        const result = mapResponse<T>(res.data)
 
         // 业务状态码处理
         const code = result.code
@@ -280,9 +279,8 @@ export function request<T = any>(config: RequestConfig): Promise<ApiResult<T>> {
           return
         }
 
-        // 特殊业务码处理
+        // 未实名认证 - 跳转实名页
         if (code === '1010') {
-          // 未实名认证
           uni.showModal({
             title: '提示',
             content: '请先完成实名认证',
@@ -293,15 +291,15 @@ export function request<T = any>(config: RequestConfig): Promise<ApiResult<T>> {
               }
             },
           })
-          reject(new Error(result.message || ERROR_CODE_MAP[code]))
+          reject(new Error(result.message || ERROR_CODE_MAP[1010]))
           return
         }
 
+        // 拍拍豆余额不足 - 跳转充值页
         if (code === '1009') {
-          // 余额不足
           uni.showModal({
             title: '提示',
-            content: '余额不足，请充值',
+            content: '拍拍豆余额不足，请充值',
             confirmText: '去充值',
             success: (modalRes) => {
               if (modalRes.confirm) {
@@ -309,14 +307,7 @@ export function request<T = any>(config: RequestConfig): Promise<ApiResult<T>> {
               }
             },
           })
-          reject(new Error(result.message || ERROR_CODE_MAP[code]))
-          return
-        }
-
-        if (code === '1011') {
-          // 信用分不足
-          uni.showToast({ title: '信用分不足，无法操作', icon: 'none' })
-          reject(new Error(result.message || ERROR_CODE_MAP[code]))
+          reject(new Error(result.message || ERROR_CODE_MAP[1009]))
           return
         }
 
@@ -396,7 +387,7 @@ export function upload<T = any>(config: UploadConfig): Promise<ApiResult<T>> {
         }
 
         try {
-          const raw = JSON.parse(res.data) as BackendResponse
+          const raw = JSON.parse(res.data)
           const result = mapResponse<T>(raw)
           if (result.success) {
             resolve(result)

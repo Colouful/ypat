@@ -28,9 +28,9 @@
         @tap="goDetail(item.id)"
       >
         <image
-          v-if="getFirstImage(item.images)"
+          v-if="getFirstImage(item.pics)"
           class="publish-card__image"
-          :src="getFirstImage(item.images)"
+          :src="getFirstImage(item.pics)"
           mode="aspectFill"
           lazy-load
         />
@@ -46,17 +46,17 @@
             </view>
           </view>
 
-          <text class="publish-card__desc">{{ item.content }}</text>
+          <text class="publish-card__desc">{{ item.describ }}</text>
 
           <view class="publish-card__footer">
             <view class="publish-card__meta">
               <text v-if="item.city" class="publish-card__city">{{ item.city }}</text>
-              <text class="publish-card__time">{{ formatTime(item.createTime) }}</text>
+              <text class="publish-card__time">{{ item.timeStr || formatTime(item.pubdate) }}</text>
             </view>
             <view class="publish-card__stats">
-              <text class="publish-card__stat">{{ item.readCount || 0 }}浏览</text>
-              <text class="publish-card__stat">{{ item.favoriteCount || 0 }}收藏</text>
-              <text class="publish-card__stat">{{ item.applyCount || 0 }}报名</text>
+              <text class="publish-card__stat">{{ item.readtimes || 0 }}浏览</text>
+              <text class="publish-card__stat">{{ item.coltimes || 0 }}收藏</text>
+              <text class="publish-card__stat">{{ item.pattimes || 0 }}报名</text>
             </view>
           </view>
         </view>
@@ -93,10 +93,9 @@ const page = ref(0)
 const pageSize = 10
 
 /** 获取第一张图片 */
-function getFirstImage(images: string): string {
-  if (!images) return ''
-  const arr = images.split(',')
-  return arr[0] || ''
+function getFirstImage(pics: string[]): string {
+  if (!pics || pics.length === 0) return ''
+  return pics[0] || ''
 }
 
 /** 获取状态标签 */

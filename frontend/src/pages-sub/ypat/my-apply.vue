@@ -28,9 +28,9 @@
         @tap="goDetail(item.id)"
       >
         <image
-          v-if="getFirstImage(item.images)"
+          v-if="getFirstImage(item.pics)"
           class="apply-card__image"
-          :src="getFirstImage(item.images)"
+          :src="getFirstImage(item.pics)"
           mode="aspectFill"
           lazy-load
         />
@@ -43,16 +43,16 @@
 
           <view class="apply-card__publisher">
             <image
-              v-if="item.avatarUrl"
+              v-if="item.userQo?.imgpath"
               class="apply-card__avatar"
-              :src="item.avatarUrl"
+              :src="item.userQo.imgpath"
               mode="aspectFill"
             />
             <view v-else class="apply-card__avatar apply-card__avatar--default">
-              <text class="apply-card__avatar-text">{{ getAvatarText(item.nickName) }}</text>
+              <text class="apply-card__avatar-text">{{ getAvatarText(item.userQo?.nickname) }}</text>
             </view>
-            <text class="apply-card__nickname">{{ item.nickName || '匿名用户' }}</text>
-            <view v-if="item.verified" class="apply-card__verified">
+            <text class="apply-card__nickname">{{ item.userQo?.nickname || '匿名用户' }}</text>
+            <view v-if="item.userQo?.realnameflag" class="apply-card__verified">
               <text class="apply-card__verified-text">已认证</text>
             </view>
           </view>
@@ -62,7 +62,7 @@
               <text v-if="item.city" class="apply-card__city">{{ item.city }}</text>
               <text v-if="item.area" class="apply-card__area">{{ item.area }}</text>
             </view>
-            <text class="apply-card__time">{{ formatTime(item.createTime) }}</text>
+            <text class="apply-card__time">{{ item.timeStr || formatTime(item.pubdate) }}</text>
           </view>
         </view>
       </view>
@@ -97,10 +97,9 @@ const page = ref(0)
 const pageSize = 10
 
 /** 获取第一张图片 */
-function getFirstImage(images: string): string {
-  if (!images) return ''
-  const arr = images.split(',')
-  return arr[0] || ''
+function getFirstImage(pics: string[]): string {
+  if (!pics || pics.length === 0) return ''
+  return pics[0] || ''
 }
 
 /** 获取头像首字 */

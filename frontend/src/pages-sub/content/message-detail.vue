@@ -18,12 +18,12 @@
       <view class="sender-section">
         <image
           class="sender-section__avatar"
-          :src="message.fromAvatarUrl || '/static/images/default-avatar.png'"
+          :src="message.imgpath || '/static/images/default-avatar.png'"
           mode="aspectFill"
         />
         <view class="sender-section__info">
-          <text class="sender-section__name">{{ message.fromNickName || '匿名用户' }}</text>
-          <text class="sender-section__time">{{ formatTime(message.createTime) }}</text>
+          <text class="sender-section__name">{{ message.nickname || '匿名用户' }}</text>
+          <text class="sender-section__time">{{ message.timeStr || formatTime(message.credate) }}</text>
         </view>
       </view>
 
@@ -33,12 +33,12 @@
       </view>
 
       <!-- Related ypat -->
-      <view v-if="message.ypatTitle" class="related-ypat" @tap="goYpatDetail">
+      <view v-if="message.ypatid" class="related-ypat" @tap="goYpatDetail">
         <view class="related-ypat__header">
           <text class="related-ypat__label">相关约拍</text>
         </view>
         <view class="related-ypat__card">
-          <text class="related-ypat__title">{{ message.ypatTitle }}</text>
+          <text class="related-ypat__title">相关约拍 #{{ message.ypatid }}</text>
           <view class="related-ypat__arrow">
             <text class="related-ypat__arrow-icon">></text>
           </view>
@@ -126,9 +126,9 @@ async function loadDetail() {
 }
 
 function goYpatDetail() {
-  if (message.value?.ypatId) {
+  if (message.value?.ypatid) {
     uni.navigateTo({
-      url: `/pages-sub/ypat/detail?id=${message.value.ypatId}`,
+      url: `/pages-sub/ypat/detail?id=${message.value.ypatid}`,
     })
   }
 }
@@ -174,7 +174,7 @@ async function revealContact() {
   uni.showLoading({ title: '加载中...' })
   try {
     const res = await userApi.getLinkWay(
-      message.value.fromUserId,
+      message.value.sendperid,
       Number(userStore.userInfo.id),
       message.value.id
     )
