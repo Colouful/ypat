@@ -5,6 +5,7 @@
     "sourceMap": true,
     "baseUrl": ".",
     "paths": {
+      "@/api/request": ["./src/api/request-adapter.ts"],
       "@/*": ["./src/*"]
     },
     "lib": ["esnext", "dom"],
