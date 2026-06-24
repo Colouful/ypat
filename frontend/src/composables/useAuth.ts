@@ -3,77 +3,41 @@ import { useUserStore } from '@/stores/user'
 export function useAuth() {
   const userStore = useUserStore()
 
-  /**
-   * Check if user is logged in. If not, redirect to login page.
-   * Returns true if logged in, false otherwise.
-   */
   function requireLogin(): boolean {
-    if (!userStore.isLoggedIn) {
-      const currentPages = getCurrentPages()
-      const currentPage = currentPages[currentPages.length - 1]
-      const currentRoute = currentPage ? `/${currentPage.route}` : ''
-
-      uni.navigateTo({
-        url: `/pages/login/index?redirect=${encodeURIComponent(currentRoute)}`,
-      })
-      return false
-    }
-    return true
+    if (userStore.isLoggedIn) return true
+    const pages = getCurrentPages()
+    const current = pages[pages.length - 1]
+    const route = current?.route ? `/${current.route}` : ''
+    uni.navigateTo({ url: `/pages/login/index?redirect=${encodeURIComponent(route)}` })
+    return false
   }
 
-  /**
-   * Check if user has completed real-name verification.
-   * Requires login first. Returns true if verified.
-   */
   function requireRealName(): boolean {
     if (!requireLogin()) return false
+    if (userStore.userInfo?.realnameflag === '1') return true
 
-    if (!userStore.userInfo || userStore.userInfo.realnameflag !== 1) {
-      uni.showModal({
-        title: '实名认证',
-        content: '该功能需要实名认证后才能使用，是否前往认证？',
-        confirmText: '去认证',
-        success: (res) => {
-          if (res.confirm) {
-            uni.navigateTo({
-              url: '/pages/user/realname',
-            })
-          }
-        },
-      })
-      return false
-    }
-    return true
+    uni.showModal({
+      title: '需要实名认证',
+      content: '完成实名认证后才能继续，是否前往认证？',
+      confirmText: '去认证',
+      success: ({ confirm }) => {
+        if (confirm) uni.navigateTo({ url: '/pages-sub/user/realname' })
+      },
+    })
+    return false
   }
 
-  /**
-   * Check if user has completed credit verification.
-   * Requires login first. Returns true if verified.
-   */
   function requireCredit(): boolean {
     if (!requireLogin()) return false
+    if (userStore.userInfo?.creditflag === '1') return true
 
-    if (!userStore.userInfo || userStore.userInfo.creditflag !== 1) {
-      uni.showModal({
-        title: '信用认证',
-        content: '该功能需要信用认证后才能使用，是否前往认证？',
-        confirmText: '去认证',
-        success: (res) => {
-          if (res.confirm) {
-            uni.navigateTo({
-              url: '/pages/user/credit',
-            })
-          }
-        },
-      })
-      return false
-    }
-    return true
+    uni.showModal({
+      title: '需要信用保证',
+      content: '当前功能要求已缴纳保证金，请先完成信用保证。',
+      showCancel: false,
+    })
+    return false
   }
 
-  return {
-    requireLogin,
-    requireRealName,
-    requireCredit,
-  }
+  return { requireLogin, requireRealName, requireCredit }
 }
