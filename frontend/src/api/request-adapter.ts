@@ -29,7 +29,7 @@ export async function upload<T = unknown>(config: UploadConfig): Promise<ApiResu
     const base64 = await filePathToBase64(config.filePath)
     return {
       success: true,
-      data: { url: base64 } as T,
+      data: { url: base64 } as unknown as T,
       code: '200',
       message: '',
     }
