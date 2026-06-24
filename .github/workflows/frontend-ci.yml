@@ -1,0 +1,24 @@
+name: Frontend CI
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    env:
+      VITE_APP_ENV: development
+      VITE_API_BASE_URL: http://localhost:8081
+      VITE_IMAGE_BASE_URL: http://localhost:8081/
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 18
+      - run: npm install
+      - run: npx uni build
+      - run: npx uni build -p mp-weixin

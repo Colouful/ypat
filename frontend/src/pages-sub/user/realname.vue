@@ -13,7 +13,7 @@
       </view>
       <text class="status-title">审核中</text>
       <text class="status-desc">您的实名认证正在审核中，请耐心等待</text>
-      <text class="status-time">提交时间：{{ authDetail?.createTime || '' }}</text>
+      <text class="status-time">提交时间：{{ authDetail?.credate || '' }}</text>
     </view>
 
     <!-- 已认证 status=2 -->
@@ -160,15 +160,15 @@ const submitDisabled = computed(() => {
 })
 
 const maskedName = computed(() => {
-  if (!authDetail.value?.realName) return ''
-  const name = authDetail.value.realName
+  if (!authDetail.value?.name) return ''
+  const name = authDetail.value.name
   if (name.length <= 1) return name
   return name[0] + '*'.repeat(name.length - 1)
 })
 
 const maskedIdCard = computed(() => {
-  if (!authDetail.value?.idCard) return ''
-  const id = authDetail.value.idCard
+  if (!authDetail.value?.certcode) return ''
+  const id = authDetail.value.certcode
   if (id.length <= 6) return id
   return id.substring(0, 3) + '****' + id.substring(id.length - 4)
 })
@@ -243,8 +243,8 @@ async function performOcr(filePath: string, side: 'front' | 'back') {
       if (res.data.name) {
         formData.realName = res.data.name
       }
-      if (res.data.idCard) {
-        formData.idCard = res.data.idCard
+      if (res.data.certcode) {
+        formData.idCard = res.data.certcode
       }
       uni.showToast({ title: '识别成功', icon: 'success' })
     } else {
@@ -286,12 +286,10 @@ async function handleSubmit() {
   try {
     const userId = Number(userStore.userInfo?.id)
     const res = await oauthApi.submitAuth({
-      userId,
-      realName: formData.realName.trim(),
-      idCard: formData.idCard.trim(),
-      idCardFront: formData.idCardFront,
-      idCardBack: formData.idCardBack,
-      holdIdCard: '',
+      userid: userId,
+      name: formData.realName.trim(),
+      certcode: formData.idCard.trim(),
+      pics: [formData.idCardFront, formData.idCardBack].filter(Boolean),
     })
 
     if (res.success) {

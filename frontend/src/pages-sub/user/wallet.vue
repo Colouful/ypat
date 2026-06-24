@@ -61,10 +61,10 @@
           </view>
           <view class="record-item__info">
             <text class="record-item__label">{{ getRecordTypeLabel(item.type) }}</text>
-            <text class="record-item__desc">{{ item.content }}</text>
+            <text class="record-item__desc">{{ item.typeTxt || '' }}</text>
           </view>
           <view class="record-item__right">
-            <text class="record-item__date">{{ formatDate(item.createTime) }}</text>
+            <text class="record-item__date">{{ formatDate(item.credate) }}</text>
           </view>
         </view>
       </view>

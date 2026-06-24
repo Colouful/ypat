@@ -14,7 +14,7 @@
       >
         <view class="bill-item__left">
           <text class="bill-item__desc">{{ item.description }}</text>
-          <text class="bill-item__time">{{ formatTime(item.createTime) }}</text>
+          <text class="bill-item__time">{{ formatTime(item.credate) }}</text>
         </view>
         <view class="bill-item__right">
           <text
@@ -57,13 +57,10 @@ import * as paymentApi from '@/api/modules/payment'
 
 interface Bill {
   id: number
-  userId: number
   type: number
-  amount: number
-  balance: number
-  description: string
-  orderNo: string
-  createTime: string
+  total_fee: number
+  out_trade_no: string
+  credate: string
 }
 
 const userStore = useUserStore()

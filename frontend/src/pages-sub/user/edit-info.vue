@@ -281,11 +281,11 @@ async function handleSave() {
   try {
     const params: any = {
       id: Number(userStore.userInfo.id),
-      nickName: formData.nickName.trim(),
+      nickname: formData.nickName.trim(),
     }
 
     if (formData.avatarUrl) {
-      params.avatarUrl = formData.avatarUrl
+      params.imgpath = formData.avatarUrl
     }
     if (formData.gender) {
       params.gender = Number(formData.gender)

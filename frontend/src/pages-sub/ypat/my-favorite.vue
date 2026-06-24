@@ -29,9 +29,9 @@
       >
         <!-- 封面图 -->
         <image
-          v-if="getFirstImage(item.images)"
+          v-if="getFirstImage(item.pics)"
           class="favorite-card__cover"
-          :src="getFirstImage(item.images)"
+          :src="getFirstImage(item.pics)"
           mode="aspectFill"
           lazy-load
         />
@@ -41,35 +41,35 @@
           <!-- 用户信息 -->
           <view class="favorite-card__header">
             <image
-              v-if="item.avatarUrl"
+              v-if="item.userQo?.imgpath"
               class="favorite-card__avatar"
-              :src="item.avatarUrl"
+              :src="item.userQo.imgpath"
               mode="aspectFill"
             />
             <view v-else class="favorite-card__avatar favorite-card__avatar--default">
-              <text class="favorite-card__avatar-text">{{ getAvatarText(item.nickName) }}</text>
+              <text class="favorite-card__avatar-text">{{ getAvatarText(item.userQo?.nickname) }}</text>
             </view>
             <view class="favorite-card__user">
-              <text class="favorite-card__nickname">{{ item.nickName || '匿名用户' }}</text>
-              <text v-if="item.profess" class="favorite-card__profess">{{ getProfessLabel(item.profess) }}</text>
+              <text class="favorite-card__nickname">{{ item.userQo?.nickname || '匿名用户' }}</text>
+              <text v-if="item.userQo?.profess" class="favorite-card__profess">{{ getProfessLabel(item.userQo.profess) }}</text>
             </view>
-            <text class="favorite-card__time">{{ formatTime(item.createTime) }}</text>
+            <text class="favorite-card__time">{{ item.timeStr || formatTime(item.pubdate) }}</text>
           </view>
 
           <!-- 描述 -->
-          <text class="favorite-card__desc">{{ item.content }}</text>
+          <text class="favorite-card__desc">{{ item.describ }}</text>
 
           <!-- 底部标签和统计 -->
           <view class="favorite-card__footer">
             <view class="favorite-card__tags">
               <text v-if="item.city" class="favorite-card__tag">{{ item.city }}</text>
-              <text v-if="item.price > 0" class="favorite-card__tag favorite-card__tag--price">
-                {{ getChargeLabel(item.priceType) }}
+              <text v-if="item.chargeamt > 0" class="favorite-card__tag favorite-card__tag--price">
+                {{ item.chargewayTxt || getChargeLabel(item.chargeway) }}
               </text>
             </view>
             <view class="favorite-card__stats">
-              <text class="favorite-card__stat">{{ item.readCount || 0 }}浏览</text>
-              <text class="favorite-card__stat">{{ item.favoriteCount || 0 }}收藏</text>
+              <text class="favorite-card__stat">{{ item.readtimes || 0 }}浏览</text>
+              <text class="favorite-card__stat">{{ item.coltimes || 0 }}收藏</text>
             </view>
           </view>
         </view>
@@ -106,10 +106,9 @@ const page = ref(0)
 const pageSize = 10
 
 /** 获取第一张图片 */
-function getFirstImage(images: string): string {
-  if (!images) return ''
-  const arr = images.split(',')
-  return arr[0] || ''
+function getFirstImage(pics: string[]): string {
+  if (!pics || pics.length === 0) return ''
+  return pics[0] || ''
 }
 
 /** 获取头像首字 */

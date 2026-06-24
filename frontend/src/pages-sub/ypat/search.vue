@@ -49,25 +49,25 @@
         <!-- 结果列表 -->
         <view v-else class="ypat-list">
           <view v-for="item in resultList" :key="item.id" class="ypat-card" @tap="goDetail(item.id)">
-            <image v-if="getFirstImage(item.images)" class="ypat-card__image" :src="getFirstImage(item.images)" mode="aspectFill" lazy-load />
+            <image v-if="getFirstImage(item.pics)" class="ypat-card__image" :src="getFirstImage(item.pics)" mode="aspectFill" lazy-load />
             <view class="ypat-card__content">
               <view class="ypat-card__header">
-                <image class="ypat-card__avatar" :src="item.avatarUrl || '/static/default-avatar.png'" mode="aspectFill" />
+                <image class="ypat-card__avatar" :src="item.userQo?.imgpath || '/static/default-avatar.png'" mode="aspectFill" />
                 <view class="ypat-card__user">
-                  <text class="ypat-card__nickname">{{ item.nickName || '匿名用户' }}</text>
-                  <text class="ypat-card__profess">{{ getProfessLabel(item.profess) }}</text>
+                  <text class="ypat-card__nickname">{{ item.userQo?.nickname || '匿名用户' }}</text>
+                  <text class="ypat-card__profess">{{ getProfessLabel(item.userQo?.profess) }}</text>
                 </view>
-                <text class="ypat-card__time">{{ formatDate(item.createTime) }}</text>
+                <text class="ypat-card__time">{{ item.timeStr || formatDate(item.pubdate) }}</text>
               </view>
               <text class="ypat-card__title">{{ item.title }}</text>
-              <text class="ypat-card__desc">{{ item.content }}</text>
+              <text class="ypat-card__desc">{{ item.describ }}</text>
               <view class="ypat-card__footer">
                 <view class="ypat-card__tags">
                   <text v-if="item.city" class="ypat-card__tag">{{ item.city }}</text>
-                  <text class="ypat-card__tag ypat-card__tag--charge">{{ getChargeWayLabel(item.priceType) }}</text>
+                  <text class="ypat-card__tag ypat-card__tag--charge">{{ item.chargewayTxt || getChargeWayLabel(item.chargeway) }}</text>
                 </view>
                 <view class="ypat-card__stats">
-                  <text class="ypat-card__stat">{{ item.readCount || 0 }}阅读</text>
+                  <text class="ypat-card__stat">{{ item.readtimes || 0 }}阅读</text>
                 </view>
               </view>
             </view>
@@ -149,10 +149,9 @@ function getChargeWayLabel(type?: number): string {
   return CHARGE_WAY_LABELS[String(type)] || ''
 }
 
-function getFirstImage(images?: string): string {
-  if (!images) return ''
-  const list = images.split(',')
-  return list[0]?.trim() || ''
+function getFirstImage(pics?: string[]): string {
+  if (!pics || pics.length === 0) return ''
+  return pics[0]?.trim() || ''
 }
 
 function formatDate(dateStr?: string): string {

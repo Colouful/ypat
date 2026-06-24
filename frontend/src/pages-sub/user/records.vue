@@ -28,8 +28,8 @@
           <text class="record-badge-text">{{ getBadgeIcon(record.type) }}</text>
         </view>
         <view class="record-info">
-          <text class="record-desc">{{ record.content || getTypeLabel(record.type) }}</text>
-          <text class="record-date">{{ formatDate(record.createTime) }}</text>
+          <text class="record-desc">{{ record.typeTxt || getTypeLabel(record.type) }}</text>
+          <text class="record-date">{{ formatDate(record.credate) }}</text>
         </view>
         <view class="record-amount" :class="isIncome(record.type) ? 'amount-income' : 'amount-expense'">
           <text>{{ isIncome(record.type) ? '+' : '-' }}{{ getAmountDisplay(record) }}</text>
@@ -56,12 +56,11 @@ import { RECORD_TYPE_LABELS, RecordType } from '@/constants/enums'
 
 interface RecordInfo {
   id: number
-  userId: number
   type: number
-  targetId: number
-  targetType: number
-  content: string
-  createTime: string
+  credate: string
+  ppd: number
+  userid: number
+  typeTxt: string
 }
 
 const userStore = useUserStore()
@@ -112,7 +111,7 @@ function getBadgeClass(type: number): string {
 /** 获取金额显示 */
 function getAmountDisplay(record: RecordInfo): string {
   // content 中如果含有数字则提取，否则显示类型
-  const match = record.content?.match(/(\d+)/)
+  const match = String(record.ppd || '').match(/(\d+)/)
   return match ? match[1] + ' PPD' : '- PPD'
 }
 

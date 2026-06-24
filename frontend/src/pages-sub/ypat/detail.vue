@@ -62,15 +62,15 @@
 
       <!-- 发布者信息 -->
       <view class="publisher-section">
-        <image class="publisher-section__avatar" :src="detail.avatarUrl || '/static/default-avatar.png'" mode="aspectFill" />
+        <image class="publisher-section__avatar" :src="detail.userQo?.imgpath || '/static/default-avatar.png'" mode="aspectFill" />
         <view class="publisher-section__info">
           <view class="publisher-section__name-row">
-            <text class="publisher-section__nickname">{{ detail.nickName || '匿名用户' }}</text>
-            <view v-if="detail.verified" class="publisher-section__badge">
+            <text class="publisher-section__nickname">{{ detail.userQo?.nickname || '匿名用户' }}</text>
+            <view v-if="detail.userQo?.realnameflag" class="publisher-section__badge">
               <text class="publisher-section__badge-text">已认证</text>
             </view>
           </view>
-          <text class="publisher-section__profess">{{ getProfessLabel(detail.profess) }}</text>
+          <text class="publisher-section__profess">{{ getProfessLabel(detail.userQo?.profess) }}</text>
         </view>
       </view>
 
@@ -81,14 +81,14 @@
 
       <!-- 描述 -->
       <view class="desc-section">
-        <text class="desc-section__text">{{ detail.content }}</text>
+        <text class="desc-section__text">{{ detail.describ }}</text>
       </view>
 
       <!-- 信息列表 -->
       <view class="info-section">
         <view class="info-item">
           <text class="info-item__label">发布时间</text>
-          <text class="info-item__value">{{ formatDate(detail.createTime) }}</text>
+          <text class="info-item__value">{{ detail.timeStr || formatDate(detail.pubdate) }}</text>
         </view>
         <view class="info-item">
           <text class="info-item__label">拍摄地点</text>
@@ -96,15 +96,15 @@
         </view>
         <view class="info-item">
           <text class="info-item__label">收费方式</text>
-          <text class="info-item__value">{{ getChargeWayLabel(detail.priceType) }}</text>
+          <text class="info-item__value">{{ detail.chargewayTxt || getChargeWayLabel(detail.chargeway) }}</text>
         </view>
-        <view v-if="detail.price > 0" class="info-item">
+        <view v-if="detail.chargeamt > 0" class="info-item">
           <text class="info-item__label">参考价格</text>
-          <text class="info-item__value info-item__value--price">¥{{ detail.price }}</text>
+          <text class="info-item__value info-item__value--price">¥{{ detail.chargeamt }}</text>
         </view>
         <view class="info-item">
           <text class="info-item__label">浏览量</text>
-          <text class="info-item__value">{{ detail.readCount || 0 }}</text>
+          <text class="info-item__value">{{ detail.readtimes || 0 }}</text>
         </view>
       </view>
 
@@ -151,8 +151,8 @@ const currentSwiperIndex = ref(0)
 const ypatId = ref<number>(0)
 
 const imageList = computed<string[]>(() => {
-  if (!detail.value || !detail.value.images) return []
-  return detail.value.images.split(',').filter((img) => img.trim() !== '')
+  if (!detail.value || !detail.value.pics) return []
+  return detail.value.pics.filter((img) => img.trim() !== '')
 })
 
 function getProfessLabel(code?: string): string {
@@ -160,9 +160,9 @@ function getProfessLabel(code?: string): string {
   return PROFESS_LABELS[code] || ''
 }
 
-function getChargeWayLabel(type?: number): string {
+function getChargeWayLabel(type?: string): string {
   if (type === undefined || type === null) return ''
-  return CHARGE_WAY_LABELS[String(type)] || ''
+  return CHARGE_WAY_LABELS[type] || ''
 }
 
 function formatDate(dateStr?: string): string {
@@ -258,7 +258,7 @@ async function handleApply() {
 
   const userId = Number(userStore.userInfo!.id)
 
-  if (detail.value.userId === userId) {
+  if (detail.value.userid === userId) {
     uni.showToast({ title: '不能报名自己发布的约拍', icon: 'none' })
     return
   }
@@ -271,8 +271,10 @@ async function handleApply() {
       if (modalRes.confirm) {
         try {
           const res = await ypatApi.applyYpat({
-            userId,
-            ypatId: detail.value!.id,
+            sendperid: userId,
+            recperid: detail.value!.userid,
+            ypatid: detail.value!.id,
+            content: '我想报名参加您的约拍',
           })
           if (res.success) {
             uni.showToast({ title: '报名成功', icon: 'success' })

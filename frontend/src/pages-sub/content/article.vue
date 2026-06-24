@@ -19,9 +19,9 @@
     <view v-else-if="article" class="article-content">
       <!-- 封面图 -->
       <image
-        v-if="article.coverUrl"
+        v-if="article.imgpath"
         class="article-cover"
-        :src="article.coverUrl"
+        :src="article.imgpath"
         mode="aspectFill"
       />
 
@@ -32,9 +32,9 @@
       <view class="article-meta">
         <text class="meta-author">{{ article.author }}</text>
         <text class="meta-divider">·</text>
-        <text class="meta-date">{{ formatDate(article.createTime) }}</text>
+        <text class="meta-date">{{ article.timeStr || formatDate(article.credate) }}</text>
         <text class="meta-divider">·</text>
-        <text class="meta-read">{{ article.readCount }}次阅读</text>
+        <text class="meta-read">{{ article.readtimes }}次阅读</text>
       </view>
 
       <!-- 分隔线 -->
@@ -57,14 +57,12 @@ interface Article {
   id: number
   title: string
   content: string
-  coverUrl: string
-  summary: string
-  category: number
-  author: string
-  readCount: number
+  imgpath: string
+  describ: string
+  readtimes: number
   status: number
-  createTime: string
-  updateTime: string
+  credate: string
+  timeStr: string
 }
 
 const article = ref<Article | null>(null)
