@@ -15,33 +15,27 @@ function blobToBase64(blob: Blob): Promise<string> {
 export async function filePathToBase64(filePath: string): Promise<string> {
   if (!filePath) throw new Error('图片路径不能为空')
 
-  // #ifdef MP-WEIXIN
-  return new Promise((resolve, reject) => {
-    uni.getFileSystemManager().readFile({
-      filePath,
-      encoding: 'base64',
-      success: (result) => resolve(String(result.data || '')),
-      fail: () => reject(new Error('读取图片失败')),
-    })
-  })
-  // #endif
-
   // #ifdef H5
   const response = await fetch(filePath)
   if (!response.ok) throw new Error('读取图片失败')
   return blobToBase64(await response.blob())
   // #endif
 
-  // #ifdef APP-PLUS
+  // #ifndef H5
   return new Promise((resolve, reject) => {
-    plus.io.resolveLocalFileSystemURL(filePath, (entry) => {
-      entry.file((file) => {
-        const reader = new plus.io.FileReader()
-        reader.onloadend = (event) => resolve(removeDataUrlHeader(String(event.target?.result || '')))
-        reader.onerror = () => reject(new Error('读取图片失败'))
-        reader.readAsDataURL(file)
-      }, () => reject(new Error('读取图片失败')))
-    }, () => reject(new Error('读取图片失败')))
+    uni.getFileSystemManager().readFile({
+      filePath,
+      encoding: 'base64',
+      success: (result) => {
+        const value = String(result.data || '')
+        if (!value) {
+          reject(new Error('图片内容为空'))
+          return
+        }
+        resolve(removeDataUrlHeader(value))
+      },
+      fail: () => reject(new Error('读取图片失败')),
+    })
   })
   // #endif
 
