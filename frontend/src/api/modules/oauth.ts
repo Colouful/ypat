@@ -1,40 +1,30 @@
-import { get, post, upload } from '../request'
+import { get, post } from '../request'
 import type {
   ApiResult,
   OcrResult,
-  OauthSubmitParams,
   OauthInfo,
+  OauthSubmitParams,
 } from '../types'
 
 /**
- * OCR 识别身份证（文件上传）
+ * OCR 识别身份证正面。
+ * 历史后端接收表单字段 cardfront，值为不含 data:image 前缀的纯 Base64。
  */
-export function ocrIdCard(filePath: string): Promise<ApiResult<OcrResult>> {
-  return upload({
-    url: '/oauth/ocr',
-    filePath,
-    name: 'file',
-    showLoading: true,
-  })
+export function ocrIdCard(cardfront: string): Promise<ApiResult<OcrResult>> {
+  return post('/oauth/ocr', { cardfront })
 }
 
-/**
- * 提交实名认证
- */
-export function submitAuth(data: OauthSubmitParams): Promise<ApiResult<null>> {
+/** 提交当前登录用户实名认证 */
+export function submitAuth(data: OauthSubmitParams): Promise<ApiResult<OauthInfo>> {
   return post('/oauth/add', data)
 }
 
-/**
- * 获取认证状态
- */
-export function getAuthStatus(id: number): Promise<ApiResult<{ status: number; reason: string }>> {
-  return get('/oauth/get', { id })
+/** 获取当前登录用户认证信息 */
+export function getAuthDetail(): Promise<ApiResult<OauthInfo>> {
+  return get('/oauth/get')
 }
 
-/**
- * 获取认证详情
- */
-export function getAuthDetail(id: number): Promise<ApiResult<OauthInfo>> {
-  return get('/oauth/getAuth', { id })
+/** 管理端或公开场景按用户 ID 获取认证详情 */
+export function getAuthDetailByUserId(id: number): Promise<ApiResult<OauthInfo>> {
+  return get('/oauth/detail', { id })
 }
