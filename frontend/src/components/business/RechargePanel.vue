@@ -65,10 +65,32 @@ async function waitForBalance(expectedBalance: number, attempts = 10): Promise<b
       const user = await userStore.updateUserInfo()
       if (Number(user?.ppd || 0) >= expectedBalance) return true
     } catch {
-      // 回调可能尚未完成，继续下一次查询。
+      // 微信回调可能尚未完成，继续查询服务端余额。
     }
   }
   return false
+}
+
+function invokeWechatPayment(data: {
+  timeStamp: string
+  nonceStr: string
+  package: string
+  signType: string
+  paySign: string
+}): Promise<void> {
+  return new Promise((resolve, reject) => {
+    uni.requestPayment({
+      provider: 'wxpay',
+      orderInfo: {},
+      timeStamp: data.timeStamp,
+      nonceStr: data.nonceStr,
+      package: data.package,
+      signType: data.signType as 'MD5' | 'HMAC-SHA256',
+      paySign: data.paySign,
+      success: () => resolve(),
+      fail: (error) => reject(new Error(error.errMsg || '支付失败')),
+    })
+  })
 }
 
 async function pay(): Promise<void> {
@@ -90,8 +112,7 @@ async function pay(): Promise<void> {
       throw new Error('支付参数不完整')
     }
 
-    await uni.requestPayment({
-      provider: 'wxpay',
+    await invokeWechatPayment({
       timeStamp: order.data.timeStamp,
       nonceStr: order.data.nonceStr,
       package: order.data.package,
@@ -109,14 +130,14 @@ async function pay(): Promise<void> {
     } else {
       uni.showModal({
         title: '支付结果确认中',
-        content: '暂未查询到余额变化，请稍后在钱包页面下拉刷新。不会在前端自行增加余额。',
+        content: '暂未查询到余额变化，请稍后在钱包页面刷新。系统不会在前端自行增加余额。',
         showCancel: false,
       })
     }
   } catch (error) {
     uni.hideLoading()
     const message = error instanceof Error ? error.message : '支付失败'
-    if (message.includes('cancel')) uni.showToast({ title: '已取消支付', icon: 'none' })
+    if (message.toLowerCase().includes('cancel')) uni.showToast({ title: '已取消支付', icon: 'none' })
     else uni.showToast({ title: message, icon: 'none' })
   } finally {
     paying.value = false
