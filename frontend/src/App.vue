@@ -1,13 +1,23 @@
 <script setup lang="ts">
-import { onLaunch, onShow, onHide } from "@dcloudio/uni-app";
+import { onLaunch, onShow } from '@dcloudio/uni-app'
+import { useUserStore } from '@/stores/user'
+import { useAppStore } from '@/stores/app'
+
 onLaunch(() => {
-  console.log("App Launch");
-});
+  const userStore = useUserStore()
+  const appStore = useAppStore()
+  userStore.restoreSession()
+  appStore.initApp()
+})
+
 onShow(() => {
-  console.log("App Show");
-});
-onHide(() => {
-  console.log("App Hide");
-});
+  const userStore = useUserStore()
+  if (userStore.isLoggedIn) {
+    userStore.refreshUnreadCount()
+  }
+})
 </script>
-<style></style>
+
+<style lang="scss">
+@import '@/styles/global.scss';
+</style>

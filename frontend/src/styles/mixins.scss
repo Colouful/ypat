@@ -1,0 +1,90 @@
+// ============================================================
+// YPAT SCSS Mixins
+// Reusable style patterns for the design system
+// ============================================================
+
+@import './tokens.scss';
+
+// ------------------------------------------------------------
+// Flexbox Helpers
+// ------------------------------------------------------------
+
+@mixin flex-center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+@mixin flex-between {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+@mixin flex-column {
+  display: flex;
+  flex-direction: column;
+}
+
+// ------------------------------------------------------------
+// Text Overflow / Ellipsis
+// ------------------------------------------------------------
+
+@mixin ellipsis($lines: 1) {
+  overflow: hidden;
+  text-overflow: ellipsis;
+
+  @if $lines == 1 {
+    white-space: nowrap;
+  } @else {
+    display: -webkit-box;
+    -webkit-line-clamp: $lines;
+    /* autoprefixer: ignore next */
+    -webkit-box-orient: vertical;
+    white-space: normal;
+    word-break: break-all;
+  }
+}
+
+// ------------------------------------------------------------
+// Safe Area
+// ------------------------------------------------------------
+
+@mixin safe-area-bottom {
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+// ------------------------------------------------------------
+// Card Style
+// ------------------------------------------------------------
+
+@mixin card-style {
+  background-color: $color-bg-card;
+  border-radius: $radius-md;
+  box-shadow: $shadow-sm;
+  overflow: hidden;
+}
+
+// ------------------------------------------------------------
+// Page Container
+// ------------------------------------------------------------
+
+@mixin page-container {
+  min-height: 100vh;
+  background-color: $color-bg-page;
+  padding: $spacing-lg;
+  box-sizing: border-box;
+}
+
+// ------------------------------------------------------------
+// Touch Feedback (Hover/Active)
+// ------------------------------------------------------------
+
+@mixin hover-active {
+  transition: opacity $duration-fast ease, transform $duration-fast ease;
+
+  &:active {
+    opacity: 0.7;
+    transform: scale(0.98);
+  }
+}
