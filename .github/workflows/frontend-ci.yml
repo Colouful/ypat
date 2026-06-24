@@ -27,7 +27,15 @@ jobs:
           cache: npm
           cache-dependency-path: frontend/package-lock.json
       - run: npm ci
-      - run: npm run type-check
+      - name: Type check
+        run: npm run type-check > typecheck.log 2>&1
+      - name: Upload type-check log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-typecheck-log
+          path: frontend/typecheck.log
+          retention-days: 3
       - run: npm run lint
       - run: npm run test
       - run: npm run build:h5
