@@ -8,18 +8,17 @@ async function normalizeImage(value: string): Promise<string> {
 }
 
 export async function ocrIdCard(value: string): Promise<ApiResult<OcrResult>> {
-  return post('/oauth/ocr', { cardfront: await normalizeImage(value) })
+  const cardfront = await normalizeImage(value)
+  return post('/oauth/ocr', { cardfront })
 }
 
-export async function submitAuth(data: OauthSubmitParams & { userid?: number }): Promise<ApiResult<OauthInfo>> {
+export async function submitAuth(data: OauthSubmitParams): Promise<ApiResult<OauthInfo>> {
   const pics = await Promise.all(data.pics.map(normalizeImage))
   return post('/oauth/add', { name: data.name, certcode: data.certcode, pics })
 }
 
-export async function getAuthDetail(_id?: number): Promise<ApiResult<any>> {
-  const result = await get<Record<string, unknown>>('/oauth/get')
-  if (result.data) result.data = { ...result.data, status: Number(result.data.status || 0) }
-  return result as ApiResult<any>
+export function getAuthDetail(): Promise<ApiResult<OauthInfo>> {
+  return get('/oauth/get')
 }
 
 export function getAuthDetailByUserId(id: number): Promise<ApiResult<OauthInfo>> {
