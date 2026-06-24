@@ -12,10 +12,12 @@
     "build:mp-baidu": "uni build -p mp-baidu",
     "build:app": "uni build -p app",
     "type-check": "vue-tsc --noEmit",
-    "lint": "eslint src --ext .ts,.vue --fix",
+    "lint": "eslint src --ext .ts,.vue --max-warnings=0",
+    "lint:fix": "eslint src --ext .ts,.vue --fix",
     "format": "prettier --write \"src/**/*.{ts,vue,scss}\"",
-    "test": "vitest run",
-    "test:watch": "vitest"
+    "test": "vitest run --passWithNoTests",
+    "test:watch": "vitest",
+    "check": "npm run type-check && npm run lint && npm run test && npm run build:h5 && npm run build:mp-weixin"
   },
   "dependencies": {
     "@dcloudio/uni-app": "3.0.0-4080420251103001",
