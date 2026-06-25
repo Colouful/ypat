@@ -9,6 +9,8 @@ import type { ApiResult } from './types'
 
 interface BackendResponse<T = unknown> {
   code: number | string
+  msg?: string
+  res?: T
   message?: string
   result?: T
 }
@@ -95,11 +97,19 @@ export function mapBackendResponse<T>(raw: unknown): ApiResult<T> {
   if (isRecord(payload) && Object.prototype.hasOwnProperty.call(payload, 'code')) {
     const response = payload as unknown as BackendResponse<T>
     const code = String(response.code ?? '-1')
+    const hasRes = Object.prototype.hasOwnProperty.call(response, 'res')
+    const hasResult = Object.prototype.hasOwnProperty.call(response, 'result')
+    const data = (hasRes
+      ? response.res
+      : hasResult
+        ? response.result
+        : null) as T
+    const message = response.msg ?? response.message ?? ERROR_CODE_MAP[code] ?? ''
     return {
       success: code === '200',
-      data: (response.result ?? null) as T,
+      data,
       code,
-      message: response.message || ERROR_CODE_MAP[code] || '',
+      message,
     }
   }
   return { success: true, data: payload as T, code: '200', message: '' }
