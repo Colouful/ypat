@@ -1,6 +1,7 @@
 import { computed, ref } from 'vue'
 import { defineStore } from 'pinia'
 import { get, post } from '@/api/request'
+import { h5PhoneLogin, sendH5LoginCode } from '@/api/modules/user'
 import {
   clearAuth,
   getStoredUserInfo,
@@ -20,6 +21,11 @@ export interface WechatLoginInput {
   avatarurl?: string
   gender?: string
   recmobile?: string
+}
+
+export interface H5PhoneLoginInput {
+  mobile: string
+  smsCode: string
 }
 
 export const useUserStore = defineStore('user', () => {
@@ -103,6 +109,35 @@ export const useUserStore = defineStore('user', () => {
     return completeUser
   }
 
+  async function requestH5LoginCode(mobile: string): Promise<string | undefined> {
+    const result = await sendH5LoginCode(mobile)
+    if (!result.success) {
+      throw new Error(result.message || '验证码发送失败')
+    }
+    return result.data?.debugCode
+  }
+
+  async function loginByPhone(input: H5PhoneLoginInput): Promise<UserInfo> {
+    const result = await h5PhoneLogin(input)
+    if (!result.data?.token || !result.data?.id) {
+      throw new Error(result.message || '登录响应缺少用户凭证')
+    }
+
+    setToken(result.data.token)
+    token.value = result.data.token
+
+    let completeUser = createFallbackUser(result.data)
+    try {
+      const detail = await get<UserInfo>('/user/get', { id: Number(result.data.id) })
+      if (detail.data?.id) completeUser = detail.data
+    } catch {
+      // 完整资料可在进入个人中心时再次刷新。
+    }
+
+    persistSession(result.data.token, completeUser)
+    return completeUser
+  }
+
   function restoreSession(): void {
     const storedToken = getToken()
     const storedUser = getStoredUserInfo()
@@ -160,6 +195,8 @@ export const useUserStore = defineStore('user', () => {
     unreadCount,
     isLoggedIn,
     login,
+    loginByPhone,
+    requestH5LoginCode,
     logout,
     restoreSession,
     updateUserInfo,

@@ -22,6 +22,18 @@ public class SmsUtils {
     public static final String SignName = "爱去拍";
     public static final String TemplateCode = "SMS_190271093";
 
+    public static boolean sendLoginCode(String phoneNumbers, String code) {
+        if (StringUtils.isEmpty(phoneNumbers) || StringUtils.isEmpty(code)) {
+            return false;
+        }
+        if (StringUtils.isEmpty(accessKeyId) || StringUtils.isEmpty(accessSecret)) {
+            return false;
+        }
+        Map<String, String> params = new HashMap<>();
+        params.put("code", code);
+        return sendSms(phoneNumbers, params);
+    }
+
     public static void sendMsg(String PhoneNumbers, String profess) {
         if(StringUtils.isEmpty(PhoneNumbers)) {
             return;
@@ -29,6 +41,10 @@ public class SmsUtils {
         Map<String,String> params = new HashMap<>();
         params.put("code",profess);
 
+        sendSms(PhoneNumbers, params);
+    }
+
+    private static boolean sendSms(String phoneNumbers, Map<String, String> params) {
         DefaultProfile profile = DefaultProfile.getProfile("cn-hangzhou", accessKeyId, accessSecret);
         IAcsClient client = new DefaultAcsClient(profile);
 
@@ -37,7 +53,7 @@ public class SmsUtils {
         request.setSysDomain("dysmsapi.aliyuncs.com");
         request.setSysVersion("2017-05-25");
         request.setSysAction("SendSms");
-        request.putQueryParameter("PhoneNumbers", PhoneNumbers);
+        request.putQueryParameter("PhoneNumbers", phoneNumbers);
         request.putQueryParameter("SignName", SignName);
         request.putQueryParameter("TemplateCode", TemplateCode);
         request.putQueryParameter("TemplateParam", GsonUtils.toJson(params));
@@ -46,11 +62,13 @@ public class SmsUtils {
         try {
             CommonResponse response = client.getCommonResponse(request);
             System.out.println(response.getData());
+            return true;
         } catch (ServerException e) {
             e.printStackTrace();
         } catch (ClientException e) {
             e.printStackTrace();
         }
+        return false;
     }
 
     public static void queryMsg(String PhoneNumbers) {

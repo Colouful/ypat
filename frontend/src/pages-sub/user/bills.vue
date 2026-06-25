@@ -56,12 +56,14 @@ onPullDownRefresh(async () => { await load(true); uni.stopPullDownRefresh() })
 onReachBottom(() => load())
 </script>
 <style scoped lang="scss">
-.page { min-height: 100vh; padding: 24rpx; background: #F5F6F8; }
+@import '@/styles/tokens.scss';
+
+.page { min-height: 100vh; padding: 24rpx; background: $color-bg-page; }
 .item { display: flex; justify-content: space-between; margin-bottom: 18rpx; padding: 28rpx; border-radius: 32rpx; background: #fff; box-shadow: 0 6rpx 24rpx rgba(20, 24, 31, .04); }
-.item__title { display: block; color: #1A1D1F; font-size: 29rpx; font-weight: 600; }
-.item__time, .item__number, .item__status { display: block; margin-top: 10rpx; color: #83888F; font-size: 23rpx; }
+.item__title { display: block; color: $color-text-primary; font-size: 29rpx; font-weight: 600; }
+.item__time, .item__number, .item__status { display: block; margin-top: 10rpx; color: $color-text-secondary; font-size: 23rpx; }
 .item__right { text-align: right; }
 .item__amount { color: #f26a3d; font-size: 30rpx; font-weight: 600; }
-.empty, .loading, .footer { padding: 180rpx 20rpx; color: #83888F; text-align: center; }
+.empty, .loading, .footer { padding: 180rpx 20rpx; color: $color-text-secondary; text-align: center; }
 .footer { padding: 30rpx; }
 </style>

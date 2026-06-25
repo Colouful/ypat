@@ -165,17 +165,17 @@ onUnload(() => {
 </script>
 
 <style scoped lang="scss">
-.recharge { min-height: 100vh; box-sizing: border-box; padding: 28rpx; background: #F5F6F8; }
-.balance-card { padding: 38rpx; border-radius: 32rpx; color: #fff; background: linear-gradient(135deg, #23C268, #64d995); }
+.recharge { min-height: 100vh; box-sizing: border-box; padding: 28rpx; background: $color-bg-page; }
+.balance-card { padding: 38rpx; border-radius: 32rpx; color: #fff; background: linear-gradient(135deg, $color-primary, #64d995); }
 .balance-card__label { display: block; font-size: 26rpx; opacity: .9; }
 .balance-card__value { display: block; margin-top: 10rpx; font-size: 64rpx; font-weight: 700; }
 .state, .unsupported { margin-top: 28rpx; padding: 32rpx; border-radius: 32rpx; color: #747e8d; background: #fff; box-shadow: 0 6rpx 24rpx rgba(20, 24, 31, .04); text-align: center; }
 .products { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20rpx; margin-top: 28rpx; }
 .product { padding: 34rpx 20rpx; border: 2rpx solid transparent; border-radius: 32rpx; background: #fff; box-shadow: 0 6rpx 24rpx rgba(20, 24, 31, .04); text-align: center; }
-.product.active { border-color: #23C268; background: #C9F4D9; }
-.product__amount { display: block; color: #1A1D1F; font-size: 30rpx; font-weight: 600; }
+.product.active { border-color: $color-primary; background: $color-primary-light; }
+.product__amount { display: block; color: $color-text-primary; font-size: 30rpx; font-weight: 600; }
 .product__price { display: block; margin-top: 12rpx; color: #f26a3d; font-size: 27rpx; }
-.pay { margin-top: 40rpx; height: 92rpx; line-height: 92rpx; border-radius: 999rpx; color: #fff; background: #23C268; }
+.pay { margin-top: 40rpx; height: 92rpx; line-height: 92rpx; border-radius: 999rpx; color: #fff; background: $color-primary; }
 .pay[disabled] { opacity: .45; }
 .pay::after { border: 0; }
 </style>

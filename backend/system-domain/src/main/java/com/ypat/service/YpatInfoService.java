@@ -6,6 +6,7 @@ import com.ypat.SysException;
 import com.ypat.UserQo;
 import com.ypat.YpatInfoQo;
 import com.ypat.entity.*;
+import com.ypat.entity.Record;
 import com.ypat.enums.RecordType;
 import com.ypat.enums.UserImgType;
 import com.ypat.enums.YesNo;

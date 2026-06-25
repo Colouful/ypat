@@ -61,15 +61,28 @@ export interface WxSessionResult {
 }
 
 export interface LoginParams {
-  openid: string
-  encryptedData: string
-  sessionKey: string
-  iv: string
+  openid?: string
+  encryptedData?: string
+  sessionKey?: string
+  iv?: string
   nickname?: string
   avatarurl?: string
   gender?: string
   channel: string
   recmobile?: string
+  mobile?: string
+  smsCode?: string
+}
+
+export interface H5PhoneLoginInput {
+  mobile: string
+  smsCode: string
+}
+
+export interface H5LoginCodeResult {
+  mobile: string
+  expiresIn: string | number
+  debugCode?: string
 }
 
 /** LoginController 返回顶层 Map，而不是 { userInfo } 嵌套结构。 */

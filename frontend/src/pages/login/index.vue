@@ -23,9 +23,37 @@
       <!-- #endif -->
 
       <!-- #ifdef H5 -->
-      <view class="unsupported-card">
-        <text class="unsupported-card__title">H5 登录暂未开放</text>
-        <text class="unsupported-card__desc">当前后端只支持微信小程序加密手机号登录，请在微信小程序中使用登录能力。</text>
+      <view class="phone-card">
+        <view class="phone-field">
+          <KeepIcon name="phone" :size="34" color="#83888F" />
+          <input
+            v-model="mobile"
+            class="phone-input"
+            type="number"
+            maxlength="11"
+            placeholder="请输入手机号"
+            placeholder-class="phone-placeholder"
+          />
+        </view>
+        <view class="phone-field">
+          <KeepIcon name="shield" :size="34" color="#83888F" />
+          <input
+            v-model="smsCode"
+            class="phone-input"
+            type="number"
+            maxlength="6"
+            placeholder="请输入验证码"
+            placeholder-class="phone-placeholder"
+          />
+          <button class="code-button" :disabled="codeSending || countdown > 0" @tap="handleSendH5Code">
+            {{ countdown > 0 ? `${countdown}s` : '获取验证码' }}
+          </button>
+        </view>
+        <button class="wx-button phone-login-button" :disabled="submitting" @tap="handleH5PhoneLogin">
+          <KeepIcon name="phone" :size="38" color="#FFFFFF" />
+          <text>{{ submitting ? '登录中...' : '手机号登录' }}</text>
+        </button>
+        <text v-if="debugCode" class="debug-code">开发验证码：{{ debugCode }}</text>
       </view>
       <!-- #endif -->
 
@@ -59,6 +87,7 @@
 import { ref } from 'vue'
 import { useUserStore } from '@/stores/user'
 import KeepIcon from '@/components/business/KeepIcon.vue'
+import { isPhone } from '@/utils/validate'
 
 interface PhoneAuthorizationEvent {
   detail?: {
@@ -71,6 +100,12 @@ interface PhoneAuthorizationEvent {
 const userStore = useUserStore()
 const agreed = ref(false)
 const submitting = ref(false)
+const codeSending = ref(false)
+const countdown = ref(0)
+const mobile = ref('')
+const smsCode = ref('')
+const debugCode = ref('')
+let countdownTimer: ReturnType<typeof setInterval> | null = null
 
 async function handleWechatPhoneAuthorization(event: PhoneAuthorizationEvent): Promise<void> {
   if (!agreed.value) {
@@ -106,6 +141,76 @@ async function handleWechatPhoneAuthorization(event: PhoneAuthorizationEvent): P
       channel: '0',
     })
 
+    uni.showToast({ title: '登录成功', icon: 'success' })
+    const pages = getCurrentPages()
+    if (pages.length > 1) uni.navigateBack()
+    else uni.switchTab({ url: '/pages/home/index' })
+  } catch (error) {
+    const message = error instanceof Error ? error.message : '登录失败，请重试'
+    uni.showToast({ title: message, icon: 'none' })
+  } finally {
+    submitting.value = false
+  }
+}
+
+function ensureAgreement(): boolean {
+  if (!agreed.value) {
+    uni.showToast({ title: '请先同意用户协议和隐私政策', icon: 'none' })
+    return false
+  }
+  return true
+}
+
+function validateMobileInput(): boolean {
+  if (!isPhone(mobile.value)) {
+    uni.showToast({ title: '请输入正确的手机号', icon: 'none' })
+    return false
+  }
+  return true
+}
+
+function startCountdown(): void {
+  countdown.value = 60
+  if (countdownTimer) clearInterval(countdownTimer)
+  countdownTimer = setInterval(() => {
+    countdown.value -= 1
+    if (countdown.value <= 0 && countdownTimer) {
+      clearInterval(countdownTimer)
+      countdownTimer = null
+    }
+  }, 1000)
+}
+
+async function handleSendH5Code(): Promise<void> {
+  if (!ensureAgreement() || !validateMobileInput()) return
+  codeSending.value = true
+  debugCode.value = ''
+  try {
+    const code = await userStore.requestH5LoginCode(mobile.value.trim())
+    if (code) debugCode.value = code
+    startCountdown()
+    uni.showToast({ title: '验证码已发送', icon: 'success' })
+  } catch (error) {
+    const message = error instanceof Error ? error.message : '验证码发送失败'
+    uni.showToast({ title: message, icon: 'none' })
+  } finally {
+    codeSending.value = false
+  }
+}
+
+async function handleH5PhoneLogin(): Promise<void> {
+  if (!ensureAgreement() || !validateMobileInput()) return
+  if (!/^\d{6}$/.test(smsCode.value.trim())) {
+    uni.showToast({ title: '请输入 6 位验证码', icon: 'none' })
+    return
+  }
+
+  submitting.value = true
+  try {
+    await userStore.loginByPhone({
+      mobile: mobile.value.trim(),
+      smsCode: smsCode.value.trim(),
+    })
     uni.showToast({ title: '登录成功', icon: 'success' })
     const pages = getCurrentPages()
     if (pages.length > 1) uni.navigateBack()
@@ -192,11 +297,11 @@ function goPrivacy(): void {
   opacity: 0.65;
 }
 
+.phone-card,
 .unsupported-card {
-  padding: 48rpx 36rpx;
+  padding: 36rpx;
   border-radius: $radius-keep-card;
   background: $color-bg-page;
-  text-align: center;
 }
 
 .unsupported-card__title {
@@ -204,6 +309,62 @@ function goPrivacy(): void {
   color: $color-text-primary;
   font-size: 32rpx;
   font-weight: 800;
+  text-align: center;
+}
+
+.phone-field {
+  @include flex-between;
+  height: 100rpx;
+  margin-bottom: 20rpx;
+  padding: 0 28rpx;
+  border-radius: $radius-round;
+  background: #fff;
+}
+
+.phone-input {
+  flex: 1;
+  min-width: 0;
+  height: 100%;
+  margin-left: 16rpx;
+  color: $color-text-primary;
+  font-size: 30rpx;
+  font-weight: 700;
+}
+
+.phone-placeholder {
+  color: $color-text-helper;
+  font-weight: 600;
+}
+
+.code-button {
+  @include flex-center;
+  width: 176rpx;
+  height: 68rpx;
+  margin-left: 18rpx;
+  border-radius: $radius-round;
+  color: $color-primary-dark;
+  background: $color-primary-light;
+  font-size: 24rpx;
+  font-weight: 800;
+  line-height: 68rpx;
+}
+
+.code-button[disabled] {
+  color: $color-text-secondary;
+  background: $color-bg-chip;
+}
+
+.phone-login-button {
+  margin-top: 28rpx;
+}
+
+.debug-code {
+  display: block;
+  margin-top: 18rpx;
+  color: $color-accent-orange;
+  font-size: 24rpx;
+  font-weight: 700;
+  text-align: center;
 }
 
 .login-footer {

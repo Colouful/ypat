@@ -48,6 +48,7 @@ public class UserQo extends PageQo implements java.io.Serializable{
     private String encryptedData;
     private String sessionKey;
     private String iv;
+    private String smsCode;
     @DateTimeFormat(pattern = "yyyy-MM-dd")
     @JsonFormat(pattern = "yyyy-MM-dd")
     private Date birthday;
@@ -87,6 +88,14 @@ public class UserQo extends PageQo implements java.io.Serializable{
 
     public void setPassword(String password) {
         this.password = password;
+    }
+
+    public String getSmsCode() {
+        return smsCode;
+    }
+
+    public void setSmsCode(String smsCode) {
+        this.smsCode = smsCode;
     }
 
     public UserQo() {

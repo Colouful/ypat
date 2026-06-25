@@ -7,6 +7,8 @@ import type {
   UserInfo,
   UpdateUserParams,
   LinkWay,
+  H5PhoneLoginInput,
+  H5LoginCodeResult,
 } from '../types'
 
 export function wxLogin(code: string): Promise<ApiResult<WxSessionResult>> {
@@ -15,6 +17,18 @@ export function wxLogin(code: string): Promise<ApiResult<WxSessionResult>> {
 
 export function login(data: LoginParams): Promise<ApiResult<LoginResult>> {
   return post('/user/login', data)
+}
+
+export function sendH5LoginCode(mobile: string): Promise<ApiResult<H5LoginCodeResult>> {
+  return post('/user/sms/code', { mobile }, { withToken: false })
+}
+
+export function h5PhoneLogin(data: H5PhoneLoginInput): Promise<ApiResult<LoginResult>> {
+  return post('/user/login', {
+    mobile: data.mobile,
+    smsCode: data.smsCode,
+    channel: '2',
+  }, { withToken: false })
 }
 
 export function refreshToken(): Promise<ApiResult<{ token: string; refreshToken?: string }>> {

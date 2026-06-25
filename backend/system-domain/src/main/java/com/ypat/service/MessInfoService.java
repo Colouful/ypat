@@ -2,6 +2,7 @@ package com.ypat.service;
 
 import com.ypat.*;
 import com.ypat.entity.*;
+import com.ypat.entity.Record;
 import com.ypat.enums.MessType;
 import com.ypat.enums.RecordType;
 import com.ypat.enums.UserImgType;

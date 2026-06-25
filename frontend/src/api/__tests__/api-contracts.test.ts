@@ -24,6 +24,20 @@ describe('API contracts', () => {
     expect(requestMocks.get).toHaveBeenCalledWith('/user/code', { code: 'wx-code' })
   })
 
+  it('sendH5LoginCode posts mobile to /user/sms/code', async () => {
+    await userApi.sendH5LoginCode('13800138000')
+    expect(requestMocks.post).toHaveBeenCalledWith('/user/sms/code', { mobile: '13800138000' }, { withToken: false })
+  })
+
+  it('h5PhoneLogin posts mobile verification payload to /user/login', async () => {
+    await userApi.h5PhoneLogin({ mobile: '13800138000', smsCode: '123456' })
+    expect(requestMocks.post).toHaveBeenCalledWith('/user/login', {
+      mobile: '13800138000',
+      smsCode: '123456',
+      channel: '2',
+    }, { withToken: false })
+  })
+
   it('getLinkWay sends only userid and messid', async () => {
     await userApi.getLinkWay(12, 34)
     expect(requestMocks.get).toHaveBeenCalledWith('/user/linkway/get', { userid: 12, messid: 34 })

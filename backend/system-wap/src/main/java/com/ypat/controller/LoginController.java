@@ -33,6 +33,11 @@ public class LoginController {
         return GsonUtils.toJson(wxPayClient.code2Session(code));
     }
 
+    @PostMapping("/user/sms/code")
+    public String smsCode(String mobile) {
+        return GsonUtils.toJson(userService.sendH5LoginCode(mobile));
+    }
+
     @PostMapping("/user/login")
     public String login(UserQo userQo) {
         logger.info("登录输入："+userQo);

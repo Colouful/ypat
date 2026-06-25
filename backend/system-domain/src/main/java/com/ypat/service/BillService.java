@@ -4,6 +4,7 @@ import com.ypat.BillQo;
 import com.ypat.ResponseCode;
 import com.ypat.SysException;
 import com.ypat.entity.*;
+import com.ypat.entity.Record;
 import com.ypat.enums.OrderType;
 import com.ypat.enums.RecordType;
 import com.ypat.enums.UserStatus;

@@ -3,6 +3,7 @@ package com.ypat.service;
 
 import com.ypat.*;
 import com.ypat.entity.*;
+import com.ypat.entity.Record;
 import com.ypat.enums.*;
 import com.ypat.repository.*;
 import com.ypat.util.CommonUtils;

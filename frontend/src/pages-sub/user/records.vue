@@ -97,13 +97,15 @@ onReachBottom(() => load())
 </script>
 
 <style scoped lang="scss">
-.page { min-height: 100vh; padding: 24rpx; background: #F5F6F8; }
+@import '@/styles/tokens.scss';
+
+.page { min-height: 100vh; padding: 24rpx; background: $color-bg-page; }
 .item { display: flex; align-items: center; margin-bottom: 18rpx; padding: 26rpx; border-radius: 32rpx; background: #fff; box-shadow: 0 6rpx 24rpx rgba(20, 24, 31, .04); }
-.badge { width: 72rpx; height: 72rpx; line-height: 72rpx; border-radius: 50%; color: #17A857; background: #C9F4D9; text-align: center; }
+.badge { width: 72rpx; height: 72rpx; line-height: 72rpx; border-radius: 50%; color: $color-primary-dark; background: #C9F4D9; text-align: center; }
 .info { flex: 1; margin-left: 20rpx; }
-.title { display: block; color: #1A1D1F; font-size: 28rpx; font-weight: 600; }
-.time { display: block; margin-top: 8rpx; color: #B3B8BE; font-size: 23rpx; }
+.title { display: block; color: $color-text-primary; font-size: 28rpx; font-weight: 600; }
+.time { display: block; margin-top: 8rpx; color: $color-text-helper; font-size: 23rpx; }
 .amount { color: #3d4654; font-size: 28rpx; font-weight: 600; }
-.empty, .loading, .footer { padding: 180rpx 20rpx; color: #83888F; text-align: center; }
+.empty, .loading, .footer { padding: 180rpx 20rpx; color: $color-text-secondary; text-align: center; }
 .footer { padding: 30rpx; }
 </style>
