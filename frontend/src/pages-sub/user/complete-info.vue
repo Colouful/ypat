@@ -109,17 +109,17 @@ function goHome(): void {
 </script>
 
 <style scoped lang="scss">
-.page { min-height: 100vh; box-sizing: border-box; padding: 56rpx 28rpx; background: #f7f8fa; }
+.page { min-height: 100vh; box-sizing: border-box; padding: 56rpx 28rpx; background: #F5F6F8; }
 .header { margin-bottom: 36rpx; }
-.title { display: block; color: #1d2433; font-size: 42rpx; font-weight: 700; }
-.subtitle { display: block; margin-top: 14rpx; color: #7c8593; font-size: 26rpx; }
-.card { padding: 30rpx; border-radius: 26rpx; background: #fff; }
+.title { display: block; color: #1A1D1F; font-size: 42rpx; font-weight: 700; }
+.subtitle { display: block; margin-top: 14rpx; color: #83888F; font-size: 26rpx; }
+.card { padding: 30rpx; border-radius: 32rpx; background: #fff; box-shadow: 0 6rpx 24rpx rgba(20, 24, 31, .04); }
 .label { display: block; margin: 28rpx 0 14rpx; font-weight: 600; }
 .options { display: flex; flex-wrap: wrap; gap: 14rpx; }
-.option { padding: 14rpx 24rpx; border-radius: 28rpx; color: #596270; background: #f1f3f5; }
-.option.active { color: #fff; background: #23c268; }
-.picker { padding: 22rpx; border-radius: 16rpx; background: #f7f8fa; }
-.submit { margin-top: 38rpx; height: 92rpx; line-height: 92rpx; border-radius: 46rpx; color: #fff; background: #23c268; }
+.option { padding: 14rpx 24rpx; border-radius: 32rpx; color: #596270; background: #F1F3F5; }
+.option.active { color: #fff; background: #23C268; }
+.picker { padding: 22rpx; border-radius: 16rpx; background: #F5F6F8; }
+.submit { margin-top: 38rpx; height: 92rpx; line-height: 92rpx; border-radius: 999rpx; color: #fff; background: #23C268; }
 .submit::after { border: 0; }
-.skip { display: block; margin-top: 28rpx; color: #7c8593; text-align: center; }
+.skip { display: block; margin-top: 28rpx; color: #83888F; text-align: center; }
 </style>

@@ -141,18 +141,18 @@ onUnload(clearForm)
 </script>
 
 <style scoped lang="scss">
-.page { min-height: 100vh; box-sizing: border-box; padding: 28rpx; background: #f7f8fa; }
-.card { padding: 32rpx; border-radius: 26rpx; background: #fff; }
-.state { padding: 180rpx 30rpx; color: #7c8593; text-align: center; }
-.title { display: block; color: #1d2433; font-size: 36rpx; font-weight: 600; }
-.success { color: #23a85f; }
-.desc, .privacy { display: block; margin-top: 18rpx; color: #7c8593; font-size: 25rpx; text-align: center; }
-.warning { margin-bottom: 24rpx; padding: 20rpx; border-radius: 16rpx; color: #b4232c; background: #fff1f0; }
+.page { min-height: 100vh; box-sizing: border-box; padding: 28rpx; background: #F5F6F8; }
+.card { padding: 32rpx; border-radius: 32rpx; background: #fff; box-shadow: 0 6rpx 24rpx rgba(20, 24, 31, .04); }
+.state { padding: 180rpx 30rpx; color: #83888F; text-align: center; }
+.title { display: block; color: #1A1D1F; font-size: 36rpx; font-weight: 600; }
+.success { color: #17A857; }
+.desc, .privacy { display: block; margin-top: 18rpx; color: #83888F; font-size: 25rpx; text-align: center; }
+.warning { margin-bottom: 24rpx; padding: 20rpx; border-radius: 16rpx; color: #b4232c; background: #FFF3DF; }
 .label { display: block; margin: 28rpx 0 12rpx; font-weight: 600; }
-.picker { height: 260rpx; display: flex; align-items: center; justify-content: center; overflow: hidden; border: 2rpx dashed #cfd5dd; border-radius: 20rpx; color: #8b94a3; background: #fafbfc; }
+.picker { height: 260rpx; display: flex; align-items: center; justify-content: center; overflow: hidden; border: 2rpx dashed #cfd5dd; border-radius: 20rpx; color: #83888F; background: #fafbfc; }
 .picker image { width: 100%; height: 100%; }
-.input { height: 88rpx; box-sizing: border-box; padding: 0 22rpx; border-radius: 16rpx; background: #f7f8fa; }
-.submit { margin-top: 38rpx; height: 92rpx; line-height: 92rpx; border-radius: 46rpx; color: #fff; background: #23c268; }
+.input { height: 88rpx; box-sizing: border-box; padding: 0 22rpx; border-radius: 16rpx; background: #F5F6F8; }
+.submit { margin-top: 38rpx; height: 92rpx; line-height: 92rpx; border-radius: 999rpx; color: #fff; background: #23C268; }
 .submit[disabled] { opacity: .45; }
 .submit::after { border: 0; }
 </style>

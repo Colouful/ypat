@@ -173,14 +173,14 @@ onLoad(initForm)
 </script>
 
 <style scoped lang="scss">
-.page { min-height: 100vh; box-sizing: border-box; padding: 28rpx; background: #f7f8fa; }
+.page { min-height: 100vh; box-sizing: border-box; padding: 28rpx; background: #F5F6F8; }
 .avatar-section { display: flex; flex-direction: column; align-items: center; padding: 40rpx 0; }
 .avatar { width: 160rpx; height: 160rpx; border-radius: 50%; background: #e9edf2; }
-.avatar-tip { margin-top: 16rpx; color: #7c8593; font-size: 25rpx; }
-.form-card { padding: 30rpx; border-radius: 26rpx; background: #fff; }
-.label { display: block; margin: 28rpx 0 12rpx; color: #1d2433; font-weight: 600; }
-.input, .picker { box-sizing: border-box; width: 100%; padding: 22rpx; border-radius: 16rpx; background: #f7f8fa; }
-.save { margin-top: 36rpx; height: 92rpx; line-height: 92rpx; border-radius: 46rpx; color: #fff; background: #23c268; }
+.avatar-tip { margin-top: 16rpx; color: #83888F; font-size: 25rpx; }
+.form-card { padding: 30rpx; border-radius: 32rpx; background: #fff; box-shadow: 0 6rpx 24rpx rgba(20, 24, 31, .04); }
+.label { display: block; margin: 28rpx 0 12rpx; color: #1A1D1F; font-weight: 600; }
+.input, .picker { box-sizing: border-box; width: 100%; padding: 22rpx; border-radius: 16rpx; background: #F5F6F8; }
+.save { margin-top: 36rpx; height: 92rpx; line-height: 92rpx; border-radius: 999rpx; color: #fff; background: #23C268; }
 .save[disabled] { opacity: .5; }
 .save::after { border: 0; }
 </style>

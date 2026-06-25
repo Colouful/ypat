@@ -97,13 +97,13 @@ onReachBottom(() => load())
 </script>
 
 <style scoped lang="scss">
-.page { min-height: 100vh; padding: 24rpx; background: #f7f8fa; }
-.item { display: flex; align-items: center; margin-bottom: 18rpx; padding: 26rpx; border-radius: 22rpx; background: #fff; }
-.badge { width: 72rpx; height: 72rpx; line-height: 72rpx; border-radius: 50%; color: #23a85f; background: #eaf8f0; text-align: center; }
+.page { min-height: 100vh; padding: 24rpx; background: #F5F6F8; }
+.item { display: flex; align-items: center; margin-bottom: 18rpx; padding: 26rpx; border-radius: 32rpx; background: #fff; box-shadow: 0 6rpx 24rpx rgba(20, 24, 31, .04); }
+.badge { width: 72rpx; height: 72rpx; line-height: 72rpx; border-radius: 50%; color: #17A857; background: #C9F4D9; text-align: center; }
 .info { flex: 1; margin-left: 20rpx; }
-.title { display: block; color: #1d2433; font-size: 28rpx; font-weight: 600; }
-.time { display: block; margin-top: 8rpx; color: #929aa7; font-size: 23rpx; }
+.title { display: block; color: #1A1D1F; font-size: 28rpx; font-weight: 600; }
+.time { display: block; margin-top: 8rpx; color: #B3B8BE; font-size: 23rpx; }
 .amount { color: #3d4654; font-size: 28rpx; font-weight: 600; }
-.empty, .loading, .footer { padding: 180rpx 20rpx; color: #8b94a3; text-align: center; }
+.empty, .loading, .footer { padding: 180rpx 20rpx; color: #83888F; text-align: center; }
 .footer { padding: 30rpx; }
 </style>

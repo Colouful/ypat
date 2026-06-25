@@ -134,19 +134,19 @@ onLoad((query) => {
 </script>
 
 <style scoped lang="scss">
-.page { min-height: 100vh; box-sizing: border-box; padding: 28rpx; background: #f7f8fa; }
-.state { padding: 220rpx 30rpx; color: #8b94a3; text-align: center; }
+.page { min-height: 100vh; box-sizing: border-box; padding: 28rpx; background: #F5F6F8; }
+.state { padding: 220rpx 30rpx; color: #83888F; text-align: center; }
 .error { color: #b4232c; }
-.card { margin-bottom: 20rpx; padding: 28rpx; border-radius: 24rpx; background: #fff; }
+.card { margin-bottom: 20rpx; padding: 28rpx; border-radius: 32rpx; background: #fff; box-shadow: 0 6rpx 24rpx rgba(20, 24, 31, .04); }
 .sender { display: flex; align-items: center; gap: 18rpx; }
 .avatar { width: 84rpx; height: 84rpx; border-radius: 50%; }
 .name, .time { display: block; }
 .name { font-weight: 600; }
-.time { margin-top: 8rpx; color: #929aa7; font-size: 23rpx; }
+.time { margin-top: 8rpx; color: #B3B8BE; font-size: 23rpx; }
 .content { color: #3f4855; line-height: 1.7; }
 .link, .contact-row { display: flex; justify-content: space-between; }
 .section-title { display: block; margin-bottom: 20rpx; font-weight: 600; }
-.contact-row { padding: 18rpx 0; border-top: 1rpx solid #edf0f4; }
-.action { margin-top: 36rpx; color: #fff; background: #23c268; border-radius: 44rpx; }
+.contact-row { padding: 18rpx 0; border-top: 1rpx solid #EEF0F2; }
+.action { margin-top: 36rpx; color: #fff; background: #23C268; border-radius: 999rpx; }
 .action::after { border: 0; }
 </style>

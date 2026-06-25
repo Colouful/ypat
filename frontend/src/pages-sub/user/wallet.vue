@@ -78,19 +78,19 @@ onLoad(fetchRecentRecords)
 </script>
 
 <style scoped lang="scss">
-.page { min-height: 100vh; padding: 28rpx; background: #f7f8fa; }
-.balance-card { padding: 36rpx; border-radius: 28rpx; color: #fff; background: linear-gradient(135deg, #23c268, #69d89e); }
+.page { min-height: 100vh; padding: 28rpx; background: #F5F6F8; }
+.balance-card { padding: 36rpx; border-radius: 32rpx; color: #fff; background: linear-gradient(135deg, #23C268, #69d89e); }
 .label, .amount { display: block; }
 .amount { margin: 12rpx 0 28rpx; font-size: 64rpx; font-weight: 700; }
-.recharge { color: #23a85f; background: #fff; border-radius: 40rpx; }
+.recharge { color: #17A857; background: #fff; box-shadow: 0 6rpx 24rpx rgba(20, 24, 31, .04); border-radius: 40rpx; }
 .recharge::after { border: 0; }
 .links { display: grid; grid-template-columns: repeat(2, 1fr); gap: 18rpx; margin: 24rpx 0; }
-.links view { padding: 28rpx; border-radius: 22rpx; background: #fff; text-align: center; }
-.recent { padding: 28rpx; border-radius: 24rpx; background: #fff; }
+.links view { padding: 28rpx; border-radius: 32rpx; background: #fff; box-shadow: 0 6rpx 24rpx rgba(20, 24, 31, .04); text-align: center; }
+.recent { padding: 28rpx; border-radius: 32rpx; background: #fff; box-shadow: 0 6rpx 24rpx rgba(20, 24, 31, .04); }
 .section-title { font-size: 30rpx; font-weight: 600; }
-.state { padding: 80rpx 0; color: #929aa7; text-align: center; }
-.record-item { display: flex; justify-content: space-between; padding: 22rpx 0; border-top: 1rpx solid #edf0f4; }
+.state { padding: 80rpx 0; color: #B3B8BE; text-align: center; }
+.record-item { display: flex; justify-content: space-between; padding: 22rpx 0; border-top: 1rpx solid #EEF0F2; }
 .record-title, .record-time { display: block; }
-.record-time { margin-top: 8rpx; color: #929aa7; font-size: 23rpx; }
+.record-time { margin-top: 8rpx; color: #B3B8BE; font-size: 23rpx; }
 .record-value { font-weight: 600; }
 </style>

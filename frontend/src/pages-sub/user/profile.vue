@@ -116,7 +116,7 @@ onLoad((query) => {
 </script>
 
 <style scoped lang="scss">
-.page { min-height: 100vh; background: #f7f8fa; }
+.page { min-height: 100vh; background: #F5F6F8; }
 .navbar { position: fixed; z-index: 10; top: 0; left: 0; right: 0; background: rgba(255,255,255,.95); }
 .navbar__content { height: 44px; display: flex; align-items: center; justify-content: space-between; padding: 0 24rpx; }
 .back { width: 60rpx; font-size: 54rpx; }
@@ -124,8 +124,8 @@ onLoad((query) => {
 .placeholder { width: 60rpx; }
 .state { padding: 260rpx 30rpx; color: #808997; text-align: center; }
 .error { color: #b4232c; }
-.hero { height: 280rpx; background: linear-gradient(135deg, #23c268, #6dd8a0); }
-.user-card { margin: -70rpx 24rpx 0; padding: 28rpx; border-radius: 26rpx; background: #fff; text-align: center; }
+.hero { height: 280rpx; background: linear-gradient(135deg, #23C268, #6dd8a0); }
+.user-card { margin: -70rpx 24rpx 0; padding: 28rpx; border-radius: 32rpx; background: #fff; box-shadow: 0 6rpx 24rpx rgba(20, 24, 31, .04); text-align: center; }
 .avatar { width: 130rpx; height: 130rpx; margin-top: -90rpx; border: 6rpx solid #fff; border-radius: 50%; }
 .name-row { display: flex; justify-content: center; align-items: center; gap: 12rpx; margin-top: 14rpx; }
 .name { font-size: 34rpx; font-weight: 600; }
@@ -135,12 +135,12 @@ onLoad((query) => {
 .stats view { display: flex; flex-direction: column; gap: 8rpx; }
 .stats text:first-child { font-size: 31rpx; font-weight: 600; }
 .stats text:last-child { color: #8c95a2; font-size: 23rpx; }
-.works { margin: 24rpx; padding: 28rpx; border-radius: 24rpx; background: #fff; }
+.works { margin: 24rpx; padding: 28rpx; border-radius: 32rpx; background: #fff; box-shadow: 0 6rpx 24rpx rgba(20, 24, 31, .04); }
 .section-title { font-size: 30rpx; font-weight: 600; }
 .grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 18rpx; margin-top: 24rpx; }
 .work { overflow: hidden; border-radius: 18rpx; background: #f5f6f8; }
 .work image { width: 100%; height: 220rpx; }
 .work text { display: block; padding: 14rpx; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.empty { padding: 80rpx 0; color: #929aa7; text-align: center; }
+.empty { padding: 80rpx 0; color: #B3B8BE; text-align: center; }
 .more { margin-top: 24rpx; border-radius: 38rpx; }
 </style>

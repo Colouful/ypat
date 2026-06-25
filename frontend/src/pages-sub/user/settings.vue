@@ -79,15 +79,15 @@ onShow(getStorageSize)
 </script>
 
 <style scoped lang="scss">
-.settings-page { min-height: 100vh; padding: 28rpx; background: #f7f8fa; }
+.settings-page { min-height: 100vh; padding: 28rpx; background: #F5F6F8; }
 .settings-section { margin-bottom: 28rpx; }
-.section-title { margin-bottom: 14rpx; color: #7c8593; font-size: 25rpx; }
-.settings-card { overflow: hidden; border-radius: 22rpx; background: #fff; }
-.settings-item { display: flex; align-items: center; justify-content: space-between; padding: 28rpx; border-bottom: 1rpx solid #edf0f4; }
+.section-title { margin-bottom: 14rpx; color: #83888F; font-size: 25rpx; }
+.settings-card { overflow: hidden; border-radius: 32rpx; background: #fff; box-shadow: 0 6rpx 24rpx rgba(20, 24, 31, .04); }
+.settings-item { display: flex; align-items: center; justify-content: space-between; padding: 28rpx; border-bottom: 1rpx solid #EEF0F2; }
 .settings-item__right { display: flex; align-items: center; gap: 12rpx; }
-.settings-item__value, .settings-item__arrow { color: #8b94a3; }
-.settings-item__value--verified { color: #23c268; }
+.settings-item__value, .settings-item__arrow { color: #83888F; }
+.settings-item__value--verified { color: #23C268; }
 .logout-section { margin-top: 48rpx; }
-.logout-btn { padding: 26rpx; border-radius: 22rpx; background: #fff; text-align: center; }
+.logout-btn { padding: 26rpx; border-radius: 32rpx; background: #fff; box-shadow: 0 6rpx 24rpx rgba(20, 24, 31, .04); text-align: center; }
 .logout-btn__text { color: #e5484d; }
 </style>
