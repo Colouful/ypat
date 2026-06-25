@@ -83,21 +83,23 @@ onReachBottom(() => search(false))
 </script>
 
 <style scoped lang="scss">
-.page { min-height: 100vh; background: #f7f8fa; }
-.search-bar { position: fixed; z-index: 10; top: 0; left: 0; right: 0; display: flex; align-items: center; gap: 18rpx; padding-left: 24rpx; padding-right: 24rpx; padding-bottom: 14rpx; background: #fff; }
-.input { flex: 1; height: 68rpx; padding: 0 24rpx; border-radius: 34rpx; background: #f1f3f5; }
-.cancel { color: #596270; }
-.content { padding-left: 24rpx; padding-right: 24rpx; padding-bottom: 50rpx; }
-.section-title { font-size: 30rpx; font-weight: 600; }
-.tags { display: flex; flex-wrap: wrap; gap: 16rpx; margin-top: 24rpx; }
-.tag { padding: 14rpx 24rpx; border-radius: 28rpx; background: #fff; }
-.state, .footer { padding: 180rpx 20rpx; color: #929aa7; text-align: center; }
+@import '@/styles/tokens.scss';
+
+.page { min-height: 100vh; background: $color-bg-page; }
+.search-bar { position: fixed; z-index: 10; top: 0; left: 0; right: 0; display: flex; align-items: center; gap: 18rpx; padding-left: 28rpx; padding-right: 28rpx; padding-bottom: 18rpx; background: $color-bg-page; }
+.input { flex: 1; height: 76rpx; padding: 0 30rpx; border-radius: 38rpx; background: $color-bg-chip; font-weight: 700; }
+.cancel { color: $color-text-primary; font-weight: 800; }
+.content { padding-left: 28rpx; padding-right: 28rpx; padding-bottom: 50rpx; }
+.section-title { font-size: 34rpx; font-weight: 900; }
+.tags { display: flex; flex-wrap: wrap; gap: 18rpx; margin-top: 26rpx; }
+.tag { padding: 14rpx 28rpx; border-radius: 999rpx; color: $color-text-secondary; background: #fff; font-weight: 800; }
+.state, .footer { padding: 120rpx 20rpx; color: $color-text-helper; text-align: center; }
 .footer { padding: 28rpx; }
-.card { display: flex; margin-bottom: 18rpx; overflow: hidden; border-radius: 22rpx; background: #fff; }
-.cover { width: 210rpx; height: 190rpx; }
-.body { flex: 1; min-width: 0; padding: 22rpx; }
+.card { display: flex; margin-bottom: 22rpx; padding: 22rpx; overflow: hidden; border-radius: 32rpx; background: #fff; box-shadow: 0 6rpx 24rpx rgba(20, 24, 31, .04); }
+.cover { width: 204rpx; height: 220rpx; border-radius: 24rpx; background: $color-bg-chip; }
+.body { flex: 1; min-width: 0; padding: 6rpx 0 6rpx 22rpx; }
 .name, .desc { display: block; }
-.name { font-weight: 600; }
-.desc { margin: 14rpx 0; color: #596270; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.meta { display: flex; justify-content: space-between; color: #929aa7; font-size: 23rpx; }
+.name { color: $color-text-primary; font-size: 30rpx; font-weight: 800; }
+.desc { margin: 16rpx 0; color: #596270; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.meta { display: flex; justify-content: space-between; color: $color-text-helper; font-size: 23rpx; font-weight: 700; }
 </style>

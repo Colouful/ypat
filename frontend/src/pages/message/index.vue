@@ -86,17 +86,20 @@ onPullDownRefresh(async () => {
 onReachBottom(() => load())
 </script>
 
-<style scoped>
-.page { min-height: 100vh; background: #f7f8fa; }
-.tabs { display: flex; padding: 16rpx 24rpx; background: #fff; }
-.tab { padding: 16rpx 28rpx; color: #7c8593; }
-.active { color: #23c268; font-weight: 600; }
-.state { padding: 220rpx 30rpx; color: #929aa7; text-align: center; }
-.item { display: flex; padding: 24rpx 28rpx; margin-bottom: 2rpx; background: #fff; }
-.avatar { width: 84rpx; height: 84rpx; border-radius: 50%; }
-.body { flex: 1; margin-left: 20rpx; }
+<style scoped lang="scss">
+@import '@/styles/tokens.scss';
+
+.page { min-height: 100vh; padding: 24rpx; background: $color-bg-page; }
+.tabs { display: flex; gap: 18rpx; padding: 10rpx 0 26rpx; }
+.tab { padding: 16rpx 30rpx; border-radius: 999rpx; color: $color-text-secondary; background: $color-bg-chip; font-weight: 800; }
+.active { color: $color-primary-dark; border: 3rpx solid $color-primary; background: $color-primary-light; }
+.state { margin-top: 28rpx; padding: 96rpx 30rpx; border-radius: 32rpx; color: $color-text-helper; background: #fff; text-align: center; }
+.state button { margin-top: 24rpx; padding: 0 36rpx; border-radius: 999rpx; color: #fff; background: $color-primary; }
+.item { display: flex; padding: 28rpx; margin-bottom: 22rpx; border-radius: 32rpx; background: #fff; box-shadow: 0 6rpx 24rpx rgba(20, 24, 31, .04); }
+.avatar { width: 92rpx; height: 92rpx; border-radius: 50%; background: $color-bg-chip; }
+.body { flex: 1; min-width: 0; margin-left: 22rpx; }
 .name, .content, .meta { display: block; }
-.name { font-weight: 600; }
-.content { margin: 8rpx 0; color: #596270; }
-.meta { color: #9aa2ae; font-size: 22rpx; }
+.name { color: $color-text-primary; font-size: 30rpx; font-weight: 800; }
+.content { margin: 10rpx 0; color: #596270; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.meta { color: $color-text-helper; font-size: 23rpx; font-weight: 700; }
 </style>

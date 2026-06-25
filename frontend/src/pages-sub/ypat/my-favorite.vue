@@ -84,14 +84,16 @@ onReachBottom(() => load())
 </script>
 
 <style scoped lang="scss">
-.page { min-height: 100vh; padding: 24rpx; background: #f7f8fa; }
-.state, .footer { padding: 160rpx 20rpx; color: #929aa7; text-align: center; }
+@import '@/styles/tokens.scss';
+
+.page { min-height: 100vh; padding: 28rpx; background: $color-bg-page; }
+.state, .footer { padding: 120rpx 20rpx; color: $color-text-helper; text-align: center; }
 .footer { padding: 28rpx; }
-.card { display: flex; margin-bottom: 18rpx; overflow: hidden; border-radius: 22rpx; background: #fff; }
-.cover { width: 210rpx; height: 190rpx; background: #edf0f4; }
-.body { flex: 1; min-width: 0; padding: 22rpx; }
+.card { display: flex; margin-bottom: 22rpx; padding: 22rpx; overflow: hidden; border-radius: 32rpx; background: #fff; box-shadow: 0 6rpx 24rpx rgba(20, 24, 31, .04); }
+.cover { width: 204rpx; height: 220rpx; border-radius: 24rpx; background: $color-bg-chip; }
+.body { flex: 1; min-width: 0; padding: 6rpx 0 6rpx 22rpx; }
 .header, .meta { display: flex; justify-content: space-between; }
-.name { font-weight: 600; }
-.time, .meta { color: #929aa7; font-size: 23rpx; }
-.desc { display: block; margin: 14rpx 0; color: #596270; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.name { color: $color-text-primary; font-weight: 900; }
+.time, .meta { color: $color-text-helper; font-size: 23rpx; font-weight: 700; }
+.desc { display: block; margin: 16rpx 0; color: #596270; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 </style>
