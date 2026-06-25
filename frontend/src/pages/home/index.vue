@@ -1,87 +1,113 @@
 <template>
   <view class="home-page">
-    <view class="navbar" :style="{ paddingTop: statusBarHeight + 'px' }">
-      <view class="navbar__content">
-        <view class="navbar__city" @tap="handleCityTap">
-          <text class="navbar__city-text">{{ currentCity || '定位中' }}</text>
-          <text class="navbar__city-arrow">▼</text>
+    <view class="home-scroll" :style="{ paddingTop: statusBarHeight + 24 + 'px' }">
+      <view class="home-top">
+        <view class="home-search" @tap="goSearch">
+          <KeepIcon name="search" :size="46" color="#B3B8BE" />
+          <text class="home-search__placeholder">搜索摄影师 / 风格 / 城市</text>
         </view>
-        <view class="navbar__search" @tap="goSearch">
-          <text class="navbar__search-icon">🔍</text>
-          <text class="navbar__search-placeholder">搜索约拍</text>
+        <view class="home-ai" @tap="showToast('AI 智能推荐')">
+          <text class="home-ai__spark">✦</text>
         </view>
-        <view class="navbar__message" @tap="goMessage">
-          <text class="navbar__message-icon">✉</text>
-          <view v-if="unreadCount > 0" class="navbar__badge">
-            <text class="navbar__badge-text">{{ unreadCount > 99 ? '99+' : unreadCount }}</text>
+      </view>
+
+      <view class="quick-grid">
+        <view v-for="item in quickItems" :key="item.label" class="quick-grid__item" @tap="showToast(item.label)">
+          <view class="quick-grid__icon">
+            <KeepIcon :name="item.icon" :size="50" />
+          </view>
+          <text class="quick-grid__label">{{ item.label }}</text>
+        </view>
+      </view>
+
+      <view class="home-tabs">
+        <view
+          v-for="tabItem in tabs"
+          :key="tabItem.key"
+          class="home-tabs__item"
+          :class="{ 'home-tabs__item--active': activeTab === tabItem.key }"
+          @tap="switchTab(tabItem.key)"
+        >
+          <text>{{ tabItem.label }}</text>
+        </view>
+        <view class="home-tabs__filter" @tap="filterVisible = true">
+          <text>筛选</text>
+          <KeepIcon name="sliders" :size="24" />
+        </view>
+      </view>
+
+      <scroll-view class="chip-scroll" scroll-x>
+        <view class="chip-row">
+          <view
+            v-for="chip in quickChips"
+            :key="chip.value"
+            class="chip-row__item"
+            :class="{ 'chip-row__item--active': activeChip === chip.value }"
+            @tap="pickChip(chip.value)"
+          >
+            {{ chip.label }}
           </view>
         </view>
-      </view>
-    </view>
+      </scroll-view>
 
-    <view class="home-content" :style="{ paddingTop: navHeight + 'px' }">
-      <view v-if="bannerList.length > 0" class="banner-section">
-        <swiper class="banner-swiper" circular autoplay :interval="4000" indicator-dots indicator-color="rgba(255,255,255,0.4)" indicator-active-color="#23C268">
-          <swiper-item v-for="banner in bannerList" :key="banner.id">
-            <image class="banner-image" :src="banner.imgpath" mode="aspectFill" />
-          </swiper-item>
-        </swiper>
+      <view v-if="loading && list.length === 0" class="home-loading">
+        <view v-for="index in 3" :key="index" class="home-skeleton" />
       </view>
 
-      <view class="tabs-section">
-        <view v-for="tab in tabs" :key="tab.key" class="tab-item" :class="{ 'tab-item--active': activeTab === tab.key }" @tap="switchTab(tab.key)">
-          <text class="tab-item__text">{{ tab.label }}</text>
-          <view v-if="activeTab === tab.key" class="tab-item__indicator" />
-        </view>
-      </view>
+      <KeepState
+        v-else-if="list.length === 0 && !loading"
+        type="empty"
+        title="暂无约拍信息"
+        description="换个筛选条件，或者下拉刷新试试"
+      />
 
-      <view v-if="loading && list.length === 0" class="skeleton-list">
-        <view v-for="i in 3" :key="i" class="skeleton-card">
-          <view class="skeleton-image" />
-          <view class="skeleton-info">
-            <view class="skeleton-line skeleton-line--title" />
-            <view class="skeleton-line skeleton-line--desc" />
-            <view class="skeleton-line skeleton-line--short" />
-          </view>
-        </view>
-      </view>
-
-      <view v-else-if="list.length === 0 && !loading" class="empty-state">
-        <text class="empty-state__text">暂无约拍信息</text>
-        <text class="empty-state__sub">下拉刷新试试</text>
-      </view>
-
-      <view v-else class="ypat-list">
-        <view v-for="item in list" :key="item.id" class="ypat-card" @tap="goDetail(item.id)">
-          <image v-if="item.pics && item.pics.length > 0" class="ypat-card__image" :src="item.pics[0]" mode="aspectFill" lazy-load />
-          <view class="ypat-card__content">
-            <view class="ypat-card__header">
-              <image v-if="item.userQo?.imgpath" class="ypat-card__avatar" :src="item.userQo.imgpath" mode="aspectFill" />
-              <view class="ypat-card__user">
-                <text class="ypat-card__nickname">{{ item.userQo?.nickname || '匿名用户' }}</text>
-                <text class="ypat-card__profess">{{ getProfessLabel(item.userQo?.profess) }}</text>
-              </view>
-              <text class="ypat-card__time">{{ item.timeStr }}</text>
-            </view>
-            <text class="ypat-card__desc">{{ item.describ }}</text>
-            <view class="ypat-card__footer">
-              <view class="ypat-card__tags">
-                <text v-if="item.city" class="ypat-card__tag">{{ item.city }}</text>
-                <text v-if="item.chargewayTxt" class="ypat-card__tag ypat-card__tag--charge">{{ item.chargewayTxt }}</text>
-                <text v-if="item.patstyleTxt" class="ypat-card__tag">{{ item.patstyleTxt }}</text>
-              </view>
-              <view class="ypat-card__stats">
-                <text class="ypat-card__stat">{{ item.readtimes || 0 }}阅读</text>
-              </view>
-            </view>
-          </view>
-        </view>
+      <view v-else class="home-list">
+        <KeepYpatCard
+          v-for="item in cardItems"
+          :key="item.id"
+          :item="item"
+          @tap="goDetail(item.id || 0)"
+        />
       </view>
 
       <view v-if="!hasMore && list.length > 0" class="load-end">
         <text class="load-end__text">没有更多了</text>
       </view>
     </view>
+
+    <view class="keep-tabbar">
+      <view class="keep-tabbar__item keep-tabbar__item--active" @tap="noop">
+        <KeepIcon name="home" :size="44" />
+        <text>广场</text>
+      </view>
+      <view class="keep-tabbar__item" @tap="showToast('发现')">
+        <KeepIcon name="compass" :size="44" />
+        <text>发现</text>
+        <view class="keep-tabbar__dot" />
+      </view>
+      <view class="keep-tabbar__item" @tap="goPublish">
+        <KeepIcon name="plus-circle" :size="46" />
+        <text>发布</text>
+      </view>
+      <view class="keep-tabbar__item" @tap="goMessage">
+        <KeepIcon name="mail" :size="44" />
+        <text>消息</text>
+        <view v-if="unreadCount > 0" class="keep-tabbar__badge">{{ unreadCount > 9 ? '9+' : unreadCount }}</view>
+      </view>
+      <view class="keep-tabbar__item" @tap="goMine">
+        <KeepIcon name="user" :size="44" />
+        <text>我的</text>
+      </view>
+    </view>
+
+    <KeepFilterSheet
+      v-model:visible="filterVisible"
+      v-model="filterValue"
+      :groups="filterGroups"
+      :count="86"
+      @reset="resetFilter"
+      @confirm="applyFilter"
+    />
   </view>
 </template>
 
@@ -91,43 +117,120 @@ import { onPullDownRefresh, onReachBottom, onShow } from '@dcloudio/uni-app'
 import { useUserStore } from '@/stores/user'
 import { useAppStore } from '@/stores/app'
 import * as ypatApi from '@/api/modules/ypat'
-import * as contentApi from '@/api/modules/content'
-import { PROFESS_LABELS } from '@/constants/enums'
-import type { YpatInfo, Banner } from '@/api/types/index'
+import { CHARGE_WAY_LABELS, PHOTO_STYLES, TARGET_LABELS } from '@/constants/enums'
+import KeepFilterSheet, { type KeepFilterGroup } from '@/components/business/KeepFilterSheet.vue'
+import KeepIcon from '@/components/business/KeepIcon.vue'
+import KeepState from '@/components/business/KeepState.vue'
+import KeepYpatCard, { type KeepYpatCardItem } from '@/components/business/KeepYpatCard.vue'
+import type { YpatInfo } from '@/api/types/index'
+
+type TabKey = 'recommend' | 'nearby' | 'latest'
+type FilterValue = Record<string, string[]>
 
 const userStore = useUserStore()
 const appStore = useAppStore()
 
 const statusBarHeight = computed(() => appStore.statusBarHeight)
-const navHeight = computed(() => appStore.statusBarHeight + 44)
 const unreadCount = computed(() => userStore.unreadCount)
 
 const currentCity = ref('')
-const activeTab = ref('recommend')
+const activeTab = ref<TabKey>('latest')
+const activeChip = ref('all')
 const loading = ref(false)
 const list = ref<YpatInfo[]>([])
-const bannerList = ref<Banner[]>([])
 const page = ref(0)
 const hasMore = ref(true)
+const filterVisible = ref(false)
+const filterValue = ref<FilterValue>({
+  target: ['all'],
+  chargeway: ['0'],
+  style: ['INS'],
+})
 
-const tabs = [
+const tabs: Array<{ key: TabKey; label: string }> = [
   { key: 'recommend', label: '推荐' },
-  { key: 'latest', label: '最新' },
   { key: 'nearby', label: '同城' },
+  { key: 'latest', label: '最新' },
 ]
 
-function getProfessLabel(code?: string): string {
-  if (!code) return ''
-  return PROFESS_LABELS[code] || ''
-}
+const quickItems = [
+  { label: '约摄影师', icon: 'camera' },
+  { label: '约模特', icon: 'user' },
+  { label: '妆造师', icon: 'edit' },
+  { label: '修图师', icon: 'image' },
+  { label: '找同城', icon: 'map-pin' },
+]
 
-async function loadBanners() {
-  try {
-    const res = await contentApi.getBannerList({ page: 0, size: 5, status: '1' } as any)
-    if (res.success && res.data) {
-      bannerList.value = res.data.content || []
-    }
-  } catch (_) {}
+const quickChips = [
+  { label: '全部', value: 'all' },
+  { label: '希望互免', value: 'free' },
+  { label: '可付费', value: 'pay' },
+  { label: '约摄影师', value: 'photographer' },
+  { label: '约模特', value: 'model' },
+  { label: 'INS', value: 'INS' },
+  { label: '胶片', value: '胶片' },
+  { label: '情绪', value: '情绪' },
+]
+
+const filterGroups: KeepFilterGroup[] = [
+  {
+    key: 'target',
+    title: '我想找',
+    multiple: false,
+    options: [
+      { label: '全部', value: 'all' },
+      { label: '约摄影师', value: '0' },
+      { label: '约模特', value: '1' },
+    ],
+  },
+  {
+    key: 'chargeway',
+    title: '合作方式',
+    multiple: true,
+    options: [
+      { label: '希望互免', value: '0' },
+      { label: '我要收费', value: '1' },
+      { label: '可付费', value: '2' },
+      { label: '费用协商', value: '3' },
+    ],
+  },
+  {
+    key: 'style',
+    title: '风格偏好',
+    multiple: true,
+    options: PHOTO_STYLES.slice(0, 6).map((style) => ({ label: style, value: style })),
+  },
+]
+
+const cardItems = computed<KeepYpatCardItem[]>(() => list.value.map((item) => ({
+  id: item.id,
+  title: item.describ || item.targetTxt || '约拍需求',
+  targetLabel: item.targetTxt || TARGET_LABELS[item.target] || '约拍',
+  chargeLabel: item.chargewayTxt || CHARGE_WAY_LABELS[item.chargeway] || '费用协商',
+  city: [item.city, item.area].filter(Boolean).join('·') || '同城',
+  name: item.userQo?.nickname || '匿名用户',
+  image: item.pics?.[0] || '/static/default-cover.png',
+  avatar: item.userQo?.imgpath || item.userQo?.avatarurl || '/static/default-avatar.png',
+  time: item.timeStr || item.pubdate || '刚刚',
+  applyCount: item.pattimes || item.readtimes || 0,
+  realname: item.realnameflag === '1' || item.userQo?.realnameflag === '1',
+  credit: item.creditflag === '1' || item.userQo?.creditflag === '1',
+})))
+
+function buildParams() {
+  const target = filterValue.value.target?.find((value) => value !== 'all')
+  const chargeway = filterValue.value.chargeway?.[0]
+  const style = filterValue.value.style?.[0]
+  return {
+    page: page.value,
+    size: 10,
+    status: 'shtg',
+    ...(activeTab.value === 'recommend' ? { recomflag: '1' } : {}),
+    ...(activeTab.value === 'nearby' && currentCity.value && currentCity.value !== '全国' ? { city: currentCity.value } : {}),
+    ...(target ? { target } : {}),
+    ...(chargeway ? { chargeway } : {}),
+    ...(style ? { patstyle: style } : {}),
+  }
 }
 
 async function loadList(refresh = false) {
@@ -140,41 +243,55 @@ async function loadList(refresh = false) {
 
   loading.value = true
   try {
-    const params = {
-      page: page.value,
-      size: 10,
-      status: 'shtg',
-      ...(activeTab.value === 'recommend' ? { recomflag: '1' } : {}),
-      ...(activeTab.value === 'nearby' && currentCity.value ? { city: currentCity.value } : {}),
-    }
-    const res = activeTab.value === 'recommend'
-      ? await ypatApi.getRecommendList(params)
-      : await ypatApi.getLatestList(params)
+    const params = buildParams()
+    const res = activeTab.value === 'latest'
+      ? await ypatApi.getLatestList(params)
+      : await ypatApi.getRecommendList(params)
 
     if (res.success) {
       const content = res.data.content || []
-      if (refresh) {
-        list.value = content
-      } else {
-        list.value.push(...content)
-      }
+      list.value = refresh ? content : list.value.concat(content)
       hasMore.value = content.length >= 10
       page.value++
     }
-  } catch (_) {
+  } catch (error) {
+    uni.showToast({ title: error instanceof Error ? error.message : '约拍加载失败', icon: 'none' })
   } finally {
     loading.value = false
   }
 }
 
-function switchTab(key: string) {
+function switchTab(key: TabKey) {
   if (activeTab.value === key) return
   activeTab.value = key
   list.value = []
   loadList(true)
 }
 
+function pickChip(value: string) {
+  activeChip.value = value
+  if (value === 'all') filterValue.value = { ...filterValue.value, target: ['all'], style: [], chargeway: [] }
+  if (value === 'free') filterValue.value = { ...filterValue.value, chargeway: ['0'] }
+  if (value === 'pay') filterValue.value = { ...filterValue.value, chargeway: ['2'] }
+  if (value === 'photographer') filterValue.value = { ...filterValue.value, target: ['0'] }
+  if (value === 'model') filterValue.value = { ...filterValue.value, target: ['1'] }
+  if (PHOTO_STYLES.includes(value)) filterValue.value = { ...filterValue.value, style: [value] }
+  loadList(true)
+}
+
+function applyFilter(value: FilterValue) {
+  filterValue.value = value
+  loadList(true)
+}
+
+function resetFilter() {
+  filterValue.value = { target: ['all'], chargeway: [], style: [] }
+  activeChip.value = 'all'
+  loadList(true)
+}
+
 function goDetail(id: number) {
+  if (!id) return
   uni.navigateTo({ url: `/pages-sub/ypat/detail?id=${id}` })
 }
 
@@ -186,21 +303,29 @@ function goMessage() {
   uni.switchTab({ url: '/pages/message/index' })
 }
 
-function handleCityTap() {
-  getLocation()
+function goPublish() {
+  uni.switchTab({ url: '/pages/publish/index' })
+}
+
+function goMine() {
+  uni.switchTab({ url: '/pages/mine/index' })
+}
+
+function noop() {}
+
+function showToast(title: string) {
+  uni.showToast({ title, icon: 'none' })
 }
 
 async function getLocation() {
   try {
-    const res = await new Promise<UniApp.GetLocationSuccess>((resolve, reject) => {
+    await new Promise<UniApp.GetLocationSuccess>((resolve, reject) => {
       uni.getLocation({
         type: 'gcj02',
         success: resolve,
         fail: reject,
       })
     })
-    currentCity.value = '定位中'
-    // In real app, would reverse-geocode to city name
     currentCity.value = '全国'
   } catch (_) {
     currentCity.value = '全国'
@@ -208,12 +333,12 @@ async function getLocation() {
 }
 
 onMounted(() => {
-  loadBanners()
   loadList(true)
   getLocation()
 })
 
 onShow(() => {
+  uni.hideTabBar({ animation: false })
   if (userStore.isLoggedIn) {
     userStore.refreshUnreadCount()
   }
@@ -232,316 +357,252 @@ onReachBottom(() => {
 
 <style lang="scss">
 @import '@/styles/tokens.scss';
+@import '@/styles/mixins.scss';
 
 .home-page {
   min-height: 100vh;
-  background-color: $color-bg-page;
+  background: $color-bg-page;
 }
 
-.navbar {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  z-index: $z-index-navbar;
-  background-color: #fff;
-
-  &__content {
-    display: flex;
-    align-items: center;
-    height: 88rpx;
-    padding: 0 $spacing-md;
-  }
-
-  &__city {
-    display: flex;
-    align-items: center;
-    margin-right: $spacing-sm;
-  }
-
-  &__city-text {
-    font-size: $font-size-base;
-    font-weight: $font-weight-medium;
-    color: $color-text-primary;
-  }
-
-  &__city-arrow {
-    font-size: $font-size-xs;
-    color: $color-text-secondary;
-    margin-left: 4rpx;
-  }
-
-  &__search {
-    flex: 1;
-    display: flex;
-    align-items: center;
-    height: 64rpx;
-    background-color: $color-bg-page;
-    border-radius: $radius-round;
-    padding: 0 $spacing-md;
-  }
-
-  &__search-icon {
-    font-size: $font-size-sm;
-    margin-right: $spacing-xs;
-  }
-
-  &__search-placeholder {
-    font-size: $font-size-sm;
-    color: $color-text-helper;
-  }
-
-  &__message {
-    position: relative;
-    margin-left: $spacing-md;
-    padding: $spacing-xs;
-  }
-
-  &__message-icon {
-    font-size: $font-size-xl;
-  }
-
-  &__badge {
-    position: absolute;
-    top: 0;
-    right: 0;
-    min-width: 32rpx;
-    height: 32rpx;
-    background-color: $color-accent-red;
-    border-radius: $radius-round;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 0 8rpx;
-  }
-
-  &__badge-text {
-    font-size: 20rpx;
-    color: #fff;
-    line-height: 1;
-  }
+.home-scroll {
+  min-height: 100vh;
+  padding-bottom: calc(168rpx + env(safe-area-inset-bottom));
 }
 
-.home-content {
-  padding-bottom: calc(env(safe-area-inset-bottom) + 100rpx);
-}
-
-.banner-section {
-  padding: $spacing-md;
-}
-
-.banner-swiper {
-  height: 300rpx;
-  border-radius: $radius-md;
-  overflow: hidden;
-}
-
-.banner-image {
-  width: 100%;
-  height: 100%;
-}
-
-.tabs-section {
+.home-top {
   display: flex;
   align-items: center;
-  padding: $spacing-sm $spacing-md;
-  background-color: #fff;
+  gap: 22rpx;
+  padding: 0 36rpx;
 }
 
-.tab-item {
+.home-search {
+  display: flex;
+  align-items: center;
+  flex: 1;
+  height: 84rpx;
+  padding: 0 28rpx;
+  border-radius: 42rpx;
+  background: $color-bg-chip;
+}
+
+.home-search__placeholder {
+  margin-left: 16rpx;
+  color: $color-text-helper;
+  font-size: 28rpx;
+  font-weight: 700;
+}
+
+.home-ai {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 68rpx;
+  height: 68rpx;
+  border-radius: 50%;
+  background: conic-gradient(from 90deg, #7C5CFF, #23C268, #FF9F1C, #7C5CFF);
+}
+
+.home-ai__spark {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 52rpx;
+  height: 52rpx;
+  border-radius: 50%;
+  color: $color-text-primary;
+  background: #fff;
+  font-size: 30rpx;
+  font-weight: 800;
+}
+
+.quick-grid {
+  display: flex;
+  justify-content: space-between;
+  padding: 36rpx 32rpx 20rpx;
+}
+
+.quick-grid__item {
+  flex: 1;
+  text-align: center;
+}
+
+.quick-grid__icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 104rpx;
+  height: 104rpx;
+  margin: 0 auto 14rpx;
+  border-radius: 32rpx;
+  color: $color-text-primary;
+  background: #fff;
+  box-shadow: $shadow-keep-card;
+}
+
+.quick-grid__label {
+  color: $color-text-secondary;
+  font-size: 24rpx;
+  font-weight: 800;
+}
+
+.home-tabs {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  gap: 44rpx;
+  padding: 32rpx 40rpx 8rpx;
+  background: $color-bg-page;
+}
+
+.home-tabs__item {
   position: relative;
-  padding: $spacing-sm $spacing-md;
-
-  &__text {
-    font-size: $font-size-base;
-    color: $color-text-secondary;
-  }
-
-  &--active &__text {
-    color: $color-primary;
-    font-weight: $font-weight-semibold;
-  }
-
-  &__indicator {
-    position: absolute;
-    bottom: 0;
-    left: 50%;
-    transform: translateX(-50%);
-    width: 40rpx;
-    height: 6rpx;
-    background-color: $color-primary;
-    border-radius: 3rpx;
-  }
+  padding-bottom: 18rpx;
+  color: $color-text-helper;
+  font-size: 34rpx;
+  font-weight: 800;
 }
 
-.ypat-list {
-  padding: $spacing-sm $spacing-md;
+.home-tabs__item--active {
+  color: $color-text-primary;
+  font-size: 42rpx;
 }
 
-.ypat-card {
-  background-color: #fff;
-  border-radius: $radius-md;
-  margin-bottom: $spacing-md;
-  overflow: hidden;
-  box-shadow: $shadow-sm;
-
-  &__image {
-    width: 100%;
-    height: 400rpx;
-  }
-
-  &__content {
-    padding: $spacing-md;
-  }
-
-  &__header {
-    display: flex;
-    align-items: center;
-    margin-bottom: $spacing-sm;
-  }
-
-  &__avatar {
-    width: 64rpx;
-    height: 64rpx;
-    border-radius: 50%;
-    margin-right: $spacing-sm;
-  }
-
-  &__user {
-    flex: 1;
-  }
-
-  &__nickname {
-    font-size: $font-size-base;
-    font-weight: $font-weight-medium;
-    color: $color-text-primary;
-  }
-
-  &__profess {
-    font-size: $font-size-xs;
-    color: $color-text-secondary;
-    margin-top: 4rpx;
-  }
-
-  &__time {
-    font-size: $font-size-xs;
-    color: $color-text-helper;
-  }
-
-  &__desc {
-    font-size: $font-size-base;
-    color: $color-text-primary;
-    line-height: 1.6;
-    display: -webkit-box;
-    -webkit-box-orient: vertical;
-    -webkit-line-clamp: 2;
-    overflow: hidden;
-    margin-bottom: $spacing-sm;
-  }
-
-  &__footer {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-  }
-
-  &__tags {
-    display: flex;
-    flex-wrap: wrap;
-    gap: $spacing-xs;
-  }
-
-  &__tag {
-    font-size: $font-size-xs;
-    color: $color-text-secondary;
-    background-color: $color-bg-page;
-    padding: 4rpx 12rpx;
-    border-radius: $radius-sm;
-
-    &--charge {
-      color: $color-primary;
-      background-color: $color-primary-light;
-    }
-  }
-
-  &__stats {
-    display: flex;
-    align-items: center;
-  }
-
-  &__stat {
-    font-size: $font-size-xs;
-    color: $color-text-helper;
-  }
+.home-tabs__item--active::after {
+  position: absolute;
+  right: 0;
+  bottom: 4rpx;
+  left: 0;
+  height: 14rpx;
+  border-radius: 8rpx;
+  background: $color-primary-light;
+  content: '';
 }
 
-.skeleton-list {
-  padding: $spacing-md;
+.home-tabs__item text {
+  position: relative;
+  z-index: 1;
 }
 
-.skeleton-card {
-  background-color: #fff;
-  border-radius: $radius-md;
-  margin-bottom: $spacing-md;
-  overflow: hidden;
+.home-tabs__filter {
+  display: flex;
+  align-items: center;
+  gap: 6rpx;
+  margin-left: auto;
+  color: $color-text-secondary;
+  font-size: 26rpx;
+  font-weight: 800;
 }
 
-.skeleton-image {
+.chip-scroll {
   width: 100%;
-  height: 400rpx;
-  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+  white-space: nowrap;
+}
+
+.chip-row {
+  display: flex;
+  gap: 16rpx;
+  padding: 20rpx 32rpx 24rpx;
+}
+
+.chip-row__item {
+  @include keep-chip;
+  flex: none;
+}
+
+.chip-row__item--active {
+  @include keep-chip(true);
+}
+
+.home-list {
+  padding: 0 32rpx;
+}
+
+.home-loading {
+  padding: 0 32rpx;
+}
+
+.home-skeleton {
+  height: 308rpx;
+  margin-bottom: 22rpx;
+  border-radius: $radius-keep-card;
+  background: linear-gradient(90deg, #f0f1f3 25%, #e7e9ec 50%, #f0f1f3 75%);
   background-size: 200% 100%;
-  animation: shimmer 1.5s infinite;
+  animation: homeShimmer 1.4s infinite;
 }
 
-.skeleton-info {
-  padding: $spacing-md;
-}
-
-.skeleton-line {
-  height: 28rpx;
-  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
-  background-size: 200% 100%;
-  animation: shimmer 1.5s infinite;
-  border-radius: 4rpx;
-  margin-bottom: $spacing-sm;
-
-  &--title { width: 60%; }
-  &--desc { width: 90%; }
-  &--short { width: 40%; }
-}
-
-@keyframes shimmer {
+@keyframes homeShimmer {
   0% { background-position: -200% 0; }
   100% { background-position: 200% 0; }
-}
-
-.empty-state {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  padding: 200rpx $spacing-xl;
-
-  &__text {
-    font-size: $font-size-lg;
-    color: $color-text-secondary;
-    margin-bottom: $spacing-sm;
-  }
-
-  &__sub {
-    font-size: $font-size-sm;
-    color: $color-text-helper;
-  }
 }
 
 .load-end {
   display: flex;
   justify-content: center;
-  padding: $spacing-lg;
+  padding: 28rpx 0 10rpx;
+}
 
-  &__text {
-    font-size: $font-size-sm;
-    color: $color-text-helper;
-  }
+.load-end__text {
+  color: $color-text-helper;
+  font-size: 24rpx;
+  font-weight: 700;
+}
+
+.keep-tabbar {
+  position: fixed;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  height: calc(148rpx + env(safe-area-inset-bottom));
+  padding: 10rpx 0 env(safe-area-inset-bottom);
+  border-top: 1rpx solid $color-border;
+  background: rgba(255, 255, 255, 0.98);
+}
+
+.keep-tabbar__item {
+  position: relative;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4rpx;
+  color: $color-text-helper;
+  font-size: 22rpx;
+  font-weight: 800;
+}
+
+.keep-tabbar__item--active {
+  color: $color-text-primary;
+}
+
+.keep-tabbar__dot,
+.keep-tabbar__badge {
+  position: absolute;
+  top: 2rpx;
+  right: 50%;
+  border-radius: $radius-round;
+  background: $color-accent-red;
+}
+
+.keep-tabbar__dot {
+  width: 14rpx;
+  height: 14rpx;
+  margin-right: -28rpx;
+}
+
+.keep-tabbar__badge {
+  min-width: 32rpx;
+  height: 32rpx;
+  margin-right: -40rpx;
+  padding: 0 8rpx;
+  color: #fff;
+  font-size: 18rpx;
+  line-height: 32rpx;
+  text-align: center;
 }
 </style>
