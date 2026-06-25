@@ -21,9 +21,15 @@ function getEnvConfig(): EnvConfig {
   if (env === 'production' && !rawApiBaseUrl) {
     throw new Error('生产环境必须配置 VITE_API_BASE_URL')
   }
+  if (env === 'production' && rawApiBaseUrl.indexOf('https://') !== 0) {
+    throw new Error('生产环境接口地址必须使用 HTTPS')
+  }
 
   const apiBaseUrl = normalizeBaseUrl(rawApiBaseUrl || 'http://localhost:8081')
   const imageBaseUrl = normalizeBaseUrl(import.meta.env.VITE_IMAGE_BASE_URL || apiBaseUrl)
+  if (env === 'production' && imageBaseUrl.indexOf('https://') !== 0) {
+    throw new Error('生产环境图片地址必须使用 HTTPS')
+  }
 
   return { apiBaseUrl, imageBaseUrl, env }
 }
