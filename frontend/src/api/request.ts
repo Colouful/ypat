@@ -1,346 +1,328 @@
 import { envConfig } from '@/config/env'
-import { getToken, setToken, clearAuth } from '@/services/auth-storage'
+import {
+  clearAuth,
+  getStoredUserInfo,
+  getToken,
+  setToken,
+} from '@/services/auth-storage'
 import type { ApiResult } from './types'
 
-/** 后端原始响应结构 */
-interface BackendResponse {
+interface BackendResponse<T = unknown> {
   code: number | string
+  msg?: string
+  res?: T
   message?: string
-  result?: unknown
+  result?: T
 }
 
-/** 错误码映射 */
-const ERROR_CODE_MAP: Record<string | number, string> = {
-  200: '请求成功',
-  400: '请求参数错误',
-  401: '登录已过期，请重新登录',
-  403: '没有权限访问',
-  404: '请求资源不存在',
-  500: '服务器内部错误',
-  502: '网关错误',
-  503: '服务不可用',
-  1001: '鉴权失败',
-  1002: '参数错误',
-  1003: 'JSON错误',
-  1004: '非法字符串',
-  1005: '数据不存在',
-  1006: '数据已存在',
-  1008: 'OCR识别失败',
-  1009: '拍拍豆余额不足',
-  1010: '未实名认证',
-  1011: '未缴纳保证金',
-  1012: '密码错误',
-  1013: '实名失败',
-  1014: 'OCR识别超限',
-  1015: '水印失败',
-  2001: '微信通信失败',
-  2002: '下单失败',
-  2003: '支付失败',
-}
-
-/** 请求配置 */
-interface RequestConfig {
+export interface RequestConfig {
   url: string
   method?: 'GET' | 'POST' | 'PUT' | 'DELETE'
-  data?: any
-  params?: Record<string, any>
+  data?: unknown
+  params?: Record<string, unknown>
   header?: Record<string, string>
   timeout?: number
   showLoading?: boolean
   showError?: boolean
   withToken?: boolean
+  contentType?: 'form' | 'json'
+  skipDuplicateCheck?: boolean
 }
 
-/** 文件上传配置 */
 interface UploadConfig {
   url: string
   filePath: string
   name?: string
-  formData?: Record<string, any>
+  formData?: Record<string, string>
   header?: Record<string, string>
   showLoading?: boolean
   showError?: boolean
   withToken?: boolean
 }
 
-/** 请求队列项（用于token刷新时的请求排队） */
-interface PendingRequest {
-  resolve: (value: any) => void
-  reject: (reason: any) => void
-  config: RequestConfig
+type RequestBody = string | ArrayBuffer | Record<string, unknown> | undefined
+
+const ERROR_CODE_MAP: Record<string, string> = {
+  '400': '请求参数错误',
+  '401': '登录已过期，请重新登录',
+  '403': '没有权限访问',
+  '404': '请求资源不存在',
+  '500': '服务器内部错误',
+  '502': '网关错误',
+  '503': '服务不可用',
+  '1001': '鉴权失败，请重新登录',
+  '1002': '参数错误',
+  '1003': 'JSON 格式错误',
+  '1004': '请求中包含非法字符',
+  '1005': '数据不存在',
+  '1006': '数据已存在',
+  '1008': '身份证识别失败',
+  '1009': '拍拍豆余额不足',
+  '1010': '请先完成实名认证',
+  '1011': '请先缴纳保证金',
+  '1012': '密码错误',
+  '1013': '实名认证失败',
+  '1014': '身份证识别次数已达上限',
+  '1015': '图片水印处理失败',
+  '2001': '微信服务通信失败',
+  '2002': '微信下单失败',
+  '2003': '微信支付失败',
 }
 
-/** 进行中的请求记录（防重复请求） */
-const pendingRequests = new Map<string, boolean>()
+const pendingRequests = new Set<string>()
+let refreshPromise: Promise<string> | null = null
+let redirectingToLogin = false
 
-/** token 刷新状态 */
-let isRefreshing = false
-
-/** 刷新 token 时排队的请求 */
-let requestQueue: PendingRequest[] = []
-
-/** 生成请求唯一标识 */
-function generateRequestKey(config: RequestConfig): string {
-  const { url, method, data, params } = config
-  return `${method || 'GET'}_${url}_${JSON.stringify(data || '')}_${JSON.stringify(params || '')}`
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value)
 }
 
-/** 跳转到登录页 */
-function redirectToLogin(): void {
-  clearAuth()
-  uni.reLaunch({
-    url: '/pages/login/index',
-  })
+function isArrayBuffer(value: unknown): value is ArrayBuffer {
+  return typeof ArrayBuffer !== 'undefined' && value instanceof ArrayBuffer
 }
 
-/** 将后端原始响应映射为 ApiResult */
-function mapResponse<T>(raw: unknown): ApiResult<T> {
-  if (!raw || typeof raw !== 'object') {
-    return {
-      success: false,
-      data: null as unknown as T,
-      code: '-1',
-      message: '响应数据格式异常',
-    }
-  }
-
-  const response = raw as BackendResponse
-  const code = response.code !== undefined && response.code !== null
-    ? String(response.code)
-    : '-1'
-
-  return {
-    success: code === '200',
-    data: (response.result ?? null) as T,
-    code,
-    message: response.message || '',
-  }
-}
-
-/** 处理 token 过期 - 尝试刷新 */
-async function handleTokenExpired(config: RequestConfig): Promise<ApiResult> {
-  if (isRefreshing) {
-    return new Promise((resolve, reject) => {
-      requestQueue.push({ resolve, reject, config })
-    })
-  }
-
-  isRefreshing = true
-
+function parseResponsePayload(raw: unknown): unknown {
+  if (typeof raw !== 'string') return raw
+  const text = raw.trim()
+  if (!text) return null
   try {
-    const tokenValue = getToken()
-    if (!tokenValue) {
-      redirectToLogin()
-      return Promise.reject(new Error('No token'))
-    }
-
-    // 调用刷新 token 接口 GET /user/token
-    const res = await new Promise<UniApp.RequestSuccessCallbackResult>((resolve, reject) => {
-      uni.request({
-        url: `${envConfig.apiBaseUrl}/user/token`,
-        method: 'GET',
-        header: {
-          Token: tokenValue,
-        },
-        success: resolve,
-        fail: reject,
-      })
-    })
-
-    const raw = res.data as BackendResponse
-    const result = mapResponse<{ token: string }>(raw)
-    if (result.success && result.data?.token) {
-      setToken(result.data.token)
-
-      // 重新发送队列中的请求
-      requestQueue.forEach(({ resolve, config: pendingConfig }) => {
-        resolve(request(pendingConfig))
-      })
-      requestQueue = []
-
-      // 重新发送当前请求
-      return request(config)
-    } else {
-      // 刷新失败，跳转登录
-      requestQueue.forEach(({ reject }) => {
-        reject(new Error('Token refresh failed'))
-      })
-      requestQueue = []
-      redirectToLogin()
-      return Promise.reject(new Error('Token refresh failed'))
-    }
-  } catch (error) {
-    requestQueue.forEach(({ reject }) => {
-      reject(error)
-    })
-    requestQueue = []
-    redirectToLogin()
-    return Promise.reject(error)
-  } finally {
-    isRefreshing = false
+    return JSON.parse(text) as unknown
+  } catch {
+    return raw
   }
 }
 
-/** 构建带 query 参数的 URL */
-function buildUrl(url: string, params?: Record<string, any>): string {
+export function mapBackendResponse<T>(raw: unknown): ApiResult<T> {
+  const payload = parseResponsePayload(raw)
+  if (isRecord(payload) && Object.prototype.hasOwnProperty.call(payload, 'code')) {
+    const response = payload as unknown as BackendResponse<T>
+    const code = String(response.code ?? '-1')
+    const hasRes = Object.prototype.hasOwnProperty.call(response, 'res')
+    const hasResult = Object.prototype.hasOwnProperty.call(response, 'result')
+    const data = (hasRes
+      ? response.res
+      : hasResult
+        ? response.result
+        : null) as T
+    const message = response.msg ?? response.message ?? ERROR_CODE_MAP[code] ?? ''
+    return {
+      success: code === '200',
+      data,
+      code,
+      message,
+    }
+  }
+  return { success: true, data: payload as T, code: '200', message: '' }
+}
+
+function flattenFormValue(
+  output: Record<string, string | number | boolean>,
+  key: string,
+  value: unknown,
+): void {
+  if (value === undefined || value === null || value === '') return
+  if (Array.isArray(value)) {
+    value.forEach((item, index) => flattenFormValue(output, `${key}[${index}]`, item))
+    return
+  }
+  if (isRecord(value)) {
+    Object.entries(value).forEach(([childKey, childValue]) => {
+      flattenFormValue(output, key ? `${key}.${childKey}` : childKey, childValue)
+    })
+    return
+  }
+  if (typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean') {
+    output[key] = value
+  }
+}
+
+function toFormData(data: unknown): Record<string, string | number | boolean> {
+  if (!isRecord(data)) return {}
+  const output: Record<string, string | number | boolean> = {}
+  Object.entries(data).forEach(([key, value]) => flattenFormValue(output, key, value))
+  return output
+}
+
+function normalizeJsonData(data: unknown): RequestBody {
+  if (data === undefined) return undefined
+  if (typeof data === 'string' || isArrayBuffer(data)) return data
+  if (isRecord(data)) return data
+  return {}
+}
+
+function buildUrl(url: string, params?: Record<string, unknown>): string {
   if (!params) return url
   const query = Object.entries(params)
     .filter(([, value]) => value !== undefined && value !== null && value !== '')
     .map(([key, value]) => `${encodeURIComponent(key)}=${encodeURIComponent(String(value))}`)
     .join('&')
-  return query ? `${url}?${query}` : url
+  return query ? `${url}${url.includes('?') ? '&' : '?'}${query}` : url
 }
 
-/** 统一请求方法 */
-export function request<T = any>(config: RequestConfig): Promise<ApiResult<T>> {
+function createRequestKey(config: RequestConfig): string {
+  return `${config.method || 'GET'}:${config.url}:${JSON.stringify(config.params || {})}:${JSON.stringify(config.data || {})}`
+}
+
+function redirectToLogin(): void {
+  clearAuth()
+  if (redirectingToLogin) return
+  redirectingToLogin = true
+  uni.reLaunch({
+    url: '/pages/login/index',
+    complete: () => setTimeout(() => { redirectingToLogin = false }, 300),
+  })
+}
+
+function refreshToken(): Promise<string> {
+  if (refreshPromise) return refreshPromise
+  refreshPromise = new Promise<string>((resolve, reject) => {
+    const currentToken = getToken()
+    const currentUser = getStoredUserInfo()
+    if (!currentToken || !currentUser?.mobile) {
+      reject(new Error('登录状态已失效'))
+      return
+    }
+    uni.request({
+      url: buildUrl(`${envConfig.apiBaseUrl}/user/token`, { mobile: currentUser.mobile }),
+      method: 'GET',
+      header: { Token: currentToken },
+      success: (res) => {
+        if (res.statusCode !== 200) {
+          reject(new Error('刷新登录状态失败'))
+          return
+        }
+        const result = mapBackendResponse<{ token?: string } | string>(res.data)
+        const nextToken = typeof result.data === 'string' ? result.data : result.data?.token
+        if (!result.success || !nextToken) {
+          reject(new Error(result.message || '刷新登录状态失败'))
+          return
+        }
+        setToken(nextToken)
+        resolve(nextToken)
+      },
+      fail: () => reject(new Error('刷新登录状态失败')),
+    })
+  })
+    .catch((error) => {
+      redirectToLogin()
+      throw error
+    })
+    .finally(() => { refreshPromise = null })
+  return refreshPromise
+}
+
+function showBusinessGuide(code: string): void {
+  if (code === '1010') {
+    uni.showModal({
+      title: '需要实名认证',
+      content: '完成实名认证后才能继续当前操作。',
+      confirmText: '去认证',
+      success: ({ confirm }) => confirm && uni.navigateTo({ url: '/pages-sub/user/realname' }),
+    })
+  } else if (code === '1009') {
+    uni.showModal({
+      title: '拍拍豆不足',
+      content: '当前拍拍豆余额不足，请先充值。',
+      confirmText: '去充值',
+      success: ({ confirm }) => confirm && uni.navigateTo({ url: '/pages-sub/user/recharge' }),
+    })
+  } else if (code === '1011') {
+    uni.showToast({ title: '请先缴纳保证金', icon: 'none' })
+  }
+}
+
+export function request<T = unknown>(config: RequestConfig): Promise<ApiResult<T>> {
   const {
     url,
     method = 'GET',
     data,
     params,
     header = {},
-    timeout = 10000,
+    timeout = 15000,
     showLoading = false,
     showError = true,
     withToken = true,
+    contentType = 'form',
+    skipDuplicateCheck = false,
   } = config
 
-  // 拼接完整 URL
-  const fullUrl = buildUrl(
-    url.startsWith('http') ? url : `${envConfig.apiBaseUrl}${url}`,
-    params,
-  )
-
-  // 防止重复请求
-  const requestKey = generateRequestKey(config)
-  if (pendingRequests.has(requestKey)) {
-    return Promise.reject(new Error('重复请求已被拦截'))
+  const fullUrl = buildUrl(url.startsWith('http') ? url : `${envConfig.apiBaseUrl}${url}`, params)
+  const requestKey = createRequestKey(config)
+  if (!skipDuplicateCheck && pendingRequests.has(requestKey)) {
+    return Promise.reject(new Error('请求正在处理中，请勿重复操作'))
   }
-  pendingRequests.set(requestKey, true)
+  pendingRequests.add(requestKey)
 
-  // 请求头处理
   const headers: Record<string, string> = {
-    'Content-Type': 'application/json',
+    'Content-Type': contentType === 'json' ? 'application/json' : 'application/x-www-form-urlencoded',
     ...header,
   }
-
-  // Token 注入
   if (withToken) {
     const token = getToken()
-    if (token) {
-      headers['Token'] = token
-    }
+    if (token) headers.Token = token
   }
 
-  // 显示 loading
-  if (showLoading) {
-    uni.showLoading({ title: '加载中...', mask: true })
-  }
+  const requestData: RequestBody = method === 'GET'
+    ? undefined
+    : contentType === 'json'
+      ? normalizeJsonData(data)
+      : toFormData(data)
+
+  if (showLoading) uni.showLoading({ title: '加载中...', mask: true })
 
   return new Promise<ApiResult<T>>((resolve, reject) => {
     uni.request({
       url: fullUrl,
       method,
-      data,
+      data: requestData,
       header: headers,
       timeout,
       success: async (res) => {
-        const statusCode = res.statusCode
-
-        // HTTP 状态码非 200
-        if (statusCode !== 200) {
-          const errorMsg = ERROR_CODE_MAP[statusCode] || `网络错误(${statusCode})`
-          if (showError) {
-            uni.showToast({ title: errorMsg, icon: 'none' })
-          }
-          reject(new Error(errorMsg))
+        if (res.statusCode < 200 || res.statusCode >= 300) {
+          const message = ERROR_CODE_MAP[String(res.statusCode)] || `网络错误（${res.statusCode}）`
+          if (showError) uni.showToast({ title: message, icon: 'none' })
+          reject(new Error(message))
           return
         }
 
-        // 将后端原始响应映射为 ApiResult
-        const result = mapResponse<T>(res.data)
-
-        // 业务状态码处理
-        const code = result.code
-
-        if (code === '200') {
+        const result = mapBackendResponse<T>(res.data)
+        if (result.success) {
           resolve(result)
           return
         }
 
-        // Token 过期，尝试刷新
-        if (code === '401' || code === '1001') {
+        if (withToken && url !== '/user/token' && (result.code === '401' || result.code === '1001')) {
           try {
-            const refreshResult = await handleTokenExpired(config)
-            resolve(refreshResult as ApiResult<T>)
+            pendingRequests.delete(requestKey)
+            await refreshToken()
+            resolve(await request<T>({ ...config, skipDuplicateCheck: true }))
           } catch (error) {
             reject(error)
           }
           return
         }
 
-        // 未实名认证 - 跳转实名页
-        if (code === '1010') {
-          uni.showModal({
-            title: '提示',
-            content: '请先完成实名认证',
-            confirmText: '去认证',
-            success: (modalRes) => {
-              if (modalRes.confirm) {
-                uni.navigateTo({ url: '/pages-sub/user/realname' })
-              }
-            },
-          })
-          reject(new Error(result.message || ERROR_CODE_MAP[1010]))
-          return
+        showBusinessGuide(result.code)
+        const message = result.message || ERROR_CODE_MAP[result.code] || '请求失败'
+        if (showError && !['1009', '1010', '1011'].includes(result.code)) {
+          uni.showToast({ title: message, icon: 'none' })
         }
-
-        // 拍拍豆余额不足 - 跳转充值页
-        if (code === '1009') {
-          uni.showModal({
-            title: '提示',
-            content: '拍拍豆余额不足，请充值',
-            confirmText: '去充值',
-            success: (modalRes) => {
-              if (modalRes.confirm) {
-                uni.navigateTo({ url: '/pages-sub/user/recharge' })
-              }
-            },
-          })
-          reject(new Error(result.message || ERROR_CODE_MAP[1009]))
-          return
-        }
-
-        // 其他错误码
-        const errorMessage = result.message || ERROR_CODE_MAP[code] || '请求失败'
-        if (showError) {
-          uni.showToast({ title: errorMessage, icon: 'none' })
-        }
-        reject(new Error(errorMessage))
+        reject(new Error(message))
       },
-      fail: (err) => {
-        const errorMessage = err.errMsg?.includes('timeout')
-          ? '请求超时，请检查网络'
-          : '网络异常，请检查网络连接'
-        if (showError) {
-          uni.showToast({ title: errorMessage, icon: 'none' })
-        }
-        reject(new Error(errorMessage))
+      fail: (error) => {
+        const message = error.errMsg?.includes('timeout') ? '请求超时，请稍后重试' : '网络异常，请检查网络连接'
+        if (showError) uni.showToast({ title: message, icon: 'none' })
+        reject(new Error(message))
       },
       complete: () => {
-        // 移除请求记录
         pendingRequests.delete(requestKey)
-        // 隐藏 loading
-        if (showLoading) {
-          uni.hideLoading()
-        }
+        if (showLoading) uni.hideLoading()
       },
     })
   })
 }
 
-/** 文件上传方法 */
-export function upload<T = any>(config: UploadConfig): Promise<ApiResult<T>> {
+export function upload<T = unknown>(config: UploadConfig): Promise<ApiResult<T>> {
   const {
     url,
     filePath,
@@ -352,97 +334,53 @@ export function upload<T = any>(config: UploadConfig): Promise<ApiResult<T>> {
     withToken = true,
   } = config
 
-  const fullUrl = url.startsWith('http') ? url : `${envConfig.apiBaseUrl}${url}`
-
-  // 请求头处理
   const headers: Record<string, string> = { ...header }
-
-  // Token 注入
   if (withToken) {
     const token = getToken()
-    if (token) {
-      headers['Token'] = token
-    }
+    if (token) headers.Token = token
   }
-
-  if (showLoading) {
-    uni.showLoading({ title: '上传中...', mask: true })
-  }
+  if (showLoading) uni.showLoading({ title: '上传中...', mask: true })
 
   return new Promise<ApiResult<T>>((resolve, reject) => {
     uni.uploadFile({
-      url: fullUrl,
+      url: url.startsWith('http') ? url : `${envConfig.apiBaseUrl}${url}`,
       filePath,
       name,
       formData,
       header: headers,
       success: (res) => {
-        if (res.statusCode !== 200) {
-          const errorMsg = ERROR_CODE_MAP[res.statusCode] || `上传失败(${res.statusCode})`
-          if (showError) {
-            uni.showToast({ title: errorMsg, icon: 'none' })
-          }
-          reject(new Error(errorMsg))
+        if (res.statusCode < 200 || res.statusCode >= 300) {
+          reject(new Error(`上传失败（${res.statusCode}）`))
           return
         }
-
-        try {
-          const raw = JSON.parse(res.data)
-          const result = mapResponse<T>(raw)
-          if (result.success) {
-            resolve(result)
-          } else {
-            const errorMessage = result.message || '上传失败'
-            if (showError) {
-              uni.showToast({ title: errorMessage, icon: 'none' })
-            }
-            reject(new Error(errorMessage))
-          }
-        } catch (e) {
-          reject(new Error('响应数据解析失败'))
-        }
+        const result = mapBackendResponse<T>(res.data)
+        if (result.success) resolve(result)
+        else reject(new Error(result.message || '上传失败'))
       },
-      fail: (err) => {
-        const errorMessage = '上传失败，请检查网络连接'
-        if (showError) {
-          uni.showToast({ title: errorMessage, icon: 'none' })
-        }
-        reject(new Error(err.errMsg || errorMessage))
+      fail: (error) => {
+        const message = error.errMsg || '上传失败，请检查网络连接'
+        if (showError) uni.showToast({ title: message, icon: 'none' })
+        reject(new Error(message))
       },
-      complete: () => {
-        if (showLoading) {
-          uni.hideLoading()
-        }
-      },
+      complete: () => { if (showLoading) uni.hideLoading() },
     })
   })
 }
 
-/** GET 请求快捷方法 */
-export function get<T = any>(url: string, params?: Record<string, any>, options?: Partial<RequestConfig>): Promise<ApiResult<T>> {
+export function get<T = unknown>(url: string, params?: Record<string, unknown>, options?: Partial<RequestConfig>): Promise<ApiResult<T>> {
   return request<T>({ url, method: 'GET', params, ...options })
 }
 
-/** POST 请求快捷方法 */
-export function post<T = any>(url: string, data?: any, options?: Partial<RequestConfig>): Promise<ApiResult<T>> {
+export function post<T = unknown>(url: string, data?: unknown, options?: Partial<RequestConfig>): Promise<ApiResult<T>> {
   return request<T>({ url, method: 'POST', data, ...options })
 }
 
-/** PUT 请求快捷方法 */
-export function put<T = any>(url: string, data?: any, options?: Partial<RequestConfig>): Promise<ApiResult<T>> {
+export function put<T = unknown>(url: string, data?: unknown, options?: Partial<RequestConfig>): Promise<ApiResult<T>> {
   return request<T>({ url, method: 'PUT', data, ...options })
 }
 
-/** DELETE 请求快捷方法 */
-export function del<T = any>(url: string, params?: Record<string, any>, options?: Partial<RequestConfig>): Promise<ApiResult<T>> {
+export function del<T = unknown>(url: string, params?: Record<string, unknown>, options?: Partial<RequestConfig>): Promise<ApiResult<T>> {
   return request<T>({ url, method: 'DELETE', params, ...options })
 }
 
-export default {
-  request,
-  upload,
-  get,
-  post,
-  put,
-  del,
-}
+export default { request, upload, get, post, put, del }

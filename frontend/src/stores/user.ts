@@ -1,171 +1,169 @@
+import { computed, ref } from 'vue'
 import { defineStore } from 'pinia'
-import { ref, computed } from 'vue'
 import { get, post } from '@/api/request'
-import { getToken, setToken, getStoredUserInfo, setStoredUserInfo, clearAuth } from '@/services/auth-storage'
-import type { UserInfo } from '@/api/types'
+import {
+  clearAuth,
+  getStoredUserInfo,
+  getToken,
+  registerAuthResetHandler,
+  setStoredUserInfo,
+  setToken,
+} from '@/services/auth-storage'
+import type { LoginParams, LoginResult, UserInfo, WxSessionResult } from '@/api/types'
 
-export interface LoginParams {
-  code?: string
-  openid?: string
-  encryptedData?: string
-  sessionKey?: string
-  iv?: string
+export interface WechatLoginInput {
+  code: string
+  encryptedData: string
+  iv: string
+  channel?: string
   nickname?: string
   avatarurl?: string
   gender?: string
-  channel?: string
   recmobile?: string
-  mobile?: string
 }
 
-export const useUserStore = defineStore(
-  'user',
-  () => {
-    const userInfo = ref<UserInfo | null>(null)
-    const token = ref<string>('')
-    const isLoggedIn = computed(() => !!token.value)
-    const unreadCount = ref<number>(0)
+export const useUserStore = defineStore('user', () => {
+  const userInfo = ref<UserInfo | null>(null)
+  const token = ref('')
+  const unreadCount = ref(0)
+  const isLoggedIn = computed(() => Boolean(token.value && userInfo.value?.id))
 
-    /**
-     * Login flow:
-     * Step 1: If params.code exists, call GET /user/code to get openid + session_key
-     * Step 2: Call POST /user/login with params + openid to get token + userInfo
-     * Step 3: Persist token and userInfo, update state
-     */
-    async function login(params: LoginParams) {
-      let openid = params.openid || ''
-      let sessionKey = params.sessionKey || ''
+  function resetMemoryState(): void {
+    token.value = ''
+    userInfo.value = null
+    unreadCount.value = 0
+  }
 
-      // Step 1: Exchange code for openid + session_key
-      if (params.code) {
-        const codeRes = await get<{ openid: string; session_key: string }>('/user/code', { code: params.code })
-        if (codeRes.data) {
-          openid = codeRes.data.openid
-          sessionKey = codeRes.data.session_key
-        }
-      }
+  registerAuthResetHandler(resetMemoryState)
 
-      // Step 2: Call login endpoint
-      const loginData = { ...params, openid, sessionKey }
-      delete loginData.code
-      const res = await post<{ token: string; userInfo: UserInfo }>('/user/login', loginData)
+  function persistSession(nextToken: string, nextUser: UserInfo): void {
+    token.value = nextToken
+    userInfo.value = nextUser
+    setToken(nextToken)
+    setStoredUserInfo(nextUser)
+  }
 
-      // Step 3: Persist and update state
-      if (res.data) {
-        const responseToken = res.data.token
-        if (responseToken) {
-          token.value = responseToken
-          setToken(responseToken)
-        }
-        if (res.data.userInfo) {
-          userInfo.value = res.data.userInfo
-          setStoredUserInfo(res.data.userInfo)
-        }
-      }
-      return res
-    }
-
-    /**
-     * Logout: clear all stored data and redirect to home tab
-     */
-    function logout() {
-      token.value = ''
-      userInfo.value = null
-      unreadCount.value = 0
-      clearAuth()
-      uni.switchTab({ url: '/pages/home/index' })
-    }
-
-    /**
-     * Restore session from local storage
-     */
-    function restoreSession() {
-      const storedToken = getToken()
-      const storedUser = getStoredUserInfo()
-      if (storedToken) {
-        token.value = storedToken
-      }
-      if (storedUser) {
-        userInfo.value = storedUser
-      }
-    }
-
-    /**
-     * Refresh unread message count via GET /my/ypat/unread/count?userid=xxx
-     */
-    async function refreshUnreadCount() {
-      if (!isLoggedIn.value || !userInfo.value) return
-      try {
-        const res = await get<number>('/my/ypat/unread/count', {
-          userid: userInfo.value.id,
-        })
-        if (res.data !== undefined && res.data !== null) {
-          unreadCount.value = typeof res.data === 'number' ? res.data : Number(res.data)
-        }
-      } catch {
-        // silently fail
-      }
-    }
-
-    /**
-     * Update user info from server via GET /user/get?id=xxx
-     */
-    async function updateUserInfo() {
-      if (!isLoggedIn.value || !userInfo.value) return
-      try {
-        const res = await get<UserInfo>('/user/get', {
-          id: userInfo.value.id,
-        })
-        if (res.data) {
-          userInfo.value = res.data
-          setStoredUserInfo(res.data)
-        }
-      } catch {
-        // silently fail
-      }
-    }
-
+  function createFallbackUser(result: LoginResult): UserInfo {
     return {
-      userInfo,
-      token,
-      isLoggedIn,
-      unreadCount,
-      login,
-      logout,
-      restoreSession,
-      refreshUnreadCount,
-      updateUserInfo,
+      id: Number(result.id),
+      token: result.token,
+      mobile: result.mobile,
+      nickname: result.nickname,
+      gender: result.gender,
+      profess: result.profess,
     }
-  },
-  {
-    persist: {
-      key: 'ypat_user',
-      paths: ['token', 'userInfo'],
-      storage: {
-        getItem(key: string) {
-          if (key === 'ypat_user') {
-            const t = getToken()
-            const u = getStoredUserInfo()
-            return JSON.stringify({ token: t || '', userInfo: u || null })
-          }
-          return null
-        },
-        setItem(key: string, value: string) {
-          if (key === 'ypat_user') {
-            try {
-              const parsed = JSON.parse(value)
-              if (parsed.token) {
-                setToken(parsed.token)
-              }
-              if (parsed.userInfo) {
-                setStoredUserInfo(parsed.userInfo)
-              }
-            } catch {
-              // ignore parse errors
-            }
-          }
-        },
-      },
-    },
-  },
-)
+  }
+
+  async function login(input: WechatLoginInput): Promise<UserInfo> {
+    if (!input.code || !input.encryptedData || !input.iv) {
+      throw new Error('缺少微信手机号授权信息，请重新授权')
+    }
+
+    const session = await get<WxSessionResult>(
+      '/user/code',
+      { code: input.code },
+      { withToken: false, showError: false },
+    )
+    if (!session.data?.openid || !session.data?.session_key) {
+      throw new Error(session.data?.errmsg || '微信登录凭证换取失败')
+    }
+
+    const params: LoginParams = {
+      openid: session.data.openid,
+      encryptedData: input.encryptedData,
+      sessionKey: session.data.session_key,
+      iv: input.iv,
+      channel: input.channel || '0',
+      nickname: input.nickname,
+      avatarurl: input.avatarurl,
+      gender: input.gender,
+      recmobile: input.recmobile,
+    }
+
+    const result = await post<LoginResult>('/user/login', params, {
+      withToken: false,
+      showError: false,
+    })
+    if (!result.data?.token || !result.data?.id) {
+      throw new Error(result.message || '登录响应缺少用户凭证')
+    }
+
+    setToken(result.data.token)
+    token.value = result.data.token
+
+    let completeUser = createFallbackUser(result.data)
+    try {
+      const detail = await get<UserInfo>('/user/get', { id: Number(result.data.id) })
+      if (detail.data?.id) completeUser = detail.data
+    } catch {
+      // 完整资料可在进入个人中心时再次刷新。
+    }
+
+    persistSession(result.data.token, completeUser)
+    return completeUser
+  }
+
+  function restoreSession(): void {
+    const storedToken = getToken()
+    const storedUser = getStoredUserInfo()
+    if (storedToken && storedUser?.id) {
+      token.value = storedToken
+      userInfo.value = storedUser
+    } else {
+      clearAuth()
+    }
+  }
+
+  function logout(): void {
+    clearAuth()
+    uni.switchTab({ url: '/pages/home/index' })
+  }
+
+  async function updateUserInfo(localPatch?: Partial<UserInfo>): Promise<UserInfo | null> {
+    if (!token.value || !userInfo.value?.id) return null
+
+    if (localPatch) {
+      userInfo.value = { ...userInfo.value, ...localPatch }
+      setStoredUserInfo(userInfo.value)
+    }
+
+    try {
+      const result = await get<UserInfo>('/user/get', { id: userInfo.value.id })
+      if (result.data?.id) {
+        userInfo.value = result.data
+        setStoredUserInfo(result.data)
+      }
+    } catch {
+      // 服务端刷新失败时保留已确认保存成功的本地补丁。
+    }
+    return userInfo.value
+  }
+
+  async function refreshUnreadCount(): Promise<number> {
+    if (!isLoggedIn.value || !userInfo.value?.id) return 0
+    try {
+      const params = { type: '0', userid: userInfo.value.id }
+      const [received, sent] = await Promise.all([
+        get<number>('/my/ypat/rec/unread/count', params),
+        get<number>('/my/ypat/send/unread/count', params),
+      ])
+      unreadCount.value = Number(received.data || 0) + Number(sent.data || 0)
+    } catch {
+      unreadCount.value = 0
+    }
+    return unreadCount.value
+  }
+
+  return {
+    userInfo,
+    token,
+    unreadCount,
+    isLoggedIn,
+    login,
+    logout,
+    restoreSession,
+    updateUserInfo,
+    refreshUnreadCount,
+    resetMemoryState,
+  }
+})

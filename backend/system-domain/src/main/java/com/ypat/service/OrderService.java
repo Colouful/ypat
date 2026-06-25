@@ -72,13 +72,14 @@ public class OrderService {
         page.put("content", content);
         page.put("totalPages", orderPage.getTotalPages());
         page.put("totalElements", orderPage.getTotalElements());
+        page.put("number", orderPage.getNumber());
+        page.put("size", orderPage.getSize());
         return page;
     }
 
     /**
-     * 分页
-     * @param queryQo
-     * @return
+     * 分页查询。所有非空条件必须真正进入 Specification，尤其是 userid 和 out_trade_no，
+     * 否则上层按当前用户查询订单状态时会产生越权和串单风险。
      */
     public Page<Order> findPageByPredicate(OrderQo queryQo){
         Sort sort = new Sort(Sort.Direction.DESC, "id");
@@ -89,6 +90,15 @@ public class OrderService {
                 List<Predicate> predicatesList = new ArrayList<Predicate>();
                 if(CommonUtils.isNotNull(queryQo.getStatus())){
                     predicatesList.add(criteriaBuilder.equal(root.get("status"), queryQo.getStatus()));
+                }
+                if(CommonUtils.isNotNull(queryQo.getUserid())){
+                    predicatesList.add(criteriaBuilder.equal(root.get("userid"), queryQo.getUserid()));
+                }
+                if(CommonUtils.isNotNull(queryQo.getOut_trade_no())){
+                    predicatesList.add(criteriaBuilder.equal(root.get("out_trade_no"), queryQo.getOut_trade_no()));
+                }
+                if(CommonUtils.isNotNull(queryQo.getType())){
+                    predicatesList.add(criteriaBuilder.equal(root.get("type"), queryQo.getType()));
                 }
                 query.where(predicatesList.toArray(new Predicate[predicatesList.size()]));
                 return query.getRestriction();

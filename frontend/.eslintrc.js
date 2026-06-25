@@ -28,6 +28,7 @@ module.exports = {
     'vue/no-v-html': 'off',
     '@typescript-eslint/no-explicit-any': 'off',
     '@typescript-eslint/no-unused-vars': ['warn', { argsIgnorePattern: '^_' }],
+    'no-empty': ['error', { allowEmptyCatch: true }],
     'no-console': process.env.NODE_ENV === 'production' ? 'warn' : 'off',
   },
 }

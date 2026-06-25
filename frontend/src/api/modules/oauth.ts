@@ -1,40 +1,26 @@
-import { get, post, upload } from '../request'
-import type {
-  ApiResult,
-  OcrResult,
-  OauthSubmitParams,
-  OauthInfo,
-} from '../types'
+import { get, post } from '../request'
+import { filePathToBase64 } from '@/utils/file-base64'
+import type { ApiResult, OauthInfo, OauthSubmitParams, OcrResult } from '../types'
 
-/**
- * OCR 识别身份证（文件上传）
- */
-export function ocrIdCard(filePath: string): Promise<ApiResult<OcrResult>> {
-  return upload({
-    url: '/oauth/ocr',
-    filePath,
-    name: 'file',
-    showLoading: true,
-  })
+async function normalizeImage(value: string): Promise<string> {
+  if (/^[A-Za-z0-9+/=\r\n]+$/.test(value) && value.length > 200) return value
+  return filePathToBase64(value)
 }
 
-/**
- * 提交实名认证
- */
-export function submitAuth(data: OauthSubmitParams): Promise<ApiResult<null>> {
-  return post('/oauth/add', data)
+export async function ocrIdCard(value: string): Promise<ApiResult<OcrResult>> {
+  const cardfront = await normalizeImage(value)
+  return post('/oauth/ocr', { cardfront })
 }
 
-/**
- * 获取认证状态
- */
-export function getAuthStatus(id: number): Promise<ApiResult<{ status: number; reason: string }>> {
-  return get('/oauth/get', { id })
+export async function submitAuth(data: OauthSubmitParams): Promise<ApiResult<OauthInfo>> {
+  const pics = await Promise.all(data.pics.map(normalizeImage))
+  return post('/oauth/add', { name: data.name, certcode: data.certcode, pics })
 }
 
-/**
- * 获取认证详情
- */
-export function getAuthDetail(id: number): Promise<ApiResult<OauthInfo>> {
-  return get('/oauth/getAuth', { id })
+export function getAuthDetail(): Promise<ApiResult<OauthInfo>> {
+  return get('/oauth/get')
+}
+
+export function getAuthDetailByUserId(id: number): Promise<ApiResult<OauthInfo>> {
+  return get('/oauth/detail', { id })
 }

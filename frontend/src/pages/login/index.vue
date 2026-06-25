@@ -8,44 +8,42 @@
 
     <view class="login-body">
       <!-- #ifdef MP-WEIXIN -->
-      <button class="login-btn login-btn--primary" @tap="handleWxLogin">
-        <text class="login-btn__text">微信授权登录</text>
+      <button
+        class="login-btn login-btn--primary"
+        open-type="getPhoneNumber"
+        :disabled="submitting"
+        @getphonenumber="handleWechatPhoneAuthorization"
+      >
+        <text class="login-btn__text">{{ submitting ? '登录中...' : '微信手机号授权登录' }}</text>
       </button>
+      <text class="login-tip">登录需要微信手机号授权，用于匹配已有账号并保障交易安全。</text>
       <!-- #endif -->
 
       <!-- #ifdef H5 -->
-      <view class="login-form">
-        <view class="login-form__item">
-          <input
-            v-model="phone"
-            class="login-form__input"
-            type="number"
-            maxlength="11"
-            placeholder="请输入手机号"
-            placeholder-class="login-form__placeholder"
-          />
-        </view>
-        <button class="login-btn login-btn--primary" :disabled="!isPhoneValid || submitting" @tap="handlePhoneLogin">
-          <text class="login-btn__text">{{ submitting ? '登录中...' : '登录' }}</text>
-        </button>
+      <view class="unsupported-card">
+        <text class="unsupported-card__title">H5 登录暂未开放</text>
+        <text class="unsupported-card__desc">当前后端只支持微信小程序加密手机号登录，避免使用无效的手机号直登流程。</text>
       </view>
       <!-- #endif -->
 
       <!-- #ifdef APP-PLUS -->
-      <button class="login-btn login-btn--primary" @tap="handleWxLogin">
-        <text class="login-btn__text">微信登录</text>
-      </button>
+      <view class="unsupported-card">
+        <text class="unsupported-card__title">App 微信登录暂未开放</text>
+        <text class="unsupported-card__desc">App 授权数据与当前小程序解密接口不兼容，需后端增加 App OAuth 登录能力后启用。</text>
+      </view>
       <!-- #endif -->
     </view>
 
     <view class="login-footer">
       <view class="login-agreement">
-        <view class="login-agreement__check" :class="{ 'login-agreement__check--active': agreed }" @tap="agreed = !agreed">
+        <view
+          class="login-agreement__check"
+          :class="{ 'login-agreement__check--active': agreed }"
+          @tap="agreed = !agreed"
+        >
           <text v-if="agreed" class="login-agreement__checkmark">✓</text>
         </view>
-        <text class="login-agreement__text">
-          我已阅读并同意
-        </text>
+        <text class="login-agreement__text">我已阅读并同意</text>
         <text class="login-agreement__link" @tap="goAgreement">《用户协议》</text>
         <text class="login-agreement__text">和</text>
         <text class="login-agreement__link" @tap="goPrivacy">《隐私政策》</text>
@@ -55,83 +53,72 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref } from 'vue'
 import { useUserStore } from '@/stores/user'
 
-const userStore = useUserStore()
+interface PhoneAuthorizationEvent {
+  detail?: {
+    errMsg?: string
+    encryptedData?: string
+    iv?: string
+  }
+}
 
-const phone = ref('')
+const userStore = useUserStore()
 const agreed = ref(false)
 const submitting = ref(false)
 
-const isPhoneValid = computed(() => /^1[3-9]\d{9}$/.test(phone.value))
-
-async function handleWxLogin() {
+async function handleWechatPhoneAuthorization(event: PhoneAuthorizationEvent): Promise<void> {
   if (!agreed.value) {
-    uni.showToast({ title: '请先同意用户协议', icon: 'none' })
+    uni.showToast({ title: '请先同意用户协议和隐私政策', icon: 'none' })
     return
   }
 
+  const detail = event.detail
+  if (!detail?.errMsg?.includes('ok')) {
+    uni.showToast({ title: '你已取消手机号授权', icon: 'none' })
+    return
+  }
+
+  if (!detail.encryptedData || !detail.iv) {
+    uni.showModal({
+      title: '当前微信授权方式不兼容',
+      content: '现有后端需要 encryptedData 和 iv 解密手机号，请升级后端到微信手机号 code 换取接口后再重试。',
+      showCancel: false,
+    })
+    return
+  }
+
+  submitting.value = true
   try {
-    submitting.value = true
-
-    // #ifdef MP-WEIXIN
-    const loginRes = await new Promise<UniApp.LoginRes>((resolve, reject) => {
+    const loginResult = await new Promise<UniApp.LoginRes>((resolve, reject) => {
       uni.login({ provider: 'weixin', success: resolve, fail: reject })
     })
-    await userStore.login({ code: loginRes.code, channel: '0' })
-    handleLoginSuccess()
-    // #endif
 
-    // #ifdef APP-PLUS
-    const loginRes2 = await new Promise<UniApp.LoginRes>((resolve, reject) => {
-      uni.login({ provider: 'weixin', success: resolve, fail: reject })
+    await userStore.login({
+      code: loginResult.code,
+      encryptedData: detail.encryptedData,
+      iv: detail.iv,
+      channel: '0',
     })
-    await userStore.login({ code: loginRes2.code, channel: '0' })
-    handleLoginSuccess()
-    // #endif
-  } catch (err: any) {
-    uni.showToast({ title: err?.message || '登录失败，请重试', icon: 'none' })
+
+    uni.showToast({ title: '登录成功', icon: 'success' })
+    const pages = getCurrentPages()
+    if (pages.length > 1) uni.navigateBack()
+    else uni.switchTab({ url: '/pages/home/index' })
+  } catch (error) {
+    const message = error instanceof Error ? error.message : '登录失败，请重试'
+    uni.showToast({ title: message, icon: 'none' })
   } finally {
     submitting.value = false
   }
 }
 
-async function handlePhoneLogin() {
-  if (!agreed.value) {
-    uni.showToast({ title: '请先同意用户协议', icon: 'none' })
-    return
-  }
-  if (!isPhoneValid.value) {
-    uni.showToast({ title: '请输入正确的手机号', icon: 'none' })
-    return
-  }
-
-  try {
-    submitting.value = true
-    await userStore.login({ mobile: phone.value, channel: '2' })
-    handleLoginSuccess()
-  } catch (err: any) {
-    uni.showToast({ title: err?.message || '登录失败，请重试', icon: 'none' })
-  } finally {
-    submitting.value = false
-  }
-}
-
-function handleLoginSuccess() {
-  const pages = getCurrentPages()
-  if (pages.length > 1) {
-    uni.navigateBack()
-  } else {
-    uni.switchTab({ url: '/pages/home/index' })
-  }
-}
-
-function goAgreement() {
+function goAgreement(): void {
   uni.navigateTo({ url: '/pages-sub/content/agreement' })
 }
 
-function goPrivacy() {
+function goPrivacy(): void {
   uni.navigateTo({ url: '/pages-sub/content/privacy' })
 }
 </script>
@@ -143,8 +130,8 @@ function goPrivacy() {
   min-height: 100vh;
   display: flex;
   flex-direction: column;
-  background-color: #fff;
   padding: 0 $spacing-xl;
+  background: #fff;
 }
 
 .login-header {
@@ -165,35 +152,20 @@ function goPrivacy() {
   font-size: 56rpx;
   font-weight: $font-weight-bold;
   color: $color-text-primary;
-  margin-bottom: $spacing-sm;
 }
 
-.login-subtitle {
-  font-size: $font-size-base;
+.login-subtitle,
+.login-tip,
+.unsupported-card__desc {
+  margin-top: $spacing-sm;
+  font-size: $font-size-sm;
+  line-height: 1.7;
   color: $color-text-secondary;
+  text-align: center;
 }
 
 .login-body {
   flex: 1;
-}
-
-.login-form {
-  margin-bottom: $spacing-xl;
-
-  &__item {
-    border-bottom: 2rpx solid $color-border;
-    padding: $spacing-md 0;
-    margin-bottom: $spacing-lg;
-  }
-
-  &__input {
-    font-size: $font-size-lg;
-    color: $color-text-primary;
-  }
-
-  &__placeholder {
-    color: $color-text-helper;
-  }
 }
 
 .login-btn {
@@ -202,31 +174,36 @@ function goPrivacy() {
   display: flex;
   align-items: center;
   justify-content: center;
+  border: 0;
   border-radius: $radius-xl;
-  border: none;
+  background: $color-primary;
 
-  &--primary {
-    background-color: $color-primary;
-  }
-
-  &[disabled] {
-    background-color: $color-primary-light;
-  }
+  &::after { border: 0; }
+  &[disabled] { opacity: .65; }
 
   &__text {
+    color: #fff;
     font-size: $font-size-lg;
     font-weight: $font-weight-medium;
-    color: #fff;
   }
+}
 
-  &::after {
-    border: none;
+.unsupported-card {
+  padding: $spacing-xl;
+  border-radius: $radius-lg;
+  background: $color-bg-page;
+  text-align: center;
+
+  &__title {
+    display: block;
+    font-size: $font-size-lg;
+    font-weight: $font-weight-semibold;
+    color: $color-text-primary;
   }
 }
 
 .login-footer {
-  padding: $spacing-xl 0;
-  padding-bottom: calc(env(safe-area-inset-bottom) + 40rpx);
+  padding: $spacing-xl 0 calc(env(safe-area-inset-bottom) + 40rpx);
 }
 
 .login-agreement {
@@ -238,32 +215,21 @@ function goPrivacy() {
   &__check {
     width: 36rpx;
     height: 36rpx;
-    border: 2rpx solid $color-border;
-    border-radius: 50%;
+    margin-right: $spacing-xs;
     display: flex;
     align-items: center;
     justify-content: center;
-    margin-right: $spacing-xs;
+    border: 2rpx solid $color-border;
+    border-radius: 50%;
 
     &--active {
-      background-color: $color-primary;
+      background: $color-primary;
       border-color: $color-primary;
     }
   }
 
-  &__checkmark {
-    font-size: 20rpx;
-    color: #fff;
-  }
-
-  &__text {
-    font-size: $font-size-xs;
-    color: $color-text-secondary;
-  }
-
-  &__link {
-    font-size: $font-size-xs;
-    color: $color-primary;
-  }
+  &__checkmark { color: #fff; font-size: 20rpx; }
+  &__text { color: $color-text-secondary; font-size: $font-size-xs; }
+  &__link { color: $color-primary; font-size: $font-size-xs; }
 }
 </style>
