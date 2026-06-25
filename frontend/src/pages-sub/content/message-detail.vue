@@ -89,7 +89,11 @@ function goYpatDetail(): void {
 }
 
 function handleViewContact(): void {
-  if ((userStore.userInfo?.ppd || 0) < 1) {
+  if (!userStore.userInfo?.id) {
+    uni.showToast({ title: '请先登录', icon: 'none' })
+    return
+  }
+  if ((userStore.userInfo.ppd || 0) < 1) {
     uni.showModal({
       title: '余额不足',
       content: '查看联系方式需要 1 个拍拍豆，是否前往充值？',
@@ -106,13 +110,17 @@ function handleViewContact(): void {
 }
 
 async function revealContact(): Promise<void> {
-  if (!message.value || revealing.value) return
+  if (!message.value || !userStore.userInfo?.id || revealing.value) return
   revealing.value = true
+  contactRevealed.value = false
   try {
-    contactInfo.value = (await userApi.getLinkWay(message.value.sendperid, message.value.id)).data
+    const result = await userApi.getLinkWay(message.value.sendperid, message.value.id)
+    contactInfo.value = result.data
     contactRevealed.value = true
     await userStore.updateUserInfo()
   } catch (err) {
+    contactInfo.value = null
+    contactRevealed.value = false
     uni.showToast({ title: err instanceof Error ? err.message : '联系方式获取失败', icon: 'none' })
   } finally {
     revealing.value = false
