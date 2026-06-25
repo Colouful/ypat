@@ -9,7 +9,7 @@
 
     <view v-else-if="authInfo?.status === '2'" class="state card">
       <text class="title success">已认证</text>
-      <text class="desc">{{ maskedName }}　{{ maskedCode }}</text>
+      <text class="desc">{{ maskedName }} {{ maskedCode }}</text>
     </view>
 
     <view v-else class="card">
