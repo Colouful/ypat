@@ -6,9 +6,8 @@ import type {
   BannerListParams,
   Article,
   ArticleListParams,
-  AreaInfo,
-  ParamInfo,
 } from '../types'
+import type { AreaInfo, ParamInfo } from '../types/area-types'
 
 export function getBannerList(params: BannerListParams): Promise<ApiResult<PageResult<Banner>>> {
   return get('/banner/list', { ...params })
