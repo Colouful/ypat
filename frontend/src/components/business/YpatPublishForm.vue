@@ -1,60 +1,93 @@
 <template>
   <view class="publish-form">
-    <view class="section">
-      <text class="title">约拍对象</text>
-      <view class="options">
-        <view v-for="item in targets" :key="item.value" class="option" :class="{ active: model.target === item.value }" @tap="model.target = item.value">
+    <view class="target-picker">
+      <view
+        v-for="item in targets"
+        :key="item.value"
+        class="target-picker__item"
+        :class="{ 'target-picker__item--active': model.target === item.value }"
+        @tap="model.target = item.value"
+      >
+        <KeepIcon :name="item.icon" :size="56" />
+        <text>{{ item.label }}</text>
+      </view>
+    </view>
+
+    <view class="field-card">
+      <text class="field-card__label">标题</text>
+      <input v-model="title" class="field-card__input" maxlength="60" placeholder="一句话说明你想拍什么" />
+    </view>
+
+    <view class="field-card field-card--textarea">
+      <text class="field-card__label">详细描述</text>
+      <textarea v-model="model.describ" class="field-card__textarea" maxlength="500" placeholder="拍摄主题、风格、时间地点、出片要求..." />
+    </view>
+
+    <view class="field-card">
+      <text class="field-card__label">合作方式</text>
+      <view class="option-wrap">
+        <view
+          v-for="item in chargeWays"
+          :key="item.value"
+          class="option-pill"
+          :class="{ 'option-pill--active': model.chargeway === item.value }"
+          @tap="selectChargeWay(item.value)"
+        >
           {{ item.label }}
+        </view>
+      </view>
+      <input
+        v-if="model.chargeway === '1' || model.chargeway === '2'"
+        v-model.number="model.chargeamt"
+        class="price-input"
+        type="digit"
+        placeholder="请输入参考金额"
+      />
+    </view>
+
+    <view class="field-card">
+      <text class="field-card__label">拍摄风格（可多选）</text>
+      <view class="option-wrap">
+        <view
+          v-for="style in styles"
+          :key="style"
+          class="option-pill"
+          :class="{ 'option-pill--active': selectedStyles.includes(style) }"
+          @tap="toggleStyle(style)"
+        >
+          {{ style }}
         </view>
       </view>
     </view>
 
-    <view class="section">
-      <text class="title">约拍说明</text>
-      <textarea v-model="model.describ" class="textarea" maxlength="500" placeholder="请描述拍摄需求、时间和地点" />
-    </view>
-
-    <view class="section">
-      <text class="title">拍摄日期</text>
-      <picker mode="date" :start="today" :value="model.patdate" @change="changeDate">
-        <view class="picker">{{ model.patdate || '请选择日期' }}</view>
-      </picker>
-    </view>
-
-    <view class="section">
-      <text class="title">拍摄地区</text>
+    <view class="field-card">
+      <text class="field-card__label">城市</text>
       <picker mode="region" :value="regionValue" @change="changeRegion">
-        <view class="picker">{{ regionText || '请选择省、市、区' }}</view>
+        <view class="city-field">{{ regionText || '请选择城市' }}</view>
       </picker>
-      <input v-model="model.patarea" class="input address-input" maxlength="100" placeholder="详细拍摄地点（选填）" />
     </view>
 
-    <view class="section">
-      <text class="title">收费方式</text>
-      <view class="options">
-        <view v-for="item in chargeWays" :key="item.value" class="option" :class="{ active: model.chargeway === item.value }" @tap="selectChargeWay(item.value)">
-          {{ item.label }}
-        </view>
-      </view>
-      <input v-if="model.chargeway === '1' || model.chargeway === '2'" v-model.number="model.chargeamt" class="input price-input" type="digit" placeholder="请输入参考金额" />
-    </view>
-
-    <view class="section">
-      <text class="title">约拍图片</text>
-      <view class="images">
-        <view v-for="(path, index) in localPaths" :key="path" class="image-item">
+    <view class="field-card">
+      <text class="field-card__label">参考图 / 样片</text>
+      <view class="upload-grid">
+        <view v-for="(path, index) in localPaths" :key="path" class="upload-grid__item">
           <image :src="path" mode="aspectFill" />
-          <view class="remove" @tap.stop="removeImage(index)">×</view>
+          <view class="upload-grid__remove" @tap.stop="removeImage(index)">×</view>
         </view>
-        <view v-if="localPaths.length < 9" class="add" @tap="chooseImages">+</view>
+        <view v-if="localPaths.length < 9" class="upload-grid__add" @tap="chooseImages">
+          <KeepIcon name="plus-circle" :size="42" />
+          <text>上传</text>
+        </view>
       </view>
-      <text v-if="processing" class="progress">正在处理 {{ processedCount }}/{{ localPaths.length }}</text>
+      <text v-if="processing" class="publish-tip">正在处理 {{ processedCount }}/{{ localPaths.length }}</text>
     </view>
 
-    <text class="tip">发布需要 3 个拍拍豆，当前余额 {{ userStore.userInfo?.ppd || 0 }}</text>
-    <button class="submit" :disabled="!canSubmit || submitting || processing" :loading="submitting" @tap="submit">
-      {{ submitting ? '提交中...' : '发布约拍' }}
-    </button>
+    <text class="publish-tip">发布需要 3 个拍拍豆，当前余额 {{ userStore.userInfo?.ppd || 0 }}</text>
+    <view class="publish-submit">
+      <button class="publish-submit__button" :disabled="!canSubmit || submitting || processing" :loading="submitting" @tap="submit">
+        {{ submitting ? '提交中...' : '发布约拍' }}
+      </button>
+    </view>
   </view>
 </template>
 
@@ -63,6 +96,8 @@ import { computed, reactive, ref } from 'vue'
 import { useUserStore } from '@/stores/user'
 import * as ypatApi from '@/api/modules/ypat'
 import { filePathToBase64 } from '@/utils/file-base64'
+import { PHOTO_STYLES } from '@/constants/enums'
+import KeepIcon from './KeepIcon.vue'
 
 const userStore = useUserStore()
 const today = new Date().toISOString().slice(0, 10)
@@ -71,22 +106,28 @@ const processing = ref(false)
 const processedCount = ref(0)
 const localPaths = ref<string[]>([])
 const base64Cache = ref<string[]>([])
+const title = ref('')
+const selectedStyles = ref<string[]>(['INS', '胶片', '情绪'])
 
-const targets = [{ value: '0', label: '约摄影师' }, { value: '1', label: '约模特' }]
+const targets = [
+  { value: '0', label: '我要约摄影师', icon: 'camera' },
+  { value: '1', label: '我要约模特', icon: 'user' },
+]
 const chargeWays = [
-  { value: '0', label: '互免' },
+  { value: '0', label: '希望互免' },
   { value: '1', label: '我要收费' },
-  { value: '2', label: '可以付费' },
+  { value: '2', label: '可付费' },
   { value: '3', label: '费用协商' },
 ]
+const styles = PHOTO_STYLES.slice(0, 9)
 
 const model = reactive({
-  target: '1',
+  target: '0',
   describ: '',
-  patdate: '',
-  province: '',
-  city: '',
-  area: '',
+  patdate: today,
+  province: '上海市',
+  city: '上海市',
+  area: '徐汇区',
   patarea: '',
   chargeway: '0',
   chargeamt: 0,
@@ -96,23 +137,20 @@ const model = reactive({
 })
 
 const regionValue = computed(() => [model.province, model.city, model.area])
-const regionText = computed(() => [model.province, model.city, model.area].filter(Boolean).join(' '))
+const regionText = computed(() => [model.city.replace('市', ''), model.area].filter(Boolean).join(' · '))
 const chargeAmountValid = computed(() => {
   if (model.chargeway !== '1' && model.chargeway !== '2') return true
   return Number(model.chargeamt) > 0
 })
 const canSubmit = computed(() => Boolean(
-  model.describ.trim()
+  title.value.trim()
+  && model.describ.trim()
   && model.patdate
   && model.province.trim()
   && model.city.trim()
   && localPaths.value.length
   && chargeAmountValid.value
 ))
-
-function changeDate(event: { detail: { value: string } }): void {
-  model.patdate = event.detail.value
-}
 
 function changeRegion(event: { detail: { value: string[] } }): void {
   const [province = '', city = '', area = ''] = event.detail.value
@@ -124,6 +162,12 @@ function changeRegion(event: { detail: { value: string[] } }): void {
 function selectChargeWay(value: string): void {
   model.chargeway = value
   if (value === '0' || value === '3') model.chargeamt = 0
+}
+
+function toggleStyle(style: string): void {
+  selectedStyles.value = selectedStyles.value.includes(style)
+    ? selectedStyles.value.filter((item) => item !== style)
+    : selectedStyles.value.concat(style)
 }
 
 function chooseImages(): void {
@@ -173,7 +217,12 @@ async function submit(): Promise<void> {
   try {
     const pics = await convertImages()
     if (pics.length !== localPaths.value.length) throw new Error('部分图片处理失败')
-    await ypatApi.submit({ ...model, pics })
+    await ypatApi.submit({
+      ...model,
+      describ: `${title.value.trim()}\n${model.describ.trim()}`,
+      patstyle: selectedStyles.value.join(','),
+      pics,
+    })
     uni.showToast({ title: '发布成功，等待审核', icon: 'success' })
     reset()
     await userStore.updateUserInfo()
@@ -186,9 +235,21 @@ async function submit(): Promise<void> {
 
 function reset(): void {
   Object.assign(model, {
-    target: '1', describ: '', patdate: '', province: '', city: '', area: '', patarea: '',
-    chargeway: '0', chargeamt: 0, patstyle: '', realnameflag: '0', creditflag: '0',
+    target: '0',
+    describ: '',
+    patdate: today,
+    province: '上海市',
+    city: '上海市',
+    area: '徐汇区',
+    patarea: '',
+    chargeway: '0',
+    chargeamt: 0,
+    patstyle: '',
+    realnameflag: '0',
+    creditflag: '0',
   })
+  title.value = ''
+  selectedStyles.value = ['INS', '胶片', '情绪']
   localPaths.value = []
   base64Cache.value = []
   processedCount.value = 0
@@ -196,22 +257,175 @@ function reset(): void {
 </script>
 
 <style scoped lang="scss">
-.publish-form { padding: 28rpx; padding-bottom: 140rpx; background: #f7f8fa; }
-.section { margin-bottom: 22rpx; padding: 28rpx; border-radius: 24rpx; background: #fff; }
-.title { display: block; margin-bottom: 18rpx; color: #1d2433; font-size: 29rpx; font-weight: 600; }
-.options { display: flex; flex-wrap: wrap; gap: 14rpx; }
-.option { padding: 14rpx 24rpx; border-radius: 28rpx; color: #606a78; background: #f1f3f5; }
-.option.active { color: #fff; background: #23c268; }
-.textarea, .picker, .input { box-sizing: border-box; width: 100%; padding: 20rpx; border-radius: 16rpx; background: #f7f8fa; }
-.textarea { min-height: 210rpx; }
-.address-input, .price-input { margin-top: 16rpx; }
-.images { display: flex; flex-wrap: wrap; gap: 14rpx; }
-.image-item, .add { position: relative; width: 190rpx; height: 190rpx; overflow: hidden; border-radius: 18rpx; background: #eef1f4; }
-.image-item image { width: 100%; height: 100%; }
-.add { display: flex; align-items: center; justify-content: center; color: #929aa7; font-size: 64rpx; }
-.remove { position: absolute; top: 8rpx; right: 8rpx; width: 40rpx; height: 40rpx; border-radius: 50%; color: #fff; background: rgba(0,0,0,.55); text-align: center; }
-.progress, .tip { display: block; margin: 18rpx 0; color: #7c8593; font-size: 25rpx; }
-.submit { height: 92rpx; line-height: 92rpx; border-radius: 46rpx; color: #fff; background: #23c268; }
-.submit[disabled] { opacity: .45; }
-.submit::after { border: 0; }
+@import '@/styles/tokens.scss';
+@import '@/styles/mixins.scss';
+
+.publish-form {
+  min-height: 100vh;
+  padding: 24rpx 36rpx 180rpx;
+  background: $color-bg-page;
+}
+
+.target-picker {
+  display: flex;
+  gap: 20rpx;
+  margin-bottom: 32rpx;
+}
+
+.target-picker__item {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 164rpx;
+  border: 4rpx solid $color-border;
+  border-radius: $radius-keep-field;
+  color: $color-text-primary;
+  background: #fff;
+  font-size: 32rpx;
+  font-weight: 800;
+}
+
+.target-picker__item text {
+  margin-top: 14rpx;
+}
+
+.target-picker__item--active {
+  color: $color-primary-dark;
+  border-color: $color-primary;
+  background: #F0FCF5;
+}
+
+.field-card {
+  margin-bottom: 26rpx;
+  padding: 28rpx 32rpx;
+  border-radius: $radius-keep-field;
+  background: #fff;
+  box-shadow: $shadow-keep-card;
+}
+
+.field-card--textarea {
+  min-height: 208rpx;
+}
+
+.field-card__label {
+  display: block;
+  margin-bottom: 20rpx;
+  color: $color-text-helper;
+  font-size: 28rpx;
+  font-weight: 800;
+}
+
+.field-card__input,
+.city-field {
+  width: 100%;
+  color: $color-text-primary;
+  font-size: 32rpx;
+  font-weight: 600;
+}
+
+.field-card__textarea {
+  width: 100%;
+  height: 128rpx;
+  color: $color-text-primary;
+  font-size: 32rpx;
+  line-height: 1.5;
+}
+
+.option-wrap {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20rpx;
+}
+
+.option-pill {
+  @include keep-chip;
+}
+
+.option-pill--active {
+  @include keep-chip(true);
+}
+
+.price-input {
+  height: 76rpx;
+  margin-top: 22rpx;
+  padding: 0 24rpx;
+  border-radius: 24rpx;
+  background: $color-bg-chip;
+}
+
+.upload-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16rpx;
+}
+
+.upload-grid__item,
+.upload-grid__add {
+  position: relative;
+  height: 156rpx;
+  overflow: hidden;
+  border-radius: 24rpx;
+  background: $color-bg-chip;
+}
+
+.upload-grid__item image {
+  width: 100%;
+  height: 100%;
+}
+
+.upload-grid__remove {
+  position: absolute;
+  top: 8rpx;
+  right: 8rpx;
+  width: 40rpx;
+  height: 40rpx;
+  border-radius: 50%;
+  color: #fff;
+  background: rgba(0, 0, 0, 0.5);
+  line-height: 40rpx;
+  text-align: center;
+}
+
+.upload-grid__add {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  border: 4rpx dashed $color-text-helper;
+  color: $color-text-helper;
+  font-size: 28rpx;
+  font-weight: 700;
+}
+
+.upload-grid__add text {
+  margin-top: 8rpx;
+}
+
+.publish-tip {
+  display: block;
+  margin: 18rpx 0;
+  color: $color-text-secondary;
+  font-size: 24rpx;
+}
+
+.publish-submit {
+  position: fixed;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  padding: 28rpx 36rpx calc(36rpx + env(safe-area-inset-bottom));
+  background: linear-gradient(transparent, #fff 28%);
+}
+
+.publish-submit__button {
+  @include keep-primary-button;
+  width: 100%;
+  line-height: 104rpx;
+}
+
+.publish-submit__button[disabled] {
+  opacity: 0.45;
+}
 </style>
