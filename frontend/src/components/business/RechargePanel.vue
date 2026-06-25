@@ -59,11 +59,11 @@ async function loadProducts(): Promise<void> {
 }
 
 function isPaid(order?: OrderInfo): boolean {
-  return order?.result_code === 'SUCCESS' || order?.status === '0'
+  return order?.result_code === 'SUCCESS' || order?.status === '1'
 }
 
 function isFailed(order?: OrderInfo): boolean {
-  return order?.result_code === 'FAIL' || order?.status === '2' || order?.status === '3'
+  return order?.result_code === 'FAIL' || Boolean(order?.err_code)
 }
 
 async function waitForServerConfirmation(outTradeNo: string, attempts = 10): Promise<'paid' | 'failed' | 'pending'> {
