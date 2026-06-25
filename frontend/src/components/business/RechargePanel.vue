@@ -30,7 +30,7 @@ import { computed, ref } from 'vue'
 import { onLoad, onUnload } from '@dcloudio/uni-app'
 import { useUserStore } from '@/stores/user'
 import * as paymentApi from '@/api/modules/payment'
-import type { Product } from '@/api/types'
+import type { OrderInfo, Product } from '@/api/types'
 
 const userStore = useUserStore()
 const loading = ref(true)
@@ -58,17 +58,27 @@ async function loadProducts(): Promise<void> {
   }
 }
 
-async function waitForBalance(expectedBalance: number, attempts = 10): Promise<boolean> {
+function isPaid(order?: OrderInfo): boolean {
+  return order?.result_code === 'SUCCESS' || order?.status === '0'
+}
+
+function isFailed(order?: OrderInfo): boolean {
+  return order?.result_code === 'FAIL' || order?.status === '2' || order?.status === '3'
+}
+
+async function waitForServerConfirmation(outTradeNo: string, attempts = 10): Promise<'paid' | 'failed' | 'pending'> {
   for (let index = 0; index < attempts && !pollingCancelled; index += 1) {
     await new Promise((resolve) => setTimeout(resolve, 2000))
     try {
-      const user = await userStore.updateUserInfo()
-      if (Number(user?.ppd || 0) >= expectedBalance) return true
+      const result = await paymentApi.getOrderStatus(outTradeNo)
+      const order = result.data?.content?.[0]
+      if (isPaid(order)) return 'paid'
+      if (isFailed(order)) return 'failed'
     } catch {
-      // 微信回调可能尚未完成，继续查询服务端余额。
+      // 支付回调或订单服务可能暂时不可用，继续在限定次数内查询。
     }
   }
-  return false
+  return 'pending'
 }
 
 function invokeWechatPayment(data: {
@@ -98,8 +108,6 @@ async function pay(): Promise<void> {
 
   paying.value = true
   pollingCancelled = false
-  const beforeBalance = Number(userStore.userInfo.ppd || 0)
-  const expectedBalance = beforeBalance + Number(selected.value.currval || 0)
 
   try {
     const order = await paymentApi.createOrder({
@@ -108,7 +116,7 @@ async function pay(): Promise<void> {
       total_fee: selected.value.oldval,
     })
 
-    if (!order.data?.package || !order.data.timeStamp || !order.data.nonceStr || !order.data.paySign) {
+    if (!order.data?.package || !order.data.timeStamp || !order.data.nonceStr || !order.data.paySign || !order.data.out_trade_no) {
       throw new Error('支付参数不完整')
     }
 
@@ -120,20 +128,26 @@ async function pay(): Promise<void> {
       paySign: order.data.paySign,
     })
 
-    uni.showLoading({ title: '确认到账中...' })
-    const confirmed = await waitForBalance(expectedBalance)
+    uni.showLoading({ title: '服务端确认中...' })
+    const state = await waitForServerConfirmation(order.data.out_trade_no)
     uni.hideLoading()
 
-    if (confirmed) {
+    if (state === 'paid') {
+      await userStore.updateUserInfo()
       uni.showToast({ title: '充值成功', icon: 'success' })
       setTimeout(() => uni.navigateBack(), 1200)
-    } else {
-      uni.showModal({
-        title: '支付结果确认中',
-        content: '暂未查询到余额变化，请稍后在钱包页面刷新。系统不会在前端自行增加余额。',
-        showCancel: false,
-      })
+      return
     }
+
+    if (state === 'failed') {
+      throw new Error('服务端确认支付失败')
+    }
+
+    uni.showModal({
+      title: '支付结果确认中',
+      content: '服务端暂未确认到账，请稍后在钱包页面刷新。系统不会在前端自行增加余额。',
+      showCancel: false,
+    })
   } catch (error) {
     uni.hideLoading()
     const message = error instanceof Error ? error.message : '支付失败'
