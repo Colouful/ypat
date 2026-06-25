@@ -1,20 +1,23 @@
 <template>
   <view class="login-page">
-    <view class="login-header">
-      <image class="login-logo" src="/static/tab/home-active.png" mode="aspectFit" />
+    <view class="login-brand">
+      <view class="login-logo">
+        <KeepIcon name="camera" :size="86" color="#FFFFFF" />
+      </view>
       <text class="login-title">爱去拍</text>
-      <text class="login-subtitle">摄影约拍撮合平台</text>
+      <text class="login-subtitle">遇见同频的拍摄伙伴</text>
     </view>
 
     <view class="login-body">
       <!-- #ifdef MP-WEIXIN -->
       <button
-        class="login-btn login-btn--primary"
+        class="wx-button"
         open-type="getPhoneNumber"
         :disabled="submitting"
         @getphonenumber="handleWechatPhoneAuthorization"
       >
-        <text class="login-btn__text">{{ submitting ? '登录中...' : '微信手机号授权登录' }}</text>
+        <KeepIcon name="phone" :size="38" color="#FFFFFF" />
+        <text>{{ submitting ? '登录中...' : '微信一键登录' }}</text>
       </button>
       <text class="login-tip">登录需要微信手机号授权，用于匹配已有账号并保障交易安全。</text>
       <!-- #endif -->
@@ -22,7 +25,7 @@
       <!-- #ifdef H5 -->
       <view class="unsupported-card">
         <text class="unsupported-card__title">H5 登录暂未开放</text>
-        <text class="unsupported-card__desc">当前后端只支持微信小程序加密手机号登录，避免使用无效的手机号直登流程。</text>
+        <text class="unsupported-card__desc">当前后端只支持微信小程序加密手机号登录，请在微信小程序中使用登录能力。</text>
       </view>
       <!-- #endif -->
 
@@ -43,9 +46,9 @@
         >
           <text v-if="agreed" class="login-agreement__checkmark">✓</text>
         </view>
-        <text class="login-agreement__text">我已阅读并同意</text>
+        <text class="login-agreement__text">登录即代表同意</text>
         <text class="login-agreement__link" @tap="goAgreement">《用户协议》</text>
-        <text class="login-agreement__text">和</text>
+        <text class="login-agreement__text">与</text>
         <text class="login-agreement__link" @tap="goPrivacy">《隐私政策》</text>
       </view>
     </view>
@@ -55,6 +58,7 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { useUserStore } from '@/stores/user'
+import KeepIcon from '@/components/business/KeepIcon.vue'
 
 interface PhoneAuthorizationEvent {
   detail?: {
@@ -125,85 +129,85 @@ function goPrivacy(): void {
 
 <style lang="scss">
 @import '@/styles/tokens.scss';
+@import '@/styles/mixins.scss';
 
 .login-page {
   min-height: 100vh;
   display: flex;
   flex-direction: column;
-  padding: 0 $spacing-xl;
+  padding: 0 60rpx;
   background: #fff;
 }
 
-.login-header {
+.login-brand {
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding-top: 200rpx;
-  margin-bottom: 100rpx;
+  padding-top: 240rpx;
 }
 
 .login-logo {
-  width: 160rpx;
-  height: 160rpx;
-  margin-bottom: $spacing-lg;
+  @include flex-center;
+  width: 168rpx;
+  height: 168rpx;
+  margin-bottom: 44rpx;
+  border-radius: 52rpx;
+  background: $color-primary;
+  box-shadow: $shadow-keep-button;
 }
 
 .login-title {
-  font-size: 56rpx;
-  font-weight: $font-weight-bold;
   color: $color-text-primary;
+  font-size: 56rpx;
+  font-weight: 900;
+  letter-spacing: 6rpx;
 }
 
 .login-subtitle,
 .login-tip,
 .unsupported-card__desc {
-  margin-top: $spacing-sm;
-  font-size: $font-size-sm;
-  line-height: 1.7;
+  margin-top: 18rpx;
   color: $color-text-secondary;
+  font-size: 28rpx;
+  line-height: 1.7;
   text-align: center;
 }
 
 .login-body {
   flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  padding-bottom: 48rpx;
 }
 
-.login-btn {
+.wx-button {
+  @include keep-primary-button;
   width: 100%;
-  height: 96rpx;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border: 0;
-  border-radius: $radius-xl;
-  background: $color-primary;
+  gap: 14rpx;
+  line-height: 104rpx;
+}
 
-  &::after { border: 0; }
-  &[disabled] { opacity: .65; }
-
-  &__text {
-    color: #fff;
-    font-size: $font-size-lg;
-    font-weight: $font-weight-medium;
-  }
+.wx-button[disabled] {
+  opacity: 0.65;
 }
 
 .unsupported-card {
-  padding: $spacing-xl;
-  border-radius: $radius-lg;
+  padding: 48rpx 36rpx;
+  border-radius: $radius-keep-card;
   background: $color-bg-page;
   text-align: center;
+}
 
-  &__title {
-    display: block;
-    font-size: $font-size-lg;
-    font-weight: $font-weight-semibold;
-    color: $color-text-primary;
-  }
+.unsupported-card__title {
+  display: block;
+  color: $color-text-primary;
+  font-size: 32rpx;
+  font-weight: 800;
 }
 
 .login-footer {
-  padding: $spacing-xl 0 calc(env(safe-area-inset-bottom) + 40rpx);
+  padding: 24rpx 0 calc(54rpx + env(safe-area-inset-bottom));
 }
 
 .login-agreement {
@@ -211,25 +215,38 @@ function goPrivacy(): void {
   align-items: center;
   justify-content: center;
   flex-wrap: wrap;
+}
 
-  &__check {
-    width: 36rpx;
-    height: 36rpx;
-    margin-right: $spacing-xs;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border: 2rpx solid $color-border;
-    border-radius: 50%;
+.login-agreement__check {
+  @include flex-center;
+  width: 36rpx;
+  height: 36rpx;
+  margin-right: 10rpx;
+  border: 2rpx solid $color-border;
+  border-radius: 50%;
+}
 
-    &--active {
-      background: $color-primary;
-      border-color: $color-primary;
-    }
-  }
+.login-agreement__check--active {
+  border-color: $color-primary;
+  background: $color-primary;
+}
 
-  &__checkmark { color: #fff; font-size: 20rpx; }
-  &__text { color: $color-text-secondary; font-size: $font-size-xs; }
-  &__link { color: $color-primary; font-size: $font-size-xs; }
+.login-agreement__checkmark {
+  color: #fff;
+  font-size: 20rpx;
+}
+
+.login-agreement__text,
+.login-agreement__link {
+  font-size: 24rpx;
+}
+
+.login-agreement__text {
+  color: $color-text-secondary;
+}
+
+.login-agreement__link {
+  color: $color-text-primary;
+  font-weight: 800;
 }
 </style>
