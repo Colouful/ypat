@@ -46,6 +46,10 @@
   }
 }
 
+@mixin line-clamp($lines: 1) {
+  @include ellipsis($lines);
+}
+
 // ------------------------------------------------------------
 // Safe Area
 // ------------------------------------------------------------
@@ -65,6 +69,17 @@
   overflow: hidden;
 }
 
+@mixin keep-card($radius: $radius-keep-card, $padding: 0) {
+  background-color: $color-bg-card;
+  border-radius: $radius;
+  box-shadow: $shadow-keep-card;
+  overflow: hidden;
+
+  @if $padding != 0 {
+    padding: $padding;
+  }
+}
+
 // ------------------------------------------------------------
 // Page Container
 // ------------------------------------------------------------
@@ -74,6 +89,49 @@
   background-color: $color-bg-page;
   padding: $spacing-lg;
   box-sizing: border-box;
+}
+
+@mixin keep-page($padding: 0) {
+  min-height: 100vh;
+  box-sizing: border-box;
+  background-color: $color-bg-page;
+  color: $color-text-primary;
+
+  @if $padding != 0 {
+    padding: $padding;
+  }
+}
+
+@mixin keep-chip($active: false) {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 60rpx;
+  padding: 0 28rpx;
+  border: 3rpx solid transparent;
+  border-radius: $radius-round;
+  font-size: $font-size-base;
+  font-weight: $font-weight-bold;
+
+  @if $active {
+    color: $color-primary-dark;
+    border-color: $color-primary;
+    background-color: $color-primary-light;
+  } @else {
+    color: $color-text-secondary;
+    background-color: $color-bg-chip;
+  }
+}
+
+@mixin keep-primary-button {
+  @include flex-center;
+  height: 104rpx;
+  border-radius: $radius-round;
+  color: #fff;
+  background-color: $color-primary;
+  box-shadow: $shadow-keep-button;
+  font-size: $font-size-lg;
+  font-weight: $font-weight-bold;
 }
 
 // ------------------------------------------------------------

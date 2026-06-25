@@ -17,6 +17,8 @@ $color-accent-orange: #FF9F1C;
 $color-accent-red: #FF4D4F;
 $color-accent-purple: #9B59B6;
 $color-accent-blue: #3498DB;
+$color-accent-teal: #10B5A8;
+$color-accent-gold: #E8A23B;
 
 // ------------------------------------------------------------
 // Colors - Neutral / Text
@@ -31,7 +33,12 @@ $color-text-disabled: #D1D5DB;
 // ------------------------------------------------------------
 $color-bg-page: #F5F6F8;
 $color-bg-card: #FFFFFF;
+$color-bg-chip: #F1F3F5;
 $color-bg-mask: rgba(0, 0, 0, 0.5);
+$color-orange-soft: #FFF3DF;
+$color-blue-soft: #EEF3FA;
+$color-gold-soft: #F8F1E3;
+$color-teal-soft: #E2F8F5;
 
 // ------------------------------------------------------------
 // Colors - Border & Divider
@@ -84,6 +91,15 @@ $radius-round: 999rpx;
 $shadow-sm: 0 2rpx 8rpx rgba(0, 0, 0, 0.04);
 $shadow-md: 0 4rpx 16rpx rgba(0, 0, 0, 0.08);
 $shadow-lg: 0 8rpx 32rpx rgba(0, 0, 0, 0.12);
+$shadow-keep-card: 0 6rpx 24rpx rgba(20, 24, 31, 0.04);
+$shadow-keep-button: 0 20rpx 44rpx rgba(35, 194, 104, 0.28);
+
+// ------------------------------------------------------------
+// Keep Visual Radius
+// ------------------------------------------------------------
+$radius-keep-card: 32rpx;
+$radius-keep-field: 32rpx;
+$radius-keep-sheet: 48rpx;
 
 // ------------------------------------------------------------
 // Animation Durations

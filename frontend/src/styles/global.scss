@@ -6,3 +6,27 @@
 @import './tokens.scss';
 @import './mixins.scss';
 @import './reset.scss';
+
+.keep-page {
+  @include keep-page;
+}
+
+.keep-card {
+  @include keep-card;
+}
+
+.keep-chip {
+  @include keep-chip;
+}
+
+.keep-chip--active {
+  @include keep-chip(true);
+}
+
+.keep-safe-bottom {
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+.keep-primary-button {
+  @include keep-primary-button;
+}
