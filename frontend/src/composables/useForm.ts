@@ -46,19 +46,16 @@ export function useForm<T extends Record<string, unknown>>(options: FormOptions<
 
   let draftTimer: ReturnType<typeof setTimeout> | null = null
 
-  // Watch form data changes for draft auto-save
   if (onDraftSave) {
     watch(
       formData,
       (newData) => {
-        if (draftTimer) {
-          clearTimeout(draftTimer)
-        }
+        if (draftTimer) clearTimeout(draftTimer)
         draftTimer = setTimeout(() => {
           onDraftSave(newData)
         }, draftDelay)
       },
-      { deep: true }
+      { deep: true },
     )
   }
 
@@ -69,7 +66,6 @@ export function useForm<T extends Record<string, unknown>>(options: FormOptions<
     const value = formData.value[field]
 
     for (const rule of fieldRules) {
-      // Required check
       if (rule.required) {
         if (value === undefined || value === null || value === '') {
           errors.value[field as string] = rule.message
@@ -81,25 +77,21 @@ export function useForm<T extends Record<string, unknown>>(options: FormOptions<
         }
       }
 
-      // Min length check
       if (rule.min !== undefined && typeof value === 'string' && value.length < rule.min) {
         errors.value[field as string] = rule.message
         return false
       }
 
-      // Max length check
       if (rule.max !== undefined && typeof value === 'string' && value.length > rule.max) {
         errors.value[field as string] = rule.message
         return false
       }
 
-      // Pattern check
       if (rule.pattern && typeof value === 'string' && !rule.pattern.test(value)) {
         errors.value[field as string] = rule.message
         return false
       }
 
-      // Custom validator
       if (rule.validator) {
         const valid = await rule.validator(value)
         if (!valid) {
@@ -109,7 +101,6 @@ export function useForm<T extends Record<string, unknown>>(options: FormOptions<
       }
     }
 
-    // Clear error for this field if valid
     delete errors.value[field as string]
     return true
   }
@@ -121,27 +112,18 @@ export function useForm<T extends Record<string, unknown>>(options: FormOptions<
     let allValid = true
     for (const field of Object.keys(rules) as Array<keyof T>) {
       const fieldValid = await validateField(field)
-      if (!fieldValid) {
-        allValid = false
-      }
+      if (!fieldValid) allValid = false
     }
     return allValid
   }
 
   async function submit(): Promise<void> {
-    // Prevent double-submit
     if (submitting.value) return
 
     const isValid = await validate()
     if (!isValid) {
-      // Show first error message
       const firstError = Object.values(errors.value)[0]
-      if (firstError) {
-        uni.showToast({
-          title: firstError,
-          icon: 'none',
-        })
-      }
+      if (firstError) uni.showToast({ title: firstError, icon: 'none' })
       return
     }
 
@@ -150,10 +132,7 @@ export function useForm<T extends Record<string, unknown>>(options: FormOptions<
       await onSubmit(formData.value)
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : '提交失败，请重试'
-      uni.showToast({
-        title: message,
-        icon: 'none',
-      })
+      uni.showToast({ title: message, icon: 'none' })
       throw error
     } finally {
       submitting.value = false
@@ -167,7 +146,8 @@ export function useForm<T extends Record<string, unknown>>(options: FormOptions<
   }
 
   function setFieldValue(field: keyof T, value: unknown): void {
-    ;(formData.value as Record<string, unknown>)[field as string] = value
+    const target = formData.value as Record<string, unknown>
+    target[field as string] = value
   }
 
   return {
