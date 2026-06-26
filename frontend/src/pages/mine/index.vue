@@ -156,7 +156,7 @@ const professLabel = computed(() => {
 })
 
 onShow(() => {
-  uni.hideTabBar({ animation: false })
+  try { uni.hideTabBar({ animation: false }) } catch(e) {}
   if (isLoggedIn.value) {
     userStore.updateUserInfo()
     userStore.refreshUnreadCount()

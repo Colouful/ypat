@@ -116,7 +116,7 @@ function checkLogin(url: string): void {
 }
 
 onShow(() => {
-  uni.hideTabBar({ animation: false })
+  try { uni.hideTabBar({ animation: false }) } catch(e) {}
   if (userStore.isLoggedIn) userStore.refreshUnreadCount()
 })
 </script>
