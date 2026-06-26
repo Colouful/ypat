@@ -179,7 +179,7 @@ onLoad(initForm)
 .avatar-section { display: flex; flex-direction: column; align-items: center; padding: 40rpx 0; }
 .avatar { width: 160rpx; height: 160rpx; border-radius: 50%; background: #e9edf2; }
 .avatar-tip { margin-top: 16rpx; color: $color-text-secondary; font-size: 25rpx; }
-.form-card { padding: 30rpx; border-radius: 32rpx; background: #fff; box-shadow: 0 6rpx 24rpx rgba(20, 24, 31, .04); }
+.form-card { padding: 30rpx; border-radius: $radius-keep-card; background: $color-bg-card; box-shadow: $shadow-keep-card; }
 .label { display: block; margin: 28rpx 0 12rpx; color: $color-text-primary; font-weight: 600; }
 .input, .picker { box-sizing: border-box; width: 100%; padding: 22rpx; border-radius: 16rpx; background: $color-bg-page; }
 .save { margin-top: 36rpx; height: 92rpx; line-height: 92rpx; border-radius: 999rpx; color: #fff; background: $color-primary; }

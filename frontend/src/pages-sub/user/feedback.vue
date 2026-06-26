@@ -57,13 +57,13 @@ async function handleSubmit(): Promise<void> {
 @import '@/styles/tokens.scss';
 
 .feedback-page { min-height: 100vh; padding: 28rpx; background: $color-bg-page; }
-.feedback-card, .contact-card { margin-bottom: 22rpx; padding: 28rpx; border-radius: 32rpx; background: #fff; box-shadow: 0 6rpx 24rpx rgba(20, 24, 31, .04); }
+.feedback-card, .contact-card { margin-bottom: 22rpx; padding: 28rpx; border-radius: $radius-keep-card; background: $color-bg-card; box-shadow: $shadow-keep-card; }
 .feedback-card__header { display: flex; margin-bottom: 18rpx; }
 .feedback-card__title, .contact-card__title { color: $color-text-primary; font-size: 28rpx; font-weight: 600; }
 .feedback-card__required { margin-left: 8rpx; color: #e5484d; }
 .feedback-textarea { width: 100%; min-height: 280rpx; }
 .feedback-card__footer { text-align: right; }
-.feedback-card__count { color: #9098a5; font-size: 23rpx; }
+.feedback-card__count { color: $color-text-helper; font-size: 23rpx; }
 .contact-input { margin-top: 18rpx; padding: 20rpx; border-radius: 16rpx; background: $color-bg-page; }
 .submit-btn { margin-top: 40rpx; padding: 26rpx; border-radius: 999rpx; color: #fff; background: $color-primary; text-align: center; }
 .submit-btn--disabled { opacity: .45; pointer-events: none; }

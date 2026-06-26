@@ -5,11 +5,11 @@
       <view class="settings-card">
         <view class="settings-item" @tap="handlePhone">
           <text class="settings-item__label">手机号</text>
-          <view class="settings-item__right"><text class="settings-item__value">{{ maskedPhone }}</text><text class="settings-item__arrow">›</text></view>
+          <view class="settings-item__right"><text class="settings-item__value">{{ maskedPhone }}</text><KeepIcon name="chevron-right" :size="32" color="#B3B8BE" /></view>
         </view>
         <view class="settings-item" @tap="goRealname">
           <text class="settings-item__label">实名认证</text>
-          <view class="settings-item__right"><text class="settings-item__value" :class="{ 'settings-item__value--verified': isVerified }">{{ verifyStatus }}</text><text class="settings-item__arrow">›</text></view>
+          <view class="settings-item__right"><text class="settings-item__value" :class="{ 'settings-item__value--verified': isVerified }">{{ verifyStatus }}</text><KeepIcon name="chevron-right" :size="32" color="#B3B8BE" /></view>
         </view>
       </view>
     </view>
@@ -17,9 +17,9 @@
     <view class="settings-section">
       <view class="section-title">通用</view>
       <view class="settings-card">
-        <view class="settings-item" @tap="handleClearCache"><text class="settings-item__label">清除缓存</text><view class="settings-item__right"><text class="settings-item__value">{{ cacheSize }}</text><text class="settings-item__arrow">›</text></view></view>
-        <view class="settings-item" @tap="goAbout"><text class="settings-item__label">关于我们</text><text class="settings-item__arrow">›</text></view>
-        <view class="settings-item" @tap="goFeedback"><text class="settings-item__label">意见反馈</text><text class="settings-item__arrow">›</text></view>
+        <view class="settings-item" @tap="handleClearCache"><text class="settings-item__label">清除缓存</text><view class="settings-item__right"><text class="settings-item__value">{{ cacheSize }}</text><KeepIcon name="chevron-right" :size="32" color="#B3B8BE" /></view></view>
+        <view class="settings-item" @tap="goAbout"><text class="settings-item__label">关于我们</text><KeepIcon name="chevron-right" :size="32" color="#B3B8BE" /></view>
+        <view class="settings-item" @tap="goFeedback"><text class="settings-item__label">意见反馈</text><KeepIcon name="chevron-right" :size="32" color="#B3B8BE" /></view>
       </view>
     </view>
 
@@ -31,6 +31,7 @@
 import { computed, ref } from 'vue'
 import { onShow } from '@dcloudio/uni-app'
 import { useUserStore } from '@/stores/user'
+import KeepIcon from '@/components/business/KeepIcon.vue'
 
 const userStore = useUserStore()
 const cacheSize = ref('0 KB')
@@ -84,12 +85,12 @@ onShow(getStorageSize)
 .settings-page { min-height: 100vh; padding: 28rpx; background: $color-bg-page; }
 .settings-section { margin-bottom: 28rpx; }
 .section-title { margin-bottom: 14rpx; color: $color-text-secondary; font-size: 25rpx; }
-.settings-card { overflow: hidden; border-radius: 32rpx; background: #fff; box-shadow: 0 6rpx 24rpx rgba(20, 24, 31, .04); }
+.settings-card { overflow: hidden; border-radius: $radius-keep-card; background: $color-bg-card; box-shadow: $shadow-keep-card; }
 .settings-item { display: flex; align-items: center; justify-content: space-between; padding: 28rpx; border-bottom: 1rpx solid $color-border; }
 .settings-item__right { display: flex; align-items: center; gap: 12rpx; }
 .settings-item__value, .settings-item__arrow { color: $color-text-secondary; }
 .settings-item__value--verified { color: $color-primary; }
 .logout-section { margin-top: 48rpx; }
-.logout-btn { padding: 26rpx; border-radius: 32rpx; background: #fff; box-shadow: 0 6rpx 24rpx rgba(20, 24, 31, .04); text-align: center; }
+.logout-btn { padding: 26rpx; border-radius: $radius-keep-card; background: $color-bg-card; box-shadow: $shadow-keep-card; text-align: center; }
 .logout-btn__text { color: #e5484d; }
 </style>

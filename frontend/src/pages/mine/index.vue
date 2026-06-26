@@ -47,15 +47,24 @@
       <view v-if="isLoggedIn" class="identity-pills">
         <view class="identity-pill">{{ professLabel || '模特' }} <text>Lv.4</text></view>
         <view class="identity-pill">信用分 735 <text>优秀</text></view>
-        <view class="identity-pill">已实名 ✓</view>
+        <view class="identity-pill">
+          <text class="identity-pill__plain">已实名</text>
+          <KeepIcon name="check" :size="24" color="#1B1E23" :stroke-width="3" />
+        </view>
       </view>
 
       <view class="member-card">
         <view>
-          <text class="member-card__title">◆ 爱去拍 · 信用会员</text>
+          <view class="member-card__title">
+            <KeepIcon name="gem" :size="34" color="#FFFFFF" />
+            <text>爱去拍 · 信用会员</text>
+          </view>
           <text class="member-card__desc">专属曝光 · 优先约拍 · 更多权益</text>
         </view>
-        <view class="member-card__button" @tap="showToast('立即开通')">立即开通 ›</view>
+        <view class="member-card__button" @tap="showToast('立即开通')">
+          <text>立即开通</text>
+          <KeepIcon name="chevron-right" :size="28" />
+        </view>
       </view>
 
       <view class="quick-card">
@@ -92,7 +101,11 @@
             </view>
             <text class="data-card__num">{{ totalYpat }}<text>次</text></text>
           </view>
-          <view class="data-card__coin" @tap="goWallet">◎ 约拍币 {{ userInfo?.ppd || 0 }} ›</view>
+          <view class="data-card__coin" @tap="goWallet">
+            <KeepIcon name="coins" :size="28" color="#FF9F1C" />
+            <text>约拍币 {{ userInfo?.ppd || 0 }}</text>
+            <KeepIcon name="chevron-right" :size="24" color="#FF9F1C" />
+          </view>
         </view>
         <view class="mini-cards">
           <view class="mini-card">
@@ -113,29 +126,7 @@
       </view>
     </view>
 
-    <view class="keep-tabbar">
-      <view class="keep-tabbar__item" @tap="goHome">
-        <KeepIcon name="home" :size="44" />
-        <text>广场</text>
-      </view>
-      <view class="keep-tabbar__item" @tap="showToast('发现')">
-        <KeepIcon name="compass" :size="44" />
-        <text>发现</text>
-        <view class="keep-tabbar__dot" />
-      </view>
-      <view class="keep-tabbar__item" @tap="goPublishTab">
-        <KeepIcon name="plus-circle" :size="46" />
-        <text>发布</text>
-      </view>
-      <view class="keep-tabbar__item" @tap="goMessage">
-        <KeepIcon name="mail" :size="44" />
-        <text>消息</text>
-      </view>
-      <view class="keep-tabbar__item keep-tabbar__item--active" @tap="noop">
-        <KeepIcon name="user" :size="44" />
-        <text>我的</text>
-      </view>
-    </view>
+    <KeepTabBar active="mine" :unread-count="unreadCount" />
   </view>
 </template>
 
@@ -147,6 +138,7 @@ import { useAppStore } from '@/stores/app'
 import { PROFESS_LABELS } from '@/constants/enums'
 import KeepIcon from '@/components/business/KeepIcon.vue'
 import KeepState from '@/components/business/KeepState.vue'
+import KeepTabBar from '@/components/business/KeepTabBar.vue'
 
 const userStore = useUserStore()
 const appStore = useAppStore()
@@ -172,16 +164,13 @@ onShow(() => {
 })
 
 function goLogin() { uni.navigateTo({ url: '/pages/login/index' }) }
-function goHome() { uni.switchTab({ url: '/pages/home/index' }) }
 function goMessage() { uni.switchTab({ url: '/pages/message/index' }) }
-function goPublishTab() { uni.switchTab({ url: '/pages/publish/index' }) }
 function goProfile() { uni.navigateTo({ url: '/pages-sub/user/profile' }) }
 function goSettings() { uni.navigateTo({ url: '/pages-sub/user/settings' }) }
 function goPublish() { checkLogin(() => uni.navigateTo({ url: '/pages-sub/ypat/my-publish' })) }
 function goApply() { checkLogin(() => uni.navigateTo({ url: '/pages-sub/ypat/my-apply' })) }
 function goFavorite() { checkLogin(() => uni.navigateTo({ url: '/pages-sub/ypat/my-favorite' })) }
 function goWallet() { checkLogin(() => uni.navigateTo({ url: '/pages-sub/user/wallet' })) }
-function noop() {}
 function showToast(title: string) { uni.showToast({ title, icon: 'none' }) }
 
 function checkLogin(callback: () => void) {
@@ -330,6 +319,13 @@ function checkLogin(callback: () => void) {
   font-size: 22rpx;
 }
 
+.identity-pill__plain {
+  color: $color-text-primary !important;
+  background: transparent !important;
+  padding: 0 !important;
+  font-size: 28rpx !important;
+}
+
 .member-card {
   display: flex;
   align-items: center;
@@ -346,6 +342,9 @@ function checkLogin(callback: () => void) {
 }
 
 .member-card__title {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
   font-size: 34rpx;
   font-weight: 800;
 }
@@ -358,6 +357,9 @@ function checkLogin(callback: () => void) {
 }
 
 .member-card__button {
+  display: flex;
+  align-items: center;
+  gap: 4rpx;
   margin-left: auto;
   padding: 18rpx 30rpx;
   border-radius: $radius-round;
@@ -464,6 +466,9 @@ function checkLogin(callback: () => void) {
 }
 
 .data-card__coin {
+  display: flex;
+  align-items: center;
+  gap: 8rpx;
   padding: 18rpx 28rpx;
   border-radius: $radius-round;
   color: $color-accent-orange;
@@ -493,44 +498,4 @@ function checkLogin(callback: () => void) {
   font-weight: 900;
 }
 
-.keep-tabbar {
-  position: fixed;
-  right: 0;
-  bottom: 0;
-  left: 0;
-  z-index: 50;
-  display: flex;
-  align-items: center;
-  height: calc(148rpx + env(safe-area-inset-bottom));
-  padding: 10rpx 0 env(safe-area-inset-bottom);
-  border-top: 1rpx solid $color-border;
-  background: rgba(255, 255, 255, 0.98);
-}
-
-.keep-tabbar__item {
-  position: relative;
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 4rpx;
-  color: $color-text-helper;
-  font-size: 22rpx;
-  font-weight: 800;
-}
-
-.keep-tabbar__item--active {
-  color: $color-text-primary;
-}
-
-.keep-tabbar__dot {
-  position: absolute;
-  top: 2rpx;
-  right: 50%;
-  width: 14rpx;
-  height: 14rpx;
-  margin-right: -28rpx;
-  border-radius: 50%;
-  background: $color-accent-red;
-}
 </style>

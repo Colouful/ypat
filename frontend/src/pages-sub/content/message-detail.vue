@@ -16,7 +16,8 @@
       </view>
 
       <view v-if="message.ypatid" class="card link" @tap="goYpatDetail">
-        <text>查看相关约拍</text><text>›</text>
+        <text>查看相关约拍</text>
+        <KeepIcon name="chevron-right" :size="34" color="#B3B8BE" />
       </view>
 
       <view v-if="contactRevealed && contactItems.length" class="card">
@@ -41,6 +42,7 @@ import { useUserStore } from '@/stores/user'
 import * as messageApi from '@/api/modules/message'
 import * as userApi from '@/api/modules/user'
 import type { LinkWay, MessInfo } from '@/api/types'
+import KeepIcon from '@/components/business/KeepIcon.vue'
 
 const userStore = useUserStore()
 const loading = ref(false)
@@ -139,13 +141,13 @@ onLoad((query) => {
 .page { min-height: 100vh; box-sizing: border-box; padding: 28rpx; background: $color-bg-page; }
 .state { padding: 220rpx 30rpx; color: $color-text-secondary; text-align: center; }
 .error { color: #b4232c; }
-.card { margin-bottom: 20rpx; padding: 28rpx; border-radius: 32rpx; background: #fff; box-shadow: 0 6rpx 24rpx rgba(20, 24, 31, .04); }
+.card { margin-bottom: 20rpx; padding: 28rpx; border-radius: $radius-keep-card; background: $color-bg-card; box-shadow: $shadow-keep-card; }
 .sender { display: flex; align-items: center; gap: 18rpx; }
 .avatar { width: 84rpx; height: 84rpx; border-radius: 50%; }
 .name, .time { display: block; }
 .name { font-weight: 600; }
 .time { margin-top: 8rpx; color: $color-text-helper; font-size: 23rpx; }
-.content { color: #3f4855; line-height: 1.7; }
+.content { color: $color-text-secondary; line-height: 1.7; }
 .link, .contact-row { display: flex; justify-content: space-between; }
 .section-title { display: block; margin-bottom: 20rpx; font-weight: 600; }
 .contact-row { padding: 18rpx 0; border-top: 1rpx solid $color-border; }

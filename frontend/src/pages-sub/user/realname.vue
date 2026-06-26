@@ -144,14 +144,14 @@ onUnload(clearForm)
 @import '@/styles/tokens.scss';
 
 .page { min-height: 100vh; box-sizing: border-box; padding: 28rpx; background: $color-bg-page; }
-.card { padding: 32rpx; border-radius: 32rpx; background: #fff; box-shadow: 0 6rpx 24rpx rgba(20, 24, 31, .04); }
+.card { padding: 32rpx; border-radius: $radius-keep-card; background: $color-bg-card; box-shadow: $shadow-keep-card; }
 .state { padding: 180rpx 30rpx; color: $color-text-secondary; text-align: center; }
 .title { display: block; color: $color-text-primary; font-size: 36rpx; font-weight: 600; }
 .success { color: $color-primary-dark; }
 .desc, .privacy { display: block; margin-top: 18rpx; color: $color-text-secondary; font-size: 25rpx; text-align: center; }
 .warning { margin-bottom: 24rpx; padding: 20rpx; border-radius: 16rpx; color: #b4232c; background: #FFF3DF; }
 .label { display: block; margin: 28rpx 0 12rpx; font-weight: 600; }
-.picker { height: 260rpx; display: flex; align-items: center; justify-content: center; overflow: hidden; border: 2rpx dashed #cfd5dd; border-radius: 20rpx; color: $color-text-secondary; background: #fafbfc; }
+.picker { height: 260rpx; display: flex; align-items: center; justify-content: center; overflow: hidden; border: 2rpx dashed #cfd5dd; border-radius: 20rpx; color: $color-text-secondary; background: $color-bg-chip; }
 .picker image { width: 100%; height: 100%; }
 .input { height: 88rpx; box-sizing: border-box; padding: 0 22rpx; border-radius: 16rpx; background: $color-bg-page; }
 .submit { margin-top: 38rpx; height: 92rpx; line-height: 92rpx; border-radius: 999rpx; color: #fff; background: $color-primary; }

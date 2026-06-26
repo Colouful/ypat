@@ -69,9 +69,9 @@ onLoad((options) => {
 .state { padding: 240rpx 40rpx; color: $color-text-secondary; text-align: center; }
 .state button { margin-top: 24rpx; }
 .error { color: #b4232c; }
-.article { display: block; overflow: hidden; padding-bottom: 48rpx; border-radius: 32rpx; background: #fff; box-shadow: 0 6rpx 24rpx rgba(20, 24, 31, .04); }
+.article { display: block; overflow: hidden; padding-bottom: 48rpx; border-radius: $radius-keep-card; background: $color-bg-card; box-shadow: $shadow-keep-card; }
 .cover { width: 100%; height: 420rpx; }
 .title { display: block; padding: 34rpx 32rpx 12rpx; color: $color-text-primary; font-size: 40rpx; font-weight: 700; }
 .meta { display: flex; gap: 12rpx; padding: 0 32rpx 28rpx; color: $color-text-helper; font-size: 24rpx; }
-.content { display: block; padding: 0 32rpx; color: #343c49; font-size: 29rpx; line-height: 1.85; }
+.content { display: block; padding: 0 32rpx; color: $color-text-primary; font-size: 29rpx; line-height: 1.85; }
 </style>

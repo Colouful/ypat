@@ -100,7 +100,7 @@ onReachBottom(() => load())
 @import '@/styles/tokens.scss';
 
 .page { min-height: 100vh; padding: 24rpx; background: $color-bg-page; }
-.item { display: flex; align-items: center; margin-bottom: 18rpx; padding: 26rpx; border-radius: 32rpx; background: #fff; box-shadow: 0 6rpx 24rpx rgba(20, 24, 31, .04); }
+.item { display: flex; align-items: center; margin-bottom: 18rpx; padding: 26rpx; border-radius: $radius-keep-card; background: $color-bg-card; box-shadow: $shadow-keep-card; }
 .badge { width: 72rpx; height: 72rpx; line-height: 72rpx; border-radius: 50%; color: $color-primary-dark; background: #C9F4D9; text-align: center; }
 .info { flex: 1; margin-left: 20rpx; }
 .title { display: block; color: $color-text-primary; font-size: 28rpx; font-weight: 600; }

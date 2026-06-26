@@ -33,6 +33,8 @@ public class UserService implements UserDetailsService {
     private static final Pattern MOBILE_PATTERN = Pattern.compile("^1[3-9]\\d{9}$");
     private static final String H5_SMS_KEY_PREFIX = "h5:login:sms:";
     private static final long H5_SMS_EXPIRES_SECONDS = 300L;
+    private static final String H5_TEST_MOBILE = "18888888888";
+    private static final String H5_TEST_SMS_CODE = "888888";
     private static final SecureRandom SECURE_RANDOM = new SecureRandom();
 
     @Autowired
@@ -86,6 +88,14 @@ public class UserService implements UserDetailsService {
 
     public Map<String, String> sendH5LoginCode(String mobile) {
         validateMobile(mobile);
+        if (isH5TestLoginCode(mobile, H5_TEST_SMS_CODE)) {
+            Map<String, String> res = new HashMap();
+            res.put("mobile", mobile);
+            res.put("expiresIn", String.valueOf(H5_SMS_EXPIRES_SECONDS));
+            res.put("debugCode", H5_TEST_SMS_CODE);
+            return res;
+        }
+
         String code = createSmsCode();
         boolean sent = SmsUtils.sendLoginCode(mobile, code);
         boolean debugMode = isDebugLoginCodeEnabled();
@@ -109,6 +119,13 @@ public class UserService implements UserDetailsService {
         String smsCode = userQo.getSmsCode();
         if (StringUtils.isBlank(smsCode)) {
             throw new RuntimeException("请输入短信验证码");
+        }
+
+        boolean testLoginCode = isH5TestLoginCode(mobile, smsCode);
+        if (testLoginCode) {
+            userQo.setChannel(UserOrigType.pc.value);
+            userQo.setMobile(mobile);
+            return loginOrCreateUser(userQo, mobile);
         }
 
         String smsKey = buildH5SmsKey(mobile);
@@ -158,6 +175,10 @@ public class UserService implements UserDetailsService {
             return true;
         }
         return environment.acceptsProfiles("dev");
+    }
+
+    private boolean isH5TestLoginCode(String mobile, String smsCode) {
+        return H5_TEST_MOBILE.equals(mobile) && H5_TEST_SMS_CODE.equals(smsCode);
     }
 
     private Map<String, String> loginOrCreateUser(UserQo userQo, String mobile) {

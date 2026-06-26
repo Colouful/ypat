@@ -128,7 +128,7 @@ function confirm(): void {
   bottom: 0;
   left: 0;
   padding: 44rpx 40rpx calc(44rpx + env(safe-area-inset-bottom));
-  background: #fff;
+  background: $color-bg-card;
   border-radius: $radius-keep-sheet $radius-keep-sheet 0 0;
 }
 

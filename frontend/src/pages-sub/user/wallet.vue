@@ -81,14 +81,14 @@ onLoad(fetchRecentRecords)
 @import '@/styles/tokens.scss';
 
 .page { min-height: 100vh; padding: 28rpx; background: $color-bg-page; }
-.balance-card { padding: 36rpx; border-radius: 32rpx; color: #fff; background: linear-gradient(135deg, $color-primary, #69d89e); }
+.balance-card { padding: 36rpx; border-radius: $radius-keep-card; color: #fff; background: linear-gradient(135deg, $color-primary, #69d89e); }
 .label, .amount { display: block; }
 .amount { margin: 12rpx 0 28rpx; font-size: 64rpx; font-weight: 700; }
-.recharge { color: $color-primary-dark; background: #fff; box-shadow: 0 6rpx 24rpx rgba(20, 24, 31, .04); border-radius: 40rpx; }
+.recharge { color: $color-primary-dark; background: $color-bg-card; box-shadow: $shadow-keep-card; border-radius: 40rpx; }
 .recharge::after { border: 0; }
 .links { display: grid; grid-template-columns: repeat(2, 1fr); gap: 18rpx; margin: 24rpx 0; }
-.links view { padding: 28rpx; border-radius: 32rpx; background: #fff; box-shadow: 0 6rpx 24rpx rgba(20, 24, 31, .04); text-align: center; }
-.recent { padding: 28rpx; border-radius: 32rpx; background: #fff; box-shadow: 0 6rpx 24rpx rgba(20, 24, 31, .04); }
+.links view { padding: 28rpx; border-radius: $radius-keep-card; background: $color-bg-card; box-shadow: $shadow-keep-card; text-align: center; }
+.recent { padding: 28rpx; border-radius: $radius-keep-card; background: $color-bg-card; box-shadow: $shadow-keep-card; }
 .section-title { font-size: 30rpx; font-weight: 600; }
 .state { padding: 80rpx 0; color: $color-text-helper; text-align: center; }
 .record-item { display: flex; justify-content: space-between; padding: 22rpx 0; border-top: 1rpx solid $color-border; }

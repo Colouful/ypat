@@ -15,6 +15,7 @@ import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 public class UserServiceH5LoginTest {
@@ -64,6 +65,34 @@ public class UserServiceH5LoginTest {
         assertFalse(debugCode.equals("000000"));
         assertEquals(debugCode, redisClient.values.get("h5:login:sms:13800138000"));
         assertEquals(Long.valueOf(300L), redisClient.ttls.get("h5:login:sms:13800138000"));
+    }
+
+    @Test
+    public void sendH5LoginCodeReturnsWhitelistCodeWithoutRedis() {
+        Map<String, String> result = userService.sendH5LoginCode("18888888888");
+
+        assertEquals("18888888888", result.get("mobile"));
+        assertEquals("300", result.get("expiresIn"));
+        assertEquals("888888", result.get("debugCode"));
+        assertFalse(redisClient.values.containsKey("h5:login:sms:18888888888"));
+    }
+
+    @Test
+    public void h5WhitelistLoginAcceptsFixedCodeWithoutCachedSmsCode() {
+        userServiceClient.addResponse = "{\"id\":188,\"mobile\":\"18888888888\",\"nickname\":\"测试账号\"}";
+
+        UserQo input = new UserQo();
+        input.setChannel(UserOrigType.pc.value);
+        input.setMobile("18888888888");
+        input.setSmsCode("888888");
+
+        Map<String, String> result = userService.login(input);
+
+        assertEquals("token-h5", result.get("token"));
+        assertEquals("188", result.get("id"));
+        assertEquals("18888888888", result.get("mobile"));
+        assertEquals(UserOrigType.pc.value, userServiceClient.addedUser.getChannel());
+        assertNull(redisClient.removedKey);
     }
 
     private static class FixedJwtTokenUtil extends JwtTokenUtil {
