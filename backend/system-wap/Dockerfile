@@ -1,6 +1,6 @@
-FROM java:8
-VOLUME /tmp
-ADD target/system-wap-1.0-SNAPSHOT.jar app.jar
-RUN bash -c 'touch /app.jar'
-EXPOSE 9000
-ENTRYPOINT ["java","-Djava.security.egd=file:/dev/./urandom","-jar","app.jar"]
+FROM eclipse-temurin:8-jre
+WORKDIR /app
+RUN mkdir -p /tmp/ypat-logs
+COPY target/system-wap-1.0-SNAPSHOT.jar app.jar
+EXPOSE 8081
+ENTRYPOINT ["java", "-Djava.security.egd=file:/dev/./urandom", "-jar", "app.jar"]

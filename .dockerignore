@@ -1,0 +1,12 @@
+node_modules
+.git
+.github
+.idea
+*.iml
+target
+docs
+91pai-master
+design-references
+*.md
+.env*
+!.env.example

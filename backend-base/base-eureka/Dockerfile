@@ -1,6 +1,5 @@
-FROM java:8
-VOLUME /tmp
-ADD target/base-eureka-1.0-SNAPSHOT.jar app.jar
-RUN bash -c 'touch /app.jar'
-EXPOSE 9000
-ENTRYPOINT ["java","-Djava.security.egd=file:/dev/./urandom","-jar","app.jar"]
+FROM eclipse-temurin:8-jre
+WORKDIR /app
+COPY target/base-eureka-1.0-SNAPSHOT.jar app.jar
+EXPOSE 8761
+ENTRYPOINT ["java", "-Djava.security.egd=file:/dev/./urandom", "-jar", "app.jar"]
