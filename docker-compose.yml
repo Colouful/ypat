@@ -113,6 +113,35 @@ services:
     networks:
       - ypat-net
 
+  system-web:
+    build:
+      context: ./backend/system-web
+      dockerfile: Dockerfile
+    container_name: ypat-system-web
+    restart: unless-stopped
+    ports:
+      - "8082:8082"
+    environment:
+      TZ: Asia/Shanghai
+      SPRING_REDIS_HOST: redis
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: "http://eureka:8761/eureka/"
+      EUREKA_INSTANCE_PREFER_IP_ADDRESS: "true"
+    depends_on:
+      redis:
+        condition: service_healthy
+      eureka:
+        condition: service_healthy
+      restapi:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8082/"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 60s
+    networks:
+      - ypat-net
+
   nginx:
     image: nginx:alpine
     container_name: ypat-nginx
