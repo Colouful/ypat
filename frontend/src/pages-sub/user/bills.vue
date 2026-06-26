@@ -59,7 +59,7 @@ onReachBottom(() => load())
 @import '@/styles/tokens.scss';
 
 .page { min-height: 100vh; padding: 24rpx; background: $color-bg-page; }
-.item { display: flex; justify-content: space-between; margin-bottom: 18rpx; padding: 28rpx; border-radius: 32rpx; background: #fff; box-shadow: 0 6rpx 24rpx rgba(20, 24, 31, .04); }
+.item { display: flex; justify-content: space-between; margin-bottom: 18rpx; padding: 28rpx; border-radius: $radius-keep-card; background: $color-bg-card; box-shadow: $shadow-keep-card; }
 .item__title { display: block; color: $color-text-primary; font-size: 29rpx; font-weight: 600; }
 .item__time, .item__number, .item__status { display: block; margin-top: 10rpx; color: $color-text-secondary; font-size: 23rpx; }
 .item__right { text-align: right; }

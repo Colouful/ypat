@@ -95,7 +95,7 @@ onReachBottom(() => load())
 .page { min-height: 100vh; padding: 28rpx; background: $color-bg-page; }
 .state, .footer { padding: 120rpx 20rpx; color: $color-text-helper; text-align: center; }
 .footer { padding: 28rpx; }
-.card { display: flex; margin-bottom: 22rpx; padding: 22rpx; overflow: hidden; border-radius: 32rpx; background: #fff; box-shadow: 0 6rpx 24rpx rgba(20, 24, 31, .04); }
+.card { display: flex; margin-bottom: 22rpx; padding: 22rpx; overflow: hidden; border-radius: $radius-keep-card; background: $color-bg-card; box-shadow: $shadow-keep-card; }
 .cover { width: 204rpx; height: 220rpx; border-radius: 24rpx; background: $color-bg-chip; }
 .body { flex: 1; min-width: 0; padding: 6rpx 0 6rpx 22rpx; }
 .header, .meta { display: flex; justify-content: space-between; }
@@ -105,6 +105,6 @@ onReachBottom(() => load())
 .status--danger { color: #b4232c; background: #fff1f0; }
 .status--warning { color: #b56a00; background: $color-orange-soft; }
 .status--muted { color: $color-text-secondary; background: $color-bg-chip; }
-.desc { display: block; margin: 16rpx 0; color: #596270; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.desc { display: block; margin: 16rpx 0; color: $color-text-secondary; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .meta { color: $color-text-helper; font-size: 23rpx; font-weight: 700; }
 </style>

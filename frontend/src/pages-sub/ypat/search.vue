@@ -33,7 +33,7 @@
 
 <script setup lang="ts">
 import { computed, ref } from 'vue'
-import { onReachBottom } from '@dcloudio/uni-app'
+import { onLoad, onReachBottom } from '@dcloudio/uni-app'
 import { useAppStore } from '@/stores/app'
 import * as ypatApi from '@/api/modules/ypat'
 import { CHARGE_WAY_LABELS, PHOTO_STYLES } from '@/constants/enums'
@@ -79,6 +79,13 @@ function chargeLabel(value: string): string { return CHARGE_WAY_LABELS[value] ||
 function openDetail(id: number): void { uni.navigateTo({ url: `/pages-sub/ypat/detail?id=${id}` }) }
 function back(): void { uni.navigateBack() }
 
+onLoad((query = {}) => {
+  const value = typeof query.keyword === 'string' ? decodeURIComponent(query.keyword) : ''
+  if (value) {
+    keyword.value = value
+    search(true)
+  }
+})
 onReachBottom(() => search(false))
 </script>
 
@@ -92,14 +99,14 @@ onReachBottom(() => search(false))
 .content { padding-left: 28rpx; padding-right: 28rpx; padding-bottom: 50rpx; }
 .section-title { font-size: 34rpx; font-weight: 900; }
 .tags { display: flex; flex-wrap: wrap; gap: 18rpx; margin-top: 26rpx; }
-.tag { padding: 14rpx 28rpx; border-radius: 999rpx; color: $color-text-secondary; background: #fff; font-weight: 800; }
+.tag { padding: 14rpx 28rpx; border-radius: 999rpx; color: $color-text-secondary; background: $color-bg-card; font-weight: 800; }
 .state, .footer { padding: 120rpx 20rpx; color: $color-text-helper; text-align: center; }
 .footer { padding: 28rpx; }
-.card { display: flex; margin-bottom: 22rpx; padding: 22rpx; overflow: hidden; border-radius: 32rpx; background: #fff; box-shadow: 0 6rpx 24rpx rgba(20, 24, 31, .04); }
+.card { display: flex; margin-bottom: 22rpx; padding: 22rpx; overflow: hidden; border-radius: $radius-keep-card; background: $color-bg-card; box-shadow: $shadow-keep-card; }
 .cover { width: 204rpx; height: 220rpx; border-radius: 24rpx; background: $color-bg-chip; }
 .body { flex: 1; min-width: 0; padding: 6rpx 0 6rpx 22rpx; }
 .name, .desc { display: block; }
 .name { color: $color-text-primary; font-size: 30rpx; font-weight: 800; }
-.desc { margin: 16rpx 0; color: #596270; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.desc { margin: 16rpx 0; color: $color-text-secondary; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .meta { display: flex; justify-content: space-between; color: $color-text-helper; font-size: 23rpx; font-weight: 700; }
 </style>

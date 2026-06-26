@@ -6,13 +6,13 @@
           <KeepIcon name="search" :size="46" color="#B3B8BE" />
           <text class="home-search__placeholder">搜索摄影师 / 风格 / 城市</text>
         </view>
-        <view class="home-ai" @tap="showToast('AI 智能推荐')">
+        <view class="home-ai" @tap="goDiscover">
           <text class="home-ai__spark">✦</text>
         </view>
       </view>
 
       <view class="quick-grid">
-        <view v-for="item in quickItems" :key="item.label" class="quick-grid__item" @tap="showToast(item.label)">
+        <view v-for="item in quickItems" :key="item.label" class="quick-grid__item" @tap="handleQuickItem(item.value)">
           <view class="quick-grid__icon">
             <KeepIcon :name="item.icon" :size="50" />
           </view>
@@ -75,30 +75,7 @@
       </view>
     </view>
 
-    <view class="keep-tabbar">
-      <view class="keep-tabbar__item keep-tabbar__item--active" @tap="noop">
-        <KeepIcon name="home" :size="44" />
-        <text>广场</text>
-      </view>
-      <view class="keep-tabbar__item" @tap="showToast('发现')">
-        <KeepIcon name="compass" :size="44" />
-        <text>发现</text>
-        <view class="keep-tabbar__dot" />
-      </view>
-      <view class="keep-tabbar__item" @tap="goPublish">
-        <KeepIcon name="plus-circle" :size="46" />
-        <text>发布</text>
-      </view>
-      <view class="keep-tabbar__item" @tap="goMessage">
-        <KeepIcon name="mail" :size="44" />
-        <text>消息</text>
-        <view v-if="unreadCount > 0" class="keep-tabbar__badge">{{ unreadCount > 9 ? '9+' : unreadCount }}</view>
-      </view>
-      <view class="keep-tabbar__item" @tap="goMine">
-        <KeepIcon name="user" :size="44" />
-        <text>我的</text>
-      </view>
-    </view>
+    <KeepTabBar active="home" :unread-count="unreadCount" />
 
     <KeepFilterSheet
       v-model:visible="filterVisible"
@@ -121,6 +98,7 @@ import { CHARGE_WAY_LABELS, PHOTO_STYLES, TARGET_LABELS } from '@/constants/enum
 import KeepFilterSheet, { type KeepFilterGroup } from '@/components/business/KeepFilterSheet.vue'
 import KeepIcon from '@/components/business/KeepIcon.vue'
 import KeepState from '@/components/business/KeepState.vue'
+import KeepTabBar from '@/components/business/KeepTabBar.vue'
 import KeepYpatCard, { type KeepYpatCardItem } from '@/components/business/KeepYpatCard.vue'
 import type { YpatInfo } from '@/api/types/index'
 
@@ -154,11 +132,11 @@ const tabs: Array<{ key: TabKey; label: string }> = [
 ]
 
 const quickItems = [
-  { label: '约摄影师', icon: 'camera' },
-  { label: '约模特', icon: 'user' },
-  { label: '妆造师', icon: 'edit' },
-  { label: '修图师', icon: 'image' },
-  { label: '找同城', icon: 'map-pin' },
+  { label: '约摄影师', icon: 'camera', value: 'photographer' },
+  { label: '约模特', icon: 'user', value: 'model' },
+  { label: '妆造师', icon: 'edit', value: '妆造师' },
+  { label: '修图师', icon: 'image', value: '修图师' },
+  { label: '找同城', icon: 'map-pin', value: 'nearby' },
 ]
 
 const quickChips = [
@@ -279,6 +257,21 @@ function pickChip(value: string) {
   loadList(true)
 }
 
+function handleQuickItem(value: string) {
+  if (value === 'photographer' || value === 'model') {
+    pickChip(value)
+    return
+  }
+  if (value === 'nearby') {
+    activeTab.value = 'nearby'
+    activeChip.value = 'all'
+    filterValue.value = { ...filterValue.value, target: ['all'], style: [], chargeway: [] }
+    loadList(true)
+    return
+  }
+  uni.navigateTo({ url: `/pages-sub/ypat/search?keyword=${encodeURIComponent(value)}` })
+}
+
 function applyFilter(value: FilterValue) {
   filterValue.value = value
   loadList(true)
@@ -299,22 +292,8 @@ function goSearch() {
   uni.navigateTo({ url: '/pages-sub/ypat/search' })
 }
 
-function goMessage() {
-  uni.switchTab({ url: '/pages/message/index' })
-}
-
-function goPublish() {
-  uni.switchTab({ url: '/pages/publish/index' })
-}
-
-function goMine() {
-  uni.switchTab({ url: '/pages/mine/index' })
-}
-
-function noop() {}
-
-function showToast(title: string) {
-  uni.showToast({ title, icon: 'none' })
+function goDiscover() {
+  uni.navigateTo({ url: '/pages/discover/index' })
 }
 
 async function getLocation() {
@@ -550,59 +529,4 @@ onReachBottom(() => {
   font-weight: 700;
 }
 
-.keep-tabbar {
-  position: fixed;
-  right: 0;
-  bottom: 0;
-  left: 0;
-  z-index: 50;
-  display: flex;
-  align-items: center;
-  height: calc(148rpx + env(safe-area-inset-bottom));
-  padding: 10rpx 0 env(safe-area-inset-bottom);
-  border-top: 1rpx solid $color-border;
-  background: rgba(255, 255, 255, 0.98);
-}
-
-.keep-tabbar__item {
-  position: relative;
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 4rpx;
-  color: $color-text-helper;
-  font-size: 22rpx;
-  font-weight: 800;
-}
-
-.keep-tabbar__item--active {
-  color: $color-text-primary;
-}
-
-.keep-tabbar__dot,
-.keep-tabbar__badge {
-  position: absolute;
-  top: 2rpx;
-  right: 50%;
-  border-radius: $radius-round;
-  background: $color-accent-red;
-}
-
-.keep-tabbar__dot {
-  width: 14rpx;
-  height: 14rpx;
-  margin-right: -28rpx;
-}
-
-.keep-tabbar__badge {
-  min-width: 32rpx;
-  height: 32rpx;
-  margin-right: -40rpx;
-  padding: 0 8rpx;
-  color: #fff;
-  font-size: 18rpx;
-  line-height: 32rpx;
-  text-align: center;
-}
 </style>

@@ -8,9 +8,15 @@
       }
     },
     {
+      "path": "pages/discover/index",
+      "style": {
+        "navigationStyle": "custom"
+      }
+    },
+    {
       "path": "pages/message/index",
       "style": {
-        "navigationBarTitleText": "消息",
+        "navigationStyle": "custom",
         "enablePullDownRefresh": true
       }
     },

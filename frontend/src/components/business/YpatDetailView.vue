@@ -246,7 +246,7 @@ watch(() => props.id, load, { immediate: true })
   margin-top: -44rpx;
   padding: 40rpx 36rpx 36rpx;
   border-radius: 44rpx 44rpx 0 0;
-  background: #fff;
+  background: $color-bg-card;
 }
 
 .detail-tags,
@@ -311,7 +311,7 @@ watch(() => props.id, load, { immediate: true })
   margin-top: 36rpx;
   padding: 28rpx;
   border: 1rpx solid $color-border;
-  border-radius: 32rpx;
+  border-radius: $radius-keep-card;
 }
 
 .author-card__avatar {
@@ -386,7 +386,7 @@ watch(() => props.id, load, { immediate: true })
   gap: 28rpx;
   padding: 24rpx 36rpx calc(28rpx + env(safe-area-inset-bottom));
   border-top: 1rpx solid $color-border;
-  background: #fff;
+  background: $color-bg-card;
 }
 
 .detail-actions__mini {

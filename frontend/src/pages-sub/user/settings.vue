@@ -84,12 +84,12 @@ onShow(getStorageSize)
 .settings-page { min-height: 100vh; padding: 28rpx; background: $color-bg-page; }
 .settings-section { margin-bottom: 28rpx; }
 .section-title { margin-bottom: 14rpx; color: $color-text-secondary; font-size: 25rpx; }
-.settings-card { overflow: hidden; border-radius: 32rpx; background: #fff; box-shadow: 0 6rpx 24rpx rgba(20, 24, 31, .04); }
+.settings-card { overflow: hidden; border-radius: $radius-keep-card; background: $color-bg-card; box-shadow: $shadow-keep-card; }
 .settings-item { display: flex; align-items: center; justify-content: space-between; padding: 28rpx; border-bottom: 1rpx solid $color-border; }
 .settings-item__right { display: flex; align-items: center; gap: 12rpx; }
 .settings-item__value, .settings-item__arrow { color: $color-text-secondary; }
 .settings-item__value--verified { color: $color-primary; }
 .logout-section { margin-top: 48rpx; }
-.logout-btn { padding: 26rpx; border-radius: 32rpx; background: #fff; box-shadow: 0 6rpx 24rpx rgba(20, 24, 31, .04); text-align: center; }
+.logout-btn { padding: 26rpx; border-radius: $radius-keep-card; background: $color-bg-card; box-shadow: $shadow-keep-card; text-align: center; }
 .logout-btn__text { color: #e5484d; }
 </style>

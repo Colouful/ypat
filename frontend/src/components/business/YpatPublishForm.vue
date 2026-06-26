@@ -282,7 +282,7 @@ function reset(): void {
   border: 4rpx solid $color-border;
   border-radius: $radius-keep-field;
   color: $color-text-primary;
-  background: #fff;
+  background: $color-bg-card;
   font-size: 32rpx;
   font-weight: 800;
 }
@@ -301,7 +301,7 @@ function reset(): void {
   margin-bottom: 26rpx;
   padding: 28rpx 32rpx;
   border-radius: $radius-keep-field;
-  background: #fff;
+  background: $color-bg-card;
   box-shadow: $shadow-keep-card;
 }
 

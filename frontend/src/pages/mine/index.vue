@@ -113,29 +113,7 @@
       </view>
     </view>
 
-    <view class="keep-tabbar">
-      <view class="keep-tabbar__item" @tap="goHome">
-        <KeepIcon name="home" :size="44" />
-        <text>广场</text>
-      </view>
-      <view class="keep-tabbar__item" @tap="showToast('发现')">
-        <KeepIcon name="compass" :size="44" />
-        <text>发现</text>
-        <view class="keep-tabbar__dot" />
-      </view>
-      <view class="keep-tabbar__item" @tap="goPublishTab">
-        <KeepIcon name="plus-circle" :size="46" />
-        <text>发布</text>
-      </view>
-      <view class="keep-tabbar__item" @tap="goMessage">
-        <KeepIcon name="mail" :size="44" />
-        <text>消息</text>
-      </view>
-      <view class="keep-tabbar__item keep-tabbar__item--active" @tap="noop">
-        <KeepIcon name="user" :size="44" />
-        <text>我的</text>
-      </view>
-    </view>
+    <KeepTabBar active="mine" :unread-count="unreadCount" />
   </view>
 </template>
 
@@ -147,6 +125,7 @@ import { useAppStore } from '@/stores/app'
 import { PROFESS_LABELS } from '@/constants/enums'
 import KeepIcon from '@/components/business/KeepIcon.vue'
 import KeepState from '@/components/business/KeepState.vue'
+import KeepTabBar from '@/components/business/KeepTabBar.vue'
 
 const userStore = useUserStore()
 const appStore = useAppStore()
@@ -172,16 +151,13 @@ onShow(() => {
 })
 
 function goLogin() { uni.navigateTo({ url: '/pages/login/index' }) }
-function goHome() { uni.switchTab({ url: '/pages/home/index' }) }
 function goMessage() { uni.switchTab({ url: '/pages/message/index' }) }
-function goPublishTab() { uni.switchTab({ url: '/pages/publish/index' }) }
 function goProfile() { uni.navigateTo({ url: '/pages-sub/user/profile' }) }
 function goSettings() { uni.navigateTo({ url: '/pages-sub/user/settings' }) }
 function goPublish() { checkLogin(() => uni.navigateTo({ url: '/pages-sub/ypat/my-publish' })) }
 function goApply() { checkLogin(() => uni.navigateTo({ url: '/pages-sub/ypat/my-apply' })) }
 function goFavorite() { checkLogin(() => uni.navigateTo({ url: '/pages-sub/ypat/my-favorite' })) }
 function goWallet() { checkLogin(() => uni.navigateTo({ url: '/pages-sub/user/wallet' })) }
-function noop() {}
 function showToast(title: string) { uni.showToast({ title, icon: 'none' }) }
 
 function checkLogin(callback: () => void) {
@@ -493,44 +469,4 @@ function checkLogin(callback: () => void) {
   font-weight: 900;
 }
 
-.keep-tabbar {
-  position: fixed;
-  right: 0;
-  bottom: 0;
-  left: 0;
-  z-index: 50;
-  display: flex;
-  align-items: center;
-  height: calc(148rpx + env(safe-area-inset-bottom));
-  padding: 10rpx 0 env(safe-area-inset-bottom);
-  border-top: 1rpx solid $color-border;
-  background: rgba(255, 255, 255, 0.98);
-}
-
-.keep-tabbar__item {
-  position: relative;
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 4rpx;
-  color: $color-text-helper;
-  font-size: 22rpx;
-  font-weight: 800;
-}
-
-.keep-tabbar__item--active {
-  color: $color-text-primary;
-}
-
-.keep-tabbar__dot {
-  position: absolute;
-  top: 2rpx;
-  right: 50%;
-  width: 14rpx;
-  height: 14rpx;
-  margin-right: -28rpx;
-  border-radius: 50%;
-  background: $color-accent-red;
-}
 </style>

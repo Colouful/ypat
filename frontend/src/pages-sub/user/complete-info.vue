@@ -115,10 +115,10 @@ function goHome(): void {
 .header { margin-bottom: 36rpx; }
 .title { display: block; color: $color-text-primary; font-size: 42rpx; font-weight: 700; }
 .subtitle { display: block; margin-top: 14rpx; color: $color-text-secondary; font-size: 26rpx; }
-.card { padding: 30rpx; border-radius: 32rpx; background: #fff; box-shadow: 0 6rpx 24rpx rgba(20, 24, 31, .04); }
+.card { padding: 30rpx; border-radius: $radius-keep-card; background: $color-bg-card; box-shadow: $shadow-keep-card; }
 .label { display: block; margin: 28rpx 0 14rpx; font-weight: 600; }
 .options { display: flex; flex-wrap: wrap; gap: 14rpx; }
-.option { padding: 14rpx 24rpx; border-radius: 32rpx; color: #596270; background: #F1F3F5; }
+.option { padding: 14rpx 24rpx; border-radius: $radius-keep-card; color: $color-text-secondary; background: $color-bg-chip; }
 .option.active { color: #fff; background: $color-primary; }
 .picker { padding: 22rpx; border-radius: 16rpx; background: $color-bg-page; }
 .submit { margin-top: 38rpx; height: 92rpx; line-height: 92rpx; border-radius: 999rpx; color: #fff; background: $color-primary; }
