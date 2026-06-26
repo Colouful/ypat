@@ -43,7 +43,7 @@ function goHome(): void {
 }
 
 onShow(() => {
-  uni.hideTabBar({ animation: false })
+  try { uni.hideTabBar({ animation: false }) } catch(e) {}
   if (userStore.isLoggedIn) userStore.updateUserInfo().catch(() => undefined)
 })
 </script>
