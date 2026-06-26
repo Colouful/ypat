@@ -72,7 +72,9 @@
       <view class="upload-grid">
         <view v-for="(path, index) in localPaths" :key="path" class="upload-grid__item">
           <image :src="path" mode="aspectFill" />
-          <view class="upload-grid__remove" @tap.stop="removeImage(index)">×</view>
+          <view class="upload-grid__remove" @tap.stop="removeImage(index)">
+            <KeepIcon name="close" :size="22" color="#FFFFFF" :stroke-width="3" />
+          </view>
         </view>
         <view v-if="localPaths.length < 9" class="upload-grid__add" @tap="chooseImages">
           <KeepIcon name="plus-circle" :size="42" />
@@ -377,6 +379,9 @@ function reset(): void {
 
 .upload-grid__remove {
   position: absolute;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   top: 8rpx;
   right: 8rpx;
   width: 40rpx;
@@ -384,8 +389,6 @@ function reset(): void {
   border-radius: 50%;
   color: #fff;
   background: rgba(0, 0, 0, 0.5);
-  line-height: 40rpx;
-  text-align: center;
 }
 
 .upload-grid__add {

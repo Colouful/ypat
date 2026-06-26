@@ -17,7 +17,10 @@
           <text class="hero-card__title">复古港风、INS、胶片风都在这里</text>
           <text class="hero-card__desc">从首页筛选到详情申请，按同一套视觉节奏完成探索。</text>
         </view>
-        <view class="hero-card__button" @tap="goSearch">去搜索 ›</view>
+        <view class="hero-card__button" @tap="goSearch">
+          <text>去搜索</text>
+          <KeepIcon name="chevron-right" :size="28" />
+        </view>
       </view>
 
       <view class="quick-card">
@@ -206,6 +209,9 @@ onShow(() => {
 }
 
 .hero-card__button {
+  display: flex;
+  align-items: center;
+  gap: 4rpx;
   flex: none;
   padding: 20rpx 26rpx;
   border-radius: $radius-round;

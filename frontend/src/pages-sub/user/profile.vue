@@ -2,7 +2,9 @@
   <view class="page">
     <view class="navbar" :style="{ paddingTop: `${statusBarHeight}px` }">
       <view class="navbar__content">
-        <text class="back" @tap="back">‹</text>
+        <view class="back" @tap="back">
+          <KeepIcon name="chevron-left" :size="42" color="#1B1E23" />
+        </view>
         <text class="nav-title">个人主页</text>
         <view class="placeholder" />
       </view>
@@ -53,6 +55,7 @@ import { useUserStore } from '@/stores/user'
 import * as userApi from '@/api/modules/user'
 import * as ypatApi from '@/api/modules/ypat'
 import type { UserInfo, YpatInfo } from '@/api/types'
+import KeepIcon from '@/components/business/KeepIcon.vue'
 
 const appStore = useAppStore()
 const userStore = useUserStore()
@@ -134,7 +137,7 @@ onLoad((query) => {
 .page { min-height: 100vh; background: $color-bg-page; }
 .navbar { position: fixed; z-index: 10; top: 0; left: 0; right: 0; background: rgba(255,255,255,.95); backdrop-filter: blur(16rpx); }
 .navbar__content { height: 44px; display: flex; align-items: center; justify-content: space-between; padding: 0 24rpx; }
-.back { width: 60rpx; font-size: 54rpx; }
+.back { width: 60rpx; display: flex; align-items: center; }
 .nav-title { font-size: 31rpx; font-weight: 600; }
 .placeholder { width: 60rpx; }
 .state { padding: 260rpx 30rpx; color: $color-text-secondary; text-align: center; }

@@ -11,11 +11,11 @@
     <view class="about-links">
       <view class="link-item" @tap="goAgreement">
         <text class="link-item__label">用户协议</text>
-        <text class="link-item__arrow">›</text>
+        <KeepIcon name="chevron-right" :size="34" color="#B3B8BE" />
       </view>
       <view class="link-item" @tap="goPrivacy">
         <text class="link-item__label">隐私政策</text>
-        <text class="link-item__arrow">›</text>
+        <KeepIcon name="chevron-right" :size="34" color="#B3B8BE" />
       </view>
     </view>
 
@@ -26,6 +26,8 @@
 </template>
 
 <script setup lang="ts">
+import KeepIcon from '@/components/business/KeepIcon.vue'
+
 function goAgreement() {
   uni.navigateTo({ url: '/pages-sub/content/agreement' })
 }

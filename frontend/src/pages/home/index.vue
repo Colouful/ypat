@@ -7,7 +7,7 @@
           <text class="home-search__placeholder">搜索摄影师 / 风格 / 城市</text>
         </view>
         <view class="home-ai" @tap="goDiscover">
-          <text class="home-ai__spark">✦</text>
+          <KeepIcon name="sparkles" :size="34" color="#1B1E23" />
         </view>
       </view>
 

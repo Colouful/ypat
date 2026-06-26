@@ -72,7 +72,7 @@
           :class="{ 'login-agreement__check--active': agreed }"
           @tap="agreed = !agreed"
         >
-          <text v-if="agreed" class="login-agreement__checkmark">✓</text>
+          <KeepIcon v-if="agreed" name="check" :size="22" color="#FFFFFF" :stroke-width="3" />
         </view>
         <text class="login-agreement__text">登录即代表同意</text>
         <text class="login-agreement__link" @tap="goAgreement">《用户协议》</text>

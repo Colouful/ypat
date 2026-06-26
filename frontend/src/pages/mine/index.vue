@@ -47,15 +47,24 @@
       <view v-if="isLoggedIn" class="identity-pills">
         <view class="identity-pill">{{ professLabel || '模特' }} <text>Lv.4</text></view>
         <view class="identity-pill">信用分 735 <text>优秀</text></view>
-        <view class="identity-pill">已实名 ✓</view>
+        <view class="identity-pill">
+          <text class="identity-pill__plain">已实名</text>
+          <KeepIcon name="check" :size="24" color="#1B1E23" :stroke-width="3" />
+        </view>
       </view>
 
       <view class="member-card">
         <view>
-          <text class="member-card__title">◆ 爱去拍 · 信用会员</text>
+          <view class="member-card__title">
+            <KeepIcon name="gem" :size="34" color="#FFFFFF" />
+            <text>爱去拍 · 信用会员</text>
+          </view>
           <text class="member-card__desc">专属曝光 · 优先约拍 · 更多权益</text>
         </view>
-        <view class="member-card__button" @tap="showToast('立即开通')">立即开通 ›</view>
+        <view class="member-card__button" @tap="showToast('立即开通')">
+          <text>立即开通</text>
+          <KeepIcon name="chevron-right" :size="28" />
+        </view>
       </view>
 
       <view class="quick-card">
@@ -92,7 +101,11 @@
             </view>
             <text class="data-card__num">{{ totalYpat }}<text>次</text></text>
           </view>
-          <view class="data-card__coin" @tap="goWallet">◎ 约拍币 {{ userInfo?.ppd || 0 }} ›</view>
+          <view class="data-card__coin" @tap="goWallet">
+            <KeepIcon name="coins" :size="28" color="#FF9F1C" />
+            <text>约拍币 {{ userInfo?.ppd || 0 }}</text>
+            <KeepIcon name="chevron-right" :size="24" color="#FF9F1C" />
+          </view>
         </view>
         <view class="mini-cards">
           <view class="mini-card">
@@ -306,6 +319,13 @@ function checkLogin(callback: () => void) {
   font-size: 22rpx;
 }
 
+.identity-pill__plain {
+  color: $color-text-primary !important;
+  background: transparent !important;
+  padding: 0 !important;
+  font-size: 28rpx !important;
+}
+
 .member-card {
   display: flex;
   align-items: center;
@@ -322,6 +342,9 @@ function checkLogin(callback: () => void) {
 }
 
 .member-card__title {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
   font-size: 34rpx;
   font-weight: 800;
 }
@@ -334,6 +357,9 @@ function checkLogin(callback: () => void) {
 }
 
 .member-card__button {
+  display: flex;
+  align-items: center;
+  gap: 4rpx;
   margin-left: auto;
   padding: 18rpx 30rpx;
   border-radius: $radius-round;
@@ -440,6 +466,9 @@ function checkLogin(callback: () => void) {
 }
 
 .data-card__coin {
+  display: flex;
+  align-items: center;
+  gap: 8rpx;
   padding: 18rpx 28rpx;
   border-radius: $radius-round;
   color: $color-accent-orange;

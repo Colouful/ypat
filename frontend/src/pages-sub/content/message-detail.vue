@@ -16,7 +16,8 @@
       </view>
 
       <view v-if="message.ypatid" class="card link" @tap="goYpatDetail">
-        <text>查看相关约拍</text><text>›</text>
+        <text>查看相关约拍</text>
+        <KeepIcon name="chevron-right" :size="34" color="#B3B8BE" />
       </view>
 
       <view v-if="contactRevealed && contactItems.length" class="card">
@@ -41,6 +42,7 @@ import { useUserStore } from '@/stores/user'
 import * as messageApi from '@/api/modules/message'
 import * as userApi from '@/api/modules/user'
 import type { LinkWay, MessInfo } from '@/api/types'
+import KeepIcon from '@/components/business/KeepIcon.vue'
 
 const userStore = useUserStore()
 const loading = ref(false)

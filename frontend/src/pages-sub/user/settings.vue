@@ -5,11 +5,11 @@
       <view class="settings-card">
         <view class="settings-item" @tap="handlePhone">
           <text class="settings-item__label">手机号</text>
-          <view class="settings-item__right"><text class="settings-item__value">{{ maskedPhone }}</text><text class="settings-item__arrow">›</text></view>
+          <view class="settings-item__right"><text class="settings-item__value">{{ maskedPhone }}</text><KeepIcon name="chevron-right" :size="32" color="#B3B8BE" /></view>
         </view>
         <view class="settings-item" @tap="goRealname">
           <text class="settings-item__label">实名认证</text>
-          <view class="settings-item__right"><text class="settings-item__value" :class="{ 'settings-item__value--verified': isVerified }">{{ verifyStatus }}</text><text class="settings-item__arrow">›</text></view>
+          <view class="settings-item__right"><text class="settings-item__value" :class="{ 'settings-item__value--verified': isVerified }">{{ verifyStatus }}</text><KeepIcon name="chevron-right" :size="32" color="#B3B8BE" /></view>
         </view>
       </view>
     </view>
@@ -17,9 +17,9 @@
     <view class="settings-section">
       <view class="section-title">通用</view>
       <view class="settings-card">
-        <view class="settings-item" @tap="handleClearCache"><text class="settings-item__label">清除缓存</text><view class="settings-item__right"><text class="settings-item__value">{{ cacheSize }}</text><text class="settings-item__arrow">›</text></view></view>
-        <view class="settings-item" @tap="goAbout"><text class="settings-item__label">关于我们</text><text class="settings-item__arrow">›</text></view>
-        <view class="settings-item" @tap="goFeedback"><text class="settings-item__label">意见反馈</text><text class="settings-item__arrow">›</text></view>
+        <view class="settings-item" @tap="handleClearCache"><text class="settings-item__label">清除缓存</text><view class="settings-item__right"><text class="settings-item__value">{{ cacheSize }}</text><KeepIcon name="chevron-right" :size="32" color="#B3B8BE" /></view></view>
+        <view class="settings-item" @tap="goAbout"><text class="settings-item__label">关于我们</text><KeepIcon name="chevron-right" :size="32" color="#B3B8BE" /></view>
+        <view class="settings-item" @tap="goFeedback"><text class="settings-item__label">意见反馈</text><KeepIcon name="chevron-right" :size="32" color="#B3B8BE" /></view>
       </view>
     </view>
 
@@ -31,6 +31,7 @@
 import { computed, ref } from 'vue'
 import { onShow } from '@dcloudio/uni-app'
 import { useUserStore } from '@/stores/user'
+import KeepIcon from '@/components/business/KeepIcon.vue'
 
 const userStore = useUserStore()
 const cacheSize = ref('0 KB')
