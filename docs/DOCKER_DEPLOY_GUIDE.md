@@ -512,3 +512,22 @@ services:
 | system-wap | 8081 | 8081 | 后端网关 |
 | nginx (API) | 8088 | 8088 | API 反代 |
 | nginx (前端) | 80 | 5189 | 前端静态资源 |
+
+## 附录：本地 Docker 构建前端注意事项
+
+`npm run build:h5` 默认加载 `.env.production`，会触发 HTTPS 检查。
+本地 Docker 部署使用 HTTP，需要加 `--mode development` 参数：
+
+```bash
+# 本地 Docker 构建 (使用 development 环境)
+cd frontend
+npx uni build --mode development
+
+# 正式发版构建 (使用 production 环境，需要 HTTPS)
+npm run build:h5
+```
+
+| 构建方式 | 加载的环境文件 | 适用场景 |
+|----------|--------------|----------|
+| `npx uni build --mode development` | `.env.development` | 本地 Docker 部署 |
+| `npm run build:h5` | `.env.production` | 正式线上发版 (需 HTTPS) |
