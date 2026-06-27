@@ -3,20 +3,22 @@
 // Normalize default browser/framework styles
 // ============================================================
 
+/* #ifdef H5 */
 * {
   box-sizing: border-box;
   margin: 0;
   padding: 0;
 }
+/* #endif */
 
 page {
   margin: 0;
   padding: 0;
-  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "HarmonyOS Sans SC", "Microsoft YaHei", sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, 'PingFang SC', 'HarmonyOS Sans SC', 'Microsoft YaHei', sans-serif;
   font-size: 28rpx;
   line-height: 1.5;
-  color: #1A1D1F;
-  background-color: #F5F6F8;
+  color: #1a1d1f;
+  background-color: #f5f6f8;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
@@ -27,7 +29,8 @@ swiper,
 swiper-item,
 cover-view,
 movable-area,
-movable-view {
+movable-view,
+text {
   box-sizing: border-box;
 }
 

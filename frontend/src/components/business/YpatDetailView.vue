@@ -186,8 +186,6 @@ watch(() => props.id, load, { immediate: true })
 </script>
 
 <style scoped lang="scss">
-@import '@/styles/tokens.scss';
-@import '@/styles/mixins.scss';
 
 .detail-page {
   min-height: 100vh;

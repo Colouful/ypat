@@ -244,6 +244,11 @@ function switchTab(key: TabKey) {
   activeTab.value = key
   list.value = []
   loadList(true)
+  // 用户切到"附近"时按需请求位置授权（不在 onMounted 自动调，
+  // 避免微信直接拒导致 Promise 卡死 + launch time 暴涨）
+  if (key === 'nearby') {
+    void getLocation()
+  }
 }
 
 function pickChip(value: string) {
@@ -297,23 +302,56 @@ function goDiscover() {
 }
 
 async function getLocation() {
-  try {
-    await new Promise<UniApp.GetLocationSuccess>((resolve, reject) => {
-      uni.getLocation({
-        type: 'gcj02',
-        success: resolve,
-        fail: reject,
-      })
+  // 必须由用户点击触发（不能在 onMounted/onLoad 自动调，否则微信直接拒且不弹原生框）
+  // 第一步：检查是否已授权
+  const setting = await new Promise<UniApp.GetSettingSuccess>((resolve, reject) => {
+    uni.getSetting({
+      success: resolve,
+      fail: reject,
     })
+  })
+  if (setting.authSetting['scope.userLocation'] === false) {
+    // 用户之前拒绝过 → 必须弹 openSetting 让用户去手动开
+    try {
+      const opened = await new Promise<UniApp.OpenSettingSuccess>((resolve, reject) => {
+        uni.openSetting({ success: resolve, fail: reject })
+      })
+      if (opened.authSetting['scope.userLocation'] !== true) {
+        currentCity.value = '全国'
+        return
+      }
+    } catch {
+      currentCity.value = '全国'
+      return
+    }
+  }
+  // 第二步：调 authorize + getLocation，加 timeout 保险
+  try {
+    await Promise.race([
+      new Promise<UniApp.GetLocationSuccess>((resolve, reject) => {
+        uni.authorize({
+          scope: 'scope.userLocation',
+          success: () => {
+            uni.getLocation({ type: 'gcj02', success: resolve, fail: reject })
+          },
+          fail: reject,
+        })
+      }),
+      new Promise<never>((_, reject) =>
+        setTimeout(() => reject(new Error('getLocation timeout 5s')), 5000),
+      ),
+    ])
     currentCity.value = '全国'
-  } catch (_) {
+  } catch (err) {
+    console.warn('[DEBUG-getLocation]', err)
     currentCity.value = '全国'
   }
 }
 
 onMounted(() => {
   loadList(true)
-  getLocation()
+  // 不要在 onMounted 自动调 uni.getLocation：开发者工具/真机都没授权时会卡死
+  // 改成在用户切到"附近" tab 时按需请求（switchTab 中处理）
 })
 
 onShow(() => {
@@ -335,8 +373,6 @@ onReachBottom(() => {
 </script>
 
 <style lang="scss">
-@import '@/styles/tokens.scss';
-@import '@/styles/mixins.scss';
 
 .home-page {
   min-height: 100vh;

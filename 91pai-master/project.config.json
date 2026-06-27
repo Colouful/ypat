@@ -1,6 +1,7 @@
 {
   "miniprogramRoot": "dist/dev/mp-weixin/",
   "setting": {
+    "urlCheck": false,
     "es6": true,
     "postcss": true,
     "minified": true,
@@ -21,6 +22,6 @@
     "ignore": [],
     "include": []
   },
-  "appid": "wx94b432e0db7c29be",
+  "appid": "wx37ee5a90fc7ecb21",
   "editorSetting": {}
 }

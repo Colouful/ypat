@@ -20,7 +20,7 @@
             :class="{'active':resultInfo.gender==='男'}"
           >
             <image
-              mode="widthFix"
+              mode="aspectFit"
               class="sex tui-skeleton-rect"
               :src="resultInfo.gender==='男'?`/static/images/home/nan2.png`:`/static/images/home/nan.png`"
             />
@@ -32,7 +32,7 @@
             :class="{'active':resultInfo.gender==='女'}"
           >
             <image
-              mode="widthFix"
+              mode="aspectFit"
               class="sex tui-skeleton-rect"
               :src="resultInfo.gender==='女'?`/static/images/home/nv2.png`:`/static/images/home/nv.png`"
             />

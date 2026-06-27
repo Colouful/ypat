@@ -183,8 +183,6 @@ function checkLogin(callback: () => void) {
 </script>
 
 <style lang="scss">
-@import '@/styles/tokens.scss';
-@import '@/styles/mixins.scss';
 
 .mine-page {
   min-height: 100vh;

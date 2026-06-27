@@ -45,3 +45,8 @@ build/
 .env
 .env.local
 .env.*.local
+.omx/
+
+# FastDFS local dev runtime data (logs, pids, binlog, uploaded files) — keep docker-compose.yml
+backend/dev/fastdfs/tracker_data/
+backend/dev/fastdfs/storage_data/

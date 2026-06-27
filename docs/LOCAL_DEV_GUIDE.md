@@ -390,3 +390,71 @@ cd backend && mvn clean package -DskipTests && cd ..
 
 # 编译后重新修补 JAR (logback + 密码) 再启动
 ```
+
+---
+
+## FastDFS 文件存储（本地开发）
+
+图片、头像、约拍图都存在 FastDFS（tracker + storage + nginx 三件套）。
+
+**WHY**: 后端 `FastDFSClient` 通过 tracker 注册文件，nginx 提供 HTTP 下载。后端配置改成 `127.0.0.1:22122`（tracker）+ `http://127.0.0.1:8888/`（文件访问根）后，文件上传/下载全自动走本地。
+
+### 一键启动
+
+```bash
+cd backend/dev/fastdfs
+docker compose up -d
+# 等待 25 秒让 storage 注册到 tracker
+sleep 25
+```
+
+### 端口
+
+| 端口 | 用途 | 映射关系 |
+|------|------|---------|
+| 22122 | tracker（注册中心） | 宿主机 22122 → 容器 22122 |
+| 23000 | storage（实际存储） | 宿主机 23000 → 容器 23000 |
+| 8888 | nginx（HTTP 下载） | 宿主机 8888 → 容器 **8080**（注意！） |
+
+> ⚠️ 镜像 `ygqygq2/fastdfs-nginx` 容器内 nginx 监听 **8080** 不是 8888。docker-compose 已配好端口映射 `8888:8080`，**不要改**。
+
+### 验证
+
+```bash
+# 上传（容器内）
+docker exec ypat-fastdfs-storage sh -c \
+  'echo test > /tmp/t.txt && /usr/bin/fdfs_upload_file /etc/fdfs/client.conf /tmp/t.txt'
+# 返回类似: group1/M00/00/00/rBMAA2o_xxx.txt
+
+# 下载（宿主机 curl）
+FILE=$(docker exec ypat-fastdfs-storage sh -c \
+  'echo test > /tmp/t.txt && /usr/bin/fdfs_upload_file /etc/fdfs/client.conf /tmp/t.txt' | grep group1)
+curl -sS "http://127.0.0.1:8888/${FILE}"
+```
+
+### 后端配置（已就位）
+
+- `backend/system-wap/src/main/resources/conf/fdfs_client.properties`
+  `fastdfs.tracker_servers = 127.0.0.1:22122`
+- `backend/system-wap/src/main/resources/conf/sys_conf.properties`
+  `system.third.fdfs_path = http://127.0.0.1:8888/`
+- `backend/system-web/src/main/resources/conf/fdfs_client.properties` 同步
+
+### 故障排查
+
+| 症状 | 原因 | 修复 |
+|------|------|------|
+| 上传报 `tracker_query_storage fail, error no: 2` | storage 没注册到 tracker | `docker logs ypat-fastdfs-storage` 确认有 "successfully connect to tracker" |
+| `curl 127.0.0.1:8888` RST | 端口映射错（映到容器 8888 而非 8080） | 检查 `docker-compose.yml` 是 `8888:8080` |
+| 两个容器都跑 tracker | 忘了设 `command: ["storage"]` | docker-compose.yml 显式设 command |
+| 文件下载 404 | mod_fastdfs.conf tracker_server 没指新 tracker | 重启 storage 容器让 entrypoint.sh 重写 |
+
+### 完全清理
+
+```bash
+cd backend/dev/fastdfs
+docker compose down -v
+rm -rf tracker_data storage_data
+```
+
+> 📚 详细文档（坑点全记录）见 `docs/FASTDFS_GUIDE.md`。

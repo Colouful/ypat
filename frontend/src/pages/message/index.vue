@@ -136,8 +136,6 @@ onReachBottom(() => load())
 </script>
 
 <style scoped lang="scss">
-@import '@/styles/tokens.scss';
-@import '@/styles/mixins.scss';
 
 .message-page {
   min-height: 100vh;

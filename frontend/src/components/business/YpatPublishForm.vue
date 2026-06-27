@@ -259,8 +259,6 @@ function reset(): void {
 </script>
 
 <style scoped lang="scss">
-@import '@/styles/tokens.scss';
-@import '@/styles/mixins.scss';
 
 .publish-form {
   min-height: 100vh;

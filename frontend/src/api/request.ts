@@ -99,15 +99,20 @@ export function mapBackendResponse<T>(raw: unknown): ApiResult<T> {
     const code = String(response.code ?? '-1')
     const hasRes = Object.prototype.hasOwnProperty.call(response, 'res')
     const hasResult = Object.prototype.hasOwnProperty.call(response, 'result')
-    const data = (hasRes
-      ? response.res
-      : hasResult
-        ? response.result
-        : null) as T
+    // 后端 /user/code 接口会把 wxPayClient.code2Session 返回的 JSON 字符串再次
+    // 序列化进 res 字段（参考后端 LoginController.code() + WXPayClient.code2Session）。
+    // 所以前端的 res 可能拿到 string 而不是 object。这里兼容：
+    // 如果是 string，再 JSON.parse 一次；如果已经是 object，直接用。
+    let data: unknown = null
+    if (hasRes) {
+      data = parseResponsePayload(response.res)
+    } else if (hasResult) {
+      data = parseResponsePayload(response.result)
+    }
     const message = response.msg ?? response.message ?? ERROR_CODE_MAP[code] ?? ''
     return {
       success: code === '200',
-      data,
+      data: data as T,
       code,
       message,
     }

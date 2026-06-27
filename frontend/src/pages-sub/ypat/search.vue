@@ -90,7 +90,6 @@ onReachBottom(() => search(false))
 </script>
 
 <style scoped lang="scss">
-@import '@/styles/tokens.scss';
 
 .page { min-height: 100vh; background: $color-bg-page; }
 .search-bar { position: fixed; z-index: 10; top: 0; left: 0; right: 0; display: flex; align-items: center; gap: 18rpx; padding-left: 28rpx; padding-right: 28rpx; padding-bottom: 18rpx; background: $color-bg-page; }

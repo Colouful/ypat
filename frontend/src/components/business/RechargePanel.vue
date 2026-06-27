@@ -165,7 +165,6 @@ onUnload(() => {
 </script>
 
 <style scoped lang="scss">
-@import '@/styles/tokens.scss';
 
 .recharge { min-height: 100vh; box-sizing: border-box; padding: 28rpx; background: $color-bg-page; }
 .balance-card { padding: 38rpx; border-radius: $radius-keep-card; color: #fff; background: linear-gradient(135deg, $color-primary, #64d995); }

@@ -97,7 +97,6 @@ onReachBottom(() => load())
 </script>
 
 <style scoped lang="scss">
-@import '@/styles/tokens.scss';
 
 .page { min-height: 100vh; padding: 24rpx; background: $color-bg-page; }
 .item { display: flex; align-items: center; margin-bottom: 18rpx; padding: 26rpx; border-radius: $radius-keep-card; background: $color-bg-card; box-shadow: $shadow-keep-card; }

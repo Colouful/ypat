@@ -90,7 +90,6 @@ onReachBottom(() => load())
 </script>
 
 <style scoped lang="scss">
-@import '@/styles/tokens.scss';
 
 .page { min-height: 100vh; padding: 28rpx; background: $color-bg-page; }
 .state, .footer { padding: 120rpx 20rpx; color: $color-text-helper; text-align: center; }

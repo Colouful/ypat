@@ -132,7 +132,6 @@ onLoad((query) => {
 </script>
 
 <style scoped lang="scss">
-@import '@/styles/tokens.scss';
 
 .page { min-height: 100vh; background: $color-bg-page; }
 .navbar { position: fixed; z-index: 10; top: 0; left: 0; right: 0; background: rgba(255,255,255,.95); backdrop-filter: blur(16rpx); }

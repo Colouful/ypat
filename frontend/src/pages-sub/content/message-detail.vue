@@ -136,7 +136,6 @@ onLoad((query) => {
 </script>
 
 <style scoped lang="scss">
-@import '@/styles/tokens.scss';
 
 .page { min-height: 100vh; box-sizing: border-box; padding: 28rpx; background: $color-bg-page; }
 .state { padding: 220rpx 30rpx; color: $color-text-secondary; text-align: center; }

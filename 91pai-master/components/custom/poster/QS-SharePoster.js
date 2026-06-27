@@ -1330,7 +1330,7 @@ function getShreUserPosterBackgroundFc(objs, upimage) {
   });
 }
 
-module.exports = {
+export {
   getShreUserPosterBackground,
   getSharePoster,
   setText,

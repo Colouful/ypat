@@ -1,0 +1,6 @@
+FROM node:18-alpine
+WORKDIR /app
+COPY package*.json ./
+RUN npm install --legacy-peer-deps 2>&1 | tail -5
+COPY . .
+RUN ls node_modules/.bin/ | head -20

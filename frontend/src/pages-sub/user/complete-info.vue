@@ -109,7 +109,6 @@ function goHome(): void {
 </script>
 
 <style scoped lang="scss">
-@import '@/styles/tokens.scss';
 
 .page { min-height: 100vh; box-sizing: border-box; padding: 56rpx 28rpx; background: $color-bg-page; }
 .header { margin-bottom: 36rpx; }

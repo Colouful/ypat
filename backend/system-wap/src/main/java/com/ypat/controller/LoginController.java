@@ -1,5 +1,8 @@
 package com.ypat.controller;
 
+import com.ypat.ResponseCode;
+import com.ypat.ResponseApiBody;
+import com.ypat.SysException;
 import com.ypat.UserQo;
 import com.ypat.enums.UserOrigType;
 import com.ypat.service.UserService;
@@ -29,8 +32,20 @@ public class LoginController {
 
     /***************微信授权登录*****************/
     @GetMapping("/user/code")
-    public String code(String code) {
-        return GsonUtils.toJson(wxPayClient.code2Session(code));
+    public ResponseApiBody code(String code) {
+        if (StringUtils.isEmpty(code)) {
+            throw new SysException(ResponseCode.FAIL_PARA);
+        }
+        String wxResult = wxPayClient.code2Session(code);
+        if (StringUtils.isEmpty(wxResult)) {
+            throw new SysException(ResponseCode.FAIL_WX);
+        }
+        Map<String, Object> wxResultMap = GsonUtils.fromJson(wxResult, Map.class);
+        if (wxResultMap != null && wxResultMap.get("errcode") != null) {
+            String errMsg = String.valueOf(wxResultMap.get("errmsg"));
+            return new ResponseApiBody(ResponseCode.FAIL_WX.getCode(), "微信登录失败：" + errMsg, null);
+        }
+        return ResponseApiBody.success(wxResultMap);
     }
 
     @PostMapping("/user/sms/code")

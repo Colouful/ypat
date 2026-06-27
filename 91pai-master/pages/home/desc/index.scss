@@ -63,7 +63,7 @@ page {
 .style {
   display: flex;
   flex-direction: row;
-  justify-content: start;
+  justify-content: flex-start;
   align-items: center;
   flex-wrap: wrap;
   margin-left: -20rpx;
@@ -111,7 +111,7 @@ page {
   margin: 12rpx 30rpx;
   display: flex;
   flex-direction: row;
-  justify-content: start;
+  justify-content: flex-start;
   align-items: center;
   overflow: scroll;
   &.img {
@@ -120,7 +120,7 @@ page {
 }
 .person-num-box {
   flex-direction: row;
-  justify-content: start;
+  justify-content: flex-start;
   align-items: center;
   overflow: scroll;
   margin-top: 20rpx;
@@ -150,7 +150,7 @@ page {
   .tui-slide-image-box {
     display: flex;
     flex-direction: row;
-    justify-content: start;
+    justify-content: flex-start;
     align-items: center;
     overflow: scroll;
   }

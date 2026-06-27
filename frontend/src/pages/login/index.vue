@@ -233,8 +233,6 @@ function goPrivacy(): void {
 </script>
 
 <style lang="scss">
-@import '@/styles/tokens.scss';
-@import '@/styles/mixins.scss';
 
 .login-page {
   min-height: 100vh;

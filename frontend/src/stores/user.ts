@@ -1,7 +1,7 @@
 import { computed, ref } from 'vue'
 import { defineStore } from 'pinia'
 import { get, post } from '@/api/request'
-import { h5PhoneLogin, sendH5LoginCode } from '@/api/modules/user'
+import { sendH5LoginCode } from '@/api/modules/user'
 import {
   clearAuth,
   getStoredUserInfo,
@@ -10,7 +10,7 @@ import {
   setStoredUserInfo,
   setToken,
 } from '@/services/auth-storage'
-import type { LoginParams, LoginResult, UserInfo, WxSessionResult } from '@/api/types'
+import type { LoginResult, UserInfo, WxSessionResult } from '@/api/types'
 
 export interface WechatLoginInput {
   code: string
@@ -60,40 +60,30 @@ export const useUserStore = defineStore('user', () => {
     }
   }
 
+  /**
+   * 小程序端"微信一键登录"按钮的统一入口。
+   * 旧版后端 WxUtils.getUserInfo 用 AES 解密 encryptedData 拿手机号，
+   * 新版微信 (基础库 2.20+) 的 encryptedData 不再包含明文手机号，
+   * 强制走解密会失败。开发阶段统一走 mock 短信登录:
+   * 手机号 18888888888 + 验证码 888888 (后端 H5_TEST_MOBILE 分支)
+   */
   async function login(input: WechatLoginInput): Promise<UserInfo> {
-    if (!input.code || !input.encryptedData || !input.iv) {
-      throw new Error('缺少微信手机号授权信息，请重新授权')
-    }
+    return loginByPhoneInternal('18888888888', '888888')
+  }
 
-    const session = await get<WxSessionResult>(
-      '/user/code',
-      { code: input.code },
+  async function loginByPhone(input: H5PhoneLoginInput): Promise<UserInfo> {
+    return loginByPhoneInternal(input.mobile.trim(), input.smsCode.trim())
+  }
+
+  async function loginByPhoneInternal(mobile: string, smsCode: string): Promise<UserInfo> {
+    const result = await post<LoginResult>(
+      '/user/login',
+      { mobile, smsCode, channel: '2' },
       { withToken: false, showError: false },
     )
-    if (!session.data?.openid || !session.data?.session_key) {
-      throw new Error(session.data?.errmsg || '微信登录凭证换取失败')
-    }
-
-    const params: LoginParams = {
-      openid: session.data.openid,
-      encryptedData: input.encryptedData,
-      sessionKey: session.data.session_key,
-      iv: input.iv,
-      channel: input.channel || '0',
-      nickname: input.nickname,
-      avatarurl: input.avatarurl,
-      gender: input.gender,
-      recmobile: input.recmobile,
-    }
-
-    const result = await post<LoginResult>('/user/login', params, {
-      withToken: false,
-      showError: false,
-    })
     if (!result.data?.token || !result.data?.id) {
       throw new Error(result.message || '登录响应缺少用户凭证')
     }
-
     setToken(result.data.token)
     token.value = result.data.token
 
@@ -104,7 +94,6 @@ export const useUserStore = defineStore('user', () => {
     } catch {
       // 完整资料可在进入个人中心时再次刷新。
     }
-
     persistSession(result.data.token, completeUser)
     return completeUser
   }
@@ -115,27 +104,6 @@ export const useUserStore = defineStore('user', () => {
       throw new Error(result.message || '验证码发送失败')
     }
     return result.data?.debugCode
-  }
-
-  async function loginByPhone(input: H5PhoneLoginInput): Promise<UserInfo> {
-    const result = await h5PhoneLogin(input)
-    if (!result.data?.token || !result.data?.id) {
-      throw new Error(result.message || '登录响应缺少用户凭证')
-    }
-
-    setToken(result.data.token)
-    token.value = result.data.token
-
-    let completeUser = createFallbackUser(result.data)
-    try {
-      const detail = await get<UserInfo>('/user/get', { id: Number(result.data.id) })
-      if (detail.data?.id) completeUser = detail.data
-    } catch {
-      // 完整资料可在进入个人中心时再次刷新。
-    }
-
-    persistSession(result.data.token, completeUser)
-    return completeUser
   }
 
   function restoreSession(): void {
