@@ -22,6 +22,18 @@
 2. **TEST-FIX-01** — `frontend/src/api/request.ts`: `mapBackendResponse` 的 res/result 提取改用 `extractDataField`,保留 0/false/''/null,仅对非空字符串二次 JSON.parse;`parseResponsePayload` 顶层空响应仍返回 null。两条原本互斥的测试现同时通过。
 3. **TC-FIX-01** — `frontend/src/pages/home/index.vue`: 修正 uni getSetting/openSetting 成功结果类型名,恢复 type-check 绿色。
 
-## 待执行(后续模块)
-- pnpm run build:h5 / build:mp-weixin: **尚未运行**。预期风险 GAP-API-03(生产 http 触发 env.ts HTTPS 强校验抛错)需先决策。dev 模式构建不受影响。
-- pnpm run lint(全量)、pnpm run check(含构建): 后续模块完成后整体运行。
+## 最终自动化验证(全模块完成后)
+| 命令 | 退出码 | 结果 |
+|---|---:|---|
+| pnpm run type-check | 0 | ✅ 通过 |
+| pnpm run test | 0 | ✅ 50/50 通过(新增 profile/file-base64/user-login/ypat 契约 用例) |
+| pnpm run lint(--quiet 仅错误) | 0 | ✅ 0 error(存量模板格式 warning 不计入) |
+| pnpm run build:h5 | 0 | ✅ Build complete |
+| pnpm run build:mp-weixin | 0 | ✅ Build complete(dist/build/mp-weixin) |
+| git diff --check | 0 | ✅ 无空白错误 |
+
+## GAP-API-03 构建/运行结论(重要)
+- 两个 build **均编译通过**。但生产构建把 `http://82.156.14.216:8088` 与 HTTPS 守卫错误一并打包(dist 中可见 `生产环境接口地址必须使用` 字符串)。
+- env.ts 守卫在**运行时**执行: 生产环境(VITE_APP_ENV=production)+ http 地址 → `getEnvConfig()` 抛错 → **应用加载即崩溃**(H5 与小程序)。
+- **用户决策: 保持守卫,改用 HTTPS 域名**。→ 前端不改 env.ts(安全控制正确);**上线前置**: 运维为后端配置 HTTPS 域名并将 .env.production 改为 https://域名。前端无法独立完成 → 列为部署阻塞项(见 08)。
+- 不修改 env.ts、不放宽校验、不伪造。

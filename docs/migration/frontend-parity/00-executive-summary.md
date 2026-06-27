@@ -22,21 +22,31 @@
 3. **GAP-API-03 (P1)**: 生产 http 地址触发 HTTPS 强校验崩溃。
 4. 多处"内联化"重构(报名/联系方式/审核态)需逐页验证业务规则未丢失。
 
-## 模块进度
-| 模块 | 范围 | 状态 |
-|---|---|---|
-| 基线 | 盘点+证据 | ✅ 完成 |
-| A 登录/用户初始化 | login/complete-info/edit-info | 🔄 进行中 |
-| B 首页/发现/搜索 | home/discover/search | ⏳ |
-| C 详情/用户主页 | detail/profile | ⏳ |
-| D 发布 | publish | ⏳ |
-| E 我的约拍 | my-publish/apply/favorite | ⏳ |
-| F 消息/联系方式 | message/message-detail | ⏳ |
-| G 实名 | realname | ⏳ |
-| H 钱包/充值/账单 | wallet/recharge/records/bills | ⏳ |
-| I 设置/内容/法律 | settings/about/feedback/content | ⏳ |
-| J 旧版遗留能力 | invitation/credit/help... | ⏳ |
-| 验证/上线 | check + release readiness | ⏳ |
+## 模块进度(全部完成)
+| 模块 | 范围 | 状态 | 主要修复 |
+|---|---|---|---|
+| 基线 | 盘点+证据 | ✅ | 三方审计+矩阵 |
+| A 登录/用户初始化 | login/complete-info/edit-info | ✅ | GAP-AUTH-01(P0 微信登录 stub)、GAP-AUTH-03(首登门禁) |
+| B 首页/发现/搜索 | home/discover/search | ✅ | GAP-B-01(风格搜索) |
+| C 详情/用户主页 | detail/profile | ✅ | GAP-C-01(报名理由) |
+| D 发布 | publish | ✅ | GAP-D 前置/校验/日期/wx字段 |
+| E 我的约拍 | my-publish/apply/favorite | ✅ | 依赖 GAP-API-01,at parity |
+| F 消息/联系方式 | message/message-detail | ✅ | GAP-F-01(P0 解锁费用)、GAP-F-02(P1 死页) |
+| G 实名 | realname | ✅ | GAP-IMG-01(P1 base64 前缀) |
+| H 钱包/充值/账单 | wallet/recharge/records/bills | ✅ | P0 安全,at parity |
+| I 设置/内容/法律 | settings/about/feedback/content | ✅ | at parity;GAP-I-01 反馈端点 |
+| J 旧版遗留能力 | invitation/credit/help | ✅ | 去向结论(MISSING 产品决策) |
+| 验证/上线 | check + matrices + release | ✅ | type/lint/test/build 全绿 |
+
+## 自动化验证(最终)
+type-check ✅ / lint ✅ / test 50/50 ✅ / build:h5 ✅ / build:mp-weixin ✅ / git diff --check ✅
+
+## 问题清零
+- P0: 2 发现 / 2 修复(GAP-AUTH-01 微信登录硬编码、GAP-F-01 解锁费用错误)→ **0 遗留**
+- P1(前端): GAP-API-01、GAP-AUTH-03、GAP-F-02、GAP-IMG-01 → **0 遗留**
+- P1(部署): GAP-API-03 HTTPS 域名(运维前置,用户已决策保持守卫)
+- P2: GAP-J-01 保证金 / GAP-I-01 反馈端点 / GAP-F-03 列表实体 / GAP-G-01 实名照数 → 产品/后端决策,不阻塞主路径
+- P3: 分享/订阅/草稿/邀请/定位逆地理 → 记录
 
 ## Skill 使用
 | Skill | 来源 | 版本 | 用途 | 已用 |
@@ -45,4 +55,5 @@
 | 子代理(general-purpose) | 内置 | — | 旧/新/后端三方代码审计 | ✅ |
 
 ## 上线结论
-**NOT_READY**(基线阶段;P0/P1 待清零)。
+**CONDITIONALLY_READY**
+前端业务迁移完成,P0=0、P1(前端)=0,自动化全绿。唯一上线前置为 **GAP-API-03**(运维提供 HTTPS 域名,用户已决策保持守卫,前端无法独立完成)。满足该前置后达 READY;P2 项(保证金/反馈端点/列表实体/实名照数)建议灰度前关闭。详见 08。
