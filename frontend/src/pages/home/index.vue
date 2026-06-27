@@ -304,7 +304,7 @@ function goDiscover() {
 async function getLocation() {
   // 必须由用户点击触发（不能在 onMounted/onLoad 自动调，否则微信直接拒且不弹原生框）
   // 第一步：检查是否已授权
-  const setting = await new Promise<UniApp.GetSettingSuccess>((resolve, reject) => {
+  const setting = await new Promise<UniApp.GetSettingSuccessResult>((resolve, reject) => {
     uni.getSetting({
       success: resolve,
       fail: reject,
@@ -313,7 +313,7 @@ async function getLocation() {
   if (setting.authSetting['scope.userLocation'] === false) {
     // 用户之前拒绝过 → 必须弹 openSetting 让用户去手动开
     try {
-      const opened = await new Promise<UniApp.OpenSettingSuccess>((resolve, reject) => {
+      const opened = await new Promise<UniApp.GetSettingSuccessResult>((resolve, reject) => {
         uni.openSetting({ success: resolve, fail: reject })
       })
       if (opened.authSetting['scope.userLocation'] !== true) {

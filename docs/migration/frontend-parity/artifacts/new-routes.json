@@ -1,0 +1,26 @@
+{
+  "project": "frontend",
+  "framework": "uni-app Vue3 + TS + Pinia + Vite",
+  "source": "frontend/src/pages.json",
+  "tabBar": [
+    "pages/home/index",
+    "pages/message/index",
+    "pages/publish/index",
+    "pages/mine/index"
+  ],
+  "mainPages": [
+    { "path": "pages/home/index", "title": "首页", "custom": true, "tab": true },
+    { "path": "pages/discover/index", "title": "发现", "custom": true, "tab": false },
+    { "path": "pages/message/index", "title": "消息", "custom": true, "tab": true },
+    { "path": "pages/publish/index", "title": "发布约拍", "tab": true },
+    { "path": "pages/mine/index", "title": "我的", "custom": true, "tab": true },
+    { "path": "pages/login/index", "title": "登录", "tab": false }
+  ],
+  "subPackages": {
+    "pages-sub/ypat": ["detail", "search", "my-publish", "my-apply", "my-favorite"],
+    "pages-sub/user": ["profile", "edit-info", "complete-info", "realname", "wallet", "recharge", "records", "bills", "settings", "about", "feedback"],
+    "pages-sub/content": ["article", "agreement", "privacy", "message-detail"]
+  },
+  "count": 26,
+  "notes": "discover is NOT in tabBar (tabBar has home/message/publish/mine). Token in storage key ypat_token, userInfo in ypat_user_info."
+}
