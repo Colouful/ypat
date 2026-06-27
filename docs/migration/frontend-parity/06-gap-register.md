@@ -14,7 +14,9 @@
 | GAP-API-02 | P2 | B | /user/findByCityAndProfess wap 不存在 | UserController 无该端点;/service 内部唯一调用点 YpatInfoController:175 已注释 | 确认前端调用点,移除或改用 /ypat 列表 | OPEN |
 | GAP-API-03 | P1 | 平台 | 生产 HTTPS 强校验 vs http 生产地址 | env.ts:24-26 throw;.env.production http://82.156.14.216:8088 | 决策:生产应上 HTTPS;短期 IP 预发可放宽为 warn(待用户确认),不静默删校验 | OPEN |
 | GAP-AUTH-02 | P2 | A | 新旧 storage key 不一致,升级丢登录态 | UNI_LOCAL_token vs ypat_token | 暂定强制重登(更安全);如需无感再做幂等迁移 | OPEN |
-| GAP-STATE-01 | P2 | B/D | 无 uni.getLocation,经纬度/定位城市缺失 | 全局无 getLocation;YpatSubmitParams 有 lng/lat 类型但未填充 | 首页定位城市 + 发布定位补齐(带降级) | OPEN |
+| GAP-STATE-01 | P3 | B | "同城"tab getLocation 拿到坐标后写死"全国"(无逆地理编码) | home/index.vue:344 | 降级: 旧版本无 GPS,此为新功能;当前优雅降级为全国。逆地理编码需地图SDK,留作增强 | ACCEPTED |
+| GAP-B-01 | P2 | B | 搜索风格标签把风格当 city 传,永远无结果 | search.vue:64 + discover searchStyle/home quickItem 传 keyword | 命中 PHOTO_STYLE → patstyle,否则 city | **FIXED** |
+| GAP-B-02 | P3 | B | 资料完善门禁旧版首页 onShow 也触发,新版仅登录 | 旧 home index.js:152 getNextUrl(res,'home') | 登录门禁覆盖主路径,发布前置兜底;记录接受 | ACCEPTED |
 | GAP-FAV-01 | ? | E | 旧版收藏只增无取消,新版若有"取消收藏"将无对应后端端点 | 后端仅 /my/ypat/sc/add(只增),无删除 | 审计 my-favorite 页;若有取消需后端支持→暂禁用或确认 | OPEN |
 | GAP-NAV-01 | ? | B | discover 页不在 tabBar,入口未知 | new pages.json tabBar 无 discover | 审计 home/discover 跳转入口 | OPEN |
 
