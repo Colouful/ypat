@@ -34,7 +34,7 @@
 | GAP-F-03 | P2 | F | rec/send 列表项类型 YpatInfo 实为 MessInfo;sent 跳详情 id 待确认 | message/index items 类型 | 需后端响应实体确认;received 不受影响 | OPEN |
 
 | GAP-G-01 | P2 | G | 实名仅2张证件照(缺手持),旧需3张 | realname.vue front/back | 后端 pics 为 List;产品决策,记录 | OPEN |
-| GAP-IMG-01 | P1(待验证) | D/G/A | base64 格式不一致(publish/realname 裸,edit-info 带前缀;旧带前缀) | file-base64 去头 vs edit-info 加前缀 | 需后端确认接受格式后统一,不盲改 | OPEN |
+| GAP-IMG-01 | **P1** | D/G/A | 图片 base64 缺 dataURL 前缀(publish/realname 裸 base64),后端按 `,` 切分取图(MockTest 用 `data:image;base64,` 前缀) | file-base64 去头 | 新增 filePathToDataUrl/ensureImageDataUrl 统一补前缀;publish/oauth/edit-info 全部带前缀;加单测 | **FIXED** |
 
 ## 待确认清单 (UNKNOWN, 需模块审计中关闭)
 - 模块C: 报名(orderShe)/联系方式(linkway) 是否完整内联到 detail/message-detail,业务规则(实名/信用/余额/约拍理由≥6字)是否保留。

@@ -104,7 +104,7 @@
 import { computed, reactive, ref } from 'vue'
 import { useUserStore } from '@/stores/user'
 import * as ypatApi from '@/api/modules/ypat'
-import { filePathToBase64 } from '@/utils/file-base64'
+import { filePathToDataUrl } from '@/utils/file-base64'
 import { isPublishProfileReady } from '@/utils/profile'
 import { PHOTO_STYLES } from '@/constants/enums'
 import KeepIcon from './KeepIcon.vue'
@@ -206,7 +206,7 @@ async function convertImages(): Promise<string[]> {
   processedCount.value = 0
   try {
     for (let index = 0; index < localPaths.value.length; index += 1) {
-      if (!base64Cache.value[index]) base64Cache.value[index] = await filePathToBase64(localPaths.value[index])
+      if (!base64Cache.value[index]) base64Cache.value[index] = await filePathToDataUrl(localPaths.value[index])
       processedCount.value += 1
     }
     return base64Cache.value.filter(Boolean)

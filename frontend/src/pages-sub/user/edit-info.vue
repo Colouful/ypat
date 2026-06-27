@@ -44,7 +44,7 @@ import { computed, reactive, ref } from 'vue'
 import { onLoad } from '@dcloudio/uni-app'
 import { useUserStore } from '@/stores/user'
 import * as userApi from '@/api/modules/user'
-import { filePathToBase64 } from '@/utils/file-base64'
+import { filePathToDataUrl } from '@/utils/file-base64'
 import { GENDER_LABELS, PROFESS_LABELS } from '@/constants/enums'
 import type { UpdateUserParams } from '@/api/types'
 
@@ -101,8 +101,7 @@ function chooseAvatar(): void {
       if (!path) return
       avatarPreview.value = path
       try {
-        const base64 = await filePathToBase64(path)
-        avatarData.value = `data:image/jpeg;base64,${base64}`
+        avatarData.value = await filePathToDataUrl(path)
       } catch (error) {
         avatarData.value = ''
         uni.showToast({ title: error instanceof Error ? error.message : '头像读取失败', icon: 'none' })
