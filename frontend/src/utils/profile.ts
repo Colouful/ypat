@@ -18,3 +18,20 @@ export function isProfileComplete(user: UserInfo | null | undefined): boolean {
       user.city,
   )
 }
+
+/**
+ * 发布/报名前置 — 对齐旧版 getNextUrl.js isNendUserInfo:
+ * gender∈{1,2} && wx && mobile && nickname && (imgpath|avatarurl)。
+ * 缺失则无法被联系/接单,需先去 edit-info 补全(尤其微信号 wx)。
+ */
+export function isPublishProfileReady(user: UserInfo | null | undefined): boolean {
+  if (!user) return false
+  const genderValid = user.gender === UserGender.MALE || user.gender === UserGender.FEMALE
+  return Boolean(
+    genderValid &&
+      user.wx &&
+      user.mobile &&
+      user.nickname &&
+      (user.imgpath || user.avatarurl),
+  )
+}

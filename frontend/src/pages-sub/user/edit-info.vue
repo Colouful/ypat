@@ -9,6 +9,9 @@
       <text class="label">昵称</text>
       <input v-model="form.nickname" class="input" maxlength="10" placeholder="请输入昵称" />
 
+      <text class="label">微信号</text>
+      <input v-model="form.wx" class="input" maxlength="30" placeholder="请输入微信号（用于对方联系你）" />
+
       <text class="label">性别</text>
       <picker :range="genderOptions" :value="genderIndex" @change="changeGender">
         <view class="picker">{{ genderText || '请选择性别' }}</view>
@@ -63,6 +66,7 @@ const form = reactive({
   province: '',
   city: '',
   area: '',
+  wx: '',
 })
 
 const today = new Date().toISOString().slice(0, 10)
@@ -83,6 +87,7 @@ function initForm(): void {
   form.province = info.province || ''
   form.city = info.city || ''
   form.area = info.area || ''
+  form.wx = info.wx || ''
   avatarPreview.value = info.imgpath || info.avatarurl || ''
 }
 
@@ -147,6 +152,7 @@ async function save(): Promise<void> {
       province: form.province || undefined,
       city: form.city || undefined,
       area: form.area || undefined,
+      wx: form.wx.trim() || undefined,
       pics: avatarData.value || undefined,
     }
     await userApi.updateUser(params)
@@ -158,6 +164,7 @@ async function save(): Promise<void> {
       province: params.province,
       city: params.city,
       area: params.area,
+      wx: params.wx,
       imgpath: avatarData.value ? avatarPreview.value : userStore.userInfo?.imgpath,
     })
     uni.showToast({ title: '保存成功', icon: 'success' })

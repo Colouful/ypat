@@ -68,6 +68,13 @@
     </view>
 
     <view class="field-card">
+      <text class="field-card__label">拍摄日期</text>
+      <picker mode="date" :value="model.patdate" :start="today" @change="changePatdate">
+        <view class="city-field">{{ model.patdate || '请选择拍摄日期' }}</view>
+      </picker>
+    </view>
+
+    <view class="field-card">
       <text class="field-card__label">参考图 / 样片</text>
       <view class="upload-grid">
         <view v-for="(path, index) in localPaths" :key="path" class="upload-grid__item">
@@ -98,6 +105,7 @@ import { computed, reactive, ref } from 'vue'
 import { useUserStore } from '@/stores/user'
 import * as ypatApi from '@/api/modules/ypat'
 import { filePathToBase64 } from '@/utils/file-base64'
+import { isPublishProfileReady } from '@/utils/profile'
 import { PHOTO_STYLES } from '@/constants/enums'
 import KeepIcon from './KeepIcon.vue'
 
@@ -166,6 +174,10 @@ function selectChargeWay(value: string): void {
   if (value === '0' || value === '3') model.chargeamt = 0
 }
 
+function changePatdate(event: { detail: { value: string } }): void {
+  model.patdate = event.detail.value
+}
+
 function toggleStyle(style: string): void {
   selectedStyles.value = selectedStyles.value.includes(style)
     ? selectedStyles.value.filter((item) => item !== style)
@@ -205,6 +217,26 @@ async function convertImages(): Promise<string[]> {
 
 async function submit(): Promise<void> {
   if (!canSubmit.value || submitting.value || processing.value) return
+  // 发布前置: 资料(含微信号)必须完整,否则报名者无法联系(对齐旧 isNendUserInfo)
+  if (!isPublishProfileReady(userStore.userInfo)) {
+    uni.showModal({
+      title: '请先完善资料',
+      content: '发布前需补全性别、昵称、头像和微信号，方便对方联系你。',
+      confirmText: '去完善',
+      success: ({ confirm }) => confirm && uni.navigateTo({ url: '/pages-sub/user/edit-info' }),
+    })
+    return
+  }
+  // 描述至少 6 个字(对齐旧 getError describe<6 拦截)
+  if (model.describ.trim().length < 6) {
+    uni.showToast({ title: '拍摄需求至少 6 个字', icon: 'none' })
+    return
+  }
+  // 拍摄日期不能早于今天(对齐旧 patdate 过期拦截)
+  if (model.patdate < today) {
+    uni.showToast({ title: '拍摄日期不能早于今天', icon: 'none' })
+    return
+  }
   if ((userStore.userInfo?.ppd || 0) < 3) {
     uni.showModal({
       title: '拍拍豆不足',

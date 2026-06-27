@@ -7,7 +7,12 @@
 |---|---|---|---|---|---|---|
 | GAP-AUTH-01 | P0/P1 | A | 微信登录被硬编码测试账号绕过 | frontend/src/stores/user.ts:70-72 `login()` 恒调 `loginByPhoneInternal('18888888888','888888')` | login() 生产透传真实 code/encryptedData/iv 给 /user/login;测试账号仅 development;加 store 回归测试 | **FIXED** |
 | GAP-AUTH-03 | P1 | A | 首登资料完善门禁缺失,complete-info 页无人跳转(死页) | 全仓 grep 仅 pages.json 出现 `complete-info`;旧版 getNextUrl 强制不完整资料→introduce | 新增 utils/profile.isProfileComplete(对齐 getNextUrl: profess/gender(1,2)/birthday/province/city);登录成功后不完整→redirectTo complete-info;加单测 | **FIXED** |
-| GAP-A-EDIT-01 | P2 | A/D | edit-info 缺少微信号(wx)字段,但发布/报名前置(criterion#2)需要 wx | edit-info.vue 表单仅 nickname/gender/profess/birthday/region/avatar;旧 userInfo 页可编辑 wx;isNendUserInfo 需 gender/wx/mobile/nickname/imgpath | 在 Module D 统一处理发布前置门禁时补 wx 编辑入口 | OPEN |
+| GAP-A-EDIT-01 | P2 | A/D | edit-info 缺少微信号(wx)字段,但发布/报名前置(criterion#2)需要 wx | edit-info.vue 表单仅 nickname/gender/profess/birthday/region/avatar | edit-info 新增微信号输入(表单/init/save/store) | **FIXED** |
+| GAP-D-01 | P2 | D | 描述 ≥6 字未校验 | YpatPublishForm canSubmit | submit 增加 describ≥6 校验 | **FIXED** |
+| GAP-D-02 | P2 | D | 拍摄日期写死 today,无选择UI、不校验过期 | YpatPublishForm model.patdate | 新增 date picker(:start=today)+不过期校验 | **FIXED** |
+| GAP-D-03 | P2 | D | 发布前置(gender/wx/mobile/nickname/imgpath)未校验 | YpatPublishForm submit | isPublishProfileReady + modal 引导 edit-info | **FIXED** |
+| GAP-D-04 | P3 | D | 无 requestSubscribeMessage(审核通知) | — | mp-weixin 通知,记录留待补 | ACCEPTED |
+| GAP-D-05 | P3 | D | 无草稿保存/恢复(旧 publishData) | ypat store draftForm 未接入表单 | 记录,留待增强 | ACCEPTED |
 | GAP-API-01 | P1 | E | 我的列表用 POST,后端 GET-only → 405 | request POST vs MypatInfoController.java:48/90/97/112 `@GetMapping` | getMyPublishList/getMyFavoriteList/getMyReceivedList/getMySentList 改 GET+query;加回归测试 | **FIXED** |
 | TEST-FIX-01 | P2 | A | mapBackendResponse 将 res:'' 强制转 null(基线测试 RED) | request.test.ts:26 | extractDataField 保留 falsy,顶层空响应仍 null | **FIXED** |
 | TC-FIX-01 | P2 | B | type-check RED: GetSettingSuccess 类型名不存在 | home/index.vue:307/316 | 改 GetSettingSuccessResult | **FIXED** |
