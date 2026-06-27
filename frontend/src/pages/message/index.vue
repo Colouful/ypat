@@ -30,7 +30,7 @@
         <KeepState v-if="loading && items.length === 0" type="loading" title="加载中..." />
         <KeepState v-else-if="items.length === 0" type="empty" title="暂无消息" description="去首页看看新的约拍机会。" button-text="去广场" @action="goHome" />
       <view v-else>
-          <view v-for="item in items" :key="item.id" class="message-card" @tap="openDetail(item.id)">
+          <view v-for="item in items" :key="item.id" class="message-card" @tap="openDetail(item)">
             <image class="message-card__avatar" :src="item.userQo?.imgpath || item.userQo?.avatarurl || '/static/default-avatar.png'" mode="aspectFill" />
             <view class="message-card__body">
               <view class="message-card__head">
@@ -105,8 +105,14 @@ function switchTab(value: 'received' | 'sent'): void {
   load(true)
 }
 
-function openDetail(id: number): void {
-  uni.navigateTo({ url: `/pages-sub/ypat/detail?id=${id}` })
+function openDetail(item: YpatInfo): void {
+  // 收到的约拍申请 → 消息详情(mess/get + 可解锁联系方式);我申请的 → 约拍详情。
+  // 列表项来自 /my/ypat/rec|send/list(消息记录),item.id 为消息id。
+  if (tab.value === 'received') {
+    uni.navigateTo({ url: `/pages-sub/content/message-detail?id=${item.id}` })
+  } else {
+    uni.navigateTo({ url: `/pages-sub/ypat/detail?id=${item.id}` })
+  }
 }
 
 function goHome(): void {

@@ -41,6 +41,7 @@ import { onLoad } from '@dcloudio/uni-app'
 import { useUserStore } from '@/stores/user'
 import * as messageApi from '@/api/modules/message'
 import * as userApi from '@/api/modules/user'
+import { VIEW_CONTACT_PPD } from '@/constants/enums'
 import type { LinkWay, MessInfo } from '@/api/types'
 import KeepIcon from '@/components/business/KeepIcon.vue'
 
@@ -95,10 +96,12 @@ function handleViewContact(): void {
     uni.showToast({ title: '请先登录', icon: 'none' })
     return
   }
-  if ((userStore.userInfo.ppd || 0) < 1) {
+  // 查看联系方式消耗 3 个拍拍豆(对齐后端 Constant.VIEW_NEED_PPD=3,旧版 linkway 亦为 3 豆)。
+  // 已解锁(后端 linkwayflag=yes)则不再扣费,由后端去重。
+  if ((userStore.userInfo.ppd || 0) < VIEW_CONTACT_PPD) {
     uni.showModal({
       title: '余额不足',
-      content: '查看联系方式需要 1 个拍拍豆，是否前往充值？',
+      content: `查看联系方式需要 ${VIEW_CONTACT_PPD} 个拍拍豆，是否前往充值？`,
       confirmText: '去充值',
       success: ({ confirm }) => confirm && uni.navigateTo({ url: '/pages-sub/user/recharge' }),
     })
@@ -106,7 +109,7 @@ function handleViewContact(): void {
   }
   uni.showModal({
     title: '确认查看',
-    content: '本次将消耗 1 个拍拍豆。',
+    content: `首次查看将消耗 ${VIEW_CONTACT_PPD} 个拍拍豆，已解锁则不再扣费。`,
     success: ({ confirm }) => confirm && revealContact(),
   })
 }

@@ -29,6 +29,10 @@
 | GAP-C-02 | P3 | C | 详情 share() 仅 toast | YpatDetailView:131 | 真实分享需页面级 onShareAppMessage,记录 | ACCEPTED |
 | GAP-C-03 | P3 | C | 详情"私信"stub、"关注"无后端 | YpatDetailView 模板 | 旧版无 viewer 联系入口;关注为新增无后端 | ACCEPTED |
 
+| GAP-F-01 | **P0** | F | 联系方式解锁费用显示/预检 1 豆,后端实扣 3 | message-detail handleViewContact | VIEW_CONTACT_PPD=3,阈值+文案改 3 | **FIXED** |
+| GAP-F-02 | **P1** | F | message-detail 死页,联系方式解锁不可达 | 全仓无跳转 | 消息中心 received→message-detail?id | **FIXED** |
+| GAP-F-03 | P2 | F | rec/send 列表项类型 YpatInfo 实为 MessInfo;sent 跳详情 id 待确认 | message/index items 类型 | 需后端响应实体确认;received 不受影响 | OPEN |
+
 ## 待确认清单 (UNKNOWN, 需模块审计中关闭)
 - 模块C: 报名(orderShe)/联系方式(linkway) 是否完整内联到 detail/message-detail,业务规则(实名/信用/余额/约拍理由≥6字)是否保留。
 - 模块D: 发布表单字段(target/chargeway/patstyle/patdate不过期/省市必填/收费金额)是否完整;草稿恢复;图片 base64 ≤9。
