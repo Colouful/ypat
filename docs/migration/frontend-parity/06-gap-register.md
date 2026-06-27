@@ -5,7 +5,8 @@
 
 | ID | 级别 | 模块 | 标题 | 证据 | 处理方案 | 状态 |
 |---|---|---|---|---|---|---|
-| GAP-AUTH-01 | P0/P1 | A | 微信登录被硬编码测试账号绕过 | frontend/src/stores/user.ts:70-72 `login()` 恒调 `loginByPhoneInternal('18888888888','888888')` | 恢复真实微信 code 登录(#ifdef MP-WEIXIN: uni.login→/user/code→/user/login w/ encryptedData,iv);保留 H5 手机号登录;测试开关仅 dev | OPEN |
+| GAP-AUTH-01 | P0/P1 | A | 微信登录被硬编码测试账号绕过 | frontend/src/stores/user.ts:70-72 `login()` 恒调 `loginByPhoneInternal('18888888888','888888')` | login() 生产透传真实 code/encryptedData/iv 给 /user/login;测试账号仅 development;加 store 回归测试 | **FIXED** |
+| GAP-AUTH-03 | P1 | A | 首登资料完善门禁缺失,complete-info 页无人跳转(死页) | 全仓 grep 仅 pages.json 出现 `complete-info`;旧版 getNextUrl 强制不完整资料→introduce | 在登录成功后/发布前检查资料完整(gender/wx/mobile/nickname),不完整 redirect complete-info;确认必填字段产品规则 | OPEN |
 | GAP-API-01 | P1 | E | 我的列表用 POST,后端 GET-only → 405 | request POST vs MypatInfoController.java:48/90/97/112 `@GetMapping` | getMyPublishList/getMyFavoriteList/getMyReceivedList/getMySentList 改 GET+query;加回归测试 | **FIXED** |
 | TEST-FIX-01 | P2 | A | mapBackendResponse 将 res:'' 强制转 null(基线测试 RED) | request.test.ts:26 | extractDataField 保留 falsy,顶层空响应仍 null | **FIXED** |
 | TC-FIX-01 | P2 | B | type-check RED: GetSettingSuccess 类型名不存在 | home/index.vue:307/316 | 改 GetSettingSuccessResult | **FIXED** |

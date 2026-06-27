@@ -62,7 +62,7 @@ describe('API contracts', () => {
   // GAP-API-01: 后端 MypatInfoController 这些列表均为 @GetMapping，必须用 GET。
   // 见 docs/migration/frontend-parity/03-api-contract-matrix.md。
   it('my-ypat list endpoints use GET (backend @GetMapping)', async () => {
-    const p = { page: 1, size: 10 }
+    const p = { userid: 7, page: 1, size: 10 }
     await ypatApi.getMyPublishList(p)
     await ypatApi.getMyFavoriteList(p)
     await ypatApi.getMyReceivedList(p)

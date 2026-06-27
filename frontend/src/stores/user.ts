@@ -1,6 +1,7 @@
 import { computed, ref } from 'vue'
 import { defineStore } from 'pinia'
 import { get, post } from '@/api/request'
+import { envConfig } from '@/config/env'
 import { sendH5LoginCode } from '@/api/modules/user'
 import {
   clearAuth,
@@ -10,7 +11,7 @@ import {
   setStoredUserInfo,
   setToken,
 } from '@/services/auth-storage'
-import type { LoginResult, UserInfo, WxSessionResult } from '@/api/types'
+import type { ApiResult, LoginResult, UserInfo, WxSessionResult } from '@/api/types'
 
 export interface WechatLoginInput {
   code: string
@@ -62,13 +63,34 @@ export const useUserStore = defineStore('user', () => {
 
   /**
    * 小程序端"微信一键登录"按钮的统一入口。
-   * 旧版后端 WxUtils.getUserInfo 用 AES 解密 encryptedData 拿手机号，
-   * 新版微信 (基础库 2.20+) 的 encryptedData 不再包含明文手机号，
-   * 强制走解密会失败。开发阶段统一走 mock 短信登录:
-   * 手机号 18888888888 + 验证码 888888 (后端 H5_TEST_MOBILE 分支)
+   * 真实流程: 将登录页通过 getPhoneNumber + uni.login 收集到的
+   * code / encryptedData / iv 透传给后端 /user/login(UserQo 接受这些字段),
+   * 由后端解密手机号并签发 token。**生产环境绝不使用测试账号。**
+   *
+   * 开发环境保留测试账号便于无微信开发者工具联调
+   * (手机号 18888888888 + 验证码 888888, 后端 H5_TEST_MOBILE 分支)。
+   * 注意: 新版微信(基础库 2.21+)的 getPhoneNumber 已改为返回 code 换取,
+   * 若后端仍依赖 encryptedData 解密失败,登录页已有明确提示(见 login/index.vue)。
    */
   async function login(input: WechatLoginInput): Promise<UserInfo> {
-    return loginByPhoneInternal('18888888888', '888888')
+    if (envConfig.env === 'development') {
+      return loginByPhoneInternal('18888888888', '888888')
+    }
+    const result = await post<LoginResult>(
+      '/user/login',
+      {
+        code: input.code,
+        encryptedData: input.encryptedData,
+        iv: input.iv,
+        channel: input.channel ?? '0',
+        nickname: input.nickname,
+        avatarurl: input.avatarurl,
+        gender: input.gender,
+        recmobile: input.recmobile,
+      },
+      { withToken: false, showError: false },
+    )
+    return applyLoginResult(result)
   }
 
   async function loginByPhone(input: H5PhoneLoginInput): Promise<UserInfo> {
@@ -81,6 +103,11 @@ export const useUserStore = defineStore('user', () => {
       { mobile, smsCode, channel: '2' },
       { withToken: false, showError: false },
     )
+    return applyLoginResult(result)
+  }
+
+  // 统一处理登录响应: 校验凭证、保存 token、拉取完整资料、落地会话。
+  async function applyLoginResult(result: ApiResult<LoginResult>): Promise<UserInfo> {
     if (!result.data?.token || !result.data?.id) {
       throw new Error(result.message || '登录响应缺少用户凭证')
     }
