@@ -20,6 +20,10 @@
 | GAP-FAV-01 | ? | E | 旧版收藏只增无取消,新版若有"取消收藏"将无对应后端端点 | 后端仅 /my/ypat/sc/add(只增),无删除 | 审计 my-favorite 页;若有取消需后端支持→暂禁用或确认 | OPEN |
 | GAP-NAV-01 | ? | B | discover 页不在 tabBar,入口未知 | new pages.json tabBar 无 discover | 审计 home/discover 跳转入口 | OPEN |
 
+| GAP-C-01 | P2 | C | 报名理由硬编码,丢失用户自填(旧 ≥6字) | YpatDetailView apply() | editable modal 收集理由 + ≥6字校验 | **FIXED** |
+| GAP-C-02 | P3 | C | 详情 share() 仅 toast | YpatDetailView:131 | 真实分享需页面级 onShareAppMessage,记录 | ACCEPTED |
+| GAP-C-03 | P3 | C | 详情"私信"stub、"关注"无后端 | YpatDetailView 模板 | 旧版无 viewer 联系入口;关注为新增无后端 | ACCEPTED |
+
 ## 待确认清单 (UNKNOWN, 需模块审计中关闭)
 - 模块C: 报名(orderShe)/联系方式(linkway) 是否完整内联到 detail/message-detail,业务规则(实名/信用/余额/约拍理由≥6字)是否保留。
 - 模块D: 发布表单字段(target/chargeway/patstyle/patdate不过期/省市必填/收费金额)是否完整;草稿恢复;图片 base64 ≤9。
