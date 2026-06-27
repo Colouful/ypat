@@ -39,6 +39,9 @@
 | GAP-I-01 | P2 | I | 反馈 /feedback/add 后端不存在 | feedback.vue + 后端无端点 | 新功能;诚实失败,建议后端补端点或上线前下线入口 | OPEN |
 | GAP-I-02 | P3 | I | 不支持改手机号 | settings handlePhone | 与旧一致,记录 | ACCEPTED |
 
+| GAP-J-01 | P2 | J | 保证金充值流程缺失,1011 仅 toast 无支付入口 | 后端 order type=2;新版无 credit 页 | 产品决策: 迁移 credit 充值页或下线保证金;主路径(默认 creditflag=0)不受阻 | OPEN |
+| GAP-J-02 | P3 | J | 邀请体系未迁移(INVITE 常量悬空无引用) | constants/pages.ts:40 | 产品决策;无运行风险 | OPEN |
+
 ## 待确认清单 (UNKNOWN, 需模块审计中关闭)
 - 模块C: 报名(orderShe)/联系方式(linkway) 是否完整内联到 detail/message-detail,业务规则(实名/信用/余额/约拍理由≥6字)是否保留。
 - 模块D: 发布表单字段(target/chargeway/patstyle/patdate不过期/省市必填/收费金额)是否完整;草稿恢复;图片 base64 ≤9。
