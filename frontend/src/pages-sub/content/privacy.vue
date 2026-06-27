@@ -116,7 +116,6 @@ onMounted(() => {
 </script>
 
 <style lang="scss">
-@import '@/styles/tokens.scss';
 
 .privacy-page {
   min-height: 100vh;

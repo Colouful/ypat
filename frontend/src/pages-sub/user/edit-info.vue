@@ -9,6 +9,9 @@
       <text class="label">昵称</text>
       <input v-model="form.nickname" class="input" maxlength="10" placeholder="请输入昵称" />
 
+      <text class="label">微信号</text>
+      <input v-model="form.wx" class="input" maxlength="30" placeholder="请输入微信号（用于对方联系你）" />
+
       <text class="label">性别</text>
       <picker :range="genderOptions" :value="genderIndex" @change="changeGender">
         <view class="picker">{{ genderText || '请选择性别' }}</view>
@@ -41,7 +44,7 @@ import { computed, reactive, ref } from 'vue'
 import { onLoad } from '@dcloudio/uni-app'
 import { useUserStore } from '@/stores/user'
 import * as userApi from '@/api/modules/user'
-import { filePathToBase64 } from '@/utils/file-base64'
+import { filePathToDataUrl } from '@/utils/file-base64'
 import { GENDER_LABELS, PROFESS_LABELS } from '@/constants/enums'
 import type { UpdateUserParams } from '@/api/types'
 
@@ -63,6 +66,7 @@ const form = reactive({
   province: '',
   city: '',
   area: '',
+  wx: '',
 })
 
 const today = new Date().toISOString().slice(0, 10)
@@ -83,6 +87,7 @@ function initForm(): void {
   form.province = info.province || ''
   form.city = info.city || ''
   form.area = info.area || ''
+  form.wx = info.wx || ''
   avatarPreview.value = info.imgpath || info.avatarurl || ''
 }
 
@@ -96,8 +101,7 @@ function chooseAvatar(): void {
       if (!path) return
       avatarPreview.value = path
       try {
-        const base64 = await filePathToBase64(path)
-        avatarData.value = `data:image/jpeg;base64,${base64}`
+        avatarData.value = await filePathToDataUrl(path)
       } catch (error) {
         avatarData.value = ''
         uni.showToast({ title: error instanceof Error ? error.message : '头像读取失败', icon: 'none' })
@@ -147,6 +151,7 @@ async function save(): Promise<void> {
       province: form.province || undefined,
       city: form.city || undefined,
       area: form.area || undefined,
+      wx: form.wx.trim() || undefined,
       pics: avatarData.value || undefined,
     }
     await userApi.updateUser(params)
@@ -158,6 +163,7 @@ async function save(): Promise<void> {
       province: params.province,
       city: params.city,
       area: params.area,
+      wx: params.wx,
       imgpath: avatarData.value ? avatarPreview.value : userStore.userInfo?.imgpath,
     })
     uni.showToast({ title: '保存成功', icon: 'success' })
@@ -173,7 +179,6 @@ onLoad(initForm)
 </script>
 
 <style scoped lang="scss">
-@import '@/styles/tokens.scss';
 
 .page { min-height: 100vh; box-sizing: border-box; padding: 28rpx; background: $color-bg-page; }
 .avatar-section { display: flex; flex-direction: column; align-items: center; padding: 40rpx 0; }

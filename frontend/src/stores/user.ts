@@ -1,7 +1,8 @@
 import { computed, ref } from 'vue'
 import { defineStore } from 'pinia'
 import { get, post } from '@/api/request'
-import { h5PhoneLogin, sendH5LoginCode } from '@/api/modules/user'
+import { envConfig } from '@/config/env'
+import { sendH5LoginCode } from '@/api/modules/user'
 import {
   clearAuth,
   getStoredUserInfo,
@@ -10,7 +11,7 @@ import {
   setStoredUserInfo,
   setToken,
 } from '@/services/auth-storage'
-import type { LoginParams, LoginResult, UserInfo, WxSessionResult } from '@/api/types'
+import type { ApiResult, LoginResult, UserInfo, WxSessionResult } from '@/api/types'
 
 export interface WechatLoginInput {
   code: string
@@ -60,40 +61,56 @@ export const useUserStore = defineStore('user', () => {
     }
   }
 
+  /**
+   * 小程序端"微信一键登录"按钮的统一入口。
+   * 真实流程: 将登录页通过 getPhoneNumber + uni.login 收集到的
+   * code / encryptedData / iv 透传给后端 /user/login(UserQo 接受这些字段),
+   * 由后端解密手机号并签发 token。**生产环境绝不使用测试账号。**
+   *
+   * 开发环境保留测试账号便于无微信开发者工具联调
+   * (手机号 18888888888 + 验证码 888888, 后端 H5_TEST_MOBILE 分支)。
+   * 注意: 新版微信(基础库 2.21+)的 getPhoneNumber 已改为返回 code 换取,
+   * 若后端仍依赖 encryptedData 解密失败,登录页已有明确提示(见 login/index.vue)。
+   */
   async function login(input: WechatLoginInput): Promise<UserInfo> {
-    if (!input.code || !input.encryptedData || !input.iv) {
-      throw new Error('缺少微信手机号授权信息，请重新授权')
+    if (envConfig.env === 'development') {
+      return loginByPhoneInternal('18888888888', '888888')
     }
-
-    const session = await get<WxSessionResult>(
-      '/user/code',
-      { code: input.code },
+    const result = await post<LoginResult>(
+      '/user/login',
+      {
+        code: input.code,
+        encryptedData: input.encryptedData,
+        iv: input.iv,
+        channel: input.channel ?? '0',
+        nickname: input.nickname,
+        avatarurl: input.avatarurl,
+        gender: input.gender,
+        recmobile: input.recmobile,
+      },
       { withToken: false, showError: false },
     )
-    if (!session.data?.openid || !session.data?.session_key) {
-      throw new Error(session.data?.errmsg || '微信登录凭证换取失败')
-    }
+    return applyLoginResult(result)
+  }
 
-    const params: LoginParams = {
-      openid: session.data.openid,
-      encryptedData: input.encryptedData,
-      sessionKey: session.data.session_key,
-      iv: input.iv,
-      channel: input.channel || '0',
-      nickname: input.nickname,
-      avatarurl: input.avatarurl,
-      gender: input.gender,
-      recmobile: input.recmobile,
-    }
+  async function loginByPhone(input: H5PhoneLoginInput): Promise<UserInfo> {
+    return loginByPhoneInternal(input.mobile.trim(), input.smsCode.trim())
+  }
 
-    const result = await post<LoginResult>('/user/login', params, {
-      withToken: false,
-      showError: false,
-    })
+  async function loginByPhoneInternal(mobile: string, smsCode: string): Promise<UserInfo> {
+    const result = await post<LoginResult>(
+      '/user/login',
+      { mobile, smsCode, channel: '2' },
+      { withToken: false, showError: false },
+    )
+    return applyLoginResult(result)
+  }
+
+  // 统一处理登录响应: 校验凭证、保存 token、拉取完整资料、落地会话。
+  async function applyLoginResult(result: ApiResult<LoginResult>): Promise<UserInfo> {
     if (!result.data?.token || !result.data?.id) {
       throw new Error(result.message || '登录响应缺少用户凭证')
     }
-
     setToken(result.data.token)
     token.value = result.data.token
 
@@ -104,7 +121,6 @@ export const useUserStore = defineStore('user', () => {
     } catch {
       // 完整资料可在进入个人中心时再次刷新。
     }
-
     persistSession(result.data.token, completeUser)
     return completeUser
   }
@@ -115,27 +131,6 @@ export const useUserStore = defineStore('user', () => {
       throw new Error(result.message || '验证码发送失败')
     }
     return result.data?.debugCode
-  }
-
-  async function loginByPhone(input: H5PhoneLoginInput): Promise<UserInfo> {
-    const result = await h5PhoneLogin(input)
-    if (!result.data?.token || !result.data?.id) {
-      throw new Error(result.message || '登录响应缺少用户凭证')
-    }
-
-    setToken(result.data.token)
-    token.value = result.data.token
-
-    let completeUser = createFallbackUser(result.data)
-    try {
-      const detail = await get<UserInfo>('/user/get', { id: Number(result.data.id) })
-      if (detail.data?.id) completeUser = detail.data
-    } catch {
-      // 完整资料可在进入个人中心时再次刷新。
-    }
-
-    persistSession(result.data.token, completeUser)
-    return completeUser
   }
 
   function restoreSession(): void {

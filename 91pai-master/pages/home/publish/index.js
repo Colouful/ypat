@@ -115,9 +115,18 @@ export default {
       "scope.userLocation",
       () => getLocation(true),
       "请开启定位权限"
-    );
+    ).catch((error) => {
+      console.log("发布页定位失败", error);
+      return "";
+    });
     // #endif
+    if (!locationArray || locationArray === "-1,-1") {
+      return;
+    }
     let address = await getCity(locationArray, "area");
+    if (!address || !address[0]) {
+      return;
+    }
     this.resultInfo2.province = address[0];
     this.resultInfo2.city = address[1];
     this.resultInfo2.area = address[2];

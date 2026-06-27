@@ -63,7 +63,6 @@ onLoad((options) => {
 </script>
 
 <style scoped lang="scss">
-@import '@/styles/tokens.scss';
 
 .page { min-height: 100vh; padding: 28rpx; background: $color-bg-page; }
 .state { padding: 240rpx 40rpx; color: $color-text-secondary; text-align: center; }

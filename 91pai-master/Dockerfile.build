@@ -1,0 +1,23 @@
+FROM node:18-alpine
+WORKDIR /app
+
+# 先装系统工具（wget 用于 npm registry 健康检查，git 用于部分依赖）
+RUN apk add --no-cache git
+
+# 用淘宝镜像加速（按项目约定）
+RUN npm config set registry https://registry.npmmirror.com
+
+# 升级到稳定的 npm 9（18-alpine 自带 9.x，但确认一下）
+RUN npm install -g npm@9.8.1
+
+COPY package*.json ./
+# 加 --no-audit --no-fund 加速，加 --verbose 看错误
+RUN npm install --legacy-peer-deps --no-audit --no-fund
+
+COPY . .
+
+# 先 dev 一次预热（不一定要成功，主要是把缓存装好）
+# 直接 production build
+RUN npm run build:mp-weixin 2>&1 | tee /tmp/build.log | tail -50
+
+CMD ["sh", "-c", "cp -r /app/dist/build/mp-weixin/* /output/ 2>/dev/null || echo 'no output yet'"]

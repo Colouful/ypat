@@ -78,7 +78,6 @@ onLoad(fetchRecentRecords)
 </script>
 
 <style scoped lang="scss">
-@import '@/styles/tokens.scss';
 
 .page { min-height: 100vh; padding: 28rpx; background: $color-bg-page; }
 .balance-card { padding: 36rpx; border-radius: $radius-keep-card; color: #fff; background: linear-gradient(135deg, $color-primary, #69d89e); }

@@ -38,7 +38,6 @@ function goPrivacy() {
 </script>
 
 <style lang="scss">
-@import '@/styles/tokens.scss';
 
 .about-page {
   min-height: 100vh;

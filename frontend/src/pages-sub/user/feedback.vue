@@ -54,7 +54,6 @@ async function handleSubmit(): Promise<void> {
 </script>
 
 <style scoped lang="scss">
-@import '@/styles/tokens.scss';
 
 .feedback-page { min-height: 100vh; padding: 28rpx; background: $color-bg-page; }
 .feedback-card, .contact-card { margin-bottom: 22rpx; padding: 28rpx; border-radius: $radius-keep-card; background: $color-bg-card; box-shadow: $shadow-keep-card; }

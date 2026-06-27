@@ -80,7 +80,6 @@ onShow(getStorageSize)
 </script>
 
 <style scoped lang="scss">
-@import '@/styles/tokens.scss';
 
 .settings-page { min-height: 100vh; padding: 28rpx; background: $color-bg-page; }
 .settings-section { margin-bottom: 28rpx; }

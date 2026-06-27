@@ -6,7 +6,7 @@ const { NODE_ENV } = process.env;
 const config = {
   development: {
     imgUrl: "http://appapi.duoyi.cblog.top/storage/",
-    apiUrl: "https://www.91qupaier.com"
+    apiUrl: "http://localhost:8088"
   },
   production: {
     imgUrl: "http://appapi.duoyi.cblog.top/storage/",

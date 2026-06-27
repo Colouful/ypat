@@ -1,0 +1,39 @@
+{
+  "project": "91pai-master",
+  "framework": "uni-app Vue2 + Vuex + vue-cli",
+  "source": "91pai-master/pages.json",
+  "tabBar": [
+    "pages/home/home/index",
+    "pages/mine/mine/index"
+  ],
+  "pages": [
+    { "path": "pages/home/home/index", "title": "爱去拍(首页)", "platform": "all" },
+    { "path": "pages/home/introduce/index", "title": "完善您的信息", "platform": "all" },
+    { "path": "pages/mine/invitationdesc/index", "title": "邀请好友", "platform": "non-H5" },
+    { "path": "pages/mine/helpcenter/index", "title": "帮助中心", "platform": "non-H5" },
+    { "path": "pages/mine/invitation/index", "title": "邀请好友", "platform": "non-H5" },
+    { "path": "pages/login/gender/index", "title": "完善您的信息", "platform": "non-H5" },
+    { "path": "pages/home/publish/index", "title": "发布", "platform": "non-H5" },
+    { "path": "pages/home/success/index", "title": "发布(结果/审核)", "platform": "non-H5" },
+    { "path": "pages/home/linkway/index", "title": "约拍请求(联系方式)", "platform": "non-H5" },
+    { "path": "pages/home/orderShe/index", "title": "约拍她(报名)", "platform": "non-H5" },
+    { "path": "pages/home/desc/index", "title": "约拍详情", "platform": "all" },
+    { "path": "pages/mine/mine/index", "title": "我的", "platform": "all" },
+    { "path": "pages/mine/userInfo/index", "title": "个人信息", "platform": "non-H5" },
+    { "path": "pages/mine/about/index", "title": "关于我们", "platform": "non-H5" },
+    { "path": "pages/mine/message/index", "title": "我的消息列表", "platform": "non-H5" },
+    { "path": "pages/mine/credit/index", "title": "信用担保", "platform": "non-H5" },
+    { "path": "pages/mine/realname/index", "title": "实名认证", "platform": "non-H5" },
+    { "path": "pages/mine/ppd/index", "title": "我的拍拍豆", "platform": "non-H5" },
+    { "path": "pages/mine/creditagreement/index", "title": "保证金协议", "platform": "non-H5" },
+    { "path": "pages/mine/records/index", "title": "收支记录", "platform": "non-H5" },
+    { "path": "pages/mine/infoaudit/index", "title": "发布信息审核", "platform": "non-H5" },
+    { "path": "pages/mine/yplist/index", "title": "爱去拍(我的约拍列表)", "platform": "non-H5" },
+    { "path": "pages/login/login/index", "title": "登录", "platform": "non-H5" },
+    { "path": "pages/login/logininfo/index", "title": "登录(手机号)", "platform": "non-H5" },
+    { "path": "pages/login/agreement/index", "title": "注册协议", "platform": "non-H5" },
+    { "path": "pages/mine/homepage/index", "title": "个人主页", "platform": "all" }
+  ],
+  "count": 26,
+  "notes": "Many pages are #ifndef H5 (mp-weixin / app only). Page logic lives in sibling index.js files (<script src='./index.js'>). Token in storage key UNI_LOCAL_token, userInfo in UNI_LOCAL_userInfo."
+}

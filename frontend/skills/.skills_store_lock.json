@@ -1,0 +1,19 @@
+{
+  "version": 1,
+  "skills": {
+    "uniapp-expert": {
+      "name": "Uni-app 开发专家",
+      "zip_url": "https://api.skillhub.cn/api/v1/download?slug=uniapp-expert",
+      "source": "community",
+      "version": "1.0.0",
+      "installedAt": "2026-06-27T09:08:32Z"
+    },
+    "uniapp-guide": {
+      "name": "Uniapp Guide",
+      "zip_url": "https://api.skillhub.cn/api/v1/download?slug=uniapp-guide",
+      "source": "community",
+      "version": "1.0.0",
+      "installedAt": "2026-06-27T09:09:15Z"
+    }
+  }
+}

@@ -61,7 +61,11 @@ async function search(refresh = false): Promise<void> {
   }
   loading.value = true
   try {
-    const result = await ypatApi.getRecommendList({ page: page.value, size: 10, city: value })
+    // 关键词既可能是城市也可能是拍摄风格(首页/发现的"热门风格"标签会把风格当关键词传入)。
+    // 命中已知风格 → 用 patstyle 过滤(与首页风格筛选一致);否则按城市过滤。
+    const isStyle = (PHOTO_STYLES as readonly string[]).includes(value)
+    const filter = isStyle ? { patstyle: value } : { city: value }
+    const result = await ypatApi.getRecommendList({ page: page.value, size: 10, ...filter })
     const content = result.data?.content || []
     items.value = refresh ? content : items.value.concat(content)
     const current = result.data?.number ?? page.value
@@ -90,7 +94,6 @@ onReachBottom(() => search(false))
 </script>
 
 <style scoped lang="scss">
-@import '@/styles/tokens.scss';
 
 .page { min-height: 100vh; background: $color-bg-page; }
 .search-bar { position: fixed; z-index: 10; top: 0; left: 0; right: 0; display: flex; align-items: center; gap: 18rpx; padding-left: 28rpx; padding-right: 28rpx; padding-bottom: 18rpx; background: $color-bg-page; }

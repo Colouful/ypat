@@ -122,8 +122,6 @@ onShow(() => {
 </script>
 
 <style scoped lang="scss">
-@import '@/styles/tokens.scss';
-@import '@/styles/mixins.scss';
 
 .discover-page {
   min-height: 100vh;

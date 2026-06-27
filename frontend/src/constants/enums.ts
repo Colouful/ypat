@@ -108,6 +108,15 @@ export const YPAT_STATUS_LABELS: Record<string, string> = {
   [YpatStatus.REJECTED]: '审核不通过',
 };
 
+/**
+ * 拍拍豆消耗(对齐后端 system-domain Constant):
+ * PUB_NEED_PPD / APPLY_NEED_PPD / VIEW_NEED_PPD 均为 3。
+ * 仅用于前端预检与文案展示;实际扣费以服务端为准。
+ */
+export const VIEW_CONTACT_PPD = 3
+export const PUBLISH_PPD = 3
+export const APPLY_PPD = 3
+
 /** 积分/PPD记录类型 */
 export const RecordType = {
   TOPUP: '0',

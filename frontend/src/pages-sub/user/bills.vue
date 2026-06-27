@@ -56,7 +56,6 @@ onPullDownRefresh(async () => { await load(true); uni.stopPullDownRefresh() })
 onReachBottom(() => load())
 </script>
 <style scoped lang="scss">
-@import '@/styles/tokens.scss';
 
 .page { min-height: 100vh; padding: 24rpx; background: $color-bg-page; }
 .item { display: flex; justify-content: space-between; margin-bottom: 18rpx; padding: 28rpx; border-radius: $radius-keep-card; background: $color-bg-card; box-shadow: $shadow-keep-card; }

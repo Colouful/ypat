@@ -88,6 +88,8 @@ import { ref } from 'vue'
 import { useUserStore } from '@/stores/user'
 import KeepIcon from '@/components/business/KeepIcon.vue'
 import { isPhone } from '@/utils/validate'
+import { isProfileComplete } from '@/utils/profile'
+import type { UserInfo } from '@/api/types'
 
 interface PhoneAuthorizationEvent {
   detail?: {
@@ -106,6 +108,19 @@ const mobile = ref('')
 const smsCode = ref('')
 const debugCode = ref('')
 let countdownTimer: ReturnType<typeof setInterval> | null = null
+
+// 登录成功后的回跳：资料不完整(对齐旧版 getNextUrl)→ 引导完善资料；
+// 否则保留原目标回跳(登录回跳)。
+function redirectAfterLogin(user: UserInfo): void {
+  uni.showToast({ title: '登录成功', icon: 'success' })
+  if (!isProfileComplete(user)) {
+    setTimeout(() => uni.redirectTo({ url: '/pages-sub/user/complete-info' }), 600)
+    return
+  }
+  const pages = getCurrentPages()
+  if (pages.length > 1) uni.navigateBack()
+  else uni.switchTab({ url: '/pages/home/index' })
+}
 
 async function handleWechatPhoneAuthorization(event: PhoneAuthorizationEvent): Promise<void> {
   if (!agreed.value) {
@@ -134,17 +149,14 @@ async function handleWechatPhoneAuthorization(event: PhoneAuthorizationEvent): P
       uni.login({ provider: 'weixin', success: resolve, fail: reject })
     })
 
-    await userStore.login({
+    const user = await userStore.login({
       code: loginResult.code,
       encryptedData: detail.encryptedData,
       iv: detail.iv,
       channel: '0',
     })
 
-    uni.showToast({ title: '登录成功', icon: 'success' })
-    const pages = getCurrentPages()
-    if (pages.length > 1) uni.navigateBack()
-    else uni.switchTab({ url: '/pages/home/index' })
+    redirectAfterLogin(user)
   } catch (error) {
     const message = error instanceof Error ? error.message : '登录失败，请重试'
     uni.showToast({ title: message, icon: 'none' })
@@ -207,14 +219,11 @@ async function handleH5PhoneLogin(): Promise<void> {
 
   submitting.value = true
   try {
-    await userStore.loginByPhone({
+    const user = await userStore.loginByPhone({
       mobile: mobile.value.trim(),
       smsCode: smsCode.value.trim(),
     })
-    uni.showToast({ title: '登录成功', icon: 'success' })
-    const pages = getCurrentPages()
-    if (pages.length > 1) uni.navigateBack()
-    else uni.switchTab({ url: '/pages/home/index' })
+    redirectAfterLogin(user)
   } catch (error) {
     const message = error instanceof Error ? error.message : '登录失败，请重试'
     uni.showToast({ title: message, icon: 'none' })
@@ -233,8 +242,6 @@ function goPrivacy(): void {
 </script>
 
 <style lang="scss">
-@import '@/styles/tokens.scss';
-@import '@/styles/mixins.scss';
 
 .login-page {
   min-height: 100vh;

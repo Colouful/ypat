@@ -1,10 +1,10 @@
 import { get, post } from '../request'
-import { filePathToBase64 } from '@/utils/file-base64'
+import { ensureImageDataUrl } from '@/utils/file-base64'
 import type { ApiResult, OauthInfo, OauthSubmitParams, OcrResult } from '../types'
 
+// 后端 /oauth/ocr、/oauth/add 需要带 dataURL 头的 base64(见 backend MockTest)。
 async function normalizeImage(value: string): Promise<string> {
-  if (/^[A-Za-z0-9+/=\r\n]+$/.test(value) && value.length > 200) return value
-  return filePathToBase64(value)
+  return ensureImageDataUrl(value)
 }
 
 export async function ocrIdCard(value: string): Promise<ApiResult<OcrResult>> {

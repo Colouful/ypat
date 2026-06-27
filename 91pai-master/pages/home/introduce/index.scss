@@ -2,19 +2,19 @@ page {
 	background-color: #fff;
 }
 .container{
-	padding-bottom: 180upx;
+	padding-bottom: 180rpx;
 }
 .top-box {
-	padding: 80upx 40upx;
+	padding: 80rpx 40rpx;
 }
 .title {
 	color: #2c2d2d;
-	font-size: 48upx;
+	font-size: 48rpx;
 	font-weight: 700;
 }
 .subtitle {
-	margin-top: 10upx;
-	font-size: 28upx;
+	margin-top: 10rpx;
+	font-size: 28rpx;
 	font-family: PingFangSC-Regular, PingFang SC;
 	font-weight: 400;
 	color: rgba(180, 185, 185, 1);
@@ -23,17 +23,17 @@ page {
 }
 .cell-list {
 	position: relative;
-	padding: 40upx;
+	padding: 40rpx;
 	display: flex;
 	flex-direction: row;
 	align-items: center;
 	justify-content: space-between;
 	&::after {
 		content: " ";
-		width: calc(100% - 80upx);
-		left: 40upx;
+		width: calc(100% - 80rpx);
+		left: 40rpx;
 		position: absolute;
-		border-bottom: 2upx solid #eaecec;
+		border-bottom: 2rpx solid #eaecec;
 		bottom: 0;
 	}
 }
@@ -41,20 +41,20 @@ page {
 	background-color: #f7f7f9;
 }
 .cell-list-two {
-	padding: 40upx;
+	padding: 40rpx;
 	position: relative;
 
 	&::after {
 		content: " ";
 		position: absolute;
-		border-bottom: 2upx solid #eaecec;
+		border-bottom: 2rpx solid #eaecec;
 		bottom: 0;
-		left: 40upx;
-		width: calc(100% - 80upx);
+		left: 40rpx;
+		width: calc(100% - 80rpx);
 	}
 }
 .cell-title {
-	font-size: 28upx;
+	font-size: 28rpx;
 	color: #2c2d2d;
 }
 .title-box {
@@ -63,12 +63,17 @@ page {
 	display: flex;
 	flex-direction: row;
 	border: 1px solid #21c2c2;
-	border-radius: 6upx;
+	border-radius: 6rpx;
 	.item-btn {
+		display: flex;
+		flex-direction: row;
+		align-items: center;
+		justify-content: center;
+		box-sizing: border-box;
 		text-align: center;
-		width: 200upx;
-		padding: 10upx 0;
-		font-size: 28upx;
+		width: 200rpx;
+		height: 56rpx;
+		font-size: 28rpx;
 		color: #37c2bb;
 		background-color: #fff;
 		&.active {
@@ -77,10 +82,11 @@ page {
 		}
 	}
 	.sex {
-		margin-right: 10upx;
-		vertical-align: middle;
-		width: 26upx;
-		height: 26upx;
+		display: block;
+		flex: 0 0 26rpx;
+		margin-right: 10rpx;
+		width: 26rpx;
+		height: 26rpx;
 	}
 }
 .subtitle-box {
@@ -91,11 +97,11 @@ page {
 	align-items: center;
 }
 .desc {
-	font-size: 32upx;
+	font-size: 32rpx;
 	font-family: PingFangSC-Regular, PingFang SC;
 	font-weight: 400;
 	color: rgba(180, 185, 185, 1);
-	margin-top: 20upx;
+	margin-top: 20rpx;
 	font-weight: 500;
 	&.active {
 		color: #2c2d2d;
@@ -106,58 +112,58 @@ page {
 	position: relative;
 	&:before {
 		content: " ";
-		height: 16upx;
-		width: 16upx;
-		border-width: 2upx 2upx 0 0;
+		height: 16rpx;
+		width: 16rpx;
+		border-width: 2rpx 2rpx 0 0;
 		border-color: #b2b2b2;
 		border-style: solid;
 		transform: matrix(0.71, 0.71, 0.71, -0.71, 0, 0);
 		position: absolute;
 		top: 50%;
 		margin-top: -7px;
-		right: 0upx;
+		right: 0rpx;
 	}
 }
 .popup-box {
-	border-top-left-radius: 20upx;
-	border-top-right-radius: 20upx;
-	padding-bottom: calc(40upx + env(safe-area-inset-bottom));
+	border-top-left-radius: 20rpx;
+	border-top-right-radius: 20rpx;
+	padding-bottom: calc(40rpx + env(safe-area-inset-bottom));
 }
 .popup-header {
-	border-bottom: 1upx solid #eaecec;
+	border-bottom: 1rpx solid #eaecec;
 	flex-direction: row;
 	display: flex;
 	justify-content: space-between;
 	align-items: center;
 	.cancle {
-		padding: 20upx 30upx;
+		padding: 20rpx 30rpx;
 		color: #b4b9b9;
 	}
 	.confirm {
-		padding: 20upx 30upx;
+		padding: 20rpx 30rpx;
 		color: #1bb6b6;
 	}
 }
 .content-box {
 	text-align: center;
-	padding: 30upx 100upx;
+	padding: 30rpx 100rpx;
 	display: flex;
 	flex-direction: row;
 	flex-wrap: wrap;
 	justify-content: center;
 	align-items: center;
 	.item {
-		margin-bottom: 30upx;
-		font-size: 28upx;
-		min-width: 240upx;
-		border: 1upx solid #eaecec;
+		margin-bottom: 30rpx;
+		font-size: 28rpx;
+		min-width: 240rpx;
+		border: 1rpx solid #eaecec;
 		background-color: #fff;
 		color: #2c2d2d;
-		padding: 14upx 0;
-		border-radius: 6upx;
-		margin-right: 20upx;
+		padding: 14rpx 0;
+		border-radius: 6rpx;
+		margin-right: 20rpx;
 		&.active {
-			border: 1upx solid #21c2c2;
+			border: 1rpx solid #21c2c2;
 			background-color: #21c2c2;
 			color: #fff;
 		}
