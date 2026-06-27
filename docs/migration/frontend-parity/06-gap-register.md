@@ -36,6 +36,9 @@
 | GAP-G-01 | P2 | G | 实名仅2张证件照(缺手持),旧需3张 | realname.vue front/back | 后端 pics 为 List;产品决策,记录 | OPEN |
 | GAP-IMG-01 | **P1** | D/G/A | 图片 base64 缺 dataURL 前缀(publish/realname 裸 base64),后端按 `,` 切分取图(MockTest 用 `data:image;base64,` 前缀) | file-base64 去头 | 新增 filePathToDataUrl/ensureImageDataUrl 统一补前缀;publish/oauth/edit-info 全部带前缀;加单测 | **FIXED** |
 
+| GAP-I-01 | P2 | I | 反馈 /feedback/add 后端不存在 | feedback.vue + 后端无端点 | 新功能;诚实失败,建议后端补端点或上线前下线入口 | OPEN |
+| GAP-I-02 | P3 | I | 不支持改手机号 | settings handlePhone | 与旧一致,记录 | ACCEPTED |
+
 ## 待确认清单 (UNKNOWN, 需模块审计中关闭)
 - 模块C: 报名(orderShe)/联系方式(linkway) 是否完整内联到 detail/message-detail,业务规则(实名/信用/余额/约拍理由≥6字)是否保留。
 - 模块D: 发布表单字段(target/chargeway/patstyle/patdate不过期/省市必填/收费金额)是否完整;草稿恢复;图片 base64 ≤9。
