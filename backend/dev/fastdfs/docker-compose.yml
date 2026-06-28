@@ -1,11 +1,9 @@
-# FastDFS 本地开发环境（Apple Silicon 原生 arm64）
-# 镜像: ygqygq2/fastdfs-nginx (多架构原生支持)
-# 用法:
-#   cd backend/dev/fastdfs
-#   docker compose up -d
+# FastDFS — 预发环境
+# tracker:22122 (内网) + storage:23000 (内网) + storage nginx 8888 (主机端口,浏览器访问图片)
+# 共享主 ypat-net 网络，wap/web 容器可直接用主机名 fastdfs-tracker:22122
 #
-# 镜像的 entrypoint.sh 通过 CMD 第一个位置参数（tracker|storage|monitor）选择角色，
-# 所以 command 必须传 "tracker" 或 "storage"（不是 env）。
+# 启动: docker compose -f backend/dev/fastdfs/docker-compose.yml up -d
+# 停止: docker compose -f backend/dev/fastdfs/docker-compose.yml down
 
 services:
   fastdfs-tracker:
@@ -16,7 +14,7 @@ services:
     volumes:
       - ./tracker_data:/var/fdfs
     networks:
-      - fastdfs-net
+      - ypat-net
     ports:
       - "22122:22122"
     restart: unless-stopped
@@ -33,12 +31,13 @@ services:
     volumes:
       - ./storage_data:/var/fdfs
     networks:
-      - fastdfs-net
+      - ypat-net
     ports:
       - "23000:23000"
-      - "8888:8080"   # 镜像内 nginx 听 8080
+      - "8888:8080"
     restart: unless-stopped
 
 networks:
-  fastdfs-net:
-    driver: bridge
+  ypat-net:
+    external: true
+    name: ypat_ypat-net
