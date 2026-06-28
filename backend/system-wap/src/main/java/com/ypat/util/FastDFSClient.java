@@ -48,6 +48,10 @@ public class FastDFSClient{
 
     public String uploanFile1(InputStream inputStream, String fileName) {
         String[] result = uploadFile(inputStream,fileName,null);
+        if (result == null) {
+            // 上传失败时 uploadFile() 已记录错误日志，这里返回 null 让调用方处理
+            return null;
+        }
         String res = result[0]+File.separator+result[1];
         return res;
     }

@@ -1,5 +1,7 @@
 package com.ypat.controller;
 
+import com.ypat.ResponseCode;
+import com.ypat.SysException;
 import com.ypat.UserQo;
 import com.ypat.comm.ImageConst;
 import com.ypat.config.SystemConfig;
@@ -52,6 +54,9 @@ public class UserController {
         userQo.setId(id);
         if (pics != null) {
             String fileId = fastDFSClient.uploanFile1(pics.getInputStream(), pics.getOriginalFilename());
+            if (fileId == null) {
+                throw new SysException(ResponseCode.FAIL_MARK);
+            }
             userQo.setImgpath(fileId);
         }
         return systemServiceClient.upd(userQo);
@@ -63,10 +68,15 @@ public class UserController {
         Long id = Long.parseLong(UserUtil.getUserId());
         userQo.setId(id);
         if (!StringUtils.isEmpty(pics)) {
-            final String[] picsArr = pics.split(",");
-            if(picsArr[0].indexOf("data:image") >= 0) {
+            // 兼容 "data:image/xxx;base64,<data>" 格式：只切第一个逗号
+            final String[] picsArr = pics.split(",", 2);
+            if (picsArr[0].indexOf("data:image") >= 0 && picsArr.length == 2) {
                 byte[] bytes = Base64.decodeBase64(picsArr[1]);
                 String fileId = fastDFSClient.uploanFile1(new ByteArrayInputStream(bytes), ImageConst.IMAGE_TYPE);
+                if (fileId == null) {
+                    // FastDFS 上传失败：抛业务异常，让前端看到具体原因（不掩盖为"参数错误"）
+                    throw new SysException(ResponseCode.FAIL_MARK);
+                }
                 logger.info("fileId==="+fileId);
                 userQo.setImgpath(systemConfig.getFdfs_path()+fileId);
             }

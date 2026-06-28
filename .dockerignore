@@ -3,7 +3,9 @@ node_modules
 .github
 .idea
 *.iml
-target
+!backend/**/target
+!backend-base/**/target
+!frontend/dist
 docs
 91pai-master
 design-references
