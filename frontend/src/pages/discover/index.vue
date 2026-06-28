@@ -74,6 +74,7 @@ import { useUserStore } from '@/stores/user'
 import { PHOTO_STYLES } from '@/constants/enums'
 import KeepIcon from '@/components/business/KeepIcon.vue'
 import KeepTabBar from '@/components/business/KeepTabBar.vue'
+import { goTab } from '@/utils/tab-navigation'
 
 const appStore = useAppStore()
 const userStore = useUserStore()
@@ -83,14 +84,14 @@ const styles = PHOTO_STYLES.slice(0, 8)
 
 const quickItems = [
   { label: '找同城', icon: 'map-pin', action: () => goSearch() },
-  { label: '发布约拍', icon: 'plus-circle', action: () => uni.switchTab({ url: '/pages/publish/index' }) },
+  { label: '发布约拍', icon: 'plus-circle', action: () => goTab('/pages/publish/index') },
   { label: '我的申请', icon: 'check', action: () => checkLogin('/pages-sub/ypat/my-apply') },
   { label: '收藏夹', icon: 'star', action: () => checkLogin('/pages-sub/ypat/my-favorite') },
 ]
 
 const flowItems = [
   { title: '我的发布', desc: '查看发布状态和收到的申请', icon: 'camera', action: () => checkLogin('/pages-sub/ypat/my-publish') },
-  { title: '消息中心', desc: '处理收到的约拍与申请动态', icon: 'mail', action: () => uni.switchTab({ url: '/pages/message/index' }) },
+  { title: '消息中心', desc: '处理收到的约拍与申请动态', icon: 'mail', action: () => goTab('/pages/message/index') },
   { title: '实名认证', desc: '完善信用资料，提高合作可信度', icon: 'shield', action: () => checkLogin('/pages-sub/user/realname') },
   { title: '我的拍拍豆', desc: '充值、账单、收支记录统一管理', icon: 'wallet', action: () => checkLogin('/pages-sub/user/wallet') },
 ]
@@ -100,7 +101,7 @@ function goSearch(): void {
 }
 
 function goMine(): void {
-  uni.switchTab({ url: '/pages/mine/index' })
+  goTab('/pages/mine/index')
 }
 
 function searchStyle(style: string): void {
@@ -116,7 +117,6 @@ function checkLogin(url: string): void {
 }
 
 onShow(() => {
-  try { uni.hideTabBar({ animation: false }) } catch(e) {}
   if (userStore.isLoggedIn) userStore.refreshUnreadCount()
 })
 </script>

@@ -1,5 +1,8 @@
 <template>
-  <RechargePanel />
+  <view class="page">
+    <KeepPageNav title="充值" />
+    <RechargePanel />
+  </view>
 </template>
 
 <script setup lang="ts">

@@ -1,5 +1,16 @@
 <template>
   <view class="publish-form">
+    <view class="publish-summary">
+      <view>
+        <text class="publish-summary__label">当前拍拍豆</text>
+        <text class="publish-summary__value">{{ userStore.userInfo?.ppd || 0 }}</text>
+      </view>
+      <view class="publish-summary__cost">
+        <KeepIcon name="coins" :size="30" color="#FF9F1C" />
+        <text>发布消耗 3</text>
+      </view>
+    </view>
+
     <view class="target-picker">
       <view
         v-for="item in targets"
@@ -20,7 +31,8 @@
 
     <view class="field-card field-card--textarea">
       <text class="field-card__label">详细描述</text>
-      <textarea v-model="model.describ" class="field-card__textarea" maxlength="500" placeholder="拍摄主题、风格、时间地点、出片要求..." />
+      <textarea v-model="model.describ" class="field-card__textarea" maxlength="200" placeholder="拍摄主题、风格、时间地点、出片要求..." />
+      <text class="field-card__count">{{ model.describ.length }}/200</text>
     </view>
 
     <view class="field-card">
@@ -36,13 +48,19 @@
           {{ item.label }}
         </view>
       </view>
-      <input
-        v-if="model.chargeway === '1' || model.chargeway === '2'"
-        v-model.number="model.chargeamt"
-        class="price-input"
-        type="digit"
-        placeholder="请输入参考金额"
-      />
+      <view v-if="model.chargeway === '1' || model.chargeway === '2'" class="price-input-field">
+        <input
+          :value="model.chargeamt"
+          class="price-input"
+          type="number"
+          maxlength="8"
+          placeholder="请输入金额"
+          @input="changeChargeAmount"
+        />
+        <view v-if="model.chargeamt" class="price-input__clear" @tap.stop="clearChargeAmount">
+          <KeepIcon name="close" :size="22" color="#83888F" :stroke-width="3" />
+        </view>
+      </view>
     </view>
 
     <view class="field-card">
@@ -63,14 +81,14 @@
     <view class="field-card">
       <text class="field-card__label">城市</text>
       <picker mode="region" :value="regionValue" @change="changeRegion">
-        <view class="city-field">{{ regionText || '请选择城市' }}</view>
+        <view class="city-field" :class="{ 'city-field--placeholder': !regionText }">{{ regionText || '请选择城市' }}</view>
       </picker>
     </view>
 
     <view class="field-card">
       <text class="field-card__label">拍摄日期</text>
-      <picker mode="date" :value="model.patdate" :start="today" @change="changePatdate">
-        <view class="city-field">{{ model.patdate || '请选择拍摄日期' }}</view>
+      <picker mode="date" :value="model.patdate" :start="minPatdate" @change="changePatdate">
+        <view class="city-field" :class="{ 'city-field--placeholder': !model.patdate }">{{ model.patdate || '请选择拍摄日期' }}</view>
       </picker>
     </view>
 
@@ -91,9 +109,9 @@
       <text v-if="processing" class="publish-tip">正在处理 {{ processedCount }}/{{ localPaths.length }}</text>
     </view>
 
-    <text class="publish-tip">发布需要 3 个拍拍豆，当前余额 {{ userStore.userInfo?.ppd || 0 }}</text>
+    <text class="publish-tip">提交后将进入审核，审核通过后展示在广场。</text>
     <view class="publish-submit">
-      <button class="publish-submit__button" :disabled="!canSubmit || submitting || processing" :loading="submitting" @tap="submit">
+      <button class="publish-submit__button" :disabled="submitting || processing" :loading="submitting" @tap="submit">
         {{ submitting ? '提交中...' : '发布约拍' }}
       </button>
     </view>
@@ -107,11 +125,14 @@ import * as ypatApi from '@/api/modules/ypat'
 import { FEATURE_FLAGS } from '@/config/features'
 import { filePathToDataUrl } from '@/utils/file-base64'
 import { isPublishProfileReady } from '@/utils/profile'
+import { normalizePositiveIntegerInput, toPositiveIntegerAmount } from '@/utils/amount'
 import { PHOTO_STYLES } from '@/constants/enums'
 import KeepIcon from './KeepIcon.vue'
+import type { UserInfo } from '@/api/types'
 
 const userStore = useUserStore()
-const today = new Date().toISOString().slice(0, 10)
+const today = formatLocalDate()
+const minPatdate = formatLocalDate(1)
 const submitting = ref(false)
 const processing = ref(false)
 const processedCount = ref(0)
@@ -135,33 +156,37 @@ const styles = PHOTO_STYLES.slice(0, 9)
 const model = reactive({
   target: '0',
   describ: '',
-  patdate: today,
-  province: '上海市',
-  city: '上海市',
-  area: '徐汇区',
+  patdate: '',
+  province: '',
+  city: '',
+  area: '',
   patarea: '',
   chargeway: '0',
-  chargeamt: 0,
+  chargeamt: '',
   patstyle: '',
   realnameflag: '0',
   creditflag: '0',
 })
 
-const regionValue = computed(() => [model.province, model.city, model.area])
+const regionValue = computed(() => (model.province && model.city ? [model.province, model.city, model.area] : []))
 const regionText = computed(() => [model.city.replace('市', ''), model.area].filter(Boolean).join(' · '))
 const chargeAmountValid = computed(() => {
   if (model.chargeway !== '1' && model.chargeway !== '2') return true
-  return Number(model.chargeamt) > 0
+  return toPositiveIntegerAmount(model.chargeamt) !== undefined
 })
-const canSubmit = computed(() => Boolean(
-  title.value.trim()
-  && model.describ.trim()
-  && model.patdate
-  && model.province.trim()
-  && model.city.trim()
-  && localPaths.value.length
-  && chargeAmountValid.value
+const chargeAmountValue = computed(() => (
+  model.chargeway === '1' || model.chargeway === '2'
+    ? toPositiveIntegerAmount(model.chargeamt)
+    : 0
 ))
+function formatLocalDate(offsetDays = 0): string {
+  const date = new Date()
+  date.setDate(date.getDate() + offsetDays)
+  const year = date.getFullYear()
+  const month = String(date.getMonth() + 1).padStart(2, '0')
+  const day = String(date.getDate()).padStart(2, '0')
+  return `${year}-${month}-${day}`
+}
 
 function changeRegion(event: { detail: { value: string[] } }): void {
   const [province = '', city = '', area = ''] = event.detail.value
@@ -172,11 +197,29 @@ function changeRegion(event: { detail: { value: string[] } }): void {
 
 function selectChargeWay(value: string): void {
   model.chargeway = value
-  if (value === '0' || value === '3') model.chargeamt = 0
+  if (value === '0' || value === '3') model.chargeamt = ''
+}
+
+function changeChargeAmount(event: Event): string {
+  const detailValue = (event as Event & { detail?: { value?: string | number } }).detail?.value
+  const targetValue = (event as Event & { target?: { value?: string | number } }).target?.value
+  const normalized = normalizePositiveIntegerInput(detailValue ?? targetValue)
+  model.chargeamt = normalized
+  return normalized
+}
+
+function clearChargeAmount(): void {
+  model.chargeamt = ''
 }
 
 function changePatdate(event: { detail: { value: string } }): void {
-  model.patdate = event.detail.value
+  const value = event.detail.value
+  if (value <= today) {
+    model.patdate = ''
+    uni.showToast({ title: '请选择明天及以后的日期', icon: 'none' })
+    return
+  }
+  model.patdate = value
 }
 
 function toggleStyle(style: string): void {
@@ -217,29 +260,22 @@ async function convertImages(): Promise<string[]> {
 }
 
 async function submit(): Promise<void> {
-  if (!canSubmit.value || submitting.value || processing.value) return
+  if (submitting.value || processing.value) return
+  if (!validateSubmit()) return
   if (!FEATURE_FLAGS.deposit && model.creditflag === '1') {
     model.creditflag = '0'
     uni.showToast({ title: '当前版本暂未开放保证金服务，已关闭保证金要求', icon: 'none' })
   }
-  // 发布前置: 资料(含微信号)必须完整,否则报名者无法联系(对齐旧 isNendUserInfo)
-  if (!isPublishProfileReady(userStore.userInfo)) {
+  // 发布前置: 提交前刷新一次,避免从编辑资料返回后仍拿到旧 store。
+  const cachedUser = userStore.userInfo
+  const latestUser = await userStore.updateUserInfo()
+  if (!isPublishProfileReady(mergeNonEmptyUser(latestUser, cachedUser))) {
     uni.showModal({
       title: '请先完善资料',
       content: '发布前需补全性别、昵称、头像和微信号，方便对方联系你。',
       confirmText: '去完善',
       success: ({ confirm }) => confirm && uni.navigateTo({ url: '/pages-sub/user/edit-info' }),
     })
-    return
-  }
-  // 描述至少 6 个字(对齐旧 getError describe<6 拦截)
-  if (model.describ.trim().length < 6) {
-    uni.showToast({ title: '拍摄需求至少 6 个字', icon: 'none' })
-    return
-  }
-  // 拍摄日期不能早于今天(对齐旧 patdate 过期拦截)
-  if (model.patdate < today) {
-    uni.showToast({ title: '拍摄日期不能早于今天', icon: 'none' })
     return
   }
   if ((userStore.userInfo?.ppd || 0) < 3) {
@@ -259,6 +295,7 @@ async function submit(): Promise<void> {
     await ypatApi.submit({
       ...model,
       creditflag: FEATURE_FLAGS.deposit ? model.creditflag : '0',
+      chargeamt: chargeAmountValue.value,
       describ: `${title.value.trim()}\n${model.describ.trim()}`,
       patstyle: selectedStyles.value.join(','),
       pics,
@@ -273,17 +310,65 @@ async function submit(): Promise<void> {
   }
 }
 
+function mergeNonEmptyUser(
+  latest: UserInfo | null | undefined,
+  cached: UserInfo | null | undefined,
+): UserInfo | null {
+  if (!latest && !cached) return null
+  const merged = { ...(latest || {}), ...(pickNonEmpty(cached) || {}) }
+  return merged.id ? merged as UserInfo : null
+}
+
+function pickNonEmpty(user: UserInfo | null | undefined): Partial<UserInfo> {
+  if (!user) return {}
+  return Object.fromEntries(
+    Object.entries(user).filter(([, value]) => value !== undefined && value !== null && value !== ''),
+  ) as Partial<UserInfo>
+}
+
+function validateSubmit(): boolean {
+  if (!title.value.trim()) {
+    uni.showToast({ title: '请输入标题', icon: 'none' })
+    return false
+  }
+  if (model.describ.trim().length < 6) {
+    uni.showToast({ title: '拍摄需求至少 6 个字', icon: 'none' })
+    return false
+  }
+  if (!model.patdate) {
+    uni.showToast({ title: '请选择拍摄日期', icon: 'none' })
+    return false
+  }
+  if (model.patdate <= today) {
+    uni.showToast({ title: '请选择明天及以后的日期', icon: 'none' })
+    return false
+  }
+  if (!model.province.trim() || !model.city.trim()) {
+    uni.showToast({ title: '请选择城市', icon: 'none' })
+    return false
+  }
+  if (!localPaths.value.length) {
+    uni.showToast({ title: '请上传参考图', icon: 'none' })
+    return false
+  }
+  if (!chargeAmountValid.value) {
+    uni.showToast({ title: '请输入正整数金额', icon: 'none' })
+    return false
+  }
+  return true
+}
+
 function reset(): void {
   Object.assign(model, {
     target: '0',
     describ: '',
-    patdate: today,
-    province: '上海市',
-    city: '上海市',
-    area: '徐汇区',
+    patdate: '',
+    province: '',
+    city: '',
+    area: '',
     patarea: '',
     chargeway: '0',
-    chargeamt: 0,
+    chargeamt: '',
     patstyle: '',
     realnameflag: '0',
     creditflag: '0',
@@ -299,9 +384,49 @@ function reset(): void {
 <style scoped lang="scss">
 
 .publish-form {
-  min-height: 100vh;
-  padding: 24rpx 36rpx 180rpx;
+  padding: 0 36rpx 36rpx;
   background: $color-bg-page;
+}
+
+.publish-summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 24rpx;
+  padding: 26rpx 30rpx;
+  border-radius: $radius-keep-field;
+  background: $color-bg-card;
+  box-shadow: $shadow-keep-card;
+}
+
+.publish-summary__label,
+.publish-summary__value {
+  display: block;
+}
+
+.publish-summary__label {
+  color: $color-text-secondary;
+  font-size: 24rpx;
+  font-weight: 800;
+}
+
+.publish-summary__value {
+  margin-top: 4rpx;
+  color: $color-text-primary;
+  font-size: 44rpx;
+  font-weight: 900;
+}
+
+.publish-summary__cost {
+  display: inline-flex;
+  align-items: center;
+  gap: 8rpx;
+  padding: 14rpx 18rpx;
+  border-radius: $radius-round;
+  color: #9C7836;
+  background: $color-gold-soft;
+  font-size: 24rpx;
+  font-weight: 900;
 }
 
 .target-picker {
@@ -316,7 +441,7 @@ function reset(): void {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  height: 164rpx;
+  height: 152rpx;
   border: 4rpx solid $color-border;
   border-radius: $radius-keep-field;
   color: $color-text-primary;
@@ -344,13 +469,13 @@ function reset(): void {
 }
 
 .field-card--textarea {
-  min-height: 208rpx;
+  min-height: 248rpx;
 }
 
 .field-card__label {
   display: block;
   margin-bottom: 20rpx;
-  color: $color-text-helper;
+  color: $color-text-secondary;
   font-size: 28rpx;
   font-weight: 800;
 }
@@ -363,12 +488,25 @@ function reset(): void {
   font-weight: 600;
 }
 
+.city-field.city-field--placeholder {
+  color: $color-text-helper;
+  font-weight: 500;
+}
+
 .field-card__textarea {
   width: 100%;
-  height: 128rpx;
+  height: 142rpx;
   color: $color-text-primary;
   font-size: 32rpx;
   line-height: 1.5;
+}
+
+.field-card__count {
+  display: block;
+  margin-top: 12rpx;
+  color: $color-text-helper;
+  font-size: 24rpx;
+  text-align: right;
 }
 
 .option-wrap {
@@ -385,12 +523,29 @@ function reset(): void {
   @include keep-chip(true);
 }
 
-.price-input {
+.price-input-field {
+  display: flex;
+  align-items: center;
   height: 76rpx;
   margin-top: 22rpx;
   padding: 0 24rpx;
   border-radius: 24rpx;
   background: $color-bg-chip;
+}
+
+.price-input {
+  flex: 1;
+  min-width: 0;
+  height: 76rpx;
+}
+
+.price-input__clear {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44rpx;
+  height: 44rpx;
+  margin-left: 14rpx;
 }
 
 .upload-grid {
@@ -450,21 +605,26 @@ function reset(): void {
 }
 
 .publish-submit {
-  position: fixed;
-  right: 0;
-  bottom: 0;
-  left: 0;
-  padding: 28rpx 36rpx calc(36rpx + env(safe-area-inset-bottom));
-  background: linear-gradient(transparent, #fff 28%);
+  margin-top: 26rpx;
+  padding-bottom: 16rpx;
 }
 
 .publish-submit__button {
   @include keep-primary-button;
   width: 100%;
+  color: #fff;
+  background: $color-primary;
+  background-color: $color-primary;
   line-height: 104rpx;
 }
 
+.publish-submit__button::after {
+  border: 0;
+}
+
 .publish-submit__button[disabled] {
-  opacity: 0.45;
+  color: #fff;
+  background: $color-primary;
+  background-color: $color-primary;
 }
 </style>

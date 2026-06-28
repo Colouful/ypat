@@ -25,14 +25,26 @@
         <view class="detail-tags">
           <text class="detail-tag detail-tag--green">{{ detail.targetTxt || targetLabel }}</text>
           <text class="detail-tag detail-tag--green">{{ detail.chargewayTxt || detail.chargeway }}</text>
-          <text class="detail-tag">📍 {{ cityText }}</text>
+          <text class="detail-tag detail-tag--icon">
+            <KeepIcon name="map-pin" :size="24" />
+            {{ cityText }}
+          </text>
         </view>
 
         <text class="detail-title">{{ detailTitle }}</text>
         <view class="detail-meta">
-          <text>👁 {{ detail.readtimes || 0 }}</text>
-          <text>🤝 约拍 {{ detail.pattimes || 0 }}</text>
-          <text>★ 收藏 {{ detail.coltimes || 0 }}</text>
+          <text class="detail-meta__item">
+            <KeepIcon name="eye" :size="26" />
+            {{ detail.readtimes || 0 }}
+          </text>
+          <text class="detail-meta__item">
+            <KeepIcon name="handshake" :size="26" />
+            约拍 {{ detail.pattimes || 0 }}
+          </text>
+          <text class="detail-meta__item">
+            <KeepIcon name="star" :size="26" />
+            收藏 {{ detail.coltimes || 0 }}
+          </text>
         </view>
         <text class="detail-body">{{ detail.describ }}</text>
 
@@ -79,6 +91,7 @@ import { TARGET_LABELS } from '@/constants/enums'
 import KeepIcon from './KeepIcon.vue'
 import KeepState from './KeepState.vue'
 import type { YpatInfo } from '@/api/types'
+import { goTab } from '@/utils/tab-navigation'
 
 const props = defineProps<{ id: number }>()
 const emit = defineEmits<{
@@ -131,7 +144,7 @@ function preview(index: number): void {
 
 function back(): void {
   if (getCurrentPages().length > 1) uni.navigateBack()
-  else uni.switchTab({ url: '/pages/home/index' })
+  else goTab('/pages/home/index')
 }
 
 function copyShareLink(): void {
@@ -286,6 +299,9 @@ watch(() => props.id, load, { immediate: true })
 
 .detail-tag,
 .style-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 6rpx;
   padding: 10rpx 22rpx;
   border-radius: $radius-round;
   color: $color-text-secondary;
@@ -310,6 +326,7 @@ watch(() => props.id, load, { immediate: true })
 
 .detail-meta {
   display: flex;
+  flex-wrap: wrap;
   gap: 32rpx;
   margin-top: 28rpx;
   padding: 26rpx 0;
@@ -318,6 +335,12 @@ watch(() => props.id, load, { immediate: true })
   color: $color-text-secondary;
   font-size: 26rpx;
   font-weight: 700;
+}
+
+.detail-meta__item {
+  display: inline-flex;
+  align-items: center;
+  gap: 8rpx;
 }
 
 .detail-body {

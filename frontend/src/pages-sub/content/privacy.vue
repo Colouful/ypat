@@ -1,5 +1,6 @@
 <template>
   <view class="privacy-page">
+    <KeepPageNav title="隐私政策" />
     <view class="privacy-header">
       <text class="privacy-header__title">隐私政策</text>
       <text class="privacy-header__update">更新日期：2024年1月1日</text>

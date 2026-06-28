@@ -3,6 +3,7 @@ import { defineStore } from 'pinia'
 import { get, post } from '@/api/request'
 import { envConfig } from '@/config/env'
 import { sendH5LoginCode } from '@/api/modules/user'
+import { goTab } from '@/utils/tab-navigation'
 import {
   clearAuth,
   getStoredUserInfo,
@@ -146,27 +147,33 @@ export const useUserStore = defineStore('user', () => {
 
   function logout(): void {
     clearAuth()
-    uni.switchTab({ url: '/pages/home/index' })
+    goTab('/pages/home/index')
   }
 
   async function updateUserInfo(localPatch?: Partial<UserInfo>): Promise<UserInfo | null> {
     if (!token.value || !userInfo.value?.id) return null
 
+    const confirmedPatch = omitUndefined(localPatch)
     if (localPatch) {
-      userInfo.value = { ...userInfo.value, ...localPatch }
+      userInfo.value = { ...userInfo.value, ...confirmedPatch }
       setStoredUserInfo(userInfo.value)
     }
 
     try {
       const result = await get<UserInfo>('/user/get', { id: userInfo.value.id })
       if (result.data?.id) {
-        userInfo.value = result.data
-        setStoredUserInfo(result.data)
+        userInfo.value = { ...result.data, ...confirmedPatch }
+        setStoredUserInfo(userInfo.value)
       }
     } catch {
       // 服务端刷新失败时保留已确认保存成功的本地补丁。
     }
     return userInfo.value
+  }
+
+  function omitUndefined<T extends Record<string, unknown>>(value?: T): Partial<T> {
+    if (!value) return {}
+    return Object.fromEntries(Object.entries(value).filter(([, item]) => item !== undefined)) as Partial<T>
   }
 
   async function refreshUnreadCount(): Promise<number> {

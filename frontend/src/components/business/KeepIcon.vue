@@ -1,5 +1,9 @@
 <template>
   <view class="keep-icon" :style="iconStyle" aria-hidden="true">
+    <!-- #ifdef MP-WEIXIN -->
+    <image class="keep-icon__image" :src="imageSource" mode="aspectFit" />
+    <!-- #endif -->
+    <!-- #ifndef MP-WEIXIN -->
     <svg
       class="keep-icon__svg"
       viewBox="0 0 24 24"
@@ -18,6 +22,7 @@
         <polyline v-else-if="part.tag === 'polyline'" v-bind="part.attrs" />
       </template>
     </svg>
+    <!-- #endif -->
   </view>
 </template>
 
@@ -143,6 +148,16 @@ const iconMap: Record<string, IconPart[]> = {
   phone: [
     { tag: 'path', attrs: { d: 'M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.4 19.4 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1 1 .4 1.9.7 2.8a2 2 0 0 1-.5 2.1L8.1 9.9a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.5c.9.3 1.8.6 2.8.7a2 2 0 0 1 1.7 2.1' } },
   ],
+  eye: [
+    { tag: 'path', attrs: { d: 'M2.1 12.5a1 1 0 0 1 0-1c1.8-3.1 5.1-6 9.9-6s8.1 2.9 9.9 6a1 1 0 0 1 0 1c-1.8 3.1-5.1 6-9.9 6s-8.1-2.9-9.9-6' } },
+    { tag: 'circle', attrs: { cx: 12, cy: 12, r: 3 } },
+  ],
+  handshake: [
+    { tag: 'path', attrs: { d: 'm11 17 2 2a2.8 2.8 0 0 0 4-4' } },
+    { tag: 'path', attrs: { d: 'm14 14 2.5 2.5a2.8 2.8 0 0 0 4-4L14 6h-4l-6.5 6.5a2.8 2.8 0 0 0 4 4L10 14' } },
+    { tag: 'path', attrs: { d: 'M7 7 5.5 5.5' } },
+    { tag: 'path', attrs: { d: 'm17 7 1.5-1.5' } },
+  ],
   trash: [
     { tag: 'path', attrs: { d: 'M3 6h18' } },
     { tag: 'path', attrs: { d: 'M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2' } },
@@ -179,10 +194,26 @@ const iconMap: Record<string, IconPart[]> = {
 
 const iconParts = computed(() => iconMap[props.name] || iconMap.sparkles)
 
+const iconName = computed(() => (iconMap[props.name] ? props.name : 'sparkles'))
+
 const normalizedSize = computed(() => {
   if (typeof props.size === 'number') return `${props.size}rpx`
   return props.size
 })
+
+const colorToken = computed(() => {
+  const color = props.color.toUpperCase()
+  if (color === '#23C268') return 'brand'
+  if (color === '#83888F') return 'secondary'
+  if (color === '#B3B8BE') return 'helper'
+  if (color === '#FFFFFF') return 'white'
+  if (color === '#FF9F1C') return 'orange'
+  if (color === '#5577A8') return 'blue'
+  if (color === '#9C7836') return 'gold'
+  return 'primary'
+})
+
+const imageSource = computed(() => `/static/icons/${iconName.value}-${colorToken.value}.png`)
 
 const iconStyle = computed(() => ({
   width: normalizedSize.value,
@@ -200,7 +231,8 @@ const iconStyle = computed(() => ({
   flex: none;
 }
 
-.keep-icon__svg {
+.keep-icon__svg,
+.keep-icon__image {
   display: block;
   width: 100%;
   height: 100%;

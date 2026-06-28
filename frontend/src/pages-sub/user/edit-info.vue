@@ -1,5 +1,6 @@
 <template>
   <view class="page">
+    <KeepPageNav title="编辑资料" />
     <view class="avatar-section" @tap="chooseAvatar">
       <image class="avatar" :src="avatarPreview || '/static/default-avatar.png'" mode="aspectFill" />
       <text class="avatar-tip">点击更换头像</text>
@@ -7,29 +8,59 @@
 
     <view class="form-card">
       <text class="label">昵称</text>
-      <input v-model="form.nickname" class="input" maxlength="10" placeholder="请输入昵称" />
+      <view class="form-field">
+        <input v-model="form.nickname" class="input" maxlength="10" placeholder="请输入昵称" />
+        <view v-if="form.nickname" class="field-clear" @tap.stop="form.nickname = ''">
+          <KeepIcon name="close" :size="22" color="#83888F" :stroke-width="3" />
+        </view>
+      </view>
 
       <text class="label">微信号</text>
-      <input v-model="form.wx" class="input" maxlength="30" placeholder="请输入微信号（用于对方联系你）" />
+      <view class="form-field">
+        <input v-model="form.wx" class="input" maxlength="30" placeholder="请输入微信号（用于对方联系你）" />
+        <view v-if="form.wx" class="field-clear" @tap.stop="form.wx = ''">
+          <KeepIcon name="close" :size="22" color="#83888F" :stroke-width="3" />
+        </view>
+      </view>
 
       <text class="label">性别</text>
       <picker :range="genderOptions" :value="genderIndex" @change="changeGender">
-        <view class="picker">{{ genderText || '请选择性别' }}</view>
+        <view class="form-field picker-field">
+          <text class="picker-text" :class="{ 'picker-text--placeholder': !genderText }">{{ genderText || '请选择性别' }}</text>
+          <view v-if="form.gender" class="field-clear" @tap.stop="form.gender = ''">
+            <KeepIcon name="close" :size="22" color="#83888F" :stroke-width="3" />
+          </view>
+        </view>
       </picker>
 
       <text class="label">职业</text>
       <picker :range="professionLabels" :value="professionIndex" @change="changeProfession">
-        <view class="picker">{{ professionText || '请选择职业' }}</view>
+        <view class="form-field picker-field">
+          <text class="picker-text" :class="{ 'picker-text--placeholder': !professionText }">{{ professionText || '请选择职业' }}</text>
+          <view v-if="form.profess" class="field-clear" @tap.stop="form.profess = ''">
+            <KeepIcon name="close" :size="22" color="#83888F" :stroke-width="3" />
+          </view>
+        </view>
       </picker>
 
       <text class="label">生日</text>
       <picker mode="date" :value="form.birthday" :end="today" @change="changeBirthday">
-        <view class="picker">{{ form.birthday || '请选择生日' }}</view>
+        <view class="form-field picker-field">
+          <text class="picker-text" :class="{ 'picker-text--placeholder': !form.birthday }">{{ form.birthday || '请选择生日' }}</text>
+          <view v-if="form.birthday" class="field-clear" @tap.stop="form.birthday = ''">
+            <KeepIcon name="close" :size="22" color="#83888F" :stroke-width="3" />
+          </view>
+        </view>
       </picker>
 
       <text class="label">所在地区</text>
       <picker mode="region" :value="regionValue" @change="changeRegion">
-        <view class="picker">{{ regionText || '请选择省、市、区' }}</view>
+        <view class="form-field picker-field">
+          <text class="picker-text" :class="{ 'picker-text--placeholder': !regionText }">{{ regionText || '请选择省、市、区' }}</text>
+          <view v-if="regionText" class="field-clear" @tap.stop="clearRegion">
+            <KeepIcon name="close" :size="22" color="#83888F" :stroke-width="3" />
+          </view>
+        </view>
       </picker>
     </view>
 
@@ -46,6 +77,7 @@ import { useUserStore } from '@/stores/user'
 import * as userApi from '@/api/modules/user'
 import { filePathToDataUrl } from '@/utils/file-base64'
 import { GENDER_LABELS, PROFESS_LABELS } from '@/constants/enums'
+import KeepIcon from '@/components/business/KeepIcon.vue'
 import type { UpdateUserParams } from '@/api/types'
 
 const userStore = useUserStore()
@@ -129,6 +161,12 @@ function changeRegion(event: { detail: { value: string[] } }): void {
   form.area = area
 }
 
+function clearRegion(): void {
+  form.province = ''
+  form.city = ''
+  form.area = ''
+}
+
 async function save(): Promise<void> {
   const id = userStore.userInfo?.id
   if (!id) {
@@ -186,7 +224,44 @@ onLoad(initForm)
 .avatar-tip { margin-top: 16rpx; color: $color-text-secondary; font-size: 25rpx; }
 .form-card { padding: 30rpx; border-radius: $radius-keep-card; background: $color-bg-card; box-shadow: $shadow-keep-card; }
 .label { display: block; margin: 28rpx 0 12rpx; color: $color-text-primary; font-weight: 600; }
-.input, .picker { box-sizing: border-box; width: 100%; padding: 22rpx; border-radius: 16rpx; background: $color-bg-page; }
+.form-field {
+  display: flex;
+  align-items: center;
+  box-sizing: border-box;
+  width: 100%;
+  height: 88rpx;
+  padding: 0 22rpx;
+  border-radius: 16rpx;
+  background: $color-bg-page;
+}
+.input {
+  flex: 1;
+  min-width: 0;
+  height: 88rpx;
+  color: $color-text-primary;
+  font-size: 28rpx;
+}
+.picker-field {
+  justify-content: space-between;
+}
+.picker-text {
+  flex: 1;
+  min-width: 0;
+  color: $color-text-primary;
+  font-size: 28rpx;
+  @include ellipsis;
+}
+.picker-text--placeholder {
+  color: $color-text-helper;
+}
+.field-clear {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44rpx;
+  height: 44rpx;
+  margin-left: 12rpx;
+}
 .save { margin-top: 36rpx; height: 92rpx; line-height: 92rpx; border-radius: 999rpx; color: #fff; background: $color-primary; }
 .save[disabled] { opacity: .5; }
 .save::after { border: 0; }

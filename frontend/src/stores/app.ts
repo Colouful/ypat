@@ -43,7 +43,6 @@ interface SystemApiHost {
   getDeviceInfo?: () => DeviceInfo
   getWindowInfo?: () => WindowInfo
   getAppBaseInfo?: () => AppBaseInfo
-  getSystemInfoSync?: () => LegacySystemInfo
 }
 
 interface RuntimeGlobals {
@@ -80,7 +79,7 @@ function getCompatSystemInfo(): LegacySystemInfo {
     }
   }
 
-  return callSystemApi(uniApi.getSystemInfoSync) ?? {}
+  return {}
 }
 
 export const useAppStore = defineStore('app', () => {

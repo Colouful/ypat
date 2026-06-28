@@ -64,6 +64,7 @@ import * as messageApi from '@/api/modules/message'
 import KeepIcon from '@/components/business/KeepIcon.vue'
 import KeepState from '@/components/business/KeepState.vue'
 import KeepTabBar from '@/components/business/KeepTabBar.vue'
+import { goTab } from '@/utils/tab-navigation'
 import type { MessInfo } from '@/api/types'
 import { resolveMessageNavigation } from '@/utils/message-navigation'
 
@@ -123,11 +124,11 @@ async function openDetail(item: MessInfo): Promise<void> {
 }
 
 function goHome(): void {
-  uni.switchTab({ url: '/pages/home/index' })
+  goTab('/pages/home/index')
 }
 
 function goDiscover(): void {
-  uni.navigateTo({ url: '/pages/discover/index' })
+  goTab('/pages/discover/index')
 }
 
 function goLogin(): void {
@@ -135,7 +136,6 @@ function goLogin(): void {
 }
 
 onShow(() => {
-  try { uni.hideTabBar({ animation: false }) } catch(e) {}
   if (userStore.isLoggedIn) {
     userStore.refreshUnreadCount()
     load(true)

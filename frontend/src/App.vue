@@ -2,10 +2,31 @@
 import { onLaunch, onShow } from '@dcloudio/uni-app'
 import { useUserStore } from '@/stores/user'
 import { useAppStore } from '@/stores/app'
+import { hideNavigationLoading, showNavigationLoading } from '@/utils/tab-navigation'
+
+let navigationInterceptorsReady = false
+
+function setupNavigationInterceptors(): void {
+  if (navigationInterceptorsReady) return
+  navigationInterceptorsReady = true
+  const interceptor = {
+    invoke() {
+      showNavigationLoading()
+    },
+    complete() {
+      hideNavigationLoading()
+    },
+  }
+  uni.addInterceptor('navigateTo', interceptor)
+  uni.addInterceptor('redirectTo', interceptor)
+  uni.addInterceptor('reLaunch', interceptor)
+  uni.addInterceptor('navigateBack', interceptor)
+}
 
 onLaunch(() => {
   const userStore = useUserStore()
   const appStore = useAppStore()
+  setupNavigationInterceptors()
   userStore.restoreSession()
   appStore.initApp()
 })

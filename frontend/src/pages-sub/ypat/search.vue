@@ -1,8 +1,10 @@
 <template>
   <view class="page">
     <view class="search-bar" :style="{ paddingTop: `${statusBarHeight}px` }">
+      <view class="back-button" @tap="back">
+        <KeepIcon name="chevron-left" :size="40" color="#1A1D1F" />
+      </view>
       <input v-model="keyword" class="input" placeholder="搜索城市或拍摄风格" confirm-type="search" @confirm="search(true)" />
-      <text class="cancel" @tap="back">取消</text>
     </view>
 
     <view class="content" :style="{ paddingTop: `${navHeight + 12}px` }">
@@ -37,6 +39,8 @@ import { onLoad, onReachBottom } from '@dcloudio/uni-app'
 import { useAppStore } from '@/stores/app'
 import * as ypatApi from '@/api/modules/ypat'
 import { CHARGE_WAY_LABELS, PHOTO_STYLES } from '@/constants/enums'
+import KeepIcon from '@/components/business/KeepIcon.vue'
+import { goBackOrHome } from '@/utils/tab-navigation'
 import type { YpatInfo } from '@/api/types'
 
 const appStore = useAppStore()
@@ -81,7 +85,7 @@ async function search(refresh = false): Promise<void> {
 function useTag(value: string): void { keyword.value = value; search(true) }
 function chargeLabel(value: string): string { return CHARGE_WAY_LABELS[value] || '费用面议' }
 function openDetail(id: number): void { uni.navigateTo({ url: `/pages-sub/ypat/detail?id=${id}` }) }
-function back(): void { uni.navigateBack() }
+function back(): void { goBackOrHome() }
 
 onLoad((query = {}) => {
   const value = typeof query.keyword === 'string' ? decodeURIComponent(query.keyword) : ''
@@ -97,8 +101,8 @@ onReachBottom(() => search(false))
 
 .page { min-height: 100vh; background: $color-bg-page; }
 .search-bar { position: fixed; z-index: 10; top: 0; left: 0; right: 0; display: flex; align-items: center; gap: 18rpx; padding-left: 28rpx; padding-right: 28rpx; padding-bottom: 18rpx; background: $color-bg-page; }
+.back-button { @include flex-center; width: 72rpx; height: 72rpx; flex: none; border-radius: 50%; background: $color-bg-card; box-shadow: $shadow-keep-card; }
 .input { flex: 1; height: 76rpx; padding: 0 30rpx; border-radius: 38rpx; background: $color-bg-chip; font-weight: 700; }
-.cancel { color: $color-text-primary; font-weight: 800; }
 .content { padding-left: 28rpx; padding-right: 28rpx; padding-bottom: 50rpx; }
 .section-title { font-size: 34rpx; font-weight: 900; }
 .tags { display: flex; flex-wrap: wrap; gap: 18rpx; margin-top: 26rpx; }

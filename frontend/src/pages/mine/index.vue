@@ -139,6 +139,7 @@ import { PROFESS_LABELS } from '@/constants/enums'
 import KeepIcon from '@/components/business/KeepIcon.vue'
 import KeepState from '@/components/business/KeepState.vue'
 import KeepTabBar from '@/components/business/KeepTabBar.vue'
+import { goTab } from '@/utils/tab-navigation'
 
 const userStore = useUserStore()
 const appStore = useAppStore()
@@ -156,7 +157,6 @@ const professLabel = computed(() => {
 })
 
 onShow(() => {
-  try { uni.hideTabBar({ animation: false }) } catch(e) {}
   if (isLoggedIn.value) {
     userStore.updateUserInfo()
     userStore.refreshUnreadCount()
@@ -164,7 +164,7 @@ onShow(() => {
 })
 
 function goLogin() { uni.navigateTo({ url: '/pages/login/index' }) }
-function goMessage() { uni.switchTab({ url: '/pages/message/index' }) }
+function goMessage() { goTab('/pages/message/index') }
 function goProfile() { uni.navigateTo({ url: '/pages-sub/user/profile' }) }
 function goSettings() { uni.navigateTo({ url: '/pages-sub/user/settings' }) }
 function goPublish() { checkLogin(() => uni.navigateTo({ url: '/pages-sub/ypat/my-publish' })) }

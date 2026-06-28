@@ -1,5 +1,6 @@
 <template>
   <view class="page">
+    <KeepPageNav title="实名认证" />
     <view v-if="loading" class="state">正在查询认证状态...</view>
 
     <view v-else-if="authInfo?.status === '1'" class="state card">

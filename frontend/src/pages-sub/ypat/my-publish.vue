@@ -1,5 +1,6 @@
 <template>
   <view class="page">
+    <KeepPageNav title="我的发布" />
     <view v-if="loading && !items.length" class="state">加载中...</view>
     <view v-else-if="!items.length" class="state">暂无发布记录</view>
     <view v-else>

@@ -1,5 +1,6 @@
 <template>
   <view class="page">
+    <KeepPageNav title="收支记录" />
     <view v-if="items.length" class="list">
       <view v-for="item in items" :key="item.id" class="item">
         <view class="badge">{{ badge(item.type) }}</view>

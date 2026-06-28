@@ -1,5 +1,6 @@
 <template>
   <view class="login-page">
+    <KeepPageNav title="登录" />
     <view class="login-brand">
       <view class="login-logo">
         <KeepIcon name="camera" :size="86" color="#FFFFFF" />
@@ -87,6 +88,7 @@
 import { ref } from 'vue'
 import { useUserStore } from '@/stores/user'
 import KeepIcon from '@/components/business/KeepIcon.vue'
+import { goTab } from '@/utils/tab-navigation'
 import { isPhone } from '@/utils/validate'
 import { isProfileComplete } from '@/utils/profile'
 import type { UserInfo } from '@/api/types'
@@ -119,7 +121,7 @@ function redirectAfterLogin(user: UserInfo): void {
   }
   const pages = getCurrentPages()
   if (pages.length > 1) uni.navigateBack()
-  else uni.switchTab({ url: '/pages/home/index' })
+  else goTab('/pages/home/index')
 }
 
 async function handleWechatPhoneAuthorization(event: PhoneAuthorizationEvent): Promise<void> {

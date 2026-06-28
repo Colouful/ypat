@@ -1,5 +1,6 @@
 <template>
   <view class="page">
+    <KeepPageNav title="我的拍拍豆" />
     <view class="balance-card">
       <text class="label">拍拍豆余额</text>
       <text class="amount">{{ userStore.userInfo?.ppd || 0 }}</text>

@@ -18,7 +18,10 @@
       <view class="keep-ypat-card__user">
         <image class="keep-ypat-card__avatar" :src="item.avatar" mode="aspectFill" />
         <text class="keep-ypat-card__name">{{ item.name }}</text>
-        <text class="keep-ypat-card__city">📍{{ item.city }}</text>
+        <text class="keep-ypat-card__city">
+          <KeepIcon name="map-pin" :size="22" />
+          {{ item.city }}
+        </text>
       </view>
       <text class="keep-ypat-card__meta">已收到约拍 {{ item.applyCount }} · {{ item.time }}</text>
     </view>
@@ -160,6 +163,9 @@ defineEmits<{
 }
 
 .keep-ypat-card__city {
+  display: inline-flex;
+  align-items: center;
+  gap: 4rpx;
   margin-left: 16rpx;
 }
 

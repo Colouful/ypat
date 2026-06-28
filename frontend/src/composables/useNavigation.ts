@@ -1,4 +1,10 @@
 import { useUserStore } from '@/stores/user'
+import {
+  goTab,
+  hideNavigationLoading,
+  isBottomTabUrl,
+  showNavigationLoading,
+} from '@/utils/tab-navigation'
 
 // Pages that require login before accessing
 const PROTECTED_PAGES = [
@@ -58,12 +64,14 @@ export function useNavigation() {
     const fullUrl = buildUrl(url, params)
     if (!checkLoginInterception(fullUrl)) return
 
+    showNavigationLoading()
     uni.navigateTo({
       url: fullUrl,
       fail: () => {
-        // If navigateTo fails (e.g., target is a tabBar page), try switchTab
-        uni.switchTab({ url: fullUrl.split('?')[0] })
+        const path = fullUrl.split('?')[0]
+        if (isBottomTabUrl(path)) goTab(path)
       },
+      complete: hideNavigationLoading,
     })
   }
 
@@ -71,15 +79,17 @@ export function useNavigation() {
     const fullUrl = buildUrl(url, params)
     if (!checkLoginInterception(fullUrl)) return
 
-    uni.redirectTo({ url: fullUrl })
+    showNavigationLoading()
+    uni.redirectTo({ url: fullUrl, complete: hideNavigationLoading })
   }
 
   function switchTab(url: string) {
-    uni.switchTab({ url })
+    if (isBottomTabUrl(url)) goTab(url)
   }
 
   function reLaunch(url: string) {
-    uni.reLaunch({ url })
+    showNavigationLoading()
+    uni.reLaunch({ url, complete: hideNavigationLoading })
   }
 
   function goBack(delta: number = 1) {
@@ -87,8 +97,7 @@ export function useNavigation() {
     if (pages.length > 1) {
       uni.navigateBack({ delta })
     } else {
-      // If there's no page to go back to, go to home
-      uni.reLaunch({ url: '/pages/index/index' })
+      goTab('/pages/home/index')
     }
   }
 

@@ -1,5 +1,6 @@
 <template>
   <view class="feedback-page">
+    <KeepPageNav title="意见反馈" />
     <view class="feedback-card">
       <view class="feedback-card__header">
         <text class="feedback-card__title">反馈内容</text>

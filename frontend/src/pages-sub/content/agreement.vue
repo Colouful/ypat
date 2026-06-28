@@ -1,5 +1,6 @@
 <template>
   <view class="agreement-page">
+    <KeepPageNav title="用户协议" />
     <!-- 加载状态 -->
     <view v-if="loading" class="loading-container">
       <view class="loading-spinner" />

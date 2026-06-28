@@ -1,5 +1,6 @@
 <template>
   <view class="about-page">
+    <KeepPageNav title="关于我们" />
     <view class="about-header">
       <view class="about-logo">
         <image class="about-logo__image" src="/static/logo.png" mode="aspectFit" />

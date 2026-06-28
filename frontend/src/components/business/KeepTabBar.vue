@@ -7,7 +7,11 @@
       :class="{ 'keep-tabbar__item--active': active === item.key }"
       @tap="go(item)"
     >
-      <KeepIcon :name="item.icon" :size="item.key === 'publish' ? 46 : 44" />
+      <KeepIcon
+        :name="item.icon"
+        :size="item.key === 'publish' ? 46 : 44"
+        :color="active === item.key ? '#1A1D1F' : '#83888F'"
+      />
       <text class="keep-tabbar__label">{{ item.label }}</text>
       <view v-if="item.key === 'discover' && showDiscoverDot" class="keep-tabbar__dot" />
       <view v-if="item.key === 'message' && unreadCount > 0" class="keep-tabbar__badge">
@@ -19,6 +23,7 @@
 
 <script setup lang="ts">
 import KeepIcon from './KeepIcon.vue'
+import { goTab, type BottomTabUrl } from '@/utils/tab-navigation'
 
 type TabKey = 'home' | 'discover' | 'publish' | 'message' | 'mine'
 
@@ -26,8 +31,7 @@ type TabItem = {
   key: TabKey
   label: string
   icon: string
-  url: string
-  tab?: boolean
+  url: BottomTabUrl
 }
 
 const props = withDefaults(defineProps<{
@@ -40,20 +44,16 @@ const props = withDefaults(defineProps<{
 })
 
 const items: TabItem[] = [
-  { key: 'home', label: '广场', icon: 'home', url: '/pages/home/index', tab: true },
+  { key: 'home', label: '广场', icon: 'home', url: '/pages/home/index' },
   { key: 'discover', label: '发现', icon: 'compass', url: '/pages/discover/index' },
-  { key: 'publish', label: '发布', icon: 'plus-circle', url: '/pages/publish/index', tab: true },
-  { key: 'message', label: '消息', icon: 'mail', url: '/pages/message/index', tab: true },
-  { key: 'mine', label: '我的', icon: 'user', url: '/pages/mine/index', tab: true },
+  { key: 'publish', label: '发布', icon: 'plus-circle', url: '/pages/publish/index' },
+  { key: 'message', label: '消息', icon: 'mail', url: '/pages/message/index' },
+  { key: 'mine', label: '我的', icon: 'user', url: '/pages/mine/index' },
 ]
 
 function go(item: TabItem): void {
   if (props.active === item.key) return
-  if (item.tab) {
-    uni.switchTab({ url: item.url })
-    return
-  }
-  uni.navigateTo({ url: item.url })
+  goTab(item.url)
 }
 </script>
 
@@ -66,10 +66,11 @@ function go(item: TabItem): void {
   bottom: 0;
   left: 0;
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   justify-content: space-around;
-  height: 112rpx;
-  padding-top: 18rpx;
+  box-sizing: border-box;
+  min-height: calc(120rpx + env(safe-area-inset-bottom));
+  padding-top: 14rpx;
   padding-bottom: env(safe-area-inset-bottom);
   border-top: 1rpx solid $color-border;
   background: rgba(255, 255, 255, 0.96);

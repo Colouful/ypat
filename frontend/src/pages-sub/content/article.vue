@@ -1,5 +1,6 @@
 <template>
   <view class="page">
+    <KeepPageNav title="文章详情" />
     <view v-if="loading" class="state">加载中...</view>
     <view v-else-if="errorMessage" class="state error">
       <text>{{ errorMessage }}</text>

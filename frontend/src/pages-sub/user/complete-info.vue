@@ -1,5 +1,6 @@
 <template>
   <view class="page">
+    <KeepPageNav title="完善资料" />
     <view class="header">
       <text class="title">完善个人资料</text>
       <text class="subtitle">这些信息用于同城推荐，可稍后在个人中心修改。</text>
@@ -43,6 +44,7 @@ import { computed, reactive, ref } from 'vue'
 import { useUserStore } from '@/stores/user'
 import * as userApi from '@/api/modules/user'
 import { GENDER_LABELS, PROFESS_LABELS } from '@/constants/enums'
+import { goTab } from '@/utils/tab-navigation'
 import type { UpdateUserParams } from '@/api/types'
 
 const userStore = useUserStore()
@@ -104,7 +106,7 @@ async function submit(): Promise<void> {
 }
 
 function goHome(): void {
-  uni.switchTab({ url: '/pages/home/index' })
+  goTab('/pages/home/index')
 }
 </script>
 

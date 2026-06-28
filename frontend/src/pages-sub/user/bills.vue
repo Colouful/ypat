@@ -1,5 +1,6 @@
 <template>
   <view class="page">
+    <KeepPageNav title="账单" />
     <view v-if="items.length" class="list">
       <view v-for="item in items" :key="item.id" class="item">
         <view><text class="item__title">{{ item.typeTxt || orderTypeText(item.type) }}</text><text class="item__time">{{ formatTime(item.credate) }}</text><text class="item__number">订单号：{{ item.out_trade_no }}</text></view>

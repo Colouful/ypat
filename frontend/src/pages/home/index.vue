@@ -100,6 +100,7 @@ import KeepIcon from '@/components/business/KeepIcon.vue'
 import KeepState from '@/components/business/KeepState.vue'
 import KeepTabBar from '@/components/business/KeepTabBar.vue'
 import KeepYpatCard, { type KeepYpatCardItem } from '@/components/business/KeepYpatCard.vue'
+import { goTab } from '@/utils/tab-navigation'
 import type { YpatInfo } from '@/api/types/index'
 
 type TabKey = 'recommend' | 'nearby' | 'latest'
@@ -112,7 +113,7 @@ const statusBarHeight = computed(() => appStore.statusBarHeight)
 const unreadCount = computed(() => userStore.unreadCount)
 
 const currentCity = ref('')
-const activeTab = ref<TabKey>('latest')
+const activeTab = ref<TabKey>('recommend')
 const activeChip = ref('all')
 const loading = ref(false)
 const list = ref<YpatInfo[]>([])
@@ -298,7 +299,7 @@ function goSearch() {
 }
 
 function goDiscover() {
-  uni.navigateTo({ url: '/pages/discover/index' })
+  goTab('/pages/discover/index')
 }
 
 async function getLocation() {
@@ -355,7 +356,6 @@ onMounted(() => {
 })
 
 onShow(() => {
-  try { uni.hideTabBar({ animation: false }) } catch(e) {}
   if (userStore.isLoggedIn) {
     userStore.refreshUnreadCount()
   }

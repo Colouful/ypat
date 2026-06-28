@@ -1,5 +1,6 @@
 <template>
   <view class="settings-page">
+    <KeepPageNav title="设置" />
     <view class="settings-section">
       <view class="section-title">账号</view>
       <view class="settings-card">

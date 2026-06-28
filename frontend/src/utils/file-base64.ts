@@ -44,6 +44,7 @@ export async function filePathToBase64(filePath: string): Promise<string> {
   // #endif
 
   // #ifndef H5
+  if (/^https?:\/\//.test(filePath)) return requestImageAsBase64(filePath)
   return new Promise((resolve, reject) => {
     uni.getFileSystemManager().readFile({
       filePath,
@@ -56,10 +57,51 @@ export async function filePathToBase64(filePath: string): Promise<string> {
         }
         resolve(removeDataUrlHeader(value))
       },
-      fail: () => reject(new Error('读取图片失败')),
+      fail: async () => {
+        try {
+          resolve(await requestImageAsBase64(filePath))
+        } catch {
+          reject(new Error('读取图片失败'))
+        }
+      },
     })
   })
   // #endif
 
   throw new Error('当前平台暂不支持图片读取')
+}
+
+function arrayBufferToBase64(buffer: ArrayBuffer): string {
+  const uniConverter = (uni as unknown as { arrayBufferToBase64?: (value: ArrayBuffer) => string }).arrayBufferToBase64
+  if (uniConverter) return uniConverter(buffer)
+  const wxConverter = (globalThis as unknown as {
+    wx?: { arrayBufferToBase64?: (value: ArrayBuffer) => string }
+  }).wx?.arrayBufferToBase64
+  if (wxConverter) return wxConverter(buffer)
+  throw new Error('当前平台暂不支持图片读取')
+}
+
+function requestImageAsBase64(url: string): Promise<string> {
+  return new Promise((resolve, reject) => {
+    uni.request({
+      url,
+      responseType: 'arraybuffer',
+      success: (result) => {
+        if (result.statusCode && result.statusCode >= 400) {
+          reject(new Error('读取图片失败'))
+          return
+        }
+        if (!(result.data instanceof ArrayBuffer)) {
+          reject(new Error('读取图片失败'))
+          return
+        }
+        try {
+          resolve(arrayBufferToBase64(result.data))
+        } catch (error) {
+          reject(error)
+        }
+      },
+      fail: () => reject(new Error('读取图片失败')),
+    })
+  })
 }
