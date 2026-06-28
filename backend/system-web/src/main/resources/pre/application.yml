@@ -1,0 +1,40 @@
+server:
+  port: 8082
+spring:
+  http:
+    multipart:
+      max-request-size: 2MB
+      max-file-size: 2MB
+  redis:
+    host: ${YPAT_REDIS_HOST:localhost}
+    port: ${YPAT_REDIS_PORT:6379}
+    password: ${YPAT_REDIS_PASSWORD:}
+    pool:
+      max-idle: 8
+      min-idle: 0
+      max-active: 8
+      max-wait: -1
+  jackson:
+    time-zone: GMT+8
+eureka:
+  client:
+    serviceUrl:
+      defaultZone: ${YPAT_EUREKA_DEFAULT_ZONE:http://localhost:8761/eureka/}
+  instance:
+    preferIpAddress: true
+
+
+##FeignClient超时设置
+---
+spring.cloud.loadbalancer.retry.enabled: false
+#hystrix.command.default.execution.isolation.thread.timeoutInMilliseconds: 10000
+ribbon.ConnectTimeout: 250
+ribbon.ReadTimeout: 5000
+ribbon.OkToRetryOnAllOperations: false
+ribbon.MaxAutoRetriesNextServer: 0
+ribbon.MaxAutoRetries: 0
+
+#spring devtools 更改类程序文件不使用热部署自动重启
+#spring.devtools.restart.enabled: false
+#spring.devtools.livereload.enabled: false
+#spring.thymeleaf.cache: false

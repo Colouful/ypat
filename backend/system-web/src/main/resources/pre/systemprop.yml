@@ -1,0 +1,6 @@
+system:
+  web:
+    third:
+        bd_api : https://aip.baidubce.com/rest/2.0/ocr/v1/idcard
+        bd_ak : ${YPAT_WEB_BD_OCR_AK:}
+        bd_sk : ${YPAT_WEB_BD_OCR_SK:}
