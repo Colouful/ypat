@@ -8,9 +8,9 @@ spring:
       uri: http://localhost:8888
 
   rabbitmq:
-        addresses: amqp://localhost:5672
-        username: ddd
-        password: ddd
+        addresses: ${YPAT_RABBITMQ_URL:amqp://localhost:5672}
+        username: ${YPAT_RABBITMQ_USERNAME:guest}
+        password: ${YPAT_RABBITMQ_PASSWORD:}
 
 encrypt:
   failOnError: false

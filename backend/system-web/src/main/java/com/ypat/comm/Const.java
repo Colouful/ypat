@@ -10,7 +10,7 @@ import java.util.Date;
 public class Const {
 
     public static final long EXPIRATION_TIME = 432_000;         // 5天(以毫秒ms计)
-    public static final String SECRET = "WNFSIDHFIOWEF#$%&*9984334SecretSOFOJWNFOWIJFSLSIJDF";      // JWT密码
+    public static final String SECRET = env("YPAT_WEB_JWT_SECRET", "development-only-web-jwt-key-change-me");      // JWT密码
     public static final String TOKEN_PREFIX  = "Tgbnhy";        // Token前缀
     public static final String HEADER_STRING = "Token";         // wap存放Token的Header Key
     public static final String USER_SESSION_KEY="USER";         // web存放用户session
@@ -30,6 +30,11 @@ public class Const {
     public static final String SYSFLAG_AUDIT="1";
     public static final String SYSFLAG_QUERY="2";
     public static final String SYSFLAG_ORDER="3";
+
+    private static String env(String name, String defaultValue) {
+        String value = System.getenv(name);
+        return value == null || value.trim().isEmpty() ? defaultValue : value;
+    }
 
     public static void main(String[] args) {
         System.out.println(Const.EXPIRATION_TIME * 1000);

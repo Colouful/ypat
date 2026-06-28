@@ -1,0 +1,26 @@
+# build address scan
+
+time: 2026-06-28 14:10 +0800
+directory: frontend/dist
+
+## commands
+
+- grep -R "82.156.14.216" dist || true
+- grep -R "http://" dist || true
+- grep -R "localhost" dist || true
+
+## result
+
+status: OPS_BLOCKED
+
+The production build output contains the historical HTTP IP because frontend/.env.production is intentionally unchanged in this round.
+
+Key hits:
+- dist/build/h5/assets/index-*.js contains http://82.156.14.216:8088
+- dist/build/mp-weixin/config/env.js contains http://82.156.14.216:8088
+- dist/build/h5/static/logo.png matched the broad http:// binary scan
+- dist/build/mp-weixin/static/logo.png matched the broad http:// binary scan
+
+No localhost hit was found.
+
+Conclusion: this build is valid for verification only and must not be released to production until formal HTTPS API and image domains are configured and the scan returns no unexpected address.

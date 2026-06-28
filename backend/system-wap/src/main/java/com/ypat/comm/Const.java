@@ -3,7 +3,7 @@ package com.ypat.comm;
 public class Const {
 
     public static final long EXPIRATION_TIME = 31536000; //432_000;// 5天(以毫秒ms计) //1year
-    public static final String SECRET = "WNFSIDHFIOWEF#$%&*9984334SecretSOFOJWNFOWIJFSLSIJDF";      // JWT密码
+    public static final String SECRET = env("YPAT_WAP_JWT_SECRET", "development-only-jwt-key-change-me");      // JWT密码
     public static final String TOKEN_PREFIX  = "Tgbnhy";        // Token前缀
     public static final String HEADER_STRING = "Token";         // 存放Token的Header Key
     public static final String ACCESS_TOKEN_CARD  = "accessTokenCard";      // 百度accesstoken
@@ -22,4 +22,9 @@ public class Const {
     public static final String TEMP_1 = "_uTkXi5VM9BOAXOMMUdibQPioXMwNfngC90CJgynSTg";//实名认证审核
     public static final String TEMP_2 = "i6ydNmF4EKyAQomQuopOeCWHKmMytHDjP3W0anbEq4w";//发布信息审核
     public static final String TEMP_3 = "Bv1tvnuGZeKpwRxTz-QtOt_btN0tlkDjMgyeP-Iz16s";//新订单通知
+
+    private static String env(String name, String defaultValue) {
+        String value = System.getenv(name);
+        return value == null || value.trim().isEmpty() ? defaultValue : value;
+    }
 }

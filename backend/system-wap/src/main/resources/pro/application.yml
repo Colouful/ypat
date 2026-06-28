@@ -4,9 +4,9 @@ server:
     max-http-post-size: -1
 spring:
   redis:
-    host: 172.24.127.136
-    port: 6379
-    #password: 123456
+    host: ${YPAT_REDIS_HOST:localhost}
+    port: ${YPAT_REDIS_PORT:6379}
+    password: ${YPAT_REDIS_PASSWORD:}
     pool:
       max-idle: 8
       min-idle: 0
@@ -21,7 +21,7 @@ spring:
 eureka:
   client:
     serviceUrl:
-      defaultZone: http://172.24.127.136:8761/eureka/
+      defaultZone: ${YPAT_EUREKA_DEFAULT_ZONE:http://localhost:8761/eureka/}
   instance:
     preferIpAddress: true
 

@@ -1,6 +1,6 @@
 # YPAT 生产上线待办
 
-更新时间：2026-06-28
+更新时间：2026-06-28 15:10 +0800
 
 ## 1. 当前问题
 
@@ -71,6 +71,14 @@ grep -R "localhost" dist || true
 ```
 
 出现非预期地址时禁止发布。
+
+也可以执行本轮新增的上线前自动检查：
+
+```bash
+scripts/release/preflight-check.sh
+```
+
+当前在未配置正式 HTTPS 域名前，脚本会返回非 0 并提示 `OPS_BLOCKED`。不得为了让脚本通过而放宽 HTTPS 检查。
 
 ## 6. 上线前人工联调
 
@@ -157,6 +165,16 @@ CREATE TABLE `t_feedback_backup_yyyymmddhhmmss` AS
 SELECT * FROM `t_feedback`;
 ```
 
+本轮预发验证已在本地可销毁 Docker MySQL 8.0 测试库 `ypat_migration_test` 中验证：
+
+- 建表脚本可执行。
+- 字段包含 `id`、`userid`、`content`、`contact`、`status`、`credate`、`upddate`。
+- 索引包含 `PRIMARY`、`idx_feedback_userid`、`idx_feedback_status_credate`。
+- 重复执行建表脚本不失败。
+- 回滚脚本可删除 `t_feedback`，回滚前必须备份。
+
+该验证不代表生产已执行 migration。
+
 ## 9. 管理后台微信密钥环境变量
 
 `system-web` 管理后台微信配置、`system-wap` 移动端后端第三方配置不得在源码中硬编码，正式环境需通过安全的部署配置注入：
@@ -193,3 +211,45 @@ YPAT_SMS_MOCK_ENABLED=false
 - 变更后验证管理后台订阅消息和支付相关后台能力。
 - 如旧密钥曾提交到仓库，必须按微信和支付平台流程轮换密钥。
 - 正式环境 `YPAT_SMS_MOCK_ENABLED` 必须为 `false`，不得配置测试手机号和验证码。
+
+## 10. 预发环境变量模板
+
+本轮新增：
+
+- `frontend/.env.staging.example`
+- `backend/.env.staging.example`
+
+示例文件只包含占位符，不包含真实密钥。预发和生产必须通过部署平台、密钥管理系统或服务器环境变量注入真实值。
+
+## 11. GitHub Actions 与合并门禁
+
+本轮新增 `.github/workflows/ci.yml`，包含：
+
+- 前端 type-check、lint、test、H5 build、微信小程序 build。
+- 后端 Maven test。
+- 敏感信息、私钥、keystore 和历史密钥扫描。
+
+所有 PR(Pull Request，合并请求) 合并前必须等待 CI(持续集成) 全部通过。
+
+## 12. 本地 Docker 端口
+
+`docker-compose.yml` 已支持本地端口环境变量，避免不同 worktree 或本机已有服务冲突：
+
+```env
+YPAT_LOCAL_MYSQL_PORT=3307
+YPAT_LOCAL_REDIS_PORT=6379
+YPAT_LOCAL_EUREKA_PORT=8761
+YPAT_LOCAL_RESTAPI_PORT=9081
+YPAT_LOCAL_WAP_PORT=8081
+YPAT_LOCAL_WEB_PORT=8082
+YPAT_LOCAL_NGINX_API_PORT=8088
+YPAT_LOCAL_NGINX_WEB_PORT=5189
+```
+
+正式部署不得直接沿用本地默认密码，必须显式配置强密码和最小权限账号。
+
+## 13. 运行时兼容性
+
+当前后端测试可在 Java 17 通过；但 `system-wap` 基于 Spring Boot 1.5，直接用 Java 17 启动存在 CGLIB 模块访问兼容问题。本轮 WAP 本地运行验证使用 Java 8。
+
+生产或预发运行时需要在正式部署方案中明确 Java 版本，建议先升级框架或固定兼容的 Java 运行时，再做长期生产运维。

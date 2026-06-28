@@ -192,7 +192,7 @@ curl -s -o /dev/null -w "%{http_code}" http://localhost:5189/
 | 前端页面 | http://localhost:5189 | H5 用户端 |
 | API 网关 | http://localhost:8088 | nginx 反代 → wap |
 | Eureka 控制台 | http://localhost:8761 | 服务注册中心 |
-| MySQL | 127.0.0.1:3307 | 数据库 (root / Li123456.) |
+| MySQL | 127.0.0.1:3307 | 数据库 (root / <历史本地 MySQL 密码，已脱敏>) |
 | Redis | 127.0.0.1:6379 | 缓存 |
 
 ---
@@ -206,7 +206,7 @@ services:
   mysql:
     image: mysql:8.0
     environment:
-      MYSQL_ROOT_PASSWORD: "Li123456."  # 数据库密码
+      MYSQL_ROOT_PASSWORD: "<历史本地 MySQL 密码，已脱敏>"  # 数据库密码
       MYSQL_DATABASE: ypat              # 自动创建的数据库
     ports:
       - "3307:3306"                     # 主机3307 → 容器3306
@@ -221,7 +221,7 @@ services:
       # Docker 网络内用容器名代替 localhost
       SPRING_DATASOURCE_URL: "jdbc:mysql://mysql:3306/ypat?..."
       SPRING_DATASOURCE_USERNAME: root
-      SPRING_DATASOURCE_PASSWORD: "Li123456."
+      SPRING_DATASOURCE_PASSWORD: "<历史本地 MySQL 密码，已脱敏>"
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: "http://eureka:8761/eureka/"
 ```
 
@@ -300,7 +300,7 @@ docker compose down --rmi local
 
 ```bash
 # 进入 MySQL 容器
-docker exec -it ypat-mysql mysql -u root -p'Li123456.' ypat
+docker exec -it ypat-mysql mysql -u root -p'<历史本地 MySQL 密码，已脱敏>' ypat
 
 # 进入 Redis 容器
 docker exec -it ypat-redis redis-cli
@@ -357,8 +357,8 @@ lsof -i :8088    # 检查 nginx
 
 如果仍有问题，进入 MySQL 手动修改：
 ```bash
-docker exec -it ypat-mysql mysql -u root -p'Li123456.'
-ALTER USER 'root'@'%' IDENTIFIED WITH mysql_native_password BY 'Li123456.';
+docker exec -it ypat-mysql mysql -u root -p'<历史本地 MySQL 密码，已脱敏>'
+ALTER USER 'root'@'%' IDENTIFIED WITH mysql_native_password BY '<历史本地 MySQL 密码，已脱敏>';
 FLUSH PRIVILEGES;
 ```
 
@@ -411,7 +411,7 @@ docker compose logs nginx
 docker compose down
 
 # 定期备份
-docker exec ypat-mysql mysqldump -u root -p'Li123456.' ypat > backup_$(date +%Y%m%d).sql
+docker exec ypat-mysql mysqldump -u root -p'<历史本地 MySQL 密码，已脱敏>' ypat > backup_$(date +%Y%m%d).sql
 ```
 
 ### 7. 容器启动后状态为 `unhealthy`
@@ -481,7 +481,7 @@ curl -s 'http://localhost:8088/banner/list?page=0&size=5&status=1'
 
 ### 线上安全建议
 
-1. **修改默认密码**: `MYSQL_ROOT_PASSWORD` 不要用 `Li123456.`
+1. **修改默认密码**: `MYSQL_ROOT_PASSWORD` 不要用 `<历史本地 MySQL 密码，已脱敏>`
 2. **限制端口暴露**: MySQL (3307) 和 Redis (6379) 不要暴露到公网
 3. **配置防火墙**: 只开放 80/443 (nginx) 端口
 4. **使用 HTTPS**: 在 nginx 前加一层反代 (Caddy/Traefik) 或配置 SSL

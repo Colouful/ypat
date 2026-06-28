@@ -15,9 +15,9 @@ encrypt:
 spring:
   datasource:
     driver-class-name: com.mysql.jdbc.Driver
-    url: jdbc:mysql://localhost:3306/ypat?characterEncoding=utf8&useSSL=false
-    username: root
-    password: Li123456.
+    url: ${YPAT_MYSQL_URL:jdbc:mysql://localhost:3306/ypat?characterEncoding=utf8&useSSL=false}
+    username: ${YPAT_MYSQL_USERNAME:root}
+    password: ${YPAT_MYSQL_PASSWORD:}
     # 初始化大小，最小，最大
     initialSize: 5
     minIdle: 5

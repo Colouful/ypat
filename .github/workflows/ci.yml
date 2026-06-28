@@ -1,0 +1,110 @@
+name: CI
+
+on:
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  frontend:
+    name: Frontend validation
+    runs-on: ubuntu-latest
+    env:
+      VITE_APP_ENV: development
+      VITE_API_BASE_URL: http://localhost:8081
+      VITE_IMAGE_BASE_URL: http://localhost:8081/
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Enable pnpm
+        run: |
+          corepack enable
+          corepack prepare pnpm@11.7.0 --activate
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile --registry=https://registry.npmjs.org
+
+      - name: Type check
+        run: pnpm run type-check
+
+      - name: Lint
+        run: pnpm run lint
+
+      - name: Unit tests
+        run: pnpm run test
+
+      - name: Build H5
+        run: pnpm run build:h5
+
+      - name: Build mp-weixin
+        run: pnpm run build:mp-weixin
+
+  backend:
+    name: Backend validation
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+          cache: maven
+
+      - name: Maven tests
+        run: mvn test
+
+  security:
+    name: Security scan
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Check preflight script syntax
+        run: bash -n scripts/release/preflight-check.sh
+
+      - name: Block committed private keys and historical secrets
+        run: |
+          set -euo pipefail
+          if git ls-files | grep -E '(^|/)\.env($|\.local$|\.development$|\.staging$|\.production\.local$)'; then
+            echo "禁止提交真实 .env 文件。"
+            exit 1
+          fi
+          if git ls-files | grep -E '\.(jks|p12|pfx|key|pem)$'; then
+            echo "禁止提交证书私钥或 keystore 文件。"
+            exit 1
+          fi
+          grep -R -n -E 'BEGIN (RSA |EC |OPENSSH )?PRIVATE KEY' frontend backend backend-base .github scripts docs \
+            --exclude-dir=node_modules --exclude-dir=target --exclude-dir=dist && exit 1 || true
+          known_patterns=(
+            "WNFSIDH""FIOWEF"
+            "Li""123456\\."
+            "DY""X~!@#\\$""123qwe"
+            "tc""123456"
+            "sso""secret0"
+            "sso""secret1"
+            "FastDFS""1234567890"
+          )
+          for pattern in "${known_patterns[@]}"; do
+            grep -R -n -E "$pattern" frontend backend backend-base .github scripts docs docker-compose.yml \
+              --exclude-dir=node_modules --exclude-dir=target --exclude-dir=dist && exit 1 || true
+          done

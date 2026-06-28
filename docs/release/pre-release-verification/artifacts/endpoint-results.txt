@@ -1,0 +1,28 @@
+pid=42940
+service_ready_after=11s
+{"code":"401","msg":"unauthorized"}
+# API 安全冒烟检查
+BASE_URL=http://localhost:18081
+PUBLIC GET /ypat/tc/list -> http:200 code:1002
+PUBLIC GET /ypat/zx/list -> http:200 code:1002
+PUBLIC GET /ypat/get?id=1 -> http:200 code:1002
+PUBLIC GET /banner/list -> http:200 code:1002
+PUBLIC GET /article/list -> http:200 code:1002
+PUBLIC GET /area/list -> http:200 code:200
+PUBLIC GET /tmplid/list -> http:200 code:200
+PUBLIC GET /param/list -> http:200 code:200
+PUBLIC GET /product/list -> http:200 code:1002
+PRIVATE GET /user/get?id=1 anonymous -> http:200 code:401
+PRIVATE GET /my/ypat/send/list?page=0&size=10 anonymous -> http:200 code:401
+PRIVATE GET /my/ypat/rec/list?page=0&size=10 anonymous -> http:200 code:401
+PRIVATE GET /mess/get?id=1 anonymous -> http:200 code:401
+PRIVATE POST /feedback/add anonymous -> http:200 code:401
+PRIVATE GET /oauth/get anonymous -> http:200 code:401
+PRIVATE GET /order/get?id=1 anonymous -> http:200 code:401
+PRIVATE GET /order/findPage?page=0&size=10 anonymous -> http:200 code:401
+PRIVATE GET /bill/findPage?page=0&size=10 anonymous -> http:200 code:401
+PRIVATE GET /record/findPage?page=0&size=10 anonymous -> http:200 code:401
+PRIVATE POST /user/token anonymous -> http:200 code:401
+PRIVATE GET /manage/ anonymous -> http:200 code:401
+未设置 YPAT_TEST_TOKEN，跳过有效 Token 刷新正向检查。
+api_security_smoke_exit=0
