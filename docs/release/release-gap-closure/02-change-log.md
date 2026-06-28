@@ -177,8 +177,8 @@
 - 安全影响：关闭管理路径匿名放行、私有数据越权读取和普通用户触发审核动作风险。
 - 测试：`WebSecurityConfigSourceTest`、`WapAuthorizationSourceTest`、`BillServiceAuthorizationSourceTest`、后端 Maven 测试。
 - 测试结果：后端相关模块测试通过，最终全量结果见 `05-test-evidence.md`。
-- Commit：待提交。
-- 状态：IMPLEMENTED
+- Commit：c8ea910eddf34bf0a7b1d7b755a13859fe8c602c。
+- 状态：VERIFIED
 
 ## CHANGE-009：反馈限频 Redis 故障降级与 migration 记录
 
@@ -194,8 +194,8 @@
 - 安全影响：日志不记录反馈内容和联系方式；降低 Redis 单点故障对反馈入口的影响。
 - 测试：`FeedbackControllerTest.addAllowsSubmissionWhenRedisIsUnavailable`、后端 Maven 测试。
 - 测试结果：后端相关模块测试通过，最终全量结果见 `05-test-evidence.md`。
-- Commit：待提交。
-- 状态：IMPLEMENTED
+- Commit：c8ea910eddf34bf0a7b1d7b755a13859fe8c602c。
+- 状态：VERIFIED
 
 ## CHANGE-010：移除历史硬编码微信密钥
 
@@ -210,9 +210,9 @@
 - 数据库影响：无。
 - 安全影响：代码层移除硬编码密钥并关闭默认测试登录入口；如果历史值曾用于真实环境，运维必须轮换。
 - 测试：敏感信息扫描、后端 Maven 测试。
-- 测试结果：待最终复核。
-- Commit：待提交。
-- 状态：IMPLEMENTED
+- 测试结果：后端全量测试通过；历史密钥字面量扫描命中 0。
+- Commit：c8ea910eddf34bf0a7b1d7b755a13859fe8c602c。
+- 状态：VERIFIED
 
 ## 修改文件汇总
 
