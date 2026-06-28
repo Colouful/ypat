@@ -15,4 +15,3 @@ public class FeedbackController {
         return feedbackService.add(feedbackQo);
     }
 }
-

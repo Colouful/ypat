@@ -22,7 +22,7 @@
 - 风险：旧消息缺少关联约拍时用户无法进入详情，但这是正确降级。
 - 测试：前端 `message-navigation.test.ts` 5 条；`pnpm run test`。
 - 测试结果：57 passed。
-- Commit：cc58b5d。
+- Commit：7470d63。
 - 状态：VERIFIED
 
 ## CHANGE-002：新增持久化意见反馈端点
@@ -45,7 +45,7 @@
 - 风险：依赖 Redis 做简单限频；预发需确认 Redis 可用。
 - 测试：`FeedbackControllerTest` 5 条；前端 API contract 测试。
 - 测试结果：后端 14 passed，前端 57 passed。
-- Commit：cc58b5d。
+- Commit：7470d63。
 - 状态：VERIFIED
 
 ## CHANGE-003：通过统一功能开关关闭保证金服务
@@ -68,7 +68,7 @@
 - 风险：存量 `creditflag=1` 约拍会触发不可报名提示。
 - 测试：`pnpm run check`。
 - 测试结果：通过。
-- Commit：cc58b5d。
+- Commit：7470d63。
 - 状态：VERIFIED
 
 ## CHANGE-004：确认实名认证两照免费策略并修复图片提交兼容
@@ -91,7 +91,7 @@
 - 风险：如果未来后台改为强依赖第三张图片，必须同步恢复前端和后端校验。
 - 测试：`mvn test`、`pnpm run check`。
 - 测试结果：后端 14 passed，前端 check 通过。
-- Commit：cc58b5d。
+- Commit：7470d63。
 - 状态：VERIFIED
 
 ## CHANGE-005：后端 Token 刷新与 GET 鉴权安全加固
@@ -114,7 +114,7 @@
 - 风险：若存在未登记的公开 GET 页面，可能需要加入白名单。
 - 测试：`UserServiceTokenRefreshTest` 3 条；`mvn test`。
 - 测试结果：14 passed。
-- Commit：cc58b5d。
+- Commit：7470d63。
 - 状态：VERIFIED
 
 ## CHANGE-006：清理详情页虚假关注、私信、分享交互
@@ -137,7 +137,7 @@
 - 风险：H5 分享能力降级为复制路径。
 - 测试：`pnpm run check`。
 - 测试结果：通过。
-- Commit：cc58b5d。
+- Commit：7470d63。
 - 状态：VERIFIED
 
 ## CHANGE-007：清理其余 Gap 状态和邀请悬空路由
@@ -160,7 +160,7 @@
 - 风险：若产品恢复邀请体系，需要重新增加路由和后端能力。
 - 测试：`pnpm run check`。
 - 测试结果：通过。
-- Commit：cc58b5d。
+- Commit：7470d63。
 - 状态：VERIFIED
 
 ## 修改文件汇总

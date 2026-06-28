@@ -55,4 +55,3 @@ public class FeedbackController {
         return value.replace("<", "＜").replace(">", "＞");
     }
 }
-

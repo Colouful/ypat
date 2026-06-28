@@ -84,4 +84,3 @@ public class Feedback implements java.io.Serializable {
         this.upddate = upddate;
     }
 }
-

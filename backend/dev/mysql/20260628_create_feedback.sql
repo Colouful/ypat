@@ -10,4 +10,3 @@ CREATE TABLE IF NOT EXISTS `t_feedback` (
   KEY `idx_feedback_userid` (`userid`),
   KEY `idx_feedback_status_credate` (`status`, `credate`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-

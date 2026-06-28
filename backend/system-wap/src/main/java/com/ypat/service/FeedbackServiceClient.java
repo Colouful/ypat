@@ -10,4 +10,3 @@ public interface FeedbackServiceClient {
     @PostMapping("/service/feedback/add")
     String add(@RequestBody FeedbackQo feedbackQo);
 }
-

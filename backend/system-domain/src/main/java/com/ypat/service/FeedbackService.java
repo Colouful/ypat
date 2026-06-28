@@ -35,4 +35,3 @@ public class FeedbackService {
         return CopyUtil.copy(feedback, FeedbackQo.class);
     }
 }
-

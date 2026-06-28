@@ -74,4 +74,3 @@ public class FeedbackQo extends PageQo implements java.io.Serializable {
         this.upddate = upddate;
     }
 }
-
