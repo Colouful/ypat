@@ -17,7 +17,7 @@ services:
       timeout: 5s
       retries: 10
     networks:
-      - ypat-net
+      - ypat_ypat-net
 
   redis:
     image: redis:7-alpine
@@ -32,7 +32,7 @@ services:
       timeout: 3s
       retries: 5
     networks:
-      - ypat-net
+      - ypat_ypat-net
 
   eureka:
     build:
@@ -50,7 +50,7 @@ services:
       retries: 12
       start_period: 30s
     networks:
-      - ypat-net
+      - ypat_ypat-net
 
   restapi:
     build:
@@ -78,7 +78,7 @@ services:
       retries: 24
       start_period: 60s
     networks:
-      - ypat-net
+      - ypat_ypat-net
 
   wap:
     build:
@@ -106,7 +106,7 @@ services:
       retries: 24
       start_period: 60s
     networks:
-      - ypat-net
+      - ypat_ypat-net
 
   system-web:
     build:
@@ -134,7 +134,7 @@ services:
       retries: 12
       start_period: 60s
     networks:
-      - ypat-net
+      - ypat_ypat-net
 
   nginx:
     image: nginx:alpine
@@ -148,12 +148,18 @@ services:
       wap:
         condition: service_healthy
     networks:
-      - ypat-net
+      - ypat_ypat-net
 
 volumes:
   mysql_data:
   redis_data:
 
 networks:
-  ypat-net:
+  ypat_ypat-net:
+    name: ypat_ypat-net
+    driver: bridge
+
+volumes:
+  mysql_data:
+  redis_data:
     driver: bridge
