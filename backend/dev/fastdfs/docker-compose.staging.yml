@@ -1,0 +1,44 @@
+# FastDFS — 预发环境
+# tracker:22122 (内网) + storage:23000 (内网) + storage nginx 127.0.0.1:8888 (主机端口,通过 Nginx 反代 /files)
+#
+# 环境变量：
+#   YPAT_FASTDFS_IMAGE: 固定 digest 的镜像，例如 ygqygq2/fastdfs-nginx@sha256:...
+#   YPAT_FASTDFS_TRACKER_DATA_DIR: Tracker 数据目录，默认 /opt/ypat-data/fastdfs/tracker
+#   YPAT_FASTDFS_STORAGE_DATA_DIR: Storage 数据目录，默认 /opt/ypat-data/fastdfs/storage
+#
+# 启动: docker compose -f backend/dev/fastdfs/docker-compose.staging.yml up -d
+# 停止: docker compose -f backend/dev/fastdfs/docker-compose.staging.yml down
+
+services:
+  fastdfs-tracker:
+    image: "${YPAT_FASTDFS_IMAGE:?YPAT_FASTDFS_IMAGE is required}"
+    container_name: ypat-fastdfs-tracker
+    hostname: fastdfs-tracker
+    command: ["tracker"]
+    volumes:
+      - "${YPAT_FASTDFS_TRACKER_DATA_DIR:-/opt/ypat-data/fastdfs/tracker}:/var/fdfs"
+    networks:
+      - ypat_ypat-net
+    restart: unless-stopped
+
+  fastdfs-storage:
+    image: "${YPAT_FASTDFS_IMAGE:?YPAT_FASTDFS_IMAGE is required}"
+    container_name: ypat-fastdfs-storage
+    hostname: fastdfs-storage
+    depends_on:
+      - fastdfs-tracker
+    environment:
+      TRACKER_SERVER: fastdfs-tracker:22122
+    command: ["storage"]
+    volumes:
+      - "${YPAT_FASTDFS_STORAGE_DATA_DIR:-/opt/ypat-data/fastdfs/storage}:/var/fdfs"
+    networks:
+      - ypat_ypat-net
+    ports:
+      - "127.0.0.1:8888:8080"
+    restart: unless-stopped
+
+networks:
+  ypat_ypat-net:
+    name: ypat_ypat-net
+    external: true
