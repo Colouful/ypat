@@ -8,7 +8,7 @@
       @tap="go(item)"
     >
       <KeepIcon :name="item.icon" :size="item.key === 'publish' ? 46 : 44" />
-      <text>{{ item.label }}</text>
+      <text class="keep-tabbar__label">{{ item.label }}</text>
       <view v-if="item.key === 'discover' && showDiscoverDot" class="keep-tabbar__dot" />
       <view v-if="item.key === 'message' && unreadCount > 0" class="keep-tabbar__badge">
         {{ unreadCount > 9 ? '9+' : unreadCount }}
@@ -87,7 +87,7 @@ function go(item: TabItem): void {
   line-height: 1.2;
 }
 
-.keep-tabbar__item text {
+.keep-tabbar__label {
   margin-top: 6rpx;
 }
 
