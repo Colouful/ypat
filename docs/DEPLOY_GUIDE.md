@@ -383,7 +383,7 @@ curl -s -o /dev/null -w "%{http_code}" http://localhost:8082/
 | API 网关 | http://localhost:8088 | nginx 反代 → wap |
 | 管理后台 | http://localhost:8082 | Thymeleaf 管理界面 |
 | Eureka 控制台 | http://localhost:8761 | 服务注册中心 |
-| MySQL | `127.0.0.1:3307` | root / Li123456. |
+| MySQL | `127.0.0.1:3307` | root / <历史本地 MySQL 密码，已脱敏> |
 | Redis | `127.0.0.1:6379` | 无密码 |
 
 ---
@@ -724,7 +724,7 @@ cd ..
 编辑 `docker-compose.yml`，**必须修改以下内容**：
 
 ```bash
-# 1. 修改 MySQL 密码（不要用默认的 Li123456.）
+# 1. 修改 MySQL 密码（不要用默认的 <历史本地 MySQL 密码，已脱敏>）
 # 将所有 MYSQL_ROOT_PASSWORD 和 SPRING_DATASOURCE_PASSWORD 改为强密码
 
 # 2. 生产环境不暴露 MySQL 和 Redis 端口到主机

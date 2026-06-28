@@ -1,19 +1,18 @@
 services:
   mysql:
     image: mysql:8.0
-    container_name: ypat-mysql
     restart: unless-stopped
     environment:
-      MYSQL_ROOT_PASSWORD: "Li123456."
+      MYSQL_ROOT_PASSWORD: "${YPAT_LOCAL_MYSQL_ROOT_PASSWORD:-ypat_dev_password_change_me}"
       MYSQL_DATABASE: ypat
       TZ: Asia/Shanghai
     ports:
-      - "3307:3306"
+      - "${YPAT_LOCAL_MYSQL_PORT:-3307}:3306"
     volumes:
       - mysql_data:/var/lib/mysql
     command: --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci --default-authentication-plugin=mysql_native_password
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-pLi123456."]
+      test: ["CMD-SHELL", "mysqladmin ping -h localhost -p$${MYSQL_ROOT_PASSWORD}"]
       interval: 10s
       timeout: 5s
       retries: 10
@@ -22,10 +21,9 @@ services:
 
   redis:
     image: redis:7-alpine
-    container_name: ypat-redis
     restart: unless-stopped
     ports:
-      - "6379:6379"
+      - "${YPAT_LOCAL_REDIS_PORT:-6379}:6379"
     volumes:
       - redis_data:/data
     healthcheck:
@@ -40,10 +38,9 @@ services:
     build:
       context: ./backend-base/base-eureka
       dockerfile: Dockerfile
-    container_name: ypat-eureka
     restart: unless-stopped
     ports:
-      - "8761:8761"
+      - "${YPAT_LOCAL_EUREKA_PORT:-8761}:8761"
     environment:
       TZ: Asia/Shanghai
     healthcheck:
@@ -59,15 +56,14 @@ services:
     build:
       context: ./backend/system-restapi
       dockerfile: Dockerfile
-    container_name: ypat-restapi
     restart: unless-stopped
     ports:
-      - "9081:9081"
+      - "${YPAT_LOCAL_RESTAPI_PORT:-9081}:9081"
     environment:
       TZ: Asia/Shanghai
       SPRING_DATASOURCE_URL: "jdbc:mysql://mysql:3306/ypat?characterEncoding=utf8&useSSL=false"
       SPRING_DATASOURCE_USERNAME: root
-      SPRING_DATASOURCE_PASSWORD: "Li123456."
+      SPRING_DATASOURCE_PASSWORD: "${YPAT_LOCAL_MYSQL_ROOT_PASSWORD:-ypat_dev_password_change_me}"
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: "http://eureka:8761/eureka/"
       EUREKA_INSTANCE_PREFER_IP_ADDRESS: "true"
     depends_on:
@@ -88,10 +84,9 @@ services:
     build:
       context: ./backend/system-wap
       dockerfile: Dockerfile
-    container_name: ypat-wap
     restart: unless-stopped
     ports:
-      - "8081:8081"
+      - "${YPAT_LOCAL_WAP_PORT:-8081}:8081"
     environment:
       TZ: Asia/Shanghai
       SPRING_REDIS_HOST: redis
@@ -117,10 +112,9 @@ services:
     build:
       context: ./backend/system-web
       dockerfile: Dockerfile
-    container_name: ypat-system-web
     restart: unless-stopped
     ports:
-      - "8082:8082"
+      - "${YPAT_LOCAL_WEB_PORT:-8082}:8082"
     environment:
       TZ: Asia/Shanghai
       SPRING_REDIS_HOST: redis
@@ -144,11 +138,10 @@ services:
 
   nginx:
     image: nginx:alpine
-    container_name: ypat-nginx
     restart: unless-stopped
     ports:
-      - "8088:8088"
-      - "5189:80"
+      - "${YPAT_LOCAL_NGINX_API_PORT:-8088}:8088"
+      - "${YPAT_LOCAL_NGINX_WEB_PORT:-5189}:80"
     volumes:
       - ./docker/nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
       - ./frontend/dist/build/h5:/usr/share/nginx/html:ro

@@ -1,0 +1,91 @@
+YPAT pre-release verification test results
+
+Baseline: b3a5e433921d3f4d766caf398f1c4189506bd473
+Branch: codex/pre-release-verification
+Updated: 2026-06-28 15:10 +0800
+
+Frontend:
+- node --version
+  dir: frontend
+  exit: 0
+  result: v22.18.0
+- pnpm --version
+  dir: frontend
+  exit: 0
+  result: 11.7.0
+- pnpm install --frozen-lockfile --registry=https://registry.npmjs.org
+  dir: frontend
+  exit: 0
+  result: dependencies installed
+- pnpm run type-check
+  dir: frontend
+  exit: 0
+  result: passed
+- pnpm run lint
+  dir: frontend
+  exit: 0
+  result: passed
+- pnpm run test
+  dir: frontend
+  exit: 0
+  result: 8 test files, 57 tests passed
+- pnpm run build:h5
+  dir: frontend
+  exit: 0
+  result: passed
+- pnpm run build:mp-weixin
+  dir: frontend
+  exit: 0
+  result: passed
+- pnpm run check
+  dir: frontend
+  exit: 0
+  result: passed, 57 tests passed
+
+Backend:
+- mvn test
+  dir: backend
+  start: 2026-06-28 14:21:48 +0800
+  end: 2026-06-28 14:21:51 +0800
+  exit: 0
+  result: 20 tests, 0 failures, 0 errors, 0 skipped, BUILD SUCCESS
+- mvn -pl system-wap -am package -DskipTests
+  dir: backend
+  exit: 0
+  result: system-wap jar packaged successfully
+
+Runtime smoke:
+- scripts/release/api-security-smoke.sh http://localhost:18081
+  dir: repository root
+  exit: 0
+  result: public endpoints not auth-rejected; private endpoints and /manage/ anonymous access rejected with business code 401
+
+Database:
+- backend/dev/mysql/20260628_create_feedback.sql
+  env: disposable Docker MySQL 8.0, database ypat_migration_test
+  exit: 0
+  result: t_feedback created with required fields and indexes; idempotent rerun passed
+- backend/dev/mysql/20260628_drop_feedback_rollback.sql
+  env: disposable Docker MySQL 8.0, database ypat_migration_test
+  exit: 0
+  result: t_feedback dropped after backup table was created
+
+Release scripts:
+- bash -n scripts/release/preflight-check.sh
+  dir: repository root
+  exit: 0
+  result: syntax passed
+- scripts/release/preflight-check.sh --skip-build
+  dir: repository root
+  exit: 1
+  result: expected OPS_BLOCKED because frontend/.env.production still contains HTTP IP
+- GitHub Actions security scan
+  dir: pull request #3
+  first run exit: 1
+  result: fixed overly broad .env rule that incorrectly blocked tracked frontend/.env.development; rerun required after push
+
+Build address scan:
+- grep dist for 82.156.14.216/http://localhost
+  dir: frontend
+  exit: 0
+  result: 82.156.14.216 and http:// found in production build output; release blocked until formal HTTPS domains are configured

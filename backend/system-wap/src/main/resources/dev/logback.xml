@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <configuration scan="true" scanPeriod="60 seconds" debug="false">
 
-    <property name="logback.logdir" value="/logs" />
+    <property name="logback.logdir" value="${YPAT_LOG_DIR:-/logs}" />
     <property name="logback.appname" value="system-wap" />
     <contextName>${appname}</contextName>
 

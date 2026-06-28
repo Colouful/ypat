@@ -16,9 +16,9 @@ import java.util.Map;
 
 public class SmsUtils {
 
-    // TODO: 请配置阿里云AccessKey（从环境变量或配置文件读取）
+    // 阿里云 AccessKey 只能通过环境变量注入，禁止写入仓库。
     public static final String accessKeyId = System.getenv("ALIYUN_ACCESS_KEY_ID"); // "your-access-key-id";
-    public static final String accessSecret = System.getenv("ALIYUN_ACCESS_KEY_SECRET"); // "your-access-key-secret";
+    public static final String accessKeySecret = System.getenv("ALIYUN_ACCESS_KEY_SECRET"); // "your-access-key-secret";
     public static final String SignName = "爱去拍";
     public static final String TemplateCode = "SMS_190271093";
 
@@ -26,7 +26,7 @@ public class SmsUtils {
         if (StringUtils.isEmpty(phoneNumbers) || StringUtils.isEmpty(code)) {
             return false;
         }
-        if (StringUtils.isEmpty(accessKeyId) || StringUtils.isEmpty(accessSecret)) {
+        if (StringUtils.isEmpty(accessKeyId) || StringUtils.isEmpty(accessKeySecret)) {
             return false;
         }
         Map<String, String> params = new HashMap<>();
@@ -45,7 +45,7 @@ public class SmsUtils {
     }
 
     private static boolean sendSms(String phoneNumbers, Map<String, String> params) {
-        DefaultProfile profile = DefaultProfile.getProfile("cn-hangzhou", accessKeyId, accessSecret);
+        DefaultProfile profile = DefaultProfile.getProfile("cn-hangzhou", accessKeyId, accessKeySecret);
         IAcsClient client = new DefaultAcsClient(profile);
 
         CommonRequest request = new CommonRequest();
@@ -72,7 +72,7 @@ public class SmsUtils {
     }
 
     public static void queryMsg(String PhoneNumbers) {
-        DefaultProfile profile = DefaultProfile.getProfile("cn-hangzhou", accessKeyId, accessSecret);
+        DefaultProfile profile = DefaultProfile.getProfile("cn-hangzhou", accessKeyId, accessKeySecret);
         IAcsClient client = new DefaultAcsClient(profile);
 
         CommonRequest request = new CommonRequest();

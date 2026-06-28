@@ -20,6 +20,14 @@ public class WebSecurityConfigSourceTest {
         assertFalse(source.contains("\"/manage/**\""));
         assertFalse(source.contains("HttpMethod.GET, \"/**\""));
         assertFalse(source.contains("HttpMethod.GET,\"/**\""));
+        assertFalse(source.contains("\"/user/get\""));
+        assertFalse(source.contains("\"/my/ypat/send/list\""));
+        assertFalse(source.contains("\"/my/ypat/rec/list\""));
+        assertFalse(source.contains("\"/mess/get\""));
+        assertFalse(source.contains("\"/bill/list\""));
+        assertFalse(source.contains("\"/record/list\""));
+        assertFalse(source.contains("\"/oauth/get\""));
+        assertFalse(source.contains("\"/user/token\""));
         assertTrue(source.contains("\"/user/login\""));
         assertTrue(source.contains("\"/user/sms/code\""));
         assertTrue(source.contains("\"/ypat/get\""));

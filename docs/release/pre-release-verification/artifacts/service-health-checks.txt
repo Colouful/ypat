@@ -1,0 +1,70 @@
+# service health checks
+start=2026-06-28 14:26:25 +0800
+ports=mysql:3308,redis:6380
+## docker compose config
+eureka
+redis
+mysql
+restapi
+wap
+nginx
+system-web
+## up mysql redis
+ Network pre-release-verify_ypat-net Creating
+ Network pre-release-verify_ypat-net Created
+ Container pre-release-verify-mysql-1 Creating
+ Container pre-release-verify-redis-1 Creating
+ Container pre-release-verify-redis-1 Created
+ Container pre-release-verify-mysql-1 Created
+ Container pre-release-verify-redis-1 Starting
+ Container pre-release-verify-mysql-1 Starting
+ Container pre-release-verify-redis-1 Started
+ Container pre-release-verify-mysql-1 Started
+## ps
+NAME                         IMAGE            COMMAND                  SERVICE   CREATED        STATUS                                     PORTS
+pre-release-verify-mysql-1   mysql:8.0        "docker-entrypoint.s…"   mysql     1 second ago   Up Less than a second (health: starting)   0.0.0.0:3308->3306/tcp, [::]:3308->3306/tcp
+pre-release-verify-redis-1   redis:7-alpine   "docker-entrypoint.s…"   redis     1 second ago   Up Less than a second (health: starting)   0.0.0.0:6380->6379/tcp, [::]:6380->6379/tcp
+## wait health
+health_1=mysql:starting,redis:starting
+health_2=mysql:starting,redis:starting
+health_3=mysql:starting,redis:starting
+health_4=mysql:starting,redis:starting
+health_5=mysql:starting,redis:starting
+health_6=mysql:starting,redis:healthy
+health_7=mysql:starting,redis:healthy
+health_8=mysql:starting,redis:healthy
+health_9=mysql:starting,redis:healthy
+health_10=mysql:starting,redis:healthy
+health_11=mysql:starting,redis:healthy
+health_12=mysql:starting,redis:healthy
+health_13=mysql:starting,redis:healthy
+health_14=mysql:starting,redis:healthy
+health_15=mysql:starting,redis:healthy
+health_16=mysql:starting,redis:healthy
+health_17=mysql:starting,redis:healthy
+health_18=mysql:starting,redis:healthy
+health_19=mysql:starting,redis:healthy
+health_20=mysql:healthy,redis:healthy
+## redis ping
+PONG
+## mysql query
+DATABASE()
+NULL
+Database
+information_schema
+mysql
+performance_schema
+sys
+ypat
+## down
+ Container pre-release-verify-redis-1 Stopping
+ Container pre-release-verify-mysql-1 Stopping
+ Container pre-release-verify-redis-1 Stopped
+ Container pre-release-verify-redis-1 Removing
+ Container pre-release-verify-redis-1 Removed
+ Container pre-release-verify-mysql-1 Stopped
+ Container pre-release-verify-mysql-1 Removing
+ Container pre-release-verify-mysql-1 Removed
+ Network pre-release-verify_ypat-net Removing
+ Network pre-release-verify_ypat-net Removed
+end=2026-06-28 14:26:48 +0800

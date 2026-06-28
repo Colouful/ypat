@@ -301,7 +301,7 @@ for jar in ['backend/system-restapi/target/system-restapi-1.0-SNAPSHOT.jar',
 ```yaml
 spring:
   datasource:
-    password: Li123456.  # 实际密码
+    password: <历史本地 MySQL 密码，已脱敏>  # 实际密码
 ```
 
 ### 3. Feign 超时: Read timed out executing POST http://SYSTEM-API/...

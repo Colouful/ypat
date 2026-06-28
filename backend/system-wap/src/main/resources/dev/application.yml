@@ -4,9 +4,9 @@ server:
     max-http-post-size: -1
 spring:
   redis:
-    host: localhost
-    port: 6379
-    #password: 123456
+    host: ${YPAT_REDIS_HOST:localhost}
+    port: ${YPAT_REDIS_PORT:6379}
+    password: ${YPAT_REDIS_PASSWORD:}
     pool:
       max-idle: 8
       min-idle: 0
