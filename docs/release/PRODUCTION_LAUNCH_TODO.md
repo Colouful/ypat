@@ -122,3 +122,74 @@ LIMIT 100;
 - 状态。
 - 是否仍允许报名。
 - 是否需要业务下线或人工修改。
+
+## 8. 反馈表数据库 migration
+
+项目当前未发现 Flyway(flyway 数据库迁移工具)、Liquibase(liquibase 数据库迁移工具)或 Spring SQL 初始化自动执行链路；`backend/dev/mysql/20260628_create_feedback.sql` 是手工运维 SQL(sql 结构化查询语言)脚本，不会随服务启动自动执行。
+
+执行要求：
+
+- 执行人：生产 DBA 或具备生产数据库变更权限的后端负责人。
+- 执行环境：目标生产数据库主库；禁止在本地或预发记录中冒充生产执行。
+- 执行时间：正式发布维护窗口内，应用发布前完成。
+- 备份要求：执行前完成全库备份，或至少备份即将新增/校验的 `t_feedback` 相关结构和变更记录。
+- 执行脚本：`backend/dev/mysql/20260628_create_feedback.sql`。
+- 回滚脚本：`backend/dev/mysql/20260628_drop_feedback_rollback.sql`，仅在确认本次上线回滚且已备份 `t_feedback` 数据后执行。
+
+执行前校验：
+
+```sql
+SHOW TABLES LIKE 't_feedback';
+```
+
+执行后校验：
+
+```sql
+SHOW CREATE TABLE `t_feedback`;
+SHOW INDEX FROM `t_feedback`;
+SELECT COUNT(*) AS total FROM `t_feedback`;
+```
+
+回滚前备份示例：
+
+```sql
+CREATE TABLE `t_feedback_backup_yyyymmddhhmmss` AS
+SELECT * FROM `t_feedback`;
+```
+
+## 9. 管理后台微信密钥环境变量
+
+`system-web` 管理后台微信配置、`system-wap` 移动端后端第三方配置不得在源码中硬编码，正式环境需通过安全的部署配置注入：
+
+```env
+YPAT_WEB_WX_APP_ID=<微信应用 AppID>
+YPAT_WEB_WX_APP_SECRET=<微信应用 AppSecret>
+YPAT_WEB_WX_MCH_ID=<微信支付商户号>
+YPAT_WEB_WX_PAY_KEY=<微信支付 API 密钥>
+YPAT_WEB_BD_OCR_AK=<管理后台百度 OCR AK>
+YPAT_WEB_BD_OCR_SK=<管理后台百度 OCR SK>
+
+YPAT_WX_APP_ID=<微信小程序 AppID>
+YPAT_WX_APP_SECRET=<微信小程序 AppSecret>
+YPAT_WX_MCH_ID=<微信支付商户号>
+YPAT_WX_PAY_KEY=<微信支付 API 密钥>
+YPAT_WX_PUB_APP_ID=<微信公众号 AppID>
+YPAT_WX_PUB_APP_SECRET=<微信公众号 AppSecret>
+
+YPAT_BD_IDCARD_AK=<百度身份证 OCR AK>
+YPAT_BD_IDCARD_SK=<百度身份证 OCR SK>
+YPAT_BD_IDMATCH_AK=<百度身份核验 AK>
+YPAT_BD_IDMATCH_SK=<百度身份核验 SK>
+YPAT_BD_APP_KEY=<百度登录 App Key>
+YPAT_BD_APP_SECRET=<百度登录 App Secret>
+
+YPAT_SMS_MOCK_ENABLED=false
+```
+
+要求：
+
+- 仅在部署平台、密钥管理系统或服务器环境变量中配置。
+- 不写入 Git、镜像明文层、日志、文档示例真实值或前端产物。
+- 变更后验证管理后台订阅消息和支付相关后台能力。
+- 如旧密钥曾提交到仓库，必须按微信和支付平台流程轮换密钥。
+- 正式环境 `YPAT_SMS_MOCK_ENABLED` 必须为 `false`，不得配置测试手机号和验证码。

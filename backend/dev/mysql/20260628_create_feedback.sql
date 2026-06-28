@@ -1,3 +1,7 @@
+-- 手工运维脚本：正式环境执行前必须完成备份，并先确认 t_feedback 不存在或结构一致。
+-- 校验：
+--   SHOW CREATE TABLE `t_feedback`;
+--   SHOW INDEX FROM `t_feedback`;
 CREATE TABLE IF NOT EXISTS `t_feedback` (
   `id` bigint(20) NOT NULL AUTO_INCREMENT,
   `userid` bigint(20) NOT NULL,

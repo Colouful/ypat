@@ -136,6 +136,16 @@ public class BillService {
                 if(CommonUtils.isNotNull(queryQo.getType())){
                     predicatesList.add(criteriaBuilder.greaterThan(root.get("type"), queryQo.getType()));
                 }
+                if(CommonUtils.isNotNull(queryQo.getId())){
+                    predicatesList.add(criteriaBuilder.equal(root.get("id"), queryQo.getId()));
+                }
+                if(CommonUtils.isNotNull(queryQo.getUserid())){
+                    javax.persistence.criteria.Subquery<String> orderSubquery = query.subquery(String.class);
+                    Root<Order> orderRoot = orderSubquery.from(Order.class);
+                    orderSubquery.select(orderRoot.get("out_trade_no"));
+                    orderSubquery.where(criteriaBuilder.equal(orderRoot.get("userid"), queryQo.getUserid()));
+                    predicatesList.add(root.get("out_trade_no").in(orderSubquery));
+                }
                 query.where(predicatesList.toArray(new Predicate[predicatesList.size()]));
                 return query.getRestriction();
             }

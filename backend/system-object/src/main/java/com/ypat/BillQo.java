@@ -20,6 +20,7 @@ public class BillQo extends PageQo implements java.io.Serializable{
     private String result_code;
     private String err_code;
     private String err_code_des;
+    private Long userid;
 
     public Long getId() {
         return id;
@@ -107,5 +108,13 @@ public class BillQo extends PageQo implements java.io.Serializable{
 
     public void setErr_code_des(String err_code_des) {
         this.err_code_des = err_code_des;
+    }
+
+    public Long getUserid() {
+        return userid;
+    }
+
+    public void setUserid(Long userid) {
+        this.userid = userid;
     }
 }

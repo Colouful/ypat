@@ -71,6 +71,17 @@ public class FeedbackControllerTest {
         controller.add("这里是一段合法反馈内容", "");
     }
 
+    @Test
+    public void addAllowsSubmissionWhenRedisIsUnavailable() {
+        redisClient.fail = true;
+
+        String result = controller.add("这里是一段合法反馈内容", "");
+
+        assertEquals("{\"code\":\"200\"}", result);
+        assertEquals(Long.valueOf(42), feedbackServiceClient.feedbackQo.getUserid());
+        assertEquals("这里是一段合法反馈内容", feedbackServiceClient.feedbackQo.getContent());
+    }
+
     private void setAuthenticatedUser(String userId) {
         SecurityUserDetails details = new SecurityUserDetails();
         details.setUserId(userId);
@@ -101,14 +112,21 @@ public class FeedbackControllerTest {
     private static class FakeRedisClient extends RedisClient {
         final Map<String, Object> values = new HashMap<String, Object>();
         final Map<String, Long> ttls = new HashMap<String, Long>();
+        boolean fail;
 
         @Override
         public Object get(String key) {
+            if (fail) {
+                throw new IllegalStateException("redis down");
+            }
             return values.get(key);
         }
 
         @Override
         public void put(String key, Object object, long timeout) {
+            if (fail) {
+                throw new IllegalStateException("redis down");
+            }
             values.put(key, object);
             ttls.put(key, timeout);
         }

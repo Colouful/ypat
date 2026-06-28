@@ -51,4 +51,4 @@
 
 ## 后端安全记录
 - BE-SEC-01: `/user/token` 凭 mobile 即签发 JWT,无凭证校验。状态: FIXED。本轮改为有效当前 Token 续签,前端刷新不再传 mobile。
-- BE-SEC-02: `GET /**` permitAll,数据 GET 端点鉴权靠各 handler。状态: FIXED。本轮改为明确公开 GET 白名单,其余默认认证。
+- BE-SEC-02: `GET /**` permitAll,数据 GET 端点鉴权靠各 handler。状态: FIXED。本轮改为明确公开 GET 白名单,其余默认认证;合并前复审删除 WAP 白名单中残留的 `/manage/**`,并补充私有接口用户归属校验。

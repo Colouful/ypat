@@ -163,6 +163,57 @@
 - Commit：7470d63。
 - 状态：VERIFIED
 
+## CHANGE-008：修复合并前安全复审发现
+
+- 时间：2026-06-28 12:54:54 +0800
+- 严重度：P1
+- 对应 Gap：BE-SEC-02、合并前安全复审
+- 审查发现：WAP 安全配置仍匿名放行 `/manage/**`；多个私有接口仍可能信任前端传入的 `userid/id`；WAP 侧管理审核入口可被普通 Token 访问。
+- 修改前：`/manage/**` 在 WAP POST/GET 白名单中；资料修改、我的发布、我的申请、收藏、账单和实名详情存在客户端参数越权面；WAP 暴露审核/推荐动作。
+- 修改后：删除 WAP `/manage/**` 白名单；私有接口统一使用当前 Token 用户；关闭 WAP 财务记录 get/add 和管理审核入口；账单分页通过订单归属过滤。
+- 修改文件：`backend/system-wap/src/main/java/com/ypat/config/WebSecurityConfig.java`、`backend/system-wap/src/main/java/com/ypat/controller/UserController.java`、`MypatInfoController.java`、`BillController.java`、`RecordController.java`、`OauthController.java`、`YpatInfoController.java`、`backend/system-object/src/main/java/com/ypat/BillQo.java`、`backend/system-domain/src/main/java/com/ypat/service/BillService.java`。
+- 接口影响：`/bill/get`、`/bill/add`、`/record/get`、`/record/add`、WAP 审核接口对普通用户返回无权限；`/bill/findPage` 只返回当前用户订单对应账单。
+- 数据库影响：无结构变更；账单查询新增基于 `t_order.out_trade_no` 的归属过滤。
+- 安全影响：关闭管理路径匿名放行、私有数据越权读取和普通用户触发审核动作风险。
+- 测试：`WebSecurityConfigSourceTest`、`WapAuthorizationSourceTest`、`BillServiceAuthorizationSourceTest`、后端 Maven 测试。
+- 测试结果：后端相关模块测试通过，最终全量结果见 `05-test-evidence.md`。
+- Commit：待提交。
+- 状态：IMPLEMENTED
+
+## CHANGE-009：反馈限频 Redis 故障降级与 migration 记录
+
+- 时间：2026-06-28 12:54:54 +0800
+- 严重度：P2
+- 对应 Gap：GAP-I-01、合并前安全复审
+- 审查发现：反馈限频依赖 Redis，Redis 不可用会导致非核心反馈功能 500；反馈表 SQL 只是手工脚本，原文档未完整记录执行和回滚要求。
+- 修改前：Redis `get/put` 异常会中断反馈提交；无回滚 SQL；生产待办未写执行人、环境、备份、校验和回滚。
+- 修改后：Redis 正常时 60 秒限频，异常时记录 warn 并允许提交；新增回滚脚本；上线待办明确手工 migration 执行和回滚要求。
+- 修改文件：`backend/system-wap/src/main/java/com/ypat/controller/FeedbackController.java`、`backend/system-wap/src/test/java/com/ypat/controller/FeedbackControllerTest.java`、`backend/dev/mysql/20260628_create_feedback.sql`、`backend/dev/mysql/20260628_drop_feedback_rollback.sql`、`docs/release/PRODUCTION_LAUNCH_TODO.md`。
+- 接口影响：`POST /feedback/add` 在 Redis 异常时仍可提交。
+- 数据库影响：无自动执行；新增手工回滚脚本。
+- 安全影响：日志不记录反馈内容和联系方式；降低 Redis 单点故障对反馈入口的影响。
+- 测试：`FeedbackControllerTest.addAllowsSubmissionWhenRedisIsUnavailable`、后端 Maven 测试。
+- 测试结果：后端相关模块测试通过，最终全量结果见 `05-test-evidence.md`。
+- Commit：待提交。
+- 状态：IMPLEMENTED
+
+## CHANGE-010：移除历史硬编码微信密钥
+
+- 时间：2026-06-28 13:05:00 +0800
+- 严重度：P0
+- 对应 Gap：合并前敏感信息扫描
+- 审查发现：`system-web` 管理后台历史微信配置类包含硬编码 AppSecret 和支付 key，dev/pro 配置含百度 OCR 密钥；WAP 配置文件包含微信、支付和百度密钥，且短信 mock 默认开启并写有测试手机号/验证码；WAP mock 文件包含历史 access_token。
+- 修改前：源码中保存真实格式的微信密钥、商户号、支付 key 和 access_token。
+- 修改后：管理后台微信和百度配置从环境变量读取；WAP 配置文件改为环境变量占位；短信 mock 默认关闭；mock 文件从测试环境变量读取，不再保存真实值。
+- 修改文件：`backend/system-web/src/main/java/com/ypat/third/wxmess/WXConfig.java`、`backend/system-web/src/main/resources/dev/systemprop.yml`、`backend/system-web/src/main/resources/pro/systemprop.yml`、`backend/system-wap/src/main/resources/conf/sys_conf.properties`、`backend/system-wap/src/main/test/com/mock/MockTest.java`、`docs/release/PRODUCTION_LAUNCH_TODO.md`、`docs/release/release-gap-closure/04-security-audit.md`。
+- 接口影响：无接口路径变化；部署环境必须提供管理后台微信相关环境变量。
+- 数据库影响：无。
+- 安全影响：代码层移除硬编码密钥并关闭默认测试登录入口；如果历史值曾用于真实环境，运维必须轮换。
+- 测试：敏感信息扫描、后端 Maven 测试。
+- 测试结果：待最终复核。
+- Commit：待提交。
+- 状态：IMPLEMENTED
+
 ## 修改文件汇总
 
 最终文件清单见 `artifacts/changed-files.txt`。本轮主要修改类型：

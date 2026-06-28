@@ -16,6 +16,17 @@
 | `pnpm run check` | `frontend` | 2026-06-28 12:10 | 2026-06-28 12:10 | 0 | 57 | 0 | 串联 type-check/lint/test/build 全通过 | 前端综合验证 |
 | `mvn test` | `backend` | 2026-06-28 12:12 | 2026-06-28 12:12 | 0 | 14 | 0 | `Tests run: 14, Failures: 0, Errors: 0, Skipped: 0` | 后端安全和反馈测试 |
 | dist 地址扫描 | `frontend` | 2026-06-28 12:10 | 2026-06-28 12:10 | 0 | - | - | 检出 `82.156.14.216` 和 `http://` | 记录为上线前运维阻塞 |
+| `pnpm install --frozen-lockfile --registry=https://registry.npmjs.org` | `frontend` | 2026-06-28 12:57:45 | 2026-06-28 12:57:45 | 0 | - | 0 | `Already up to date` | 合并前复审安装验证 |
+| `pnpm run type-check` | `frontend` | 2026-06-28 12:58:16 | 2026-06-28 12:58:18 | 0 | - | 0 | `vue-tsc --noEmit` 通过 | 合并前复审类型验证 |
+| `pnpm run lint` | `frontend` | 2026-06-28 12:58:18 | 2026-06-28 12:58:21 | 0 | - | 0 | ESLint quiet 通过 | 合并前复审 lint 验证 |
+| `pnpm run test` | `frontend` | 2026-06-28 12:58:21 | 2026-06-28 12:58:23 | 0 | 57 | 0 | 8 files passed, 57 tests passed | 合并前复审单测 |
+| `pnpm run build:h5` | `frontend` | 2026-06-28 12:58:36 | 2026-06-28 12:58:43 | 0 | - | 0 | `DONE Build complete` | 合并前 H5 构建 |
+| `pnpm run build:mp-weixin` | `frontend` | 2026-06-28 12:58:43 | 2026-06-28 12:58:47 | 0 | - | 0 | `DONE Build complete` | 合并前微信小程序构建 |
+| `pnpm run check` | `frontend` | 2026-06-28 12:58:57 | 2026-06-28 12:59:13 | 0 | 57 | 0 | 串联 type-check/lint/test/build 全通过 | 合并前前端综合验证 |
+| dist 地址扫描 | `frontend` | 2026-06-28 12:59 | 2026-06-28 12:59 | 0 | - | - | 检出 `82.156.14.216` 和 `http://`，未发现业务 `localhost` | 继续记录为 OPS_BLOCKED |
+| `mvn test` | `backend` | 2026-06-28 13:01:31 | 2026-06-28 13:01:34 | 0 | 19 | 0 | 领域 1 条 + WAP 18 条测试通过，Reactor 全 SUCCESS | 合并前后端全量验证 |
+| `mvn test` | `backend` | 2026-06-28 13:10:17 | 2026-06-28 13:10:20 | 0 | 19 | 0 | 密钥外置配置变更后，领域 1 条 + WAP 18 条测试通过 | 最终后端复核 |
+| `mvn test` | `backend` | 2026-06-28 13:12:45 | 2026-06-28 13:12:48 | 0 | 19 | 0 | 短信 mock 默认关闭后，后端全量测试通过 | 最终安全配置复核 |
 
 ## 证据文件
 
