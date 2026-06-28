@@ -26,19 +26,29 @@
 
 <script setup lang="ts">
 import { computed, ref } from 'vue'
-import { post } from '@/api/request'
+import * as feedbackApi from '@/api/modules/feedback'
+import { useUserStore } from '@/stores/user'
 
+const userStore = useUserStore()
 const content = ref('')
 const contact = ref('')
 const submitting = ref(false)
-const isValid = computed(() => content.value.trim().length >= 10 && content.value.length <= 500)
+const isValid = computed(() => {
+  const trimmed = content.value.trim()
+  return trimmed.length >= 10 && trimmed.length <= 500 && contact.value.trim().length <= 100
+})
 
 async function handleSubmit(): Promise<void> {
   if (!isValid.value || submitting.value) return
+  if (!userStore.isLoggedIn) {
+    uni.showToast({ title: '请先登录', icon: 'none' })
+    uni.navigateTo({ url: '/pages/login/index' })
+    return
+  }
   submitting.value = true
   uni.showLoading({ title: '提交中...' })
   try {
-    await post('/feedback/add', {
+    await feedbackApi.addFeedback({
       content: content.value.trim(),
       contact: contact.value.trim(),
     })

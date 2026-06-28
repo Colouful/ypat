@@ -71,7 +71,7 @@
 
 ## C. 关键差异速览
 
-1. **discover 页不在 tabBar**: 新版 tabBar = home/message/publish/mine。discover 入口待确认(模块B)。
+1. **discover 页入口**: 新版使用自定义 `KeepTabBar`，首页和消息空态也可进入 `/pages/discover/index`，GAP-NAV-01 已关闭。
 2. **报名 / 联系方式解锁** 旧版是独立页面(orderShe/linkway),新版疑似内联到 detail/message-detail — 需逐一验证业务逻辑未丢失。
 3. **信用担保 / 保证金** (credit/creditagreement) 旧版存在完整充值流程(order type=2, 199元),新版**当前无对应页面** — 模块J 必须给出结论(迁移/合并/产品下线)。
 4. **邀请好友 / 帮助中心** 旧版 #ifndef H5,新版无 — 模块J。

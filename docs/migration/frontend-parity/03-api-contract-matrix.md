@@ -17,7 +17,7 @@
 | 默认 Content-Type | x-www-form-urlencoded | form (x-www-form-urlencoded) | form | ✅ 一致且正确 |
 | Token 头 | `Token` | `Token` | `Token` | ✅ |
 | Token 存储 key | UNI_LOCAL_token | ypat_token | — | key 不一致(见04) |
-| 401/刷新 | 无(空 case 401) | 有(401/1001→/user/token?mobile→重试) | /user/token GET+mobile | 新版更完善 ✅ |
+| 401/刷新 | 无(空 case 401) | 有(401/1001→/user/token→重试) | /user/token GET + Token header | 新版更完善且已修复裸 mobile 续签风险 ✅ |
 | 响应成功判定 | res.code===200 | String(code)==='200' | code==200 | ✅ |
 | data 字段 | res.res | res(优先) 否则 result,含二次JSON.parse | res | ✅ |
 | 超时 | 无 | 15000ms | — | 新版更好 |
@@ -32,11 +32,11 @@
 | 登录 | 微信code换openid | /user/code | GET | query `code` | GET | user.wxLogin | ✅ |
 | 登录 | 发短信验证码 | /user/sms/code | POST | form `mobile` | POST | user.sendH5LoginCode | ✅ |
 | 登录 | 登录(微信/手机号) | /user/login | POST | form UserQo | POST | user.login / h5PhoneLogin | ✅ |
-| 登录 | 刷新token | /user/token | GET | query `mobile` | GET | request.refreshToken | ✅ |
+| 登录 | 刷新token | /user/token | GET | Token header | GET | request.refreshToken | ✅ |
 | 用户 | 获取资料 | /user/get | GET | query `id`(可空) | GET | user.getUserInfo | ✅ |
 | 用户 | 更新资料 | /user/upd | POST | form UserQo+pics | POST | user.updateUser | ✅ |
 | 用户 | 联系方式解锁 | /user/linkway/get | GET | query `userid`,`messid` | GET | user.getLinkWay | ✅ |
-| 用户 | 同城同职业 | /user/findByCityAndProfess | **NOT FOUND(wap)** | 仅 /service 内部 | GET | user.findByCityAndProfess | ❌ **端点不存在** |
+| 用户 | 同城同职业 | /user/findByCityAndProfess | **NOT_APPLICABLE** | 仅 /service 内部 | GET | 前端死 API 已删除 | ✅ |
 | 约拍 | 推荐列表 | /ypat/tc/list | GET | query YpatInfoQo | GET | ypat.getRecommendList | ✅ |
 | 约拍 | 最新列表 | /ypat/zx/list | GET | query | GET | ypat.getLatestList | ✅ |
 | 约拍 | 详情 | /ypat/get | GET | query `id` | GET | ypat.getDetail | ✅ |
@@ -72,9 +72,9 @@
 ## C. 需修复的接口问题(汇总到 06-gap-register)
 
 - **GAP-API-01 (P1)**: `getMyPublishList`/`getMyFavoriteList`/`getMyReceivedList`/`getMySentList` 使用 POST,后端为 `@GetMapping`,会 405 失败。→ 改为 GET + query。已验证 `MypatInfoController.java:48/90/97/112`。
-- **GAP-API-02 (P2)**: `user.findByCityAndProfess` 调用的 `/user/findByCityAndProfess` 在 wap 网关**不存在**(仅 /service 内部,且唯一调用点在 YpatInfoController:175 被注释)。→ 确认调用点,移除或改造。
-- **GAP-API-03 (P1/安全)**: `.env.production` 使用 `http://82.156.14.216:8088`,而 `env.ts` 在 prod 强制 HTTPS 会抛错 → 生产运行/构建崩溃。需决策(见 05/06)。
-- **后端安全(超出本次范围,记录)**: `/user/token` 凭裸 `mobile` 即可签发 JWT,无旧 token / 凭证校验;`GET /**` permitAll。建议后端修复,不在本前端任务改动。
+- **GAP-API-02 (NOT_APPLICABLE)**: 前端 `user.findByCityAndProfess` 死 API 已删除;后端 `/service` 内部接口保留给系统内调用。
+- **GAP-API-03 (OPS_BLOCKED)**: `.env.production` 使用 `http://82.156.14.216:8088`,而 `env.ts` 在 prod 强制 HTTPS。按本轮要求不改 `.env.production`,上线前运维必须改正式 HTTPS 域名。
+- **后端安全**: `/user/token` 裸 `mobile` 续签与 `GET /**` permitAll 已在本轮修复,状态 FIXED。
 
 ## D. 旧版独有/未迁移端点(参考)
 `/bd/code` `/bd/login`(百度小程序登录)、`/ypat/audit` `/oauth/audit` `/ypat/upRecom`(管理员审核,旧版 adminList 驱动)、`/my/frd/list`(好友)、`/my/ypat/app/list`、`/my/ypat/head/list`、`/qr/code`。→ 模块J/各模块确认是否前端需要。

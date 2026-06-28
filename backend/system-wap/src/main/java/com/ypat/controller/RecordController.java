@@ -1,6 +1,8 @@
 package com.ypat.controller;
 
 import com.ypat.RecordQo;
+import com.ypat.ResponseCode;
+import com.ypat.SysException;
 import com.ypat.service.RecordServiceClient;
 import com.ypat.util.UserUtil;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -15,12 +17,12 @@ public class RecordController {
 
     @GetMapping("/record/get")
     public String get(Long id) {
-        return recordServiceClient.get(id);
+        throw new SysException(ResponseCode.FAIL_VAL);
     }
 
     @PostMapping("/record/add")
     public void add(RecordQo recordQo){
-        recordServiceClient.add(recordQo);
+        throw new SysException(ResponseCode.FAIL_VAL);
     }
 
     @GetMapping("/record/findPage")

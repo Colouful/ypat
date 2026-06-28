@@ -8,6 +8,7 @@ import com.ypat.enums.UserOrigType;
 import com.ypat.service.UserService;
 import com.ypat.third.baidu.ai.GsonUtils;
 import com.ypat.third.bdlogin.BdClient;
+import com.ypat.util.UserUtil;
 import com.ypat.third.wxpay.sdk.WXPayClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -66,7 +67,7 @@ public class LoginController {
 
     @GetMapping("/user/token")
     public String code(UserQo userQo) {
-        return GsonUtils.toJson(userService.getToken(userQo));
+        return GsonUtils.toJson(userService.getToken(userQo, UserUtil.getUserId()));
     }
 
     /***************百度授权登录*****************/

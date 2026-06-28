@@ -3,14 +3,11 @@ package com.ypat.controller;
 import com.ypat.OauthQo;
 import com.ypat.ResponseCode;
 import com.ypat.SysException;
-import com.ypat.UserQo;
 import com.ypat.comm.Const;
 import com.ypat.comm.ImageConst;
 import com.ypat.config.SystemConfig;
 import com.ypat.enums.MessType;
-import com.ypat.enums.UserStatus;
 import com.ypat.service.OauthServiceClient;
-import com.ypat.service.UserServiceClient;
 import com.ypat.third.baidu.ai.GsonUtils;
 import com.ypat.third.baidu.ai.Idcard;
 import com.ypat.third.baidu.ai.IdcardResponse;
@@ -52,8 +49,6 @@ public class OauthController {
     private SystemConfig systemConfig;
     @Autowired
     private WxMessClient wxMessClient;
-    @Autowired
-    private UserServiceClient userServiceClient;
 
     @PostMapping("/oauth/ocr")
     public String ocr(String cardfront) {
@@ -88,11 +83,11 @@ public class OauthController {
             for (int i = 0; i < pics.size(); i++) {
                 String fileBase64 = pics.get(i);
                 // 保存文件
-                if(fileBase64.indexOf("data:image") < 0) {
-                    byte[] bytes = Base64.decodeBase64(fileBase64);
-                    String fileId = fastDFSClient.uploanFile1(new ByteArrayInputStream(bytes), ImageConst.IMAGE_TYPE);
-                    picsList.add(systemConfig.getFdfs_path()+fileId);
-                }
+                String[] picsArr = fileBase64.split(",", 2);
+                String imageBody = picsArr.length == 2 ? picsArr[1] : fileBase64;
+                byte[] bytes = Base64.decodeBase64(imageBody);
+                String fileId = fastDFSClient.uploanFile1(new ByteArrayInputStream(bytes), ImageConst.IMAGE_TYPE);
+                picsList.add(systemConfig.getFdfs_path()+fileId);
             }
         } else {
             throw new RuntimeException("未上传证件照");
@@ -154,40 +149,25 @@ public class OauthController {
 
     @GetMapping("/oauth/getById")
     public String getById(@NotEmpty(message = "id不能为空") Long id) {
+        Long userId = Long.parseLong(UserUtil.getUserId());
+        if (!userId.equals(id)) {
+            throw new SysException(ResponseCode.FAIL_VAL);
+        }
         return oauthServiceClient.get(id);
     }
 
     @GetMapping("/oauth/detail")
     public String userDetail(Long id) {
-        return oauthServiceClient.getAuth(id);
+        Long userId = Long.parseLong(UserUtil.getUserId());
+        if (id != null && !userId.equals(id)) {
+            throw new SysException(ResponseCode.FAIL_VAL);
+        }
+        return oauthServiceClient.getAuth(userId);
     }
 
     @PostMapping("/oauth/audit")
     public String userAudit(Long id, String flag) {
-        String res = oauthServiceClient.audit(id, flag);
-        try {
-            String accessToken = wxMessClient.getAccessToken();
-            if(accessToken != null) {
-                String page = "";
-                String userJson = userServiceClient.get(id);
-                UserQo userQo = GsonUtils.fromJson(userJson, UserQo.class);
-                Map<String,String> contentMap = new HashMap<>();
-                contentMap.put("type", "实名认证");
-                if(UserStatus.shtg.value.equals(flag)) {
-                    page = Const.PAGE_REALNAME_TG;
-                    contentMap.put("result",UserStatus.shtg.name);
-                    contentMap.put("note","赶紧找到心仪的小伙伴拍起来吧~");
-                } else {
-                    page = Const.PAGE_REALNAME_BTG;
-                    contentMap.put("result",UserStatus.shbtg.name);
-                    contentMap.put("note","填写信息有误，请认证填写哦~");
-                }
-                wxMessClient.sendMsg(accessToken, userQo.getOpenid(), MessType.oauth, page, contentMap);
-            }
-        } catch (Exception e) {
-            logger.error("消息推送失败：", e);
-        }
-        return res;
+        throw new SysException(ResponseCode.FAIL_VAL);
     }
 
 }

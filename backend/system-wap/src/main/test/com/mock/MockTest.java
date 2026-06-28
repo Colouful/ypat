@@ -116,8 +116,8 @@ public class MockTest {
 //    @Test
     public String getAccessToken() throws Exception{
         String url = "https://api.weixin.qq.com/cgi-bin/token?grant_type=client_credential"
-                + "&appid=wx94b432e0db7c29be" //+ WXConfig.appID
-                + "&secret=ca31c3ffd70aa4ea286066deffa93517" ;//+ WXConfig.appSecret;
+                + "&appid=" + System.getenv("YPAT_MOCK_WX_APP_ID")
+                + "&secret=" + System.getenv("YPAT_MOCK_WX_APP_SECRET");
         ResponseEntity<String> entity = new RestTemplate().getForEntity(url, String.class);
         if (entity.getStatusCode().equals(HttpStatus.OK)){
             JSONObject jsonObject = new JSONObject(entity.getBody());
@@ -130,8 +130,8 @@ public class MockTest {
 
     public String getAccessTokenPub() throws Exception{
         String url = "https://api.weixin.qq.com/cgi-bin/token?grant_type=client_credential"
-                + "&appid=wx80daa0a43275379f" //+ WXConfig.appID
-                + "&secret=3afab63ce1a9c98294df423fa6b976bc" ;//+ WXConfig.appSecret;
+                + "&appid=" + System.getenv("YPAT_MOCK_WX_PUB_APP_ID")
+                + "&secret=" + System.getenv("YPAT_MOCK_WX_PUB_APP_SECRET");
         ResponseEntity<String> entity = new RestTemplate().getForEntity(url, String.class);
         if (entity.getStatusCode().equals(HttpStatus.OK)){
             System.out.println(entity.getBody());
@@ -145,7 +145,7 @@ public class MockTest {
 
     @Test
     public void sendMsg() {
-        String access_token="29_fHZNfy9-279LGy1p8HuKXpdxftL41XIBk0PGZMJWsmwuJQ2zHRtuh47RY7_DsItfAH5xvZ-H-6uABC-xnY2MCn_p0qMYXEjqGg_u6e17DvV3vi9tJhv2QD45Y79U5BPkcI7HRS0-VJdYdTD1BLCeAEARBS";
+        String access_token = System.getenv("YPAT_MOCK_WX_ACCESS_TOKEN");
         MessType type = MessType.send;
         Map<String,String> contentMap = new HashMap<>();
         contentMap.put("area", "北京");

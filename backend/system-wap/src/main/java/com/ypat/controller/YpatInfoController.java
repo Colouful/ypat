@@ -1,21 +1,16 @@
 package com.ypat.controller;
 
-import com.ypat.UserQo;
 import com.ypat.YpatInfoQo;
+import com.ypat.ResponseCode;
+import com.ypat.SysException;
 import com.ypat.comm.Const;
 import com.ypat.comm.ImageConst;
 import com.ypat.config.SystemConfig;
 import com.ypat.enums.MessType;
-import com.ypat.enums.UserStatus;
-import com.ypat.enums.YesNo;
 import com.ypat.enums.YpatStatus;
-import com.ypat.service.UserServiceClient;
 import com.ypat.service.YpatServiceClient;
-import com.ypat.third.baidu.ai.GsonUtils;
 import com.ypat.third.wxmess.WxMessClient;
 import com.ypat.util.*;
-import org.apache.commons.lang.StringUtils;
-import org.apache.commons.lang.time.DateFormatUtils;
 import org.apache.tomcat.util.codec.binary.Base64;
 import org.hibernate.validator.constraints.NotEmpty;
 import org.slf4j.Logger;
@@ -28,7 +23,10 @@ import javax.validation.Valid;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 @RestController
 public class YpatInfoController {
@@ -44,8 +42,6 @@ public class YpatInfoController {
     private WxMessClient wxMessClient;
     @Autowired
     private ImageMarkUtil imageMarkUtil;
-    @Autowired
-    private UserServiceClient userServiceClient;
 
     @GetMapping("/ypat/get")
     public String get(@NotEmpty Long id) {
@@ -61,7 +57,7 @@ public class YpatInfoController {
 
     @GetMapping(value = {"ypat/audit/list"})
     public String auditList(YpatInfoQo ypatInfoQo) {
-        return ypatServiceClient.findPage(ypatInfoQo);
+        throw new SysException(ResponseCode.FAIL_VAL);
     }
 
     @PostMapping(value = {"/ypat/add","/ypat/upd"})
@@ -133,62 +129,13 @@ public class YpatInfoController {
 
     @PostMapping("/ypat/audit")
     public String audit(Long id, String flag, String recomflag, String reason, String messflag){
-        String res = ypatServiceClient.audit(id, flag, recomflag, reason);
-        try {
-            String accessToken = wxMessClient.getAccessToken();
-            if(accessToken != null) {
-                String page = "";
-                String ypatJson = ypatServiceClient.get(id, null);
-                YpatInfoQo ypatInfoQo = GsonUtils.fromJson(ypatJson, YpatInfoQo.class);
-                Map<String,String> contentMap = new HashMap<>();
-                contentMap.put("time", DateFormatUtils.format(new Date(),"yyyy-MM-dd HH:mm:ss"));
-                String content = ypatInfoQo.getDescrib();
-                if(!org.apache.commons.lang.StringUtils.isEmpty(content)){
-                    if(content.length()>=10){
-                        content = content.substring(0,10)+"...";
-                    }
-                }
-                contentMap.put("content", content);
-                if(YpatStatus.shtg.value.equals(flag)) {
-                    page = Const.PAGE_PUB_TG;
-                    contentMap.put("result", YpatStatus.shtg.name);
-                    contentMap.put("note", "无");
-                } else {
-                    page = Const.PAGE_PUB_BTG;
-                    contentMap.put("result", YpatStatus.shbtg.name);
-                    if(StringUtils.isEmpty(reason)){
-                        contentMap.put("note", "发布信息有误，请重新填写");
-                    }else{
-                        if(reason.length()>=20){
-                            reason = reason.substring(0,17)+"...";
-                        }
-                        contentMap.put("note", reason);
-                    }
-                }
-                //微信消息推送
-                wxMessClient.sendMsg(accessToken, ypatInfoQo.getUserQo().getOpenid(), MessType.audit, page, contentMap);
-
-                //短信推送
-                /**
-                 *
-                if(YpatStatus.shtg.value.equals(flag) && YesNo.yes.value.equals(messflag)) {
-                    String mobileJson = userServiceClient.findByCityAndProfess(ypatInfoQo.getUserQo().getId(), ypatInfoQo.getCity());
-                    logger.info("发送短信："+mobileJson);
-                    Map<String, Object> mobileMap = GsonUtils.fromJson(mobileJson, Map.class);
-                    SmsUtils.sendMsg(MapUtils.mapKey2Str(mobileMap), ypatInfoQo.getTargetTxt());
-                }
-                 */
-            }
-        } catch (Exception e) {
-            logger.error("消息推送失败：", e);
-        }
-        return res;
+        throw new SysException(ResponseCode.FAIL_VAL);
     }
 
 
     @PostMapping("/ypat/upRecom")
     @ResponseBody
     public String upRecom(Long id, String recomflag) {
-        return ypatServiceClient.upRecom(id, recomflag);
+        throw new SysException(ResponseCode.FAIL_VAL);
     }
 }

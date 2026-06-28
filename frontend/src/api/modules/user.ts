@@ -46,7 +46,3 @@ export function updateUser(data: UpdateUserParams): Promise<ApiResult<null>> {
 export function getLinkWay(userid: number, messid: number): Promise<ApiResult<LinkWay>> {
   return get('/user/linkway/get', { userid, messid })
 }
-
-export function findByCityAndProfess(userid: number, city: string): Promise<ApiResult<UserInfo[]>> {
-  return get('/user/findByCityAndProfess', { userid, city })
-}

@@ -104,6 +104,7 @@
 import { computed, reactive, ref } from 'vue'
 import { useUserStore } from '@/stores/user'
 import * as ypatApi from '@/api/modules/ypat'
+import { FEATURE_FLAGS } from '@/config/features'
 import { filePathToDataUrl } from '@/utils/file-base64'
 import { isPublishProfileReady } from '@/utils/profile'
 import { PHOTO_STYLES } from '@/constants/enums'
@@ -217,6 +218,10 @@ async function convertImages(): Promise<string[]> {
 
 async function submit(): Promise<void> {
   if (!canSubmit.value || submitting.value || processing.value) return
+  if (!FEATURE_FLAGS.deposit && model.creditflag === '1') {
+    model.creditflag = '0'
+    uni.showToast({ title: '当前版本暂未开放保证金服务，已关闭保证金要求', icon: 'none' })
+  }
   // 发布前置: 资料(含微信号)必须完整,否则报名者无法联系(对齐旧 isNendUserInfo)
   if (!isPublishProfileReady(userStore.userInfo)) {
     uni.showModal({
@@ -253,6 +258,7 @@ async function submit(): Promise<void> {
     if (pics.length !== localPaths.value.length) throw new Error('部分图片处理失败')
     await ypatApi.submit({
       ...model,
+      creditflag: FEATURE_FLAGS.deposit ? model.creditflag : '0',
       describ: `${title.value.trim()}\n${model.describ.trim()}`,
       patstyle: selectedStyles.value.join(','),
       pics,

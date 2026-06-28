@@ -1,7 +1,6 @@
 import { envConfig } from '@/config/env'
 import {
   clearAuth,
-  getStoredUserInfo,
   getToken,
   setToken,
 } from '@/services/auth-storage'
@@ -59,7 +58,7 @@ const ERROR_CODE_MAP: Record<string, string> = {
   '1008': '身份证识别失败',
   '1009': '拍拍豆余额不足',
   '1010': '请先完成实名认证',
-  '1011': '请先缴纳保证金',
+  '1011': '该约拍要求信用保证金',
   '1012': '密码错误',
   '1013': '实名认证失败',
   '1014': '身份证识别次数已达上限',
@@ -196,13 +195,12 @@ function refreshToken(): Promise<string> {
   if (refreshPromise) return refreshPromise
   refreshPromise = new Promise<string>((resolve, reject) => {
     const currentToken = getToken()
-    const currentUser = getStoredUserInfo()
-    if (!currentToken || !currentUser?.mobile) {
+    if (!currentToken) {
       reject(new Error('登录状态已失效'))
       return
     }
     uni.request({
-      url: buildUrl(`${envConfig.apiBaseUrl}/user/token`, { mobile: currentUser.mobile }),
+      url: buildUrl(`${envConfig.apiBaseUrl}/user/token`),
       method: 'GET',
       header: { Token: currentToken },
       success: (res) => {
@@ -246,7 +244,12 @@ function showBusinessGuide(code: string): void {
       success: ({ confirm }) => confirm && uni.navigateTo({ url: '/pages-sub/user/recharge' }),
     })
   } else if (code === '1011') {
-    uni.showToast({ title: '请先缴纳保证金', icon: 'none' })
+    uni.showModal({
+      title: '该约拍要求信用保证金',
+      content: '当前版本暂未开放保证金服务，暂时无法报名该约拍。',
+      confirmText: '知道了',
+      showCancel: false,
+    })
   }
 }
 

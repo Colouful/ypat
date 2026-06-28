@@ -31,8 +31,8 @@
 | 编号 | 级别 | 说明 | 处理 |
 |---|---|---|---|
 | GAP-C-01 | P2 | 报名理由被硬编码,丢失用户自填 | **已修复**: editable modal + ≥6字 |
-| GAP-C-02 | P3 | share() 仅 toast,无真实 onShareAppMessage | 记录: 真实分享需页面级 onShareAppMessage,详情为组件;留待页面层补 |
-| GAP-C-03 | P3 | "私信"按钮 stub(showToast 打开私信);"关注"本地切换无后端 | 记录: 旧版详情无 viewer 联系入口(联系方式解锁是 owner-only via messid → Module F);关注为新增无后端,非 parity |
+| GAP-C-02 | P3 | share() 仅 toast,无真实 onShareAppMessage | 已新增页面级 onShareAppMessage,H5 复制真实链接,状态 FIXED |
+| GAP-C-03 | P3 | "私信"按钮 stub(showToast 打开私信);"关注"本地切换无后端 | 已移除假关注,私信改真实主页入口,状态 FIXED |
 
 ## 5. 修改
 - frontend/src/components/business/YpatDetailView.vue: apply() 增加理由输入(editable modal)+≥6字校验,移除硬编码 content

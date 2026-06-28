@@ -37,7 +37,7 @@
 |---|---|---|---|---|---|
 | GAP-AUTH-01 | 安全 | P0 | — | login() 硬编码测试账号 | **已修复**: 生产透传真实凭证,测试账号仅 dev;store 回归测试 |
 | GAP-AUTH-03 | 流程 | P1 | getNextUrl 强制完善资料 | complete-info 无人跳转(死页) | **已修复**: utils/profile.isProfileComplete + 登录成功后不完整 redirectTo complete-info;加单测 |
-| GAP-A-EDIT-01 | 资料 | P2 | userInfo 可编辑 wx | edit-info 无 wx 字段 | **OPEN**(Module D): 发布前置需 wx,补编辑入口 |
+| GAP-A-EDIT-01 | 资料 | P2 | userInfo 可编辑 wx | edit-info 无 wx 字段 | **FIXED**: edit-info 已补微信号字段 |
 | GAP-AUTH-02 | 缓存 | P2 | UNI_LOCAL_token | ypat_token | 暂定强制重登(更安全),见 04 |
 
 ## 7. 修改

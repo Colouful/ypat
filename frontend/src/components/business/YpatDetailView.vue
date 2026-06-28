@@ -7,8 +7,8 @@
         <view class="detail-icon-button" @tap="back">
           <KeepIcon name="chevron-left" :size="42" />
         </view>
-        <view class="detail-icon-button" @tap="share">
-          <KeepIcon name="compass" :size="38" />
+        <view class="detail-icon-button" @tap="copyShareLink">
+          <KeepIcon name="copy" :size="38" />
         </view>
       </view>
 
@@ -46,7 +46,7 @@
             <text class="author-card__name">{{ detail.userQo?.nickname || '匿名用户' }}</text>
             <text class="author-card__desc">{{ authorDesc }}</text>
           </view>
-          <view class="author-card__follow" @tap.stop="followed = !followed">{{ followed ? '已关注' : '+ 关注' }}</view>
+          <view class="author-card__profile">查看主页</view>
         </view>
 
         <text class="section-title">TA 的作品</text>
@@ -60,9 +60,9 @@
           <KeepIcon name="star" :size="42" />
           <text>{{ favorited ? '已收藏' : '收藏' }}</text>
         </view>
-        <view class="detail-actions__mini" @tap="showToast('打开私信')">
+        <view class="detail-actions__mini" @tap="goProfile">
           <KeepIcon name="mail" :size="42" />
-          <text>私信</text>
+          <text>主页</text>
         </view>
         <button class="detail-actions__primary" :disabled="actionLoading" :loading="actionLoading" @tap="apply">立即约拍</button>
       </view>
@@ -81,13 +81,15 @@ import KeepState from './KeepState.vue'
 import type { YpatInfo } from '@/api/types'
 
 const props = defineProps<{ id: number }>()
+const emit = defineEmits<{
+  'share-meta': [{ title: string; imageUrl?: string }]
+}>()
 const userStore = useUserStore()
 const detail = ref<YpatInfo | null>(null)
 const loading = ref(false)
 const actionLoading = ref(false)
 const errorMessage = ref('')
 const favorited = ref(false)
-const followed = ref(false)
 const images = computed(() => detail.value?.pics?.filter(Boolean) || ['/static/default-cover.png'])
 const portfolioImages = computed(() => images.value.slice(0, 6).concat(Array(Math.max(0, 6 - images.value.length)).fill('/static/default-cover.png')))
 const detailTitle = computed(() => detail.value?.describ?.split('\n')[0] || detail.value?.targetTxt || '约拍详情')
@@ -111,6 +113,10 @@ async function load(): Promise<void> {
     const result = await ypatApi.getDetail(props.id)
     detail.value = result.data
     favorited.value = result.data?.colflag === '1'
+    emit('share-meta', {
+      title: detailTitle.value,
+      imageUrl: images.value[0],
+    })
     put('/ypat/yd/add', { ypatid: props.id }, { showError: false }).catch(() => undefined)
   } catch (error) {
     errorMessage.value = error instanceof Error ? error.message : '获取详情失败'
@@ -128,8 +134,14 @@ function back(): void {
   else uni.switchTab({ url: '/pages/home/index' })
 }
 
-function share(): void {
-  showToast('已分享')
+function copyShareLink(): void {
+  if (!detail.value) return
+  const path = `/pages-sub/ypat/detail?id=${detail.value.id}`
+  uni.setClipboardData({
+    data: path,
+    success: () => uni.showToast({ title: '链接已复制', icon: 'success' }),
+    fail: () => uni.showToast({ title: '当前平台不支持复制链接', icon: 'none' }),
+  })
 }
 
 function goProfile(): void {
@@ -360,7 +372,7 @@ watch(() => props.id, load, { immediate: true })
   font-size: 24rpx;
 }
 
-.author-card__follow {
+.author-card__profile {
   padding: 16rpx 30rpx;
   border-radius: $radius-round;
   color: $color-primary-dark;

@@ -17,7 +17,6 @@ import org.apache.commons.lang.time.DateFormatUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.util.StringUtils;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -47,19 +46,13 @@ public class MypatInfoController {
 
     @GetMapping(value = {"/my/ypat/pub/list"})
     public String myPubList(YpatInfoQo ypatInfoQo) {
-        if(StringUtils.isEmpty(ypatInfoQo.getUserid())){
-            ypatInfoQo.setUserid(Long.parseLong(UserUtil.getUserId()));
-        }
+        ypatInfoQo.setUserid(Long.parseLong(UserUtil.getUserId()));
         return messServiceClient.myPubList(ypatInfoQo);
     }
 
     @GetMapping(value = {"/my/ypat/app/list"})
     public String myAppList(MessInfoQo messInfoQo, Long userid) {
-        if(StringUtils.isEmpty(userid)){
-            messInfoQo.setSendperid(Long.parseLong(UserUtil.getUserId()));;
-        }else {
-            messInfoQo.setSendperid(userid);
-        }
+        messInfoQo.setSendperid(Long.parseLong(UserUtil.getUserId()));
         messInfoQo.setType(MessType.send.value);
         return messServiceClient.myAppList(messInfoQo);
     }
@@ -151,9 +144,7 @@ public class MypatInfoController {
     @RequestMapping(value = "/my/ypat/sc/add", method = {RequestMethod.POST, RequestMethod.PUT})
     public String myScAdd(Long userid, Long ypatid){
         logger.info("收藏输入："+userid+", "+ypatid);
-        if(userid==null){
-            userid = Long.parseLong(UserUtil.getUserId());
-        }
+        userid = Long.parseLong(UserUtil.getUserId());
         return systemServiceClient.myScAdd(userid, ypatid);
     }
 

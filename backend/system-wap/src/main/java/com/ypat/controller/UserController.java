@@ -48,11 +48,8 @@ public class UserController {
 
     @PostMapping("/user/upd2")
     public String upd2(UserQo userQo, MultipartFile pics) throws IOException {
-        Long id = userQo.getId();
-        if(id==null){
-            id = Long.parseLong(UserUtil.getUserId());
-            userQo.setId(id);
-        }
+        Long id = Long.parseLong(UserUtil.getUserId());
+        userQo.setId(id);
         if (pics != null) {
             String fileId = fastDFSClient.uploanFile1(pics.getInputStream(), pics.getOriginalFilename());
             userQo.setImgpath(fileId);
@@ -63,11 +60,8 @@ public class UserController {
     @PostMapping("/user/upd")
     public String upd(@Valid UserQo userQo, String pics) throws IOException {
         logger.info("用户修改输入："+userQo);
-        Long id = userQo.getId();
-        if(id==null){
-            id = Long.parseLong(UserUtil.getUserId());
-            userQo.setId(id);
-        }
+        Long id = Long.parseLong(UserUtil.getUserId());
+        userQo.setId(id);
         if (!StringUtils.isEmpty(pics)) {
             final String[] picsArr = pics.split(",");
             if(picsArr[0].indexOf("data:image") >= 0) {
