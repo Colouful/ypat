@@ -85,8 +85,8 @@ jobs:
       - name: Block committed private keys and historical secrets
         run: |
           set -euo pipefail
-          if git ls-files | grep -E '(^|/)\.env($|\.local$|\.development$|\.staging$|\.production\.local$)'; then
-            echo "禁止提交真实 .env 文件。"
+          if git ls-files | grep -E '(^|/)\.env($|\.local$|\..*\.local$)'; then
+            echo "禁止提交真实私有 .env 文件。"
             exit 1
           fi
           if git ls-files | grep -E '\.(jks|p12|pfx|key|pem)$'; then

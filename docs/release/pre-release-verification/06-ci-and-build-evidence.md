@@ -33,6 +33,8 @@
 
 删除旧的 `.github/workflows/frontend-ci.yml`，避免只跑前端而漏掉后端和安全扫描。
 
+PR #3 首次运行时，Security scan 误把仓库既有的 `frontend/.env.development` 当成真实私有 `.env` 阻断。已修正规则：阻断 `.env`、`.env.local` 和 `.env.*.local`，允许已受控的模式配置文件；生产可发布性仍由 preflight 检查正式 HTTPS 域名。
+
 ## 构建地址扫描
 
 扫描命令：

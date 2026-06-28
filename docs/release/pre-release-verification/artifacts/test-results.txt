@@ -79,6 +79,10 @@ Release scripts:
   dir: repository root
   exit: 1
   result: expected OPS_BLOCKED because frontend/.env.production still contains HTTP IP
+- GitHub Actions security scan
+  dir: pull request #3
+  first run exit: 1
+  result: fixed overly broad .env rule that incorrectly blocked tracked frontend/.env.development; rerun required after push
 
 Build address scan:
 - grep dist for 82.156.14.216/http://localhost
