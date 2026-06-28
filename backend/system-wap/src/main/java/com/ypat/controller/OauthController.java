@@ -88,11 +88,11 @@ public class OauthController {
             for (int i = 0; i < pics.size(); i++) {
                 String fileBase64 = pics.get(i);
                 // 保存文件
-                if(fileBase64.indexOf("data:image") < 0) {
-                    byte[] bytes = Base64.decodeBase64(fileBase64);
-                    String fileId = fastDFSClient.uploanFile1(new ByteArrayInputStream(bytes), ImageConst.IMAGE_TYPE);
-                    picsList.add(systemConfig.getFdfs_path()+fileId);
-                }
+                String[] picsArr = fileBase64.split(",", 2);
+                String imageBody = picsArr.length == 2 ? picsArr[1] : fileBase64;
+                byte[] bytes = Base64.decodeBase64(imageBody);
+                String fileId = fastDFSClient.uploanFile1(new ByteArrayInputStream(bytes), ImageConst.IMAGE_TYPE);
+                picsList.add(systemConfig.getFdfs_path()+fileId);
             }
         } else {
             throw new RuntimeException("未上传证件照");

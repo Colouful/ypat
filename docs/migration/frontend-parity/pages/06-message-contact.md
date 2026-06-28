@@ -23,7 +23,7 @@
 |---|---|---|---|
 | GAP-F-01 | **P0** | 解锁费用显示/预检 1 豆,后端实扣 3 豆(金额错误) | **FIXED**: 引入 VIEW_CONTACT_PPD=3(对齐后端),阈值与文案改 3 |
 | GAP-F-02 | **P1** | message-detail 无人跳转(死页),联系方式解锁不可达 | **FIXED**: 消息中心 received tab → message-detail?id=item.id |
-| GAP-F-03 | P2 | rec/send 列表项以 YpatInfo 类型承载,实为 MessInfo 形;sent tab 用 item.id 跳约拍详情,若 id 为消息id 则应为 ypatid | 记录待确认: 需后端 rec/send/list 响应实体确认;received 不受影响(message-detail 用消息id) |
+| GAP-F-03 | P1 | rec/send 列表项以 YpatInfo 类型承载,实为 MessInfo 形;sent tab 用 item.id 跳约拍详情,若 id 为消息id 则应为 ypatid | 已确认后端返回 MessInfoQo;sent 使用 ypatid,缺失补查 /mess/get,状态 FIXED |
 
 ## 4. 修改
 - constants/enums.ts: 新增 VIEW_CONTACT_PPD/PUBLISH_PPD/APPLY_PPD=3(对齐后端 Constant)
@@ -32,4 +32,4 @@
 
 ## 5. 验证
 - type-check ✅ / test 47/47 ✅
-- 结论: P0 金额错误已修复;P1 解锁入口打通;防重复扣费由服务端 linkwayflag 保障。GAP-F-03 待后端响应实体确认(不阻塞 received 解锁主流程)。
+- 结论: P0 金额错误已修复;P1 解锁入口打通;防重复扣费由服务端 linkwayflag 保障。GAP-F-03 已修复并测试。

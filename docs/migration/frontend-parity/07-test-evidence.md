@@ -37,3 +37,19 @@
 - env.ts 守卫在**运行时**执行: 生产环境(VITE_APP_ENV=production)+ http 地址 → `getEnvConfig()` 抛错 → **应用加载即崩溃**(H5 与小程序)。
 - **用户决策: 保持守卫,改用 HTTPS 域名**。→ 前端不改 env.ts(安全控制正确);**上线前置**: 运维为后端配置 HTTPS 域名并将 .env.production 改为 https://域名。前端无法独立完成 → 列为部署阻塞项(见 08)。
 - 不修改 env.ts、不放宽校验、不伪造。
+
+## 2026-06-28 release-gap-closure 验证
+
+| 命令 | 结果 | 关键输出 |
+| -- | -- | -- |
+| `pnpm install --frozen-lockfile --registry=https://registry.npmjs.org` | PASS | frozen install 通过;私有源 `nodejs.100credit.cn` 曾出现 `ECONNRESET` |
+| `pnpm run type-check` | PASS | `vue-tsc --noEmit` 退出码 0 |
+| `pnpm run lint` | PASS | ESLint quiet 退出码 0 |
+| `pnpm run test` | PASS | 8 files passed, 57 tests passed |
+| `pnpm run build:h5` | PASS | `DONE Build complete` |
+| `pnpm run build:mp-weixin` | PASS | `DONE Build complete` |
+| `pnpm run check` | PASS | 串联验证通过 |
+| `mvn test` | PASS | 14 tests passed, 0 failures, 0 skipped |
+| dist 地址扫描 | OPS_BLOCKED | 构建产物仍包含 `82.156.14.216` 和 `http://`,原因是本轮按要求未修改 `.env.production` |
+
+证据文件见 `docs/release/release-gap-closure/artifacts/`。

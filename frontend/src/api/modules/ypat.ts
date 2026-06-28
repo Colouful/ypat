@@ -1,6 +1,7 @@
 import { get, post, put } from '../request'
 import type {
   ApiResult,
+  MessInfo,
   PageResult,
   YpatInfo,
   YpatListParams,
@@ -44,11 +45,11 @@ export function getMyPublishList(params: YpatMyListParams): Promise<ApiResult<Pa
   return get('/my/ypat/pub/list', { ...params })
 }
 
-export function getMySentList(params: YpatMyListParams): Promise<ApiResult<PageResult<YpatInfo>>> {
+export function getMySentList(params: YpatMyListParams): Promise<ApiResult<PageResult<MessInfo>>> {
   return get('/my/ypat/send/list', { ...params })
 }
 
-export function getMyReceivedList(params: YpatMyListParams): Promise<ApiResult<PageResult<YpatInfo>>> {
+export function getMyReceivedList(params: YpatMyListParams): Promise<ApiResult<PageResult<MessInfo>>> {
   return get('/my/ypat/rec/list', { ...params })
 }
 

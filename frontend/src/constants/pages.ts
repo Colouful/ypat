@@ -37,7 +37,6 @@ export const MINE = {
   TOPUP: '/pages/mine/topup',
   RECORDS: '/pages/mine/records',
   REALNAME: '/pages/mine/realname',
-  INVITE: '/pages/mine/invite',
   FEEDBACK: '/pages/mine/feedback',
   ABOUT: '/pages/mine/about',
 } as const;
@@ -88,7 +87,6 @@ export const PROTECTED_PAGES: string[] = [
   MINE.TOPUP,
   MINE.RECORDS,
   MINE.REALNAME,
-  MINE.INVITE,
   MINE.FEEDBACK,
   MESSAGE.INDEX,
   MESSAGE.CHAT,

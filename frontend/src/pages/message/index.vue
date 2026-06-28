@@ -31,16 +31,16 @@
         <KeepState v-else-if="items.length === 0" type="empty" title="暂无消息" description="去首页看看新的约拍机会。" button-text="去广场" @action="goHome" />
       <view v-else>
           <view v-for="item in items" :key="item.id" class="message-card" @tap="openDetail(item)">
-            <image class="message-card__avatar" :src="item.userQo?.imgpath || item.userQo?.avatarurl || '/static/default-avatar.png'" mode="aspectFill" />
+            <image class="message-card__avatar" :src="item.imgpath || '/static/default-avatar.png'" mode="aspectFill" />
             <view class="message-card__body">
               <view class="message-card__head">
-                <text class="message-card__name">{{ item.userQo?.nickname || '用户' }}</text>
+                <text class="message-card__name">{{ item.nickname || '用户' }}</text>
                 <text class="message-card__tag">{{ tab === 'received' ? '收到' : '申请' }}</text>
               </view>
-              <text class="message-card__content">{{ item.describ || '约拍动态' }}</text>
+              <text class="message-card__content">{{ item.content || '约拍动态' }}</text>
               <view class="message-card__meta">
                 <text>{{ item.city || '同城' }}</text>
-                <text>{{ item.timeStr || item.pubdate || '刚刚' }}</text>
+                <text>{{ item.timeStr || item.credate || '刚刚' }}</text>
               </view>
             </view>
             <KeepIcon name="chevron-right" :size="34" color="#B3B8BE" />
@@ -60,17 +60,19 @@ import { onPullDownRefresh, onReachBottom, onShow } from '@dcloudio/uni-app'
 import { useAppStore } from '@/stores/app'
 import { useUserStore } from '@/stores/user'
 import * as ypatApi from '@/api/modules/ypat'
+import * as messageApi from '@/api/modules/message'
 import KeepIcon from '@/components/business/KeepIcon.vue'
 import KeepState from '@/components/business/KeepState.vue'
 import KeepTabBar from '@/components/business/KeepTabBar.vue'
-import type { YpatInfo } from '@/api/types'
+import type { MessInfo } from '@/api/types'
+import { resolveMessageNavigation } from '@/utils/message-navigation'
 
 const appStore = useAppStore()
 const userStore = useUserStore()
 const statusBarHeight = computed(() => appStore.statusBarHeight)
 const tab = ref<'received' | 'sent'>('received')
 const loading = ref(false)
-const items = ref<YpatInfo[]>([])
+const items = ref<MessInfo[]>([])
 const page = ref(0)
 const hasMore = ref(true)
 
@@ -105,13 +107,18 @@ function switchTab(value: 'received' | 'sent'): void {
   load(true)
 }
 
-function openDetail(item: YpatInfo): void {
-  // 收到的约拍申请 → 消息详情(mess/get + 可解锁联系方式);我申请的 → 约拍详情。
-  // 列表项来自 /my/ypat/rec|send/list(消息记录),item.id 为消息id。
-  if (tab.value === 'received') {
-    uni.navigateTo({ url: `/pages-sub/content/message-detail?id=${item.id}` })
+async function openDetail(item: MessInfo): Promise<void> {
+  const userid = userStore.userInfo?.id
+  if (!userid) return
+  const result = await resolveMessageNavigation({
+    tab: tab.value,
+    item,
+    getMessageDetail: async (messageId) => (await messageApi.getMessageDetail(messageId, userid)).data,
+  })
+  if (result.type === 'navigate') {
+    uni.navigateTo({ url: result.url })
   } else {
-    uni.navigateTo({ url: `/pages-sub/ypat/detail?id=${item.id}` })
+    uni.showToast({ title: result.message, icon: 'none' })
   }
 }
 

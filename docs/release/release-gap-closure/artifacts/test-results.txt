@@ -1,0 +1,28 @@
+YPAT release-gap-closure test results
+
+Frontend install:
+- pnpm install --frozen-lockfile: exit 130, private registry nodejs.100credit.cn ECONNRESET, manually stopped.
+- pnpm install --frozen-lockfile --registry=https://registry.npmjs.org: first exit 1 because pnpm build scripts required approval.
+- pnpm approve-builds --all: exit 0, approved @parcel/watcher, core-js, esbuild, vue-demi.
+- pnpm install --frozen-lockfile --registry=https://registry.npmjs.org: exit 0.
+
+Frontend verification:
+- pnpm run type-check: exit 0.
+- pnpm run lint: exit 0.
+- pnpm run test: exit 0, 57 passed, 0 failed.
+- pnpm run build:h5: exit 0.
+- pnpm run build:mp-weixin: exit 0.
+- pnpm run check: exit 0.
+- pnpm run check (final after INVITE route removal): exit 0.
+
+Backend verification:
+- mvn test: exit 0, 14 passed, 0 failed, 0 skipped.
+
+Address scan:
+- 82.156.14.216 found in dist because frontend/.env.production still contains HTTP IP.
+- http:// found in dist for the same reason.
+- localhost scan produced no business endpoint hit.
+
+Final assessment:
+- CONDITIONALLY_READY.
+- READY is blocked by production HTTPS domain, TLS certificate, WeChat Mini Program domain configuration, and real-environment manual integration.

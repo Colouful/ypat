@@ -59,7 +59,21 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
                 .authorizeRequests()
                 .antMatchers(HttpMethod.OPTIONS).permitAll()
                 .antMatchers(HttpMethod.POST, "/user/login","/user/sms/code","/bd/login","/bd/code","/wxpay/notify","/wxpub/notify","/manage/**").permitAll()
-                .antMatchers(HttpMethod.GET,  "/**","/user/code", "/wxpay/notify","/wxpub/notify","/manage/**").permitAll()
+                .antMatchers(HttpMethod.GET,
+                        "/user/code",
+                        "/ypat/tc/list",
+                        "/ypat/zx/list",
+                        "/ypat/get",
+                        "/banner/list",
+                        "/article/list",
+                        "/article/get",
+                        "/area/list",
+                        "/tmplid/list",
+                        "/param/list",
+                        "/product/list",
+                        "/wxpay/notify",
+                        "/wxpub/notify",
+                        "/manage/**").permitAll()
                 .anyRequest().authenticated();
 
         http.headers().cacheControl();

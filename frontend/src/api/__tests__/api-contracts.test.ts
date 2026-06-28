@@ -12,6 +12,7 @@ import * as userApi from '../modules/user'
 import * as paymentApi from '../modules/payment'
 import * as contentApi from '../modules/content'
 import * as ypatApi from '../modules/ypat'
+import * as feedbackApi from '../modules/feedback'
 
 describe('API contracts', () => {
   beforeEach(() => {
@@ -79,5 +80,21 @@ describe('API contracts', () => {
     await ypatApi.addFavorite(1, 2)
     expect(requestMocks.put).toHaveBeenCalledWith('/ypat/yd/add', { ypatid: 5 })
     expect(requestMocks.put).toHaveBeenCalledWith('/my/ypat/sc/add', { userid: 1, ypatid: 2 })
+  })
+
+  it('message list endpoints return message entities', async () => {
+    const p = { userid: 7, page: 0, size: 20 }
+    await ypatApi.getMyReceivedList(p)
+    await ypatApi.getMySentList(p)
+    expect(requestMocks.get).toHaveBeenCalledWith('/my/ypat/rec/list', { ...p })
+    expect(requestMocks.get).toHaveBeenCalledWith('/my/ypat/send/list', { ...p })
+  })
+
+  it('feedback add uses typed form endpoint', async () => {
+    await feedbackApi.addFeedback({ content: '这里是一条有效反馈内容', contact: '13800138000' })
+    expect(requestMocks.post).toHaveBeenCalledWith('/feedback/add', {
+      content: '这里是一条有效反馈内容',
+      contact: '13800138000',
+    })
   })
 })

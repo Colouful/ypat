@@ -3,12 +3,12 @@
     <view v-if="loading && !items.length" class="state">加载中...</view>
     <view v-else-if="!items.length" class="state">暂无报名记录</view>
     <view v-else>
-      <view v-for="item in items" :key="item.id" class="card" @tap="openDetail(item.id)">
-        <image class="cover" :src="item.pics?.[0] || '/static/default-cover.png'" mode="aspectFill" />
+      <view v-for="item in items" :key="item.id" class="card" @tap="openDetail(item)">
+        <image class="cover" :src="item.imgpath || '/static/default-cover.png'" mode="aspectFill" />
         <view class="body">
-          <text class="title">{{ item.targetTxt || '约拍报名' }}</text>
-          <text class="desc">{{ item.describ }}</text>
-          <text class="meta">{{ item.city || '' }} {{ item.timeStr || formatTime(item.pubdate) }}</text>
+          <text class="title">{{ item.nickname || '约拍报名' }}</text>
+          <text class="desc">{{ item.content || '已提交报名申请' }}</text>
+          <text class="meta">{{ item.city || '' }} {{ item.timeStr || formatTime(item.credate) }}</text>
         </view>
       </view>
     </view>
@@ -22,10 +22,12 @@ import { ref } from 'vue'
 import { onPullDownRefresh, onReachBottom, onShow } from '@dcloudio/uni-app'
 import { useUserStore } from '@/stores/user'
 import * as ypatApi from '@/api/modules/ypat'
-import type { YpatInfo } from '@/api/types'
+import * as messageApi from '@/api/modules/message'
+import { resolveMessageNavigation } from '@/utils/message-navigation'
+import type { MessInfo } from '@/api/types'
 
 const userStore = useUserStore()
-const items = ref<YpatInfo[]>([])
+const items = ref<MessInfo[]>([])
 const loading = ref(false)
 const loadingMore = ref(false)
 const hasMore = ref(true)
@@ -64,7 +66,23 @@ function formatTime(value?: string): string {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
 }
 
-function openDetail(id: number): void { uni.navigateTo({ url: `/pages-sub/ypat/detail?id=${id}` }) }
+async function openDetail(item: MessInfo): Promise<void> {
+  const userid = userStore.userInfo?.id
+  if (!userid) {
+    uni.navigateTo({ url: '/pages/login/index' })
+    return
+  }
+  const result = await resolveMessageNavigation({
+    tab: 'sent',
+    item,
+    getMessageDetail: async (messageId) => {
+      const response = await messageApi.getMessageDetail(messageId, userid)
+      return response.data
+    },
+  })
+  if (result.type === 'navigate') uni.navigateTo({ url: result.url })
+  else uni.showToast({ title: result.message, icon: 'none' })
+}
 
 onShow(() => load(true))
 onPullDownRefresh(async () => { await load(true); uni.stopPullDownRefresh() })

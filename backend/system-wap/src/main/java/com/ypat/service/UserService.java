@@ -1,6 +1,8 @@
 package com.ypat.service;
 
 import com.ypat.UserQo;
+import com.ypat.ResponseCode;
+import com.ypat.SysException;
 import com.ypat.enums.UserOrigType;
 import com.ypat.model.SecurityUserDetails;
 import com.ypat.third.baidu.ai.GsonUtils;
@@ -217,12 +219,21 @@ public class UserService implements UserDetailsService {
     }
 
     public Map<String, String> getToken(UserQo userQo) {
+        return getToken(userQo, null);
+    }
+
+    public Map<String, String> getToken(UserQo userQo, String authenticatedUserId) {
+        if (StringUtils.isBlank(authenticatedUserId)) {
+            throw new SysException(ResponseCode.FAIL_AUTH);
+        }
         SecurityUserDetails userDetails = new SecurityUserDetails();
-        //查询数据库
-        String userJson = userServiceClient.findByMobile(userQo.getMobile());
+        String userJson = userServiceClient.get(Long.parseLong(authenticatedUserId));
         UserQo user = GsonUtils.fromJson(userJson, UserQo.class);
+        if (user == null || user.getId() == null) {
+            throw new SysException(ResponseCode.FAIL_AUTH);
+        }
         userDetails.setUserId(user.getId()+"");
-        userDetails.setUsername(user.getName());
+        userDetails.setUsername(StringUtils.defaultIfBlank(user.getName(), user.getMobile()));
         userDetails.setMobile(user.getMobile());
         final String token = jwtTokenUtil.generateToken(userDetails);
         Map<String, String> res = new HashMap();
