@@ -28,6 +28,10 @@ eureka:
   instance:
     preferIpAddress: true
 
+system:
+  third:
+    fdfs_path: ${YPAT_FDFS_PUBLIC_BASE_URL:http://localhost:8888}
+
 
 
 ##FeignClient超时设置
