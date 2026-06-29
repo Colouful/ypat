@@ -1,23 +1,28 @@
 <template>
   <view class="keep-tabbar">
-    <view
-      v-for="item in items"
-      :key="item.key"
-      class="keep-tabbar__item"
-      :class="{
-        'keep-tabbar__item--active': active === item.key,
-        'keep-tabbar__item--publish': item.key === 'publish',
-      }"
-      @tap="go(item)"
-    >
-      <view class="keep-tabbar__icon">
-        <KeepIcon
-          :name="item.icon"
-          :size="item.key === 'publish' ? 54 : 44"
-          :color="item.key === 'publish' ? '#FFFFFF' : active === item.key ? '#1A1D1F' : '#83888F'"
-        />
+    <view class="keep-tabbar__shell" />
+    <view class="keep-tabbar__notch" />
+    <view class="keep-tabbar__items">
+      <view
+        v-for="item in items"
+        :key="item.key"
+        class="keep-tabbar__item"
+        :class="{
+          'keep-tabbar__item--active': active === item.key,
+          'keep-tabbar__item--publish': item.key === 'publish',
+        }"
+        @tap="go(item)"
+      >
+        <view class="keep-tabbar__icon">
+          <KeepIcon
+            :name="item.icon"
+            :size="item.key === 'publish' ? 58 : 48"
+            color="#FFFFFF"
+          />
+        </view>
+        <text class="keep-tabbar__label">{{ item.label }}</text>
+        <view v-if="active === item.key && item.key !== 'publish'" class="keep-tabbar__dot" />
       </view>
-      <text class="keep-tabbar__label">{{ item.label }}</text>
     </view>
   </view>
 </template>
@@ -63,16 +68,45 @@ function go(item: TabItem): void {
   right: 0;
   bottom: 0;
   left: 0;
+  box-sizing: border-box;
+  height: calc(156rpx + env(safe-area-inset-bottom));
+  padding-bottom: env(safe-area-inset-bottom);
+  background: transparent;
+}
+
+.keep-tabbar__shell {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  height: calc(118rpx + env(safe-area-inset-bottom));
+  border-radius: 46rpx 46rpx 0 0;
+  background: #ff2d3d;
+  box-shadow: 0 -14rpx 34rpx rgba(255, 45, 61, 0.18);
+}
+
+.keep-tabbar__notch {
+  position: absolute;
+  z-index: 1;
+  top: 4rpx;
+  left: 50%;
+  width: 150rpx;
+  height: 150rpx;
+  border-radius: 50%;
+  background: #fff;
+  transform: translateX(-50%);
+}
+
+.keep-tabbar__items {
+  position: relative;
+  z-index: 2;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 78rpx;
+  gap: 102rpx;
   box-sizing: border-box;
-  min-height: calc(132rpx + env(safe-area-inset-bottom));
-  padding-top: 18rpx;
-  padding-bottom: env(safe-area-inset-bottom);
-  border-top: 1rpx solid $color-border;
-  background: rgba(255, 255, 255, 0.96);
+  height: 156rpx;
+  padding-top: 28rpx;
 }
 
 .keep-tabbar__item {
@@ -80,10 +114,10 @@ function go(item: TabItem): void {
   @include flex-column;
   align-items: center;
   justify-content: center;
-  width: 132rpx;
-  height: 104rpx;
-  color: $color-text-helper;
-  font-size: 24rpx;
+  width: 118rpx;
+  height: 92rpx;
+  color: #fff;
+  font-size: 0;
   font-weight: 800;
   line-height: 1.2;
 }
@@ -95,29 +129,44 @@ function go(item: TabItem): void {
 }
 
 .keep-tabbar__label {
-  margin-top: 6rpx;
+  width: 0;
+  height: 0;
+  overflow: hidden;
+  font-size: 0;
 }
 
 .keep-tabbar__item--active {
-  color: $color-text-primary;
+  color: #fff;
+}
+
+.keep-tabbar__dot {
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  width: 8rpx;
+  height: 8rpx;
+  border-radius: 50%;
+  background: #fff;
+  transform: translateX(-50%);
 }
 
 .keep-tabbar__item--publish {
-  transform: translateY(-24rpx);
+  width: 132rpx;
+  height: 132rpx;
+  transform: translateY(-44rpx);
   color: #fff;
 }
 
 .keep-tabbar__item--publish .keep-tabbar__icon {
-  width: 96rpx;
-  height: 96rpx;
+  width: 112rpx;
+  height: 112rpx;
   border: 8rpx solid #fff;
   border-radius: 50%;
-  background: $color-text-primary;
-  box-shadow: 0 14rpx 34rpx rgba(27, 30, 35, 0.18);
+  background: #ff2d3d;
+  box-shadow: 0 18rpx 36rpx rgba(255, 45, 61, 0.28);
 }
 
 .keep-tabbar__item--publish .keep-tabbar__label {
-  margin-top: 8rpx;
-  color: $color-text-primary;
+  display: none;
 }
 </style>

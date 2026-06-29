@@ -10,6 +10,17 @@ describe('mp-weixin component styles', () => {
     expect(source).not.toMatch(/\.keep-tabbar__[^{]+\s+(text|view|image|button|navigator)\b/)
   })
 
+  it('uses the food-app style floating publish tabbar shell', () => {
+    const file = fileURLToPath(new URL('../KeepTabBar.vue', import.meta.url))
+    const source = readFileSync(file, 'utf8')
+
+    expect(source).toContain('keep-tabbar__shell')
+    expect(source).toContain('keep-tabbar__notch')
+    expect(source).toContain('keep-tabbar__item--publish')
+    expect(source).toContain('background: #ff2d3d')
+    expect(source).toContain('font-size: 0')
+  })
+
   it('keeps publish submit button themed in disabled state', () => {
     const file = fileURLToPath(new URL('../YpatPublishForm.vue', import.meta.url))
     const source = readFileSync(file, 'utf8')
