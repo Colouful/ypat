@@ -19,7 +19,10 @@ describe('mp-weixin component styles', () => {
     expect(source).toContain('keep-tabbar__item--publish')
     expect(source).toContain('background: $color-primary')
     expect(source).not.toContain('#ff2d3d')
-    expect(source).toContain('font-size: 0')
+    expect(source).toContain('bottom: 8rpx')
+    expect(source).toContain('right: 20rpx')
+    expect(source).toContain('font-size: 22rpx')
+    expect(source).not.toContain('height: calc(156rpx + env(safe-area-inset-bottom))')
   })
 
   it('keeps publish submit button themed in disabled state', () => {

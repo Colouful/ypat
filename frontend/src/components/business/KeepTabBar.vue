@@ -69,31 +69,31 @@ function go(item: TabItem): void {
   bottom: 0;
   left: 0;
   box-sizing: border-box;
-  height: calc(156rpx + env(safe-area-inset-bottom));
-  padding-bottom: env(safe-area-inset-bottom);
+  height: 140rpx;
   background: transparent;
 }
 
 .keep-tabbar__shell {
   position: absolute;
-  right: 0;
-  bottom: 0;
-  left: 0;
-  height: calc(118rpx + env(safe-area-inset-bottom));
-  border-radius: 46rpx 46rpx 0 0;
+  right: 20rpx;
+  bottom: 8rpx;
+  left: 20rpx;
+  height: 108rpx;
+  border-radius: 54rpx;
   background: $color-primary;
-  box-shadow: 0 -14rpx 34rpx rgba(35, 194, 104, 0.18);
+  box-shadow: 0 20rpx 42rpx rgba(20, 24, 31, 0.22);
 }
 
 .keep-tabbar__notch {
   position: absolute;
   z-index: 1;
-  top: 4rpx;
+  top: -4rpx;
   left: 50%;
-  width: 150rpx;
-  height: 150rpx;
+  width: 146rpx;
+  height: 146rpx;
   border-radius: 50%;
   background: #fff;
+  box-shadow: 0 8rpx 26rpx rgba(35, 194, 104, 0.18);
   transform: translateX(-50%);
 }
 
@@ -103,10 +103,10 @@ function go(item: TabItem): void {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 102rpx;
+  gap: 116rpx;
   box-sizing: border-box;
-  height: 156rpx;
-  padding-top: 28rpx;
+  height: 140rpx;
+  padding-top: 38rpx;
 }
 
 .keep-tabbar__item {
@@ -115,9 +115,9 @@ function go(item: TabItem): void {
   align-items: center;
   justify-content: center;
   width: 118rpx;
-  height: 92rpx;
+  height: 86rpx;
   color: #fff;
-  font-size: 0;
+  font-size: 22rpx;
   font-weight: 800;
   line-height: 1.2;
 }
@@ -129,10 +129,12 @@ function go(item: TabItem): void {
 }
 
 .keep-tabbar__label {
-  width: 0;
-  height: 0;
-  overflow: hidden;
-  font-size: 0;
+  display: block;
+  margin-top: 6rpx;
+  color: #fff;
+  font-size: 22rpx;
+  font-weight: 800;
+  line-height: 1;
 }
 
 .keep-tabbar__item--active {
@@ -141,7 +143,7 @@ function go(item: TabItem): void {
 
 .keep-tabbar__dot {
   position: absolute;
-  bottom: 0;
+  bottom: -8rpx;
   left: 50%;
   width: 8rpx;
   height: 8rpx;
@@ -151,19 +153,19 @@ function go(item: TabItem): void {
 }
 
 .keep-tabbar__item--publish {
-  width: 132rpx;
-  height: 132rpx;
-  transform: translateY(-44rpx);
+  width: 126rpx;
+  height: 126rpx;
+  transform: translateY(-48rpx);
   color: #fff;
 }
 
 .keep-tabbar__item--publish .keep-tabbar__icon {
-  width: 112rpx;
-  height: 112rpx;
-  border: 8rpx solid #fff;
+  width: 100rpx;
+  height: 100rpx;
+  border: 10rpx solid #fff;
   border-radius: 50%;
   background: $color-primary;
-  box-shadow: 0 18rpx 36rpx rgba(35, 194, 104, 0.28);
+  box-shadow: 0 14rpx 28rpx rgba(35, 194, 104, 0.24);
 }
 
 .keep-tabbar__item--publish .keep-tabbar__label {
