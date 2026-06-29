@@ -54,17 +54,15 @@ const tabbarFill = '#23C268'
 
 const tabbarBgSvg = computed(() => {
   const path = [
-    'M20,54',
-    'Q20,14 60,14',
+    'M0,54',
+    'Q0,14 40,14',
     'H270',
     'C315,14 312,92 375,92',
     'C438,92 435,14 480,14',
-    'H690',
-    'Q730,14 730,54',
-    'V158',
-    'Q730,178 710,178',
-    'H40',
-    'Q20,178 20,158',
+    'H710',
+    'Q750,14 750,54',
+    'V190',
+    'H0',
     'Z',
   ].join(' ')
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="750" height="190" viewBox="0 0 750 190"><path d="${path}" fill="${tabbarFill}"/></svg>`
@@ -91,8 +89,7 @@ function go(item: TabItem): void {
   bottom: 0;
   left: 0;
   box-sizing: border-box;
-  height: calc(150rpx + env(safe-area-inset-bottom));
-  padding-bottom: env(safe-area-inset-bottom);
+  height: 132rpx;
   background: transparent;
 }
 
@@ -100,7 +97,7 @@ function go(item: TabItem): void {
   position: absolute;
   z-index: 1;
   right: 0;
-  bottom: 12rpx;
+  bottom: 0;
   left: 0;
   width: 100%;
   pointer-events: none;
@@ -115,9 +112,9 @@ function go(item: TabItem): void {
   justify-content: center;
   gap: 128rpx;
   box-sizing: border-box;
-  height: 150rpx;
-  padding-top: 42rpx;
-  padding-bottom: 10rpx;
+  height: 132rpx;
+  padding-top: 34rpx;
+  padding-bottom: 2rpx;
 }
 
 .keep-tabbar__item {
