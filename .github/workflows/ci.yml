@@ -108,8 +108,8 @@ jobs:
     runs-on: ubuntu-latest
     env:
       VITE_APP_ENV: production
-      VITE_API_BASE_URL: ${{ env.CI_PRODUCTION_API_URL }}
-      VITE_IMAGE_BASE_URL: ${{ env.CI_PRODUCTION_FILES_URL }}
+      VITE_API_BASE_URL: https://api.production-ci.example.invalid
+      VITE_IMAGE_BASE_URL: https://files.production-ci.example.invalid
     defaults:
       run:
         working-directory: frontend
