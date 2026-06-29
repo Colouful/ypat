@@ -1,7 +1,6 @@
 <template>
   <view class="keep-tabbar">
-    <view class="keep-tabbar__shell" />
-    <view class="keep-tabbar__notch" />
+    <image class="keep-tabbar__bg" :src="tabbarBgSvg" mode="widthFix" />
     <view class="keep-tabbar__items">
       <view
         v-for="item in items"
@@ -28,6 +27,7 @@
 </template>
 
 <script setup lang="ts">
+import { computed } from 'vue'
 import KeepIcon from './KeepIcon.vue'
 import { goRootTab, openPublish, type RootTabUrl } from '@/utils/tab-navigation'
 
@@ -50,6 +50,28 @@ const items: TabItem[] = [
   { key: 'mine', label: '我的', icon: 'user', url: '/pages/mine/index' },
 ]
 
+const tabbarFill = '#23C268'
+
+const tabbarBgSvg = computed(() => {
+  const path = [
+    'M20,54',
+    'Q20,14 60,14',
+    'H270',
+    'C315,14 312,92 375,92',
+    'C438,92 435,14 480,14',
+    'H690',
+    'Q730,14 730,54',
+    'V158',
+    'Q730,178 710,178',
+    'H40',
+    'Q20,178 20,158',
+    'Z',
+  ].join(' ')
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="750" height="190" viewBox="0 0 750 190"><path d="${path}" fill="${tabbarFill}"/></svg>`
+
+  return `data:image/svg+xml,${encodeURIComponent(svg)}`
+})
+
 function go(item: TabItem): void {
   if (item.key === 'publish') {
     openPublish()
@@ -69,32 +91,20 @@ function go(item: TabItem): void {
   bottom: 0;
   left: 0;
   box-sizing: border-box;
-  height: 140rpx;
+  height: calc(150rpx + env(safe-area-inset-bottom));
+  padding-bottom: env(safe-area-inset-bottom);
   background: transparent;
 }
 
-.keep-tabbar__shell {
-  position: absolute;
-  right: 20rpx;
-  bottom: 8rpx;
-  left: 20rpx;
-  height: 108rpx;
-  border-radius: 54rpx;
-  background: $color-primary;
-  box-shadow: 0 20rpx 42rpx rgba(20, 24, 31, 0.22);
-}
-
-.keep-tabbar__notch {
+.keep-tabbar__bg {
   position: absolute;
   z-index: 1;
-  top: -4rpx;
-  left: 50%;
-  width: 146rpx;
-  height: 146rpx;
-  border-radius: 50%;
-  background: #fff;
-  box-shadow: 0 8rpx 26rpx rgba(35, 194, 104, 0.18);
-  transform: translateX(-50%);
+  right: 0;
+  bottom: 12rpx;
+  left: 0;
+  width: 100%;
+  pointer-events: none;
+  filter: drop-shadow(0 18rpx 34rpx rgba(20, 24, 31, 0.22));
 }
 
 .keep-tabbar__items {
@@ -103,10 +113,11 @@ function go(item: TabItem): void {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 116rpx;
+  gap: 128rpx;
   box-sizing: border-box;
-  height: 140rpx;
-  padding-top: 38rpx;
+  height: 150rpx;
+  padding-top: 42rpx;
+  padding-bottom: 10rpx;
 }
 
 .keep-tabbar__item {
@@ -143,7 +154,7 @@ function go(item: TabItem): void {
 
 .keep-tabbar__dot {
   position: absolute;
-  bottom: -8rpx;
+  bottom: -4rpx;
   left: 50%;
   width: 8rpx;
   height: 8rpx;
@@ -155,7 +166,7 @@ function go(item: TabItem): void {
 .keep-tabbar__item--publish {
   width: 126rpx;
   height: 126rpx;
-  transform: translateY(-48rpx);
+  transform: translateY(-50rpx);
   color: #fff;
 }
 

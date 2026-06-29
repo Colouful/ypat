@@ -10,17 +10,20 @@ describe('mp-weixin component styles', () => {
     expect(source).not.toMatch(/\.keep-tabbar__[^{]+\s+(text|view|image|button|navigator)\b/)
   })
 
-  it('uses the reference floating publish tabbar shell with project theme color', () => {
+  it('uses an svg notched tabbar background with project theme color', () => {
     const file = fileURLToPath(new URL('../KeepTabBar.vue', import.meta.url))
     const source = readFileSync(file, 'utf8')
 
-    expect(source).toContain('keep-tabbar__shell')
-    expect(source).toContain('keep-tabbar__notch')
+    expect(source).toContain('keep-tabbar__bg')
+    expect(source).toContain('tabbarBgSvg')
+    expect(source).toContain('data:image/svg+xml')
+    expect(source).toContain("fill=\"${tabbarFill}\"")
     expect(source).toContain('keep-tabbar__item--publish')
     expect(source).toContain('background: $color-primary')
+    expect(source).not.toContain('keep-tabbar__notch')
     expect(source).not.toContain('#ff2d3d')
-    expect(source).toContain('bottom: 8rpx')
-    expect(source).toContain('right: 20rpx')
+    expect(source).toContain('bottom: 12rpx')
+    expect(source).toContain('height: calc(150rpx + env(safe-area-inset-bottom))')
     expect(source).toContain('font-size: 22rpx')
     expect(source).not.toContain('height: calc(156rpx + env(safe-area-inset-bottom))')
   })
