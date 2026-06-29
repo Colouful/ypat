@@ -81,8 +81,8 @@ function go(item: TabItem): void {
   left: 0;
   height: calc(118rpx + env(safe-area-inset-bottom));
   border-radius: 46rpx 46rpx 0 0;
-  background: #ff2d3d;
-  box-shadow: 0 -14rpx 34rpx rgba(255, 45, 61, 0.18);
+  background: $color-primary;
+  box-shadow: 0 -14rpx 34rpx rgba(35, 194, 104, 0.18);
 }
 
 .keep-tabbar__notch {
@@ -162,8 +162,8 @@ function go(item: TabItem): void {
   height: 112rpx;
   border: 8rpx solid #fff;
   border-radius: 50%;
-  background: #ff2d3d;
-  box-shadow: 0 18rpx 36rpx rgba(255, 45, 61, 0.28);
+  background: $color-primary;
+  box-shadow: 0 18rpx 36rpx rgba(35, 194, 104, 0.28);
 }
 
 .keep-tabbar__item--publish .keep-tabbar__label {
