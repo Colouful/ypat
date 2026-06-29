@@ -1,92 +1,172 @@
-# STAGING 回滚指南
+# 预发环境回滚指南
 
-## 回滚场景
+> 文档日期：2026-06-29 · 基线 SHA：b4af32a · 负责人：devops
+> 入口脚本：[`scripts/deploy/rollback-staging.sh`](../../scripts/deploy/rollback-staging.sh)
+> 部署入口：[`scripts/deploy/deploy-staging.sh`](../../scripts/deploy/deploy-staging.sh) · 详见 [`STAGING_DEPLOYMENT.md`](STAGING_DEPLOYMENT.md)
 
-- 新部署导致服务异常
-- 数据库迁移失败
-- 前端部署错误
-- 配置文件错误
+## 1. 范围声明（必读）
 
-## 回滚流程
+本指南**只覆盖**：
 
-### 1. 前端回滚
+- ✅ 前端 H5 静态产物
+- ✅ 后端 Docker 镜像
+- ✅ 主机 Nginx 配置
+
+本指南**不覆盖**：
+
+- ❌ **数据库 schema / 数据变更** —— 永远不通过此脚本回滚
+- ❌ 密钥 / 环境变量轮换 —— 见 [`SECRET_MANAGEMENT.md`](SECRET_MANAGEMENT.md)
+- ❌ 微信支付 / OCR / 短信平台配置 —— 这些由对应平台后台处理
+
+> **数据库回滚必须独立执行**：见 [`DATABASE_MIGRATION.md`](DATABASE_MIGRATION.md) §"回滚"，并经过 DBA 评估后才能恢复数据。
+
+## 2. 触发条件
+
+满足任一条件进入回滚流程：
+
+- 健康检查连续 3 次失败
+- 错误率 > 1% 持续 5 分钟
+- 关键业务接口 5xx
+- 前端 404 / 白屏率异常
+- 主机 Nginx `nginx -t` 失败
+
+## 3. 回滚准备
 
 ```bash
-# 查看可用备份
-ls -la /opt/ypat-data/backups/ | grep frontend
+# 1) 查看最近 5 个发布版本
+ls -1t /opt/ypat/releases/ | head -5
 
-# 回滚到指定版本
-BACKUP_DIR=/opt/ypat-data/backups/frontend_20250629_120000
-rm -rf /var/www/panghu.work
-mkdir -p /var/www/panghu.work
-cp -r ${BACKUP_DIR}/* /var/www/panghu.work/
+# 2) 查看每个版本的部署信息（git SHA、时间、上一版本）
+for d in $(ls -1t /opt/ypat/releases/ | head -5); do
+  echo "==== $d ===="
+  cat /opt/ypat/releases/$d/deployment-info.txt
+done
+
+# 3) 当前运行版本
+readlink /opt/ypat/current
+readlink /opt/ypat/previous
+
+# 4) 数据库 / 文件备份目录
+ls -lt /opt/ypat-data/backups/mysql/ | head -5
+ls -lt /opt/ypat-data/backups/frontend/ | head -5
 ```
 
-### 2. 后端镜像回滚
+## 4. 回滚流程
+
+### 4.1 一键回滚（推荐）
 
 ```bash
-# 查看可用镜像版本
+# 回滚到指定版本（时间戳 YYYYMMDD_HHMMSS）
+./scripts/deploy/rollback-staging.sh 20250629_120000
+```
+
+脚本行为：
+
+1. 校验 `releases/<version>` 目录存在；打印 `deployment-info.txt`。
+2. 交互式确认（输入 `yes`）。
+3. **回滚前端**：从 `releases/<version>/frontend` 恢复到 `/var/www/<staging-domain>`。
+4. **回滚后端镜像**：`docker compose down && up -d`（使用 compose 当前 pin 镜像）。
+
+> 脚本不会修改数据库；DB schema / 数据完全独立。
+
+### 4.2 分项回滚（排障）
+
+#### 4.2.1 仅前端
+
+```bash
+BACKUP=/opt/ypat-data/backups/frontend/<timestamp>
+rm -rf /var/www/<staging-domain>
+mkdir -p /var/www/<staging-domain>
+cp -r ${BACKUP}/* /var/www/<staging-domain>/
+nginx -s reload
+```
+
+#### 4.2.2 仅后端镜像
+
+```bash
+# 1) 找到上一个稳定版本的镜像 tag（在 deployment-info.txt 或镜像仓库）
 docker images | grep ypat
 
-# 停止当前服务
-docker compose -f docker-compose.staging.yml down
-
-# 修改 docker-compose.staging.yml 指定旧版本镜像
-# 然后启动
+# 2) 修改 docker-compose.staging.yml 的 image: <prev-tag>
+# 3) 重建并重启
 docker compose -f docker-compose.staging.yml up -d
 ```
 
-### 3. 数据库回滚
+#### 4.2.3 仅主机 Nginx
 
 ```bash
-# 查看备份
-ls -la /opt/ypat-data/backups/mysql/
+# 查看历史配置
+ls -lt /etc/nginx/conf.d/<staging-domain>.conf.bak.* | head -5
 
-# 恢复备份
-BACKUP_FILE=/opt/ypat-data/backups/mysql/ypat_20250629_120000.sql.gz
-gunzip -c ${BACKUP_FILE} | docker exec -i ypat-mysql mysql -u root -p'$MYSQL_PASSWORD' ypat
-```
-
-### 4. Nginx 配置回滚
-
-```bash
-# 查看备份
-ls -la /etc/nginx/conf.d/panghu.work.conf.bak.*
-
-# 恢复备份
-cp /etc/nginx/conf.d/panghu.work.conf.bak.20250629_120000 /etc/nginx/conf.d/panghu.work.conf
+# 恢复并校验
+cp /etc/nginx/conf.d/<staging-domain>.conf.bak.<timestamp> \
+   /etc/nginx/conf.d/<staging-domain>.conf
 nginx -t
 systemctl reload nginx
 ```
 
-### 5. 使用回滚脚本
+## 5. 数据库回滚（独立流程）
 
-```bash
-./scripts/deploy/rollback-staging.sh 20250629_120000
+> ⚠️ **不在 `rollback-staging.sh` 范围内**。数据库回滚由 DBA 主导。
+
+```text
+1. 业务方确认影响范围（受影响表 / 时间窗口）。
+2. 在维护窗口内执行：
+   - 备份当前数据库：
+       docker exec ypat-mysql mysqldump -uroot -p"$YPAT_LOCAL_MYSQL_ROOT_PASSWORD" \
+         --single-transaction --routines --triggers ypat \
+         | gzip > /opt/ypat-data/backups/mysql/pre_rollback_$(date +%s).sql.gz
+   - 评估 PITR（Point-In-Time Recovery） vs 全量恢复。
+   - 若仅 schema 变更：执行 [`DATABASE_MIGRATION.md`](DATABASE_MIGRATION.md) 中的逆向 SQL。
+3. 恢复后执行 [`db-verify.sh`](../../scripts/deploy/db-verify.sh)。
+4. 通知业务方验证。
 ```
 
-## 回滚检查清单
+## 6. 回滚后验证
 
-- [ ] 前端版本已回滚
-- [ ] 后端服务已重启
-- [ ] 数据库已恢复
-- [ ] Nginx 配置已恢复
-- [ ] 端到端验证通过
-- [ ] 监控指标正常
+```bash
+# 前端
+curl -sI https://<staging-domain>/
 
-## 数据库回滚注意事项
+# API
+curl -sf https://<staging-domain>/api/banner/list | head -c 200
 
-⚠️ **警告**: 数据库回滚可能导致数据丢失
+# 后台
+curl -sI https://<staging-domain>/admin/
 
-- 回滚前必须备份当前数据库
-- 确认回滚时间点和影响范围
-- 通知相关人员
-- 回滚后执行数据验证
+# 文件
+curl -sI https://<staging-domain>/files/
 
-## 联系信息
+# 容器
+docker compose -f docker-compose.staging.yml ps
 
-| 角色 | 联系人 | 联系方式 |
-| --- | --- | --- |
-| 运维负责人 | TODO | TODO |
-| 开发负责人 | TODO | TODO |
-| 数据库管理员 | TODO | TODO |
+# Nginx
+nginx -t && systemctl status nginx
+```
+
+## 7. 回滚检查清单
+
+- [ ] 已确认触发条件（非误报）
+- [ ] 已通知业务方 / 值班
+- [ ] 已记录目标版本 git SHA
+- [ ] 已备份当前数据库（即便不回滚 DB）
+- [ ] 已执行 `rollback-staging.sh <version>` 或分项回滚
+- [ ] 已逐项验证（前端 / API / admin / files / 容器）
+- [ ] 已写入事故时间线（见 [`INCIDENT_RESPONSE.md`](INCIDENT_RESPONSE.md)）
+- [ ] 已通知业务方恢复完成
+
+## 8. 失败兜底
+
+若 `rollback-staging.sh` 自身失败：
+
+1. 立即停止后续操作。
+2. 在值班群同步进展。
+3. 按 [`INCIDENT_RESPONSE.md`](INCIDENT_RESPONSE.md) 升级处理。
+
+## 9. 相关文档
+
+- 预发部署：[`STAGING_DEPLOYMENT.md`](STAGING_DEPLOYMENT.md)
+- 数据库迁移：[`DATABASE_MIGRATION.md`](DATABASE_MIGRATION.md)
+- 备份恢复：[`BACKUP_AND_RECOVERY.md`](BACKUP_AND_RECOVERY.md)
+- 事故响应：[`INCIDENT_RESPONSE.md`](INCIDENT_RESPONSE.md)
+- 环境隔离：[`ENVIRONMENT_ISOLATION.md`](ENVIRONMENT_ISOLATION.md)

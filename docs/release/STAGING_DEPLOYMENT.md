@@ -1,22 +1,30 @@
-# STAGING 部署指南
+# 预发环境部署指南
 
-## 环境定义
+> 文档日期：2026-06-29 · 基线 SHA：b4af32a · 负责人：devops
+> 入口脚本：[`scripts/deploy/deploy-staging.sh`](../../scripts/deploy/deploy-staging.sh)
+> 前置检查：[`scripts/deploy/preflight.sh`](../../scripts/deploy/preflight.sh) · [`scripts/deploy/db-preflight.sh`](../../scripts/deploy/db-preflight.sh) · [`scripts/deploy/check-tls-expiry.sh`](../../scripts/deploy/check-tls-expiry.sh)
+> Nginx 配置：[`scripts/deploy/install-nginx-config.sh`](../../scripts/deploy/install-nginx-config.sh)
+> 数据库迁移：[`scripts/deploy/db-migrate-staging.sh`](../../scripts/deploy/db-migrate-staging.sh)
+> FastDFS 数据迁移：[`scripts/deploy/migrate-fastdfs-data.sh`](../../scripts/deploy/migrate-fastdfs-data.sh)
 
-- **域名**: panghu.work
-- **服务器**: 82.156.14.216
-- **角色**: 预发环境
-- **操作系统**: OpenCloudOS
+## 1. 当前预发环境
 
-## 部署架构
+- **域名**：`staging.example.invalid`（文档示例，真实值见运维记录，**禁止**将 `panghu.work` 复用为其他环境）
+- **公网入口**：主机 Nginx 80 / 443（TLS 终止）
+- **角色**：所有对外可见的服务在 staging 上**唯一存在**一份；与 production 物理隔离
+
+> ⚠️ 文档中出现的 `panghu.work` 仅为历史占位示例，**禁止**作为 production 地址。
+
+## 2. 部署架构
 
 ```
 公网 80/443
   ↓
 主机 Nginx (systemctl)
   ├─ TLS 终止
-  ├─ 静态文件 (/var/www/panghu.work)
+  ├─ 静态文件 (/var/www/<staging-domain>)
   └─ 反代
-      ├─ /api/ → 127.0.0.1:8081 (wap)
+      ├─ /api/   → 127.0.0.1:8081 (wap)
       ├─ /admin/ → 127.0.0.1:8082 (system-web)
       └─ /files/ → 127.0.0.1:8888 (fastdfs-storage)
 
@@ -27,197 +35,139 @@ Docker 网络: ypat_ypat-net
   ├─ restapi:9081
   ├─ wap:8081
   ├─ system-web:8082
-  └─ fastdfs-tracker:22122
-      fastdfs-storage:8080
+  └─ fastdfs-tracker:22122 / fastdfs-storage:8080
 ```
 
-## 部署前检查
+## 3. 部署前置检查
 
-### 1. 运行预检脚本
+依次执行：
 
 ```bash
+# 1) 部署预检：分支、工作区、关键文件
 ./scripts/deploy/preflight.sh
+
+# 2) 数据库预检：连通性、表数量、备份目录
+./scripts/deploy/db-preflight.sh
+
+# 3) TLS 证书有效期
+./scripts/deploy/check-tls-expiry.sh /etc/nginx/ssl/<staging-domain>/<staging-domain>.crt 30
+
+# 4) 当前健康状态
+curl -sI https://<staging-domain>/ | head -3
 ```
 
-### 2. 检查环境变量
+任意一步失败 → **立即停止**，回看 [`STAGING_ROLLBACK.md`](STAGING_ROLLBACK.md)。
+
+## 4. 部署流程
+
+### 4.1 一键入口
 
 ```bash
-# 服务器 .env 文件权限
-stat -c '%a %U %G %n' /opt/ypat/.env
-# 应该显示: 600 root root
+# 登录预发服务器
+ssh deploy@<staging-host>
+
+# 拉取代码
+cd /opt/ypat && git fetch && git checkout <commit-sha>
+
+# 部署（脚本内置：构建前端 + 后端 + 镜像 + 切符号链接）
+./scripts/deploy/deploy-staging.sh
 ```
 
-### 3. 备份当前状态
+脚本内部步骤概要（详见 [`deploy-staging.sh`](../../scripts/deploy/deploy-staging.sh)）：
+
+1. 记录当前版本，写入 `releases/<timestamp>/deployment-info.txt`。
+2. `pnpm install --frozen-lockfile && pnpm run build:h5:staging`。
+3. 备份并复制新前端到 `releases/<timestamp>/frontend`。
+4. `mvn -Ppre clean package -DskipTests=false` 构建后端。
+5. 原子切换 `current` 符号链接；`previous` 指向上一个版本。
+6. `docker compose -f docker-compose.staging.yml config` 校验。
+7. `docker compose ... build && up -d`。
+8. 输出 release 路径与 git SHA，便于回滚。
+
+### 4.2 手工步骤（仅排障时使用）
 
 ```bash
-# 备份数据库
-docker exec ypat-mysql mysqldump -u root -p'$MYSQL_PASSWORD' ypat | gzip > /opt/ypat-data/backups/mysql/backup_$(date +%Y%m%d_%H%M%S).sql.gz
-
-# 备份前端
-cp -r /var/www/panghu.work /opt/ypat-data/backups/frontend_$(date +%Y%m%d_%H%M%S)
-```
-
-## 部署流程
-
-### 1. 构建前端
-
-```bash
+# 前端构建
 cd frontend
 pnpm install --frozen-lockfile
 pnpm run build:h5:staging
-```
 
-### 2. 构建后端
-
-```bash
-cd backend
+# 后端构建（pre profile）
+cd ../backend
 mvn clean package -Ppre -DskipTests=false
-```
 
-### 3. 部署前端
+# 部署前端
+mkdir -p /var/www/<staging-domain>
+cp -r ../frontend/dist/build/h5/* /var/www/<staging-domain>/
 
-```bash
-# 备份当前前端
-mv /var/www/panghu.work /opt/ypat-data/backups/frontend_$(date +%Y%m%d_%H%M%S)
+# 数据库迁移（默认 --dry-run）
+./scripts/deploy/db-migrate-staging.sh --dry-run
+./scripts/deploy/db-migrate-staging.sh --execute    # 真正执行
 
-# 部署新前端
-mkdir -p /var/www/panghu.work
-cp -r dist/build/h5/* /var/www/panghu.work/
-```
+# 主机 Nginx 配置
+./scripts/deploy/install-nginx-config.sh
+nginx -t && systemctl reload nginx
 
-### 4. 构建 Docker 镜像
-
-```bash
-cd /opt/ypat
+# Docker
 docker compose -f docker-compose.staging.yml build
-```
-
-### 5. 启动服务
-
-```bash
 docker compose -f docker-compose.staging.yml up -d
 docker compose -f backend/dev/fastdfs/docker-compose.staging.yml up -d
 ```
 
-### 6. 安装 Nginx 配置
+## 5. 部署后验证
 
 ```bash
-./scripts/deploy/install-nginx-config.sh
+# H5 入口
+curl -sI https://<staging-domain>/
+
+# API 健康
+curl -sf https://<staging-domain>/api/banner/list | head -c 200
+
+# 后台入口
+curl -sI https://<staging-domain>/admin/
+
+# 文件访问
+curl -sI https://<staging-domain>/files/
+
+# Eureka 注册
+ssh -L 8761:127.0.0.1:8761 deploy@<staging-host>
+# 浏览器访问 http://127.0.0.1:8761
+
+# HSTS / TLS
+curl -sI https://<staging-domain>/ | grep -i 'strict-transport-security'
+openssl s_client -connect <staging-domain>:443 -servername <staging-domain> < /dev/null 2>/dev/null \
+  | openssl x509 -noout -dates
 ```
 
-### 7. 验证部署
+## 6. 数据库迁移注意事项
 
-```bash
-# 检查服务健康
-curl -I https://panghu.work/
-curl -I https://panghu.work/api/banner/list
-curl -I https://panghu.work/admin/
+- 默认 [`db-migrate-staging.sh`](../../scripts/deploy/db-migrate-staging.sh) 以 `--dry-run` 模式运行，仅打印待执行 SQL；**必须显式 `--execute` 才落库**。
+- 执行前必须完成 [`db-preflight.sh`](../../scripts/deploy/db-preflight.sh) + 最近一次全库备份（`/opt/ypat-data/backups/mysql/`）。
+- 表结构变更必须遵循 [`DATABASE_MIGRATION.md`](DATABASE_MIGRATION.md) 的 SHA256 + schema_migration 规范。
 
-# 检查响应头
-curl -I https://panghu.work/ | grep -i "strict-transport-security"
-```
+## 7. 密钥 / 环境变量注入
 
-## 域名配置
+- 所有 `YPAT_*` 密钥通过部署平台的密钥管理系统注入到 `/opt/ypat/.env`（`chmod 600 root:root`），**禁止**写进 docker-compose 或镜像层。
+- 密钥清单与轮换要求见 [`SECRET_MANAGEMENT.md`](SECRET_MANAGEMENT.md)。
 
-### panghu.work
+## 8. 失败判定与回滚
 
-```nginx
-server {
-    listen 80;
-    server_name panghu.work www.panghu.work;
-    return 301 https://panghu.work$request_uri;
-}
+触发下列任意一条必须立即停止部署并进入 [`STAGING_ROLLBACK.md`](STAGING_ROLLBACK.md)：
 
-server {
-    listen 443 ssl;
-    server_name panghu.work;
-    ssl_certificate /etc/nginx/ssl/panghu.work/panghu.work_bundle.crt;
-    ssl_certificate_key /etc/nginx/ssl/panghu.work/panghu.work.key;
-    # ...
-}
-```
+- 5xx 比例上升 > 1%
+- 健康检查失败
+- TLS 握手失败
+- 数据库迁移报错
+- 前端关键路径（首页 / API / admin / files）不可达
 
-### www.panghu.work
+## 9. 相关文档
 
-www.panghu.work 自动 301 重定向到 panghu.work。
-
-## 端口分配
-
-| 服务 | 监听地址 | 公网暴露 |
-| --- | --- | --- |
-| 主机 Nginx (HTTP) | 0.0.0.0:80 | ✓ |
-| 主机 Nginx (HTTPS) | 0.0.0.0:443 | ✓ |
-| MySQL | 127.0.0.1:3306 | ✗ |
-| Redis | 127.0.0.1:6379 | ✗ |
-| Eureka | 127.0.0.1:8761 | ✗ |
-| REST API | 不映射 | ✗ |
-| WAP | 127.0.0.1:8081 | ✗ |
-| System Web | 127.0.0.1:8082 | ✗ |
-| FastDFS Tracker | 容器内 22122 | ✗ |
-| FastDFS Storage | 容器内 23000 | ✗ |
-| FastDFS HTTP | 127.0.0.1:8888 | ✗ |
-
-## 运维访问
-
-### Eureka 控制台
-
-Eureka 不对公网开放，需通过 SSH 隧道：
-
-```bash
-ssh -L 8761:127.0.0.1:8761 root@82.156.14.216
-# 浏览器访问: http://127.0.0.1:8761
-```
-
-### 数据库
-
-```bash
-ssh -L 3306:127.0.0.1:3306 root@82.156.14.216
-mysql -h 127.0.0.1 -u root -p
-```
-
-### Redis
-
-```bash
-ssh -L 6379:127.0.0.1:6379 root@82.156.14.216
-redis-cli -h 127.0.0.1 -a "$YPAT_LOCAL_REDIS_PASSWORD"
-```
-
-## 故障排查
-
-### 服务无法启动
-
-```bash
-# 查看容器日志
-docker logs ypat-wap
-docker logs ypat-mysql
-
-# 查看资源使用
-docker stats
-```
-
-### 数据库连接失败
-
-```bash
-# 检查数据库状态
-docker exec ypat-mysql mysqladmin ping -h localhost
-
-# 查看连接数
-docker exec ypat-mysql mysql -u root -p -e "SHOW PROCESSLIST;"
-```
-
-### Nginx 配置错误
-
-```bash
-nginx -t
-systemctl status nginx
-tail -f /var/log/nginx/panghu.work.error.log
-```
-
-## 监控指标
-
-- CPU 使用率
-- 内存使用率
-- 磁盘使用率
-- Docker 容器健康状态
-- HTTPS 证书有效期
-- API 响应时间
+- 预发回滚：[`STAGING_ROLLBACK.md`](STAGING_ROLLBACK.md)
+- 生产部署：[`PRODUCTION_DEPLOYMENT.md`](PRODUCTION_DEPLOYMENT.md)
+- 环境隔离：[`ENVIRONMENT_ISOLATION.md`](ENVIRONMENT_ISOLATION.md)
+- 密钥管理：[`SECRET_MANAGEMENT.md`](SECRET_MANAGEMENT.md)
+- 数据库迁移：[`DATABASE_MIGRATION.md`](DATABASE_MIGRATION.md)
+- 备份恢复：[`BACKUP_AND_RECOVERY.md`](BACKUP_AND_RECOVERY.md)
+- 事故响应：[`INCIDENT_RESPONSE.md`](INCIDENT_RESPONSE.md)
+- 环境变量清单：[`../config/ENVIRONMENT_VARIABLES.md`](../config/ENVIRONMENT_VARIABLES.md)
+- 本地开发：[`../development/LOCAL_DEVELOPMENT.md`](../development/LOCAL_DEVELOPMENT.md)
