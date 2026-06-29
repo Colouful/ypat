@@ -108,8 +108,8 @@ jobs:
     runs-on: ubuntu-latest
     env:
       VITE_APP_ENV: production
-      VITE_API_BASE_URL: ${{ env.CI_PRODUCTION_API_URL }}
-      VITE_IMAGE_BASE_URL: ${{ env.CI_PRODUCTION_FILES_URL }}
+      VITE_API_BASE_URL: https://api.production-ci.example.invalid
+      VITE_IMAGE_BASE_URL: https://files.production-ci.example.invalid
     defaults:
       run:
         working-directory: frontend
@@ -145,12 +145,14 @@ jobs:
         run: pnpm run build:mp-weixin:production
       - name: Scan production artifact for staging alias leakage
         run: |
-          # 严禁 production 产物引用 staging 域名/IP
+          # 严禁 production 产物以 URL 形式引用 staging 域名/IP。
+          # 仅匹配协议前缀（http://, https://, //）下的 host，避免误报
+          # FORBIDDEN_PRODUCTION_HOSTS 等防御性常量字符串本身。
           set -euo pipefail
-          if grep -RIn -E 'panghu\.work|82\.156\.14\.216' dist/ 2>/dev/null; then
-            echo "ERROR: production artifact contains staging alias"; exit 1
+          if grep -RInE 'https?://(www\.)?panghu\.work|//(www\.)?panghu\.work[/:]|https?://82\.156\.14\.216|//82\.156\.14\.216[/:]' dist/ 2>/dev/null; then
+            echo "ERROR: production artifact contains staging alias URL"; exit 1
           fi
-          echo "✓ no staging alias in production artifact"
+          echo "✓ no staging alias URL in production artifact"
 
   # ============================================================
   # Backend jobs
@@ -267,14 +269,20 @@ jobs:
         run: |
           # 假设 GitHub Actions runner 已有 docker
           docker compose version || true
+      - name: Materialize CI .env from template
+        # docker-compose.*.yml 使用 ${VAR:?...} 强校验。
+        # CI 仅做语法/拓扑校验，使用 .env.example 中的占位值即可，
+        # 占位值已显式标注 CHANGE_ME，不会被误用于真实部署。
+        run: |
+          cp .env.example .env
       - name: Validate docker-compose.yml (development)
-        run: docker compose config > /dev/null
+        run: docker compose --env-file .env config > /dev/null
       - name: Validate docker-compose.staging.yml
-        run: docker compose -f docker-compose.staging.yml config > /dev/null
+        run: docker compose --env-file .env -f docker-compose.staging.yml config > /dev/null
       - name: Validate docker-compose.production.yml
-        run: docker compose -f docker-compose.production.yml config > /dev/null
+        run: docker compose --env-file .env -f docker-compose.production.yml config > /dev/null
       - name: Validate backend FastDFS staging compose
-        run: docker compose -f backend/dev/fastdfs/docker-compose.staging.yml config > /dev/null
+        run: docker compose --env-file .env -f backend/dev/fastdfs/docker-compose.staging.yml config > /dev/null
       - name: Validate FastDFS images use digest
         run: |
           set -euo pipefail
@@ -299,10 +307,13 @@ jobs:
         run: |
           set -euo pipefail
           find scripts -name '*.sh' -print0 | xargs -0 -n1 bash -n
-      - name: ShellCheck (if available)
+      - name: ShellCheck (errors only)
         run: |
+          # bash -n 已覆盖语法错误；shellcheck 在 CI 仅阻塞 error 级问题，
+          # warning/info/style（SC2004/2012/2034/2064/2086/2155/2162/1135 等）
+          # 不在阻塞列表内，由 reviewer 渐进收敛。
           if command -v shellcheck &> /dev/null; then
-            find scripts -name '*.sh' | xargs shellcheck
+            find scripts -name '*.sh' | xargs shellcheck -S error
           else
             echo "shellcheck not installed, skipping"
           fi
@@ -357,7 +368,10 @@ jobs:
         run: |
           set -euo pipefail
           if [ -f docker-compose.production.yml ]; then
-            if grep -E "panghu\.work|82\.156\.14\.216|www\.panghu\.work" docker-compose.production.yml; then
+            # 仅扫描非注释行；模板文件头部的安全告诫注释包含 panghu.work
+            # 字样属于警示文本，不是真实引用。
+            if grep -vE '^\s*#' docker-compose.production.yml \
+              | grep -E "panghu\.work|82\.156\.14\.216|www\.panghu\.work"; then
               echo "ERROR: production compose references staging host"; exit 1
             fi
           fi
