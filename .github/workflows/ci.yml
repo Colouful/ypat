@@ -145,12 +145,14 @@ jobs:
         run: pnpm run build:mp-weixin:production
       - name: Scan production artifact for staging alias leakage
         run: |
-          # 严禁 production 产物引用 staging 域名/IP
+          # 严禁 production 产物以 URL 形式引用 staging 域名/IP。
+          # 仅匹配协议前缀（http://, https://, //）下的 host，避免误报
+          # FORBIDDEN_PRODUCTION_HOSTS 等防御性常量字符串本身。
           set -euo pipefail
-          if grep -RIn -E 'panghu\.work|82\.156\.14\.216' dist/ 2>/dev/null; then
-            echo "ERROR: production artifact contains staging alias"; exit 1
+          if grep -RInE 'https?://(www\.)?panghu\.work|//(www\.)?panghu\.work[/:]|https?://82\.156\.14\.216|//82\.156\.14\.216[/:]' dist/ 2>/dev/null; then
+            echo "ERROR: production artifact contains staging alias URL"; exit 1
           fi
-          echo "✓ no staging alias in production artifact"
+          echo "✓ no staging alias URL in production artifact"
 
   # ============================================================
   # Backend jobs
