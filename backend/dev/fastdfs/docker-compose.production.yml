@@ -1,0 +1,68 @@
+# FastDFS — production environment — TEMPLATE ONLY
+#
+# 严禁部署此 compose 到任何位置，除非：
+#   1. production 基础设施已就绪
+#   2. FastDFS 集群（多 tracker + storage）已规划
+#   3. YPAT_FASTDFS_IMAGE 已固定 digest
+#
+# 数据卷命名：
+#   ypat-production-fastdfs-tracker-data
+#   ypat-production-fastdfs-storage-data
+
+name: ypat-production
+
+services:
+  fastdfs-tracker:
+    image: "${YPAT_FASTDFS_IMAGE:?YPAT_FASTDFS_IMAGE is required}"
+    container_name: ypat-production-fastdfs-tracker
+    hostname: fastdfs-tracker
+    command: ["tracker"]
+    volumes:
+      - "${YPAT_FASTDFS_TRACKER_DATA_DIR:-/opt/ypat-data/production/fastdfs/tracker}:/var/fdfs"
+    networks:
+      - ypat-production-net
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+    logging:
+      driver: json-file
+      options:
+        max-size: "20m"
+        max-file: "5"
+    security_opt:
+      - no-new-privileges:true
+
+  fastdfs-storage:
+    image: "${YPAT_FASTDFS_IMAGE:?YPAT_FASTDFS_IMAGE is required}"
+    container_name: ypat-production-fastdfs-storage
+    hostname: fastdfs-storage
+    depends_on:
+      - fastdfs-tracker
+    environment:
+      TRACKER_SERVER: fastdfs-tracker:22122
+    command: ["storage"]
+    volumes:
+      - "${YPAT_FASTDFS_STORAGE_DATA_DIR:-/opt/ypat-data/production/fastdfs/storage}:/var/fdfs"
+    networks:
+      - ypat-production-net
+    # 内部 8080 不对主机开放（必须通过主机 nginx 反代到 /files/）
+    ports: []
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 2G
+    logging:
+      driver: json-file
+      options:
+        max-size: "20m"
+        max-file: "5"
+    security_opt:
+      - no-new-privileges:true
+
+networks:
+  ypat-production-net:
+    name: ypat-production-net
+    external: true
