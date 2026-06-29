@@ -37,6 +37,7 @@
     "@vue/cli-plugin-babel": "~4.5.19",
     "@vue/cli-service": "~4.5.19",
     "autoprefixer": "^9.8.8",
+    "core-js": "^3.49.0",
     "cross-env": "^7.0.3",
     "postcss": "^7.0.39",
     "postcss-comment": "^2.0.0",
