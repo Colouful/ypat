@@ -1,0 +1,4 @@
+# YPAT Spring Boot 1.5.9 EnvironmentPostProcessor 注册
+# 用于启动时校验关键环境变量
+org.springframework.boot.env.EnvironmentPostProcessor=\
+com.ypat.config.EnvironmentConfigurationValidator
