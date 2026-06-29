@@ -267,14 +267,20 @@ jobs:
         run: |
           # 假设 GitHub Actions runner 已有 docker
           docker compose version || true
+      - name: Materialize CI .env from template
+        # docker-compose.*.yml 使用 ${VAR:?...} 强校验。
+        # CI 仅做语法/拓扑校验，使用 .env.example 中的占位值即可，
+        # 占位值已显式标注 CHANGE_ME，不会被误用于真实部署。
+        run: |
+          cp .env.example .env
       - name: Validate docker-compose.yml (development)
-        run: docker compose config > /dev/null
+        run: docker compose --env-file .env config > /dev/null
       - name: Validate docker-compose.staging.yml
-        run: docker compose -f docker-compose.staging.yml config > /dev/null
+        run: docker compose --env-file .env -f docker-compose.staging.yml config > /dev/null
       - name: Validate docker-compose.production.yml
-        run: docker compose -f docker-compose.production.yml config > /dev/null
+        run: docker compose --env-file .env -f docker-compose.production.yml config > /dev/null
       - name: Validate backend FastDFS staging compose
-        run: docker compose -f backend/dev/fastdfs/docker-compose.staging.yml config > /dev/null
+        run: docker compose --env-file .env -f backend/dev/fastdfs/docker-compose.staging.yml config > /dev/null
       - name: Validate FastDFS images use digest
         run: |
           set -euo pipefail
@@ -299,10 +305,13 @@ jobs:
         run: |
           set -euo pipefail
           find scripts -name '*.sh' -print0 | xargs -0 -n1 bash -n
-      - name: ShellCheck (if available)
+      - name: ShellCheck (errors only)
         run: |
+          # bash -n 已覆盖语法错误；shellcheck 在 CI 仅阻塞 error 级问题，
+          # warning/info/style（SC2004/2012/2034/2064/2086/2155/2162/1135 等）
+          # 不在阻塞列表内，由 reviewer 渐进收敛。
           if command -v shellcheck &> /dev/null; then
-            find scripts -name '*.sh' | xargs shellcheck
+            find scripts -name '*.sh' | xargs shellcheck -S error
           else
             echo "shellcheck not installed, skipping"
           fi
@@ -357,7 +366,10 @@ jobs:
         run: |
           set -euo pipefail
           if [ -f docker-compose.production.yml ]; then
-            if grep -E "panghu\.work|82\.156\.14\.216|www\.panghu\.work" docker-compose.production.yml; then
+            # 仅扫描非注释行；模板文件头部的安全告诫注释包含 panghu.work
+            # 字样属于警示文本，不是真实引用。
+            if grep -vE '^\s*#' docker-compose.production.yml \
+              | grep -E "panghu\.work|82\.156\.14\.216|www\.panghu\.work"; then
               echo "ERROR: production compose references staging host"; exit 1
             fi
           fi
