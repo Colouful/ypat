@@ -1,0 +1,34 @@
+# YPAT CODEOWNERS
+# 强制 PR review 规则 — 与 docs/release/GITHUB_BRANCH_PROTECTION.md 配合
+
+# 默认 owner（单人项目，全部归 owner）
+*                          @lizhenwei
+
+# 数据库 schema 改动
+backend/**/sql/**           @lizhenwei
+
+# 部署 / Compose / 启动脚本
+/docker-compose*.yml        @lizhenwei
+/scripts/deploy/            @lizhenwei
+/scripts/config/            @lizhenwei
+/scripts/release/           @lizhenwei
+
+# CI / GitHub 配置
+/.github/                   @lizhenwei
+
+# 架构 / 部署文档
+/docs/                      @lizhenwei
+/DEPLOY_ENVS.md             @lizhenwei
+/docs/release/              @lizhenwei
+/docs/architecture/         @lizhenwei
+/docs/config/               @lizhenwei
+
+# 前端 / 后端代码
+/frontend/src/              @lizhenwei
+/backend/**/*.java          @lizhenwei
+/backend/**/*.yml           @lizhenwei
+/backend/**/pom.xml         @lizhenwei
+
+# 密钥 / 证书
+**/.env*                    @lizhenwei
+**/ssl/                     @lizhenwei
