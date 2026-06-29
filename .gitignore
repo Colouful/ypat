@@ -47,6 +47,11 @@ build/
 .env.*.local
 .omx/
 
+# Frontend real env files (only .example files are committed)
+frontend/.env.development
+frontend/.env.staging
+frontend/.env.production
+
 # FastDFS local dev runtime data (logs, pids, binlog, uploaded files) — keep docker-compose.yml
 backend/dev/fastdfs/tracker_data/
 backend/dev/fastdfs/storage_data/

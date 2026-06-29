@@ -1,0 +1,262 @@
+# YPAT production environment — TEMPLATE ONLY
+#
+# 严禁部署此 compose 到任何位置，除非：
+#   1. 已确认 production 独立域名（非 panghu.work/www.panghu.work）
+#   2. 已确认独立服务器/集群
+#   3. 已注入全部 YPAT_* 真实密钥
+#   4. 通过 scripts/deploy/preflight-production.sh 检查
+#   5. 已加 --confirm-production 标志
+#
+# 网络/卷必须与 staging 隔离：
+#   ypat-production-net
+#   ypat-production-mysql-data
+#   ypat-production-redis-data
+#   ypat-production-fastdfs-tracker-data
+#   ypat-production-fastdfs-storage-data
+#
+# 启动参考：scripts/deploy/deploy-production.sh（待实现）
+
+name: ypat-production
+
+services:
+  mysql:
+    image: mysql:8.0.36
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: "${YPAT_LOCAL_MYSQL_ROOT_PASSWORD:?YPAT_LOCAL_MYSQL_ROOT_PASSWORD is required}"
+      MYSQL_DATABASE: "${YPAT_DB_NAME:?YPAT_DB_NAME is required}"
+      TZ: Asia/Shanghai
+    ports:
+      - "127.0.0.1:${YPAT_LOCAL_MYSQL_PORT:-3306}:3306"
+    volumes:
+      - ypat-production-mysql-data:/var/lib/mysql
+      - ./docker/mysql/production-init.sql:/docker-entrypoint-initdb.d/production-init.sql:ro
+    command: --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci --default-authentication-plugin=mysql_native_password
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h localhost -uroot -p$${MYSQL_ROOT_PASSWORD}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    networks:
+      - ypat-production-net
+    deploy:
+      resources:
+        limits:
+          memory: 2G
+    logging:
+      driver: json-file
+      options:
+        max-size: "20m"
+        max-file: "5"
+    security_opt:
+      - no-new-privileges:true
+
+  redis:
+    image: redis:7.2-alpine
+    restart: unless-stopped
+    command:
+      - redis-server
+      - --appendonly
+      - "yes"
+      - --requirepass
+      - "${YPAT_LOCAL_REDIS_PASSWORD:?YPAT_LOCAL_REDIS_PASSWORD is required}"
+    ports:
+      - "127.0.0.1:${YPAT_LOCAL_REDIS_PORT:-6379}:6379"
+    volumes:
+      - ypat-production-redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "${YPAT_LOCAL_REDIS_PASSWORD}", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    networks:
+      - ypat-production-net
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+    logging:
+      driver: json-file
+      options:
+        max-size: "20m"
+        max-file: "5"
+    security_opt:
+      - no-new-privileges:true
+
+  eureka:
+    build:
+      context: ./backend-base/base-eureka
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:${YPAT_LOCAL_EUREKA_PORT:-8761}:8761"
+    environment:
+      TZ: Asia/Shanghai
+      YPAT_LOG_DIR: /logs
+      SPRING_PROFILES_ACTIVE: pro
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8761/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 30s
+    networks:
+      - ypat-production-net
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+    logging:
+      driver: json-file
+      options:
+        max-size: "20m"
+        max-file: "5"
+    security_opt:
+      - no-new-privileges:true
+
+  restapi:
+    build:
+      context: ./backend/system-restapi
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    expose:
+      - "9081"
+    environment:
+      TZ: Asia/Shanghai
+      SPRING_PROFILES_ACTIVE: pro
+      SPRING_DATASOURCE_URL: "${YPAT_MYSQL_URL:?YPAT_MYSQL_URL is required}"
+      SPRING_DATASOURCE_USERNAME: "${YPAT_DB_USERNAME:?YPAT_DB_USERNAME is required}"
+      SPRING_DATASOURCE_PASSWORD: "${YPAT_DB_PASSWORD:?YPAT_DB_PASSWORD is required}"
+      SPRING_REDIS_HOST: redis
+      SPRING_REDIS_PORT: "6379"
+      SPRING_REDIS_PASSWORD: "${YPAT_LOCAL_REDIS_PASSWORD:?YPAT_LOCAL_REDIS_PASSWORD is required}"
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: "${YPAT_EUREKA_DEFAULT_ZONE:?YPAT_EUREKA_DEFAULT_ZONE is required}"
+      EUREKA_INSTANCE_PREFER_IP_ADDRESS: "true"
+      YPAT_FDFS_PUBLIC_BASE_URL: "${YPAT_FDFS_PUBLIC_BASE_URL:?YPAT_FDFS_PUBLIC_BASE_URL is required}"
+      YPAT_FDFS_TRACKER_SERVERS: "${YPAT_FDFS_TRACKER_SERVERS:?YPAT_FDFS_TRACKER_SERVERS is required}"
+      YPAT_LOG_DIR: /logs
+    depends_on:
+      mysql:
+        condition: service_healthy
+      eureka:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9081/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 24
+      start_period: 60s
+    networks:
+      - ypat-production-net
+    deploy:
+      resources:
+        limits:
+          memory: 2G
+    logging:
+      driver: json-file
+      options:
+        max-size: "20m"
+        max-file: "5"
+    security_opt:
+      - no-new-privileges:true
+
+  wap:
+    build:
+      context: ./backend/system-wap
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:${YPAT_LOCAL_WAP_PORT:-8081}:8081"
+    environment:
+      TZ: Asia/Shanghai
+      SPRING_PROFILES_ACTIVE: pro
+      SPRING_REDIS_HOST: redis
+      SPRING_REDIS_PORT: "6379"
+      SPRING_REDIS_PASSWORD: "${YPAT_LOCAL_REDIS_PASSWORD:?YPAT_LOCAL_REDIS_PASSWORD is required}"
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: "${YPAT_EUREKA_DEFAULT_ZONE:?YPAT_EUREKA_DEFAULT_ZONE is required}"
+      EUREKA_INSTANCE_PREFER_IP_ADDRESS: "true"
+      YPAT_FDFS_PUBLIC_BASE_URL: "${YPAT_FDFS_PUBLIC_BASE_URL:?YPAT_FDFS_PUBLIC_BASE_URL is required}"
+      YPAT_FDFS_TRACKER_SERVERS: "${YPAT_FDFS_TRACKER_SERVERS:?YPAT_FDFS_TRACKER_SERVERS is required}"
+      YPAT_LOG_DIR: /logs
+      YPAT_SSO_JWT_SIGNING_KEY: "${YPAT_SSO_JWT_SIGNING_KEY:?YPAT_SSO_JWT_SIGNING_KEY is required}"
+    depends_on:
+      redis:
+        condition: service_healthy
+      eureka:
+        condition: service_healthy
+      restapi:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8081/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 24
+      start_period: 60s
+    networks:
+      - ypat-production-net
+    deploy:
+      resources:
+        limits:
+          memory: 2G
+    logging:
+      driver: json-file
+      options:
+        max-size: "20m"
+        max-file: "5"
+    security_opt:
+      - no-new-privileges:true
+
+  system-web:
+    build:
+      context: ./backend/system-web
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:${YPAT_LOCAL_WEB_PORT:-8082}:8082"
+    environment:
+      TZ: Asia/Shanghai
+      SPRING_PROFILES_ACTIVE: pro
+      SPRING_REDIS_HOST: redis
+      SPRING_REDIS_PORT: "6379"
+      SPRING_REDIS_PASSWORD: "${YPAT_LOCAL_REDIS_PASSWORD:?YPAT_LOCAL_REDIS_PASSWORD is required}"
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: "${YPAT_EUREKA_DEFAULT_ZONE:?YPAT_EUREKA_DEFAULT_ZONE is required}"
+      EUREKA_INSTANCE_PREFER_IP_ADDRESS: "true"
+      YPAT_FDFS_PUBLIC_BASE_URL: "${YPAT_FDFS_PUBLIC_BASE_URL:?YPAT_FDFS_PUBLIC_BASE_URL is required}"
+      YPAT_FDFS_TRACKER_SERVERS: "${YPAT_FDFS_TRACKER_SERVERS:?YPAT_FDFS_TRACKER_SERVERS is required}"
+      YPAT_LOG_DIR: /logs
+      YPAT_SSO_JWT_SIGNING_KEY: "${YPAT_SSO_JWT_SIGNING_KEY:?YPAT_SSO_JWT_SIGNING_KEY is required}"
+    depends_on:
+      redis:
+        condition: service_healthy
+      eureka:
+        condition: service_healthy
+      restapi:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8082/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 24
+      start_period: 60s
+    networks:
+      - ypat-production-net
+    deploy:
+      resources:
+        limits:
+          memory: 2G
+    logging:
+      driver: json-file
+      options:
+        max-size: "20m"
+        max-file: "5"
+    security_opt:
+      - no-new-privileges:true
+
+volumes:
+  ypat-production-mysql-data:
+  ypat-production-redis-data:
+
+networks:
+  ypat-production-net:
+    name: ypat-production-net
+    driver: bridge

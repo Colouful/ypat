@@ -1,47 +1,86 @@
-# YPAT 预发环境 Compose 配置
-# 收紧端口：仅监听 127.0.0.1，禁止公网访问
+# YPAT staging environment
+#
+# 部署位置：82.156.14.216, 域名 https://panghu.work
+# 镜像版本必须固定（digest 或补丁版本号）
+# 网络/卷命名必须显式，避免与未来 production 冲突
+#
+# Docker ENTRYPOINT 冲突修复：
+#   Dockerfile ENTRYPOINT 保留 java -jar 启动
+#   Compose 只注入 SPRING_PROFILES_ACTIVE（不重复 java -jar）
+#
+# 关键变量（必须由部署平台注入，禁止占位符）：
+#   YPAT_LOCAL_MYSQL_ROOT_PASSWORD
+#   YPAT_LOCAL_REDIS_PASSWORD
+#   YPAT_FASTDFS_IMAGE  (例如 ygqygq2/fastdfs-nginx@sha256:...)
+#   YPAT_FDFS_PUBLIC_BASE_URL
+#   YPAT_FASTDFS_TRACKER_DATA_DIR
+#   YPAT_FASTDFS_STORAGE_DATA_DIR
+
+name: ypat-staging
 
 services:
   mysql:
-    image: mysql:8.0
+    image: mysql:8.0.36
     restart: unless-stopped
     environment:
-      MYSQL_ROOT_PASSWORD: "${YPAT_LOCAL_MYSQL_ROOT_PASSWORD}"
+      MYSQL_ROOT_PASSWORD: "${YPAT_LOCAL_MYSQL_ROOT_PASSWORD:?YPAT_LOCAL_MYSQL_ROOT_PASSWORD is required}"
       MYSQL_DATABASE: ypat
       TZ: Asia/Shanghai
     ports:
       - "127.0.0.1:${YPAT_LOCAL_MYSQL_PORT:-3306}:3306"
     volumes:
-      - mysql_data:/var/lib/mysql
+      - ypat-staging-mysql-data:/var/lib/mysql
     command: --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci --default-authentication-plugin=mysql_native_password
     healthcheck:
-      test: ["CMD-SHELL", "mysqladmin ping -h localhost -p$${MYSQL_ROOT_PASSWORD}"]
+      test: ["CMD-SHELL", "mysqladmin ping -h localhost -uroot -p$${MYSQL_ROOT_PASSWORD}"]
       interval: 10s
       timeout: 5s
       retries: 10
     networks:
-      - ypat_ypat-net
+      - ypat-staging-net
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+    logging:
+      driver: json-file
+      options:
+        max-size: "20m"
+        max-file: "5"
+    security_opt:
+      - no-new-privileges:true
 
   redis:
-    image: redis:7-alpine
+    image: redis:7.2-alpine
     restart: unless-stopped
     command:
       - redis-server
       - --appendonly
       - "yes"
       - --requirepass
-      - "${YPAT_LOCAL_REDIS_PASSWORD}"
+      - "${YPAT_LOCAL_REDIS_PASSWORD:?YPAT_LOCAL_REDIS_PASSWORD is required}"
     ports:
       - "127.0.0.1:${YPAT_LOCAL_REDIS_PORT:-6379}:6379"
     volumes:
-      - redis_data:/data
+      - ypat-staging-redis-data:/data
     healthcheck:
       test: ["CMD", "redis-cli", "-a", "${YPAT_LOCAL_REDIS_PASSWORD}", "ping"]
       interval: 5s
       timeout: 3s
       retries: 5
     networks:
-      - ypat_ypat-net
+      - ypat-staging-net
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+    logging:
+      driver: json-file
+      options:
+        max-size: "20m"
+        max-file: "5"
+    security_opt:
+      - no-new-privileges:true
 
   eureka:
     build:
@@ -52,6 +91,7 @@ services:
       - "127.0.0.1:${YPAT_LOCAL_EUREKA_PORT:-8761}:8761"
     environment:
       TZ: Asia/Shanghai
+      YPAT_LOG_DIR: /logs
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8761/health"]
       interval: 10s
@@ -59,7 +99,16 @@ services:
       retries: 12
       start_period: 30s
     networks:
-      - ypat_ypat-net
+      - ypat-staging-net
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+    logging:
+      driver: json-file
+      options:
+        max-size: "20m"
+        max-file: "5"
 
   restapi:
     build:
@@ -70,13 +119,17 @@ services:
       - "9081"
     environment:
       TZ: Asia/Shanghai
+      SPRING_PROFILES_ACTIVE: pre
       SPRING_DATASOURCE_URL: "jdbc:mysql://mysql:3306/ypat?characterEncoding=utf8&useSSL=false"
-      SPRING_DATASOURCE_USERNAME: root
-      SPRING_DATASOURCE_PASSWORD: "${YPAT_LOCAL_MYSQL_ROOT_PASSWORD}"
+      SPRING_DATASOURCE_USERNAME: "${YPAT_DB_USERNAME:?YPAT_DB_USERNAME is required}"
+      SPRING_DATASOURCE_PASSWORD: "${YPAT_DB_PASSWORD:?YPAT_DB_PASSWORD is required}"
+      SPRING_REDIS_HOST: redis
+      SPRING_REDIS_PORT: "6379"
       SPRING_REDIS_PASSWORD: "${YPAT_LOCAL_REDIS_PASSWORD}"
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: "http://eureka:8761/eureka/"
       EUREKA_INSTANCE_PREFER_IP_ADDRESS: "true"
-    command: ["java", "-Djava.security.egd=file:/dev/./urandom", "-Dspring.profiles.active=pre", "-jar", "app.jar"]
+      YPAT_FDFS_PUBLIC_BASE_URL: "${YPAT_FDFS_PUBLIC_BASE_URL:-https://panghu.work/files}"
+      YPAT_LOG_DIR: /logs
     depends_on:
       mysql:
         condition: service_healthy
@@ -89,7 +142,16 @@ services:
       retries: 24
       start_period: 60s
     networks:
-      - ypat_ypat-net
+      - ypat-staging-net
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+    logging:
+      driver: json-file
+      options:
+        max-size: "20m"
+        max-file: "5"
 
   wap:
     build:
@@ -100,11 +162,14 @@ services:
       - "127.0.0.1:${YPAT_LOCAL_WAP_PORT:-8081}:8081"
     environment:
       TZ: Asia/Shanghai
+      SPRING_PROFILES_ACTIVE: pre
+      SPRING_REDIS_HOST: redis
+      SPRING_REDIS_PORT: "6379"
       SPRING_REDIS_PASSWORD: "${YPAT_LOCAL_REDIS_PASSWORD}"
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: "http://eureka:8761/eureka/"
       EUREKA_INSTANCE_PREFER_IP_ADDRESS: "true"
-      YPAT_FDFS_PUBLIC_BASE_URL: "${YPAT_FDFS_PUBLIC_BASE_URL}"
-    command: ["java", "-Djava.security.egd=file:/dev/./urandom", "-Dspring.profiles.active=pre", "-jar", "app.jar"]
+      YPAT_FDFS_PUBLIC_BASE_URL: "${YPAT_FDFS_PUBLIC_BASE_URL:-https://panghu.work/files}"
+      YPAT_LOG_DIR: /logs
     depends_on:
       redis:
         condition: service_healthy
@@ -119,7 +184,16 @@ services:
       retries: 24
       start_period: 60s
     networks:
-      - ypat_ypat-net
+      - ypat-staging-net
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+    logging:
+      driver: json-file
+      options:
+        max-size: "20m"
+        max-file: "5"
 
   system-web:
     build:
@@ -130,10 +204,14 @@ services:
       - "127.0.0.1:${YPAT_LOCAL_WEB_PORT:-8082}:8082"
     environment:
       TZ: Asia/Shanghai
+      SPRING_PROFILES_ACTIVE: pre
+      SPRING_REDIS_HOST: redis
+      SPRING_REDIS_PORT: "6379"
       SPRING_REDIS_PASSWORD: "${YPAT_LOCAL_REDIS_PASSWORD}"
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: "http://eureka:8761/eureka/"
       EUREKA_INSTANCE_PREFER_IP_ADDRESS: "true"
-    command: ["java", "-Djava.security.egd=file:/dev/./urandom", "-Dspring.profiles.active=pre", "-jar", "app.jar"]
+      YPAT_FDFS_PUBLIC_BASE_URL: "${YPAT_FDFS_PUBLIC_BASE_URL:-https://panghu.work/files}"
+      YPAT_LOG_DIR: /logs
     depends_on:
       redis:
         condition: service_healthy
@@ -142,19 +220,28 @@ services:
       restapi:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8082/"]
+      test: ["CMD", "curl", "-f", "http://localhost:8082/health"]
       interval: 10s
       timeout: 5s
-      retries: 12
+      retries: 24
       start_period: 60s
     networks:
-      - ypat_ypat-net
-
-networks:
-  ypat_ypat-net:
-    name: ypat_ypat-net
-    driver: bridge
+      - ypat-staging-net
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+    logging:
+      driver: json-file
+      options:
+        max-size: "20m"
+        max-file: "5"
 
 volumes:
-  mysql_data:
-  redis_data:
+  ypat-staging-mysql-data:
+  ypat-staging-redis-data:
+
+networks:
+  ypat-staging-net:
+    name: ypat-staging-net
+    driver: bridge

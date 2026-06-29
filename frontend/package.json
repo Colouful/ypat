@@ -26,7 +26,15 @@
     "format": "prettier --write \"src/**/*.{ts,vue,scss}\"",
     "test": "vitest run",
     "test:watch": "vitest",
-    "check": "npm run type-check && npm run lint && npm run test && npm run build:h5 && npm run build:mp-weixin"
+    "env:validate:development": "node ../scripts/config/validate-frontend-env.mjs development",
+    "env:validate:staging": "node ../scripts/config/validate-frontend-env.mjs staging",
+    "env:validate:production": "node ../scripts/config/validate-frontend-env.mjs production",
+    "check:development": "pnpm run env:validate:development && pnpm run type-check && pnpm run lint && pnpm run test && pnpm run build:h5",
+    "check:staging": "pnpm run env:validate:staging && pnpm run type-check && pnpm run lint && pnpm run test && pnpm run build:h5:staging && pnpm run build:mp-weixin:staging",
+    "check:production": "pnpm run env:validate:production && pnpm run type-check && pnpm run lint && pnpm run test && pnpm run build:h5:production && pnpm run build:mp-weixin:production",
+    "build:all:staging": "pnpm run build:h5:staging && pnpm run build:mp-weixin:staging",
+    "build:all:production": "pnpm run build:h5:production && pnpm run build:mp-weixin:production",
+    "check": "pnpm run check:development"
   },
   "dependencies": {
     "@dcloudio/uni-app": "3.0.0-4080420251103001",

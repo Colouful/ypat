@@ -1,26 +1,23 @@
-# FastDFS — 预发环境
-# tracker:22122 (内网) + storage:23000 (内网) + storage nginx 8888 (主机端口,浏览器访问图片)
-# 共享主 ypat-net 网络，wap/web 容器可直接用主机名 fastdfs-tracker:22122
+# FastDFS — development environment
 #
-# 启动: docker compose -f backend/dev/fastdfs/docker-compose.yml up -d
-# 停止: docker compose -f backend/dev/fastdfs/docker-compose.yml down
+# 本地开发使用，端口绑 127.0.0.1
+
+name: ypat-development
 
 services:
   fastdfs-tracker:
-    image: ygqygq2/fastdfs-nginx:latest
+    image: ygqygq2/fastdfs-nginx@sha256:076ee9c1ab73f16d81b28f6f8e0405e67446994f9541020115d5e2f546cbde48
     container_name: ypat-fastdfs-tracker
     hostname: fastdfs-tracker
     command: ["tracker"]
     volumes:
       - ./tracker_data:/var/fdfs
     networks:
-      - ypat-net
-    ports:
-      - "22122:22122"
+      - ypat_ypat-net
     restart: unless-stopped
 
   fastdfs-storage:
-    image: ygqygq2/fastdfs-nginx:latest
+    image: ygqygq2/fastdfs-nginx@sha256:076ee9c1ab73f16d81b28f6f8e0405e67446994f9541020115d5e2f546cbde48
     container_name: ypat-fastdfs-storage
     hostname: fastdfs-storage
     depends_on:
@@ -31,13 +28,12 @@ services:
     volumes:
       - ./storage_data:/var/fdfs
     networks:
-      - ypat-net
+      - ypat_ypat-net
     ports:
-      - "23000:23000"
-      - "8888:8080"
+      - "127.0.0.1:8888:8080"
     restart: unless-stopped
 
 networks:
-  ypat-net:
-    external: true
+  ypat_ypat-net:
     name: ypat_ypat-net
+    external: true

@@ -47,7 +47,7 @@ cp -a /etc/nginx/conf.d/panghu.work.conf /opt/ypat-data/backups/nginx/${TIMESTAM
 ```dotenv
 YPAT_DB_NAME=ypat
 YPAT_DB_USERNAME=ypat_app          # 选择业务账号名
-YPAT_DB_PASSWORD=<强密码,例如 openssl rand -base64 24>
+YPAT_DB_PASSWORD=<使用脚本生成的强密码,例如:openssl rand -base64 24>
 ```
 
 操作后:

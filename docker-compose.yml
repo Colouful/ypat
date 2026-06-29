@@ -1,38 +1,70 @@
+# YPAT development environment
+# 本地开发使用，端口仅绑 127.0.0.1，禁止公网访问
+# 使用 docker compose up -d 启动
 services:
   mysql:
-    image: mysql:8.0
+    image: mysql:8.0.36
     restart: unless-stopped
     environment:
-      MYSQL_ROOT_PASSWORD: "${YPAT_LOCAL_MYSQL_ROOT_PASSWORD:-ypat_dev_password_change_me}"
+      MYSQL_ROOT_PASSWORD: "${YPAT_LOCAL_MYSQL_ROOT_PASSWORD:?YPAT_LOCAL_MYSQL_ROOT_PASSWORD is required}"
       MYSQL_DATABASE: ypat
       TZ: Asia/Shanghai
     ports:
-      - "${YPAT_LOCAL_MYSQL_PORT:-3307}:3306"
+      - "127.0.0.1:${YPAT_LOCAL_MYSQL_PORT:-3306}:3306"
     volumes:
       - mysql_data:/var/lib/mysql
+      - ./docker/mysql/dev-init.sql:/docker-entrypoint-initdb.d/dev-init.sql:ro
     command: --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci --default-authentication-plugin=mysql_native_password
     healthcheck:
-      test: ["CMD-SHELL", "mysqladmin ping -h localhost -p$${MYSQL_ROOT_PASSWORD}"]
+      test: ["CMD-SHELL", "mysqladmin ping -h localhost -uroot -p$${MYSQL_ROOT_PASSWORD}"]
       interval: 10s
       timeout: 5s
       retries: 10
     networks:
       - ypat_ypat-net
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+    logging:
+      driver: json-file
+      options:
+        max-size: "20m"
+        max-file: "5"
+    security_opt:
+      - no-new-privileges:true
 
   redis:
-    image: redis:7-alpine
+    image: redis:7.2-alpine
     restart: unless-stopped
+    command:
+      - redis-server
+      - --appendonly
+      - "yes"
+      - --requirepass
+      - "${YPAT_LOCAL_REDIS_PASSWORD:?YPAT_LOCAL_REDIS_PASSWORD is required}"
     ports:
-      - "${YPAT_LOCAL_REDIS_PORT:-6379}:6379"
+      - "127.0.0.1:${YPAT_LOCAL_REDIS_PORT:-6379}:6379"
     volumes:
       - redis_data:/data
     healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
+      test: ["CMD", "redis-cli", "-a", "${YPAT_LOCAL_REDIS_PASSWORD}", "ping"]
       interval: 5s
       timeout: 3s
       retries: 5
     networks:
       - ypat_ypat-net
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+    logging:
+      driver: json-file
+      options:
+        max-size: "20m"
+        max-file: "5"
+    security_opt:
+      - no-new-privileges:true
 
   eureka:
     build:
@@ -40,7 +72,7 @@ services:
       dockerfile: Dockerfile
     restart: unless-stopped
     ports:
-      - "${YPAT_LOCAL_EUREKA_PORT:-8761}:8761"
+      - "127.0.0.1:${YPAT_LOCAL_EUREKA_PORT:-8761}:8761"
     environment:
       TZ: Asia/Shanghai
     healthcheck:
@@ -51,21 +83,34 @@ services:
       start_period: 30s
     networks:
       - ypat_ypat-net
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+    logging:
+      driver: json-file
+      options:
+        max-size: "20m"
+        max-file: "5"
 
   restapi:
     build:
       context: ./backend/system-restapi
       dockerfile: Dockerfile
     restart: unless-stopped
-    ports:
-      - "${YPAT_LOCAL_RESTAPI_PORT:-9081}:9081"
+    expose:
+      - "9081"
     environment:
       TZ: Asia/Shanghai
+      SPRING_PROFILES_ACTIVE: dev
       SPRING_DATASOURCE_URL: "jdbc:mysql://mysql:3306/ypat?characterEncoding=utf8&useSSL=false"
-      SPRING_DATASOURCE_USERNAME: root
-      SPRING_DATASOURCE_PASSWORD: "${YPAT_LOCAL_MYSQL_ROOT_PASSWORD:-ypat_dev_password_change_me}"
+      SPRING_DATASOURCE_USERNAME: "${YPAT_DB_USERNAME:?YPAT_DB_USERNAME is required}"
+      SPRING_DATASOURCE_PASSWORD: "${YPAT_DB_PASSWORD:?YPAT_DB_PASSWORD is required}"
+      SPRING_REDIS_HOST: redis
+      SPRING_REDIS_PASSWORD: "${YPAT_LOCAL_REDIS_PASSWORD}"
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: "http://eureka:8761/eureka/"
       EUREKA_INSTANCE_PREFER_IP_ADDRESS: "true"
+      YPAT_FDFS_PUBLIC_BASE_URL: "${YPAT_FDFS_PUBLIC_BASE_URL:-http://localhost:8888}"
     depends_on:
       mysql:
         condition: service_healthy
@@ -79,6 +124,15 @@ services:
       start_period: 60s
     networks:
       - ypat_ypat-net
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+    logging:
+      driver: json-file
+      options:
+        max-size: "20m"
+        max-file: "5"
 
   wap:
     build:
@@ -86,12 +140,15 @@ services:
       dockerfile: Dockerfile
     restart: unless-stopped
     ports:
-      - "${YPAT_LOCAL_WAP_PORT:-8081}:8081"
+      - "127.0.0.1:${YPAT_LOCAL_WAP_PORT:-8081}:8081"
     environment:
       TZ: Asia/Shanghai
+      SPRING_PROFILES_ACTIVE: dev
       SPRING_REDIS_HOST: redis
+      SPRING_REDIS_PASSWORD: "${YPAT_LOCAL_REDIS_PASSWORD}"
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: "http://eureka:8761/eureka/"
       EUREKA_INSTANCE_PREFER_IP_ADDRESS: "true"
+      YPAT_FDFS_PUBLIC_BASE_URL: "${YPAT_FDFS_PUBLIC_BASE_URL:-http://localhost:8888}"
     depends_on:
       redis:
         condition: service_healthy
@@ -107,6 +164,15 @@ services:
       start_period: 60s
     networks:
       - ypat_ypat-net
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+    logging:
+      driver: json-file
+      options:
+        max-size: "20m"
+        max-file: "5"
 
   system-web:
     build:
@@ -114,12 +180,15 @@ services:
       dockerfile: Dockerfile
     restart: unless-stopped
     ports:
-      - "${YPAT_LOCAL_WEB_PORT:-8082}:8082"
+      - "127.0.0.1:${YPAT_LOCAL_WEB_PORT:-8082}:8082"
     environment:
       TZ: Asia/Shanghai
+      SPRING_PROFILES_ACTIVE: dev
       SPRING_REDIS_HOST: redis
+      SPRING_REDIS_PASSWORD: "${YPAT_LOCAL_REDIS_PASSWORD}"
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: "http://eureka:8761/eureka/"
       EUREKA_INSTANCE_PREFER_IP_ADDRESS: "true"
+      YPAT_FDFS_PUBLIC_BASE_URL: "${YPAT_FDFS_PUBLIC_BASE_URL:-http://localhost:8888}"
     depends_on:
       redis:
         condition: service_healthy
@@ -128,16 +197,25 @@ services:
       restapi:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8082/"]
+      test: ["CMD", "curl", "-f", "http://localhost:8082/health"]
       interval: 10s
       timeout: 5s
-      retries: 12
+      retries: 24
       start_period: 60s
     networks:
       - ypat_ypat-net
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+    logging:
+      driver: json-file
+      options:
+        max-size: "20m"
+        max-file: "5"
 
   nginx:
-    image: nginx:alpine
+    image: nginx:1.25-alpine
     restart: unless-stopped
     ports:
       - "127.0.0.1:8080:80"
@@ -149,6 +227,15 @@ services:
         condition: service_healthy
     networks:
       - ypat_ypat-net
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+    logging:
+      driver: json-file
+      options:
+        max-size: "20m"
+        max-file: "5"
 
 volumes:
   mysql_data:
@@ -157,9 +244,4 @@ volumes:
 networks:
   ypat_ypat-net:
     name: ypat_ypat-net
-    driver: bridge
-
-volumes:
-  mysql_data:
-  redis_data:
     driver: bridge

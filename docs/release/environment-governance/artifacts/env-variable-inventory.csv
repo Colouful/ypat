@@ -1,0 +1,60 @@
+# YPAT 环境变量清单（环境治理审计）
+# 来源：grep 扫描 frontend/backend/backend-base/docker-compose*/scripts
+# 生成时间：本任务治理盘点
+# 严禁凭经验编造，仅以代码实际读取名为准
+
+变量名,使用模块,development 是否必填,staging 是否必填,production 是否必填,是否敏感,默认值,配置来源,负责人,轮换要求
+VITE_APP_ENV,frontend,,,SENSITIVE,,frontend/.env.*,frontend,—
+VITE_API_BASE_URL,frontend,S,HTTPS,HTTPS,否,frontend/.env.*,frontend,—
+VITE_IMAGE_BASE_URL,frontend,S,HTTPS,HTTPS,否,frontend/.env.*,frontend,—
+VITE_WX_APPID,frontend,—,H,HV,—,frontend/.env.staging,frontend,—
+VITE_BD_APPID,frontend,—,H,HV,—,frontend/.env.staging,frontend,—
+VITE_API_URL,frontend,—,—,—,—,frontend/.env.*,frontend,—
+YPAT_API_BASE_URL,backend-system-wap,—,H,H,—,backend/system-wap/dev|application.yml,backend,—
+YPAT_BD_APP_KEY,backend,—,H,H,yes,backend/application.yml,backend,—
+YPAT_BD_APP_SECRET,backend,—,H,H,yes,backend/application.yml,backend,—
+YPAT_BD_IDCARD_AK,backend,—,H,H,yes,backend/system-wap/pre|application.yml,backend,90d
+YPAT_BD_IDCARD_SK,backend,—,H,H,yes,backend/system-wap/pre|application.yml,backend,90d
+YPAT_BD_IDMATCH_AK,backend,—,H,H,yes,backend/system-wap/pre|application.yml,backend,90d
+YPAT_BD_IDMATCH_SK,backend,—,H,H,yes,backend/system-wap/pre|application.yml,backend,90d
+YPAT_EUREKA_DEFAULT_ZONE,backend,—,H,H,—,backend/system-wap/pre|application.yml,backend,—
+YPAT_FASTDFS_IMAGE,backend+compose,—,H,HV,—,backend/dev/fastdfs/docker-compose.staging.yml,devops,固定
+YPAT_FASTDFS_TRACKER_DATA_DIR,backend+compose,—,H,H,—,backend/dev/fastdfs/docker-compose.staging.yml,devops,—
+YPAT_FASTDFS_STORAGE_DATA_DIR,backend+compose,—,H,H,—,backend/dev/fastdfs/docker-compose.staging.yml,devops,—
+YPAT_FDFS_PUBLIC_BASE_URL,backend+compose,—,H,HV,—,backend/system-wap/pre|application.yml,backend,—
+YPAT_LOCAL_EUREKA_PORT,compose,—,H,H,—,docker-compose.staging.yml,devops,—
+YPAT_LOCAL_MYSQL_DATABASE,compose,—,H,H,—,docker-compose.staging.yml,devops,—
+YPAT_LOCAL_MYSQL_HOST,compose,—,H,H,—,docker-compose.staging.yml,devops,—
+YPAT_LOCAL_MYSQL_PORT,compose,—,H,H,—,docker-compose.staging.yml,devops,—
+YPAT_LOCAL_MYSQL_ROOT_PASSWORD,compose,—,H,HV,yes,docker-compose.staging.yml,devops,90d
+YPAT_LOCAL_MYSQL_USER,compose,—,H,H,—,docker-compose.staging.yml,devops,—
+YPAT_LOCAL_REDIS_PASSWORD,compose,—,H,HV,yes,docker-compose.staging.yml,devops,90d
+YPAT_LOCAL_REDIS_PORT,compose,—,H,H,—,docker-compose.staging.yml,devops,—
+YPAT_LOCAL_RESTAPI_PORT,compose,—,H,H,—,docker-compose.staging.yml,devops,—
+YPAT_LOCAL_WAP_PORT,compose,—,H,H,—,docker-compose.staging.yml,devops,—
+YPAT_LOCAL_WEB_PORT,compose,—,H,H,—,docker-compose.staging.yml,devops,—
+YPAT_LOG_DIR,compose,—,H,H,—,docker-compose.staging.yml,devops,—
+YPAT_MYSQL_PASSWORD,backend,—,H,H,yes,backend/system-restapi/pre|application.yml,backend,90d
+YPAT_MYSQL_URL,backend,—,H,H,—,backend/system-restapi/pre|application.yml,backend,—
+YPAT_MYSQL_USERNAME,backend,—,H,H,—,backend/system-restapi/pre|application.yml,backend,—
+YPAT_RABBITMQ_PASSWORD,backend,—,H,H,yes,backend/application.yml,backend,—
+YPAT_RABBITMQ_URL,backend,—,H,H,—,backend/application.yml,backend,—
+YPAT_RABBITMQ_USERNAME,backend,—,H,H,—,backend/application.yml,backend,—
+YPAT_REDIS_HOST,backend+compose,—,H,H,—,backend/system-wap/pre|application.yml,backend,—
+YPAT_REDIS_PASSWORD,backend+compose,—,H,H,yes,backend/system-wap/pre|application.yml,backend,—
+YPAT_REDIS_PORT,backend+compose,—,H,H,—,backend/system-wap/pre|application.yml,backend,—
+YPAT_SMS_MOCK_CODE,backend,dev,—,—,—,backend/system-wap/dev|application.yml,backend,—
+YPAT_SMS_MOCK_ENABLED,backend,dev,—,—,—,backend/system-wap/dev|application.yml,backend,—
+YPAT_SMS_MOCK_PHONE,backend,dev,—,—,—,backend/system-wap/dev|application.yml,backend,—
+YPAT_SSO_CLIENT0_SECRET,backend,dev,—,—,yes,backend/system-sso/dev|application.yml,backend,—
+YPAT_SSO_CLIENT1_SECRET,backend,dev,—,—,yes,backend/system-sso/dev|application.yml,backend,—
+YPAT_SSO_JWT_SIGNING_KEY,backend,dev,—,—,yes,backend/system-sso/dev|application.yml,backend,—
+YPAT_TEST_TOKEN,backend,dev,—,—,yes,backend/system-wap/dev|application.yml,backend,—
+YPAT_WEB_BD_OCR_AK,backend,—,H,H,yes,backend/system-web/pre|systemprop.yml,backend,—
+YPAT_WEB_BD_OCR_SK,backend,—,H,H,yes,backend/system-web/pre|systemprop.yml,backend,—
+YPAT_WX_APP_ID,backend,—,H,H,yes,backend/system-wap/pre|application.yml,backend,—
+YPAT_WX_APP_SECRET,backend,—,H,H,yes,backend/system-wap/pre|application.yml,backend,—
+YPAT_WX_MCH_ID,backend,—,H,H,yes,backend/system-wap/pre|application.yml,backend,—
+YPAT_WX_PAY_KEY,backend,—,H,H,yes,backend/system-wap/pre|application.yml,backend,—
+YPAT_WX_PUB_APP_ID,backend,—,H,H,yes,backend/system-wap/pre|application.yml,backend,—
+YPAT_WX_PUB_APP_SECRET,backend,—,H,H,yes,backend/system-wap/pre|application.yml,backend,—

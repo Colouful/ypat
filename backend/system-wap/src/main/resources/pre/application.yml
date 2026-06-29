@@ -25,6 +25,10 @@ eureka:
   instance:
     preferIpAddress: true
 
+system:
+  third:
+    fdfs_path: ${YPAT_FDFS_PUBLIC_BASE_URL:https://panghu.work/files}
+
 
 ##FeignClient超时设置
 ---

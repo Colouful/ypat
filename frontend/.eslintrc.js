@@ -30,5 +30,9 @@ module.exports = {
     '@typescript-eslint/no-unused-vars': ['warn', { argsIgnorePattern: '^_' }],
     'no-empty': ['error', { allowEmptyCatch: true }],
     'no-console': process.env.NODE_ENV === 'production' ? 'warn' : 'off',
+    // defensive-leading-semicolon idiom in tests (;(import.meta.env as any).X = ...)
+    // is intentional to prevent ASI hazards on lines starting with ( [ + - /;
+    // not "extra".
+    'no-extra-semi': 'off',
   },
 }
