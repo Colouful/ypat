@@ -22,7 +22,7 @@
       />
     </view>
     <YpatPublishForm v-else />
-    <KeepTabBar active="publish" :unread-count="userStore.unreadCount" />
+    <KeepTabBar active="publish" />
   </view>
 </template>
 
@@ -40,7 +40,7 @@ const appStore = useAppStore()
 const statusBarHeight = computed(() => appStore.statusBarHeight)
 
 function goLogin(): void {
-  uni.navigateTo({ url: '/pages/login/index' })
+  uni.navigateTo({ url: `/pages/login/index?redirect=${encodeURIComponent('/pages/publish/index')}` })
 }
 
 onShow(() => {

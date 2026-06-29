@@ -6,8 +6,9 @@
           <KeepIcon name="search" :size="46" color="#B3B8BE" />
           <text class="home-search__placeholder">搜索摄影师 / 风格 / 城市</text>
         </view>
-        <view class="home-ai" @tap="goDiscover">
-          <KeepIcon name="sparkles" :size="34" color="#1B1E23" />
+        <view class="home-message" @tap="goMessage">
+          <KeepIcon name="mail" :size="38" color="#1B1E23" />
+          <text v-if="unreadCount > 0" class="home-message__badge">{{ unreadCount > 9 ? '9+' : unreadCount }}</text>
         </view>
       </view>
 
@@ -75,13 +76,13 @@
       </view>
     </view>
 
-    <KeepTabBar active="home" :unread-count="unreadCount" />
+    <KeepTabBar active="home" />
 
     <KeepFilterSheet
       v-model:visible="filterVisible"
       v-model="filterValue"
       :groups="filterGroups"
-      :count="86"
+      :count="totalCount"
       @reset="resetFilter"
       @confirm="applyFilter"
     />
@@ -100,7 +101,7 @@ import KeepIcon from '@/components/business/KeepIcon.vue'
 import KeepState from '@/components/business/KeepState.vue'
 import KeepTabBar from '@/components/business/KeepTabBar.vue'
 import KeepYpatCard, { type KeepYpatCardItem } from '@/components/business/KeepYpatCard.vue'
-import { goTab } from '@/utils/tab-navigation'
+import { openMessage } from '@/utils/tab-navigation'
 import type { YpatInfo } from '@/api/types/index'
 
 type TabKey = 'recommend' | 'nearby' | 'latest'
@@ -118,6 +119,7 @@ const activeChip = ref('all')
 const loading = ref(false)
 const list = ref<YpatInfo[]>([])
 const page = ref(0)
+const totalCount = ref(0)
 const hasMore = ref(true)
 const filterVisible = ref(false)
 const filterValue = ref<FilterValue>({
@@ -149,6 +151,7 @@ const quickChips = [
   { label: 'INS', value: 'INS' },
   { label: '胶片', value: '胶片' },
   { label: '情绪', value: '情绪' },
+  { label: '灵感发现', value: 'discover' },
 ]
 
 const filterGroups: KeepFilterGroup[] = [
@@ -200,12 +203,13 @@ function buildParams() {
   const target = filterValue.value.target?.find((value) => value !== 'all')
   const chargeway = filterValue.value.chargeway?.[0]
   const style = filterValue.value.style?.[0]
+  const city = currentCity.value || userStore.userInfo?.city || ''
   return {
     page: page.value,
     size: 10,
     status: 'shtg',
     ...(activeTab.value === 'recommend' ? { recomflag: '1' } : {}),
-    ...(activeTab.value === 'nearby' && currentCity.value && currentCity.value !== '全国' ? { city: currentCity.value } : {}),
+    ...(activeTab.value === 'nearby' && city && city !== '全国' ? { city } : {}),
     ...(target ? { target } : {}),
     ...(chargeway ? { chargeway } : {}),
     ...(style ? { patstyle: style } : {}),
@@ -230,8 +234,10 @@ async function loadList(refresh = false) {
     if (res.success) {
       const content = res.data.content || []
       list.value = refresh ? content : list.value.concat(content)
-      hasMore.value = content.length >= 10
-      page.value++
+      totalCount.value = Number(res.data.totalElements || 0)
+      const current = res.data.number ?? page.value
+      hasMore.value = current + 1 < (res.data.totalPages || 0)
+      page.value = current + 1
     }
   } catch (error) {
     uni.showToast({ title: error instanceof Error ? error.message : '约拍加载失败', icon: 'none' })
@@ -240,19 +246,23 @@ async function loadList(refresh = false) {
   }
 }
 
-function switchTab(key: TabKey) {
+async function switchTab(key: TabKey) {
   if (activeTab.value === key) return
   activeTab.value = key
   list.value = []
-  loadList(true)
   // 用户切到"附近"时按需请求位置授权（不在 onMounted 自动调，
   // 避免微信直接拒导致 Promise 卡死 + launch time 暴涨）
   if (key === 'nearby') {
-    void getLocation()
+    await getLocation()
   }
+  loadList(true)
 }
 
 function pickChip(value: string) {
+  if (value === 'discover') {
+    uni.navigateTo({ url: '/pages/discover/index' })
+    return
+  }
   activeChip.value = value
   if (value === 'all') filterValue.value = { ...filterValue.value, target: ['all'], style: [], chargeway: [] }
   if (value === 'free') filterValue.value = { ...filterValue.value, chargeway: ['0'] }
@@ -272,7 +282,7 @@ function handleQuickItem(value: string) {
     activeTab.value = 'nearby'
     activeChip.value = 'all'
     filterValue.value = { ...filterValue.value, target: ['all'], style: [], chargeway: [] }
-    loadList(true)
+    getLocation().finally(() => loadList(true))
     return
   }
   uni.navigateTo({ url: `/pages-sub/ypat/search?keyword=${encodeURIComponent(value)}` })
@@ -298,8 +308,8 @@ function goSearch() {
   uni.navigateTo({ url: '/pages-sub/ypat/search' })
 }
 
-function goDiscover() {
-  goTab('/pages/discover/index')
+function goMessage() {
+  openMessage()
 }
 
 async function getLocation() {
@@ -318,11 +328,11 @@ async function getLocation() {
         uni.openSetting({ success: resolve, fail: reject })
       })
       if (opened.authSetting['scope.userLocation'] !== true) {
-        currentCity.value = '全国'
+        currentCity.value = userStore.userInfo?.city || '全国'
         return
       }
     } catch {
-      currentCity.value = '全国'
+      currentCity.value = userStore.userInfo?.city || '全国'
       return
     }
   }
@@ -342,10 +352,10 @@ async function getLocation() {
         setTimeout(() => reject(new Error('getLocation timeout 5s')), 5000),
       ),
     ])
-    currentCity.value = '全国'
+    currentCity.value = userStore.userInfo?.city || '全国'
   } catch (err) {
     console.warn('[DEBUG-getLocation]', err)
-    currentCity.value = '全国'
+    currentCity.value = userStore.userInfo?.city || '全国'
   }
 }
 
@@ -408,27 +418,33 @@ onReachBottom(() => {
   font-weight: 700;
 }
 
-.home-ai {
+.home-message {
+  position: relative;
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 68rpx;
-  height: 68rpx;
+  width: 72rpx;
+  height: 72rpx;
   border-radius: 50%;
-  background: conic-gradient(from 90deg, #7C5CFF, #23C268, #FF9F1C, #7C5CFF);
+  background: #fff;
+  box-shadow: $shadow-keep-card;
 }
 
-.home-ai__spark {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 52rpx;
-  height: 52rpx;
-  border-radius: 50%;
-  color: $color-text-primary;
-  background: #fff;
-  font-size: 30rpx;
-  font-weight: 800;
+.home-message__badge {
+  position: absolute;
+  top: -8rpx;
+  right: -10rpx;
+  min-width: 34rpx;
+  height: 34rpx;
+  padding: 0 8rpx;
+  border: 4rpx solid #fff;
+  border-radius: $radius-round;
+  color: #fff;
+  background: $color-accent-red;
+  font-size: 20rpx;
+  font-weight: 900;
+  line-height: 34rpx;
+  text-align: center;
 }
 
 .quick-grid {

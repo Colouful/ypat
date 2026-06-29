@@ -86,9 +86,10 @@
 
 <script setup lang="ts">
 import { ref } from 'vue'
+import { onLoad } from '@dcloudio/uni-app'
 import { useUserStore } from '@/stores/user'
 import KeepIcon from '@/components/business/KeepIcon.vue'
-import { goTab } from '@/utils/tab-navigation'
+import { goRootTab, isRootTabUrl } from '@/utils/tab-navigation'
 import { isPhone } from '@/utils/validate'
 import { isProfileComplete } from '@/utils/profile'
 import type { UserInfo } from '@/api/types'
@@ -109,19 +110,28 @@ const countdown = ref(0)
 const mobile = ref('')
 const smsCode = ref('')
 const debugCode = ref('')
+const redirectUrl = ref('')
 let countdownTimer: ReturnType<typeof setInterval> | null = null
 
 // 登录成功后的回跳：资料不完整(对齐旧版 getNextUrl)→ 引导完善资料；
 // 否则保留原目标回跳(登录回跳)。
 function redirectAfterLogin(user: UserInfo): void {
   uni.showToast({ title: '登录成功', icon: 'success' })
+  if (redirectUrl.value) {
+    const target = redirectUrl.value
+    setTimeout(() => {
+      if (isRootTabUrl(target)) goRootTab(target)
+      else uni.redirectTo({ url: target })
+    }, 600)
+    return
+  }
   if (!isProfileComplete(user)) {
     setTimeout(() => uni.redirectTo({ url: '/pages-sub/user/complete-info' }), 600)
     return
   }
   const pages = getCurrentPages()
   if (pages.length > 1) uni.navigateBack()
-  else goTab('/pages/home/index')
+  else goRootTab('/pages/home/index')
 }
 
 async function handleWechatPhoneAuthorization(event: PhoneAuthorizationEvent): Promise<void> {
@@ -241,6 +251,10 @@ function goAgreement(): void {
 function goPrivacy(): void {
   uni.navigateTo({ url: '/pages-sub/content/privacy' })
 }
+
+onLoad((query) => {
+  redirectUrl.value = decodeURIComponent(String(query?.redirect || ''))
+})
 </script>
 
 <style lang="scss">

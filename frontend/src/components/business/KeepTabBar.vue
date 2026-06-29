@@ -4,56 +4,54 @@
       v-for="item in items"
       :key="item.key"
       class="keep-tabbar__item"
-      :class="{ 'keep-tabbar__item--active': active === item.key }"
+      :class="{
+        'keep-tabbar__item--active': active === item.key,
+        'keep-tabbar__item--publish': item.key === 'publish',
+      }"
       @tap="go(item)"
     >
-      <KeepIcon
-        :name="item.icon"
-        :size="item.key === 'publish' ? 46 : 44"
-        :color="active === item.key ? '#1A1D1F' : '#83888F'"
-      />
-      <text class="keep-tabbar__label">{{ item.label }}</text>
-      <view v-if="item.key === 'discover' && showDiscoverDot" class="keep-tabbar__dot" />
-      <view v-if="item.key === 'message' && unreadCount > 0" class="keep-tabbar__badge">
-        {{ unreadCount > 9 ? '9+' : unreadCount }}
+      <view class="keep-tabbar__icon">
+        <KeepIcon
+          :name="item.icon"
+          :size="item.key === 'publish' ? 54 : 44"
+          :color="item.key === 'publish' ? '#FFFFFF' : active === item.key ? '#1A1D1F' : '#83888F'"
+        />
       </view>
+      <text class="keep-tabbar__label">{{ item.label }}</text>
     </view>
   </view>
 </template>
 
 <script setup lang="ts">
 import KeepIcon from './KeepIcon.vue'
-import { goTab, type BottomTabUrl } from '@/utils/tab-navigation'
+import { goRootTab, openPublish, type RootTabUrl } from '@/utils/tab-navigation'
 
-type TabKey = 'home' | 'discover' | 'publish' | 'message' | 'mine'
+type TabKey = 'home' | 'publish' | 'mine'
 
 type TabItem = {
   key: TabKey
   label: string
   icon: string
-  url: BottomTabUrl
+  url?: RootTabUrl
 }
 
 const props = withDefaults(defineProps<{
   active: TabKey
-  unreadCount?: number
-  showDiscoverDot?: boolean
-}>(), {
-  unreadCount: 0,
-  showDiscoverDot: true,
-})
+}>(), {})
 
 const items: TabItem[] = [
-  { key: 'home', label: '广场', icon: 'home', url: '/pages/home/index' },
-  { key: 'discover', label: '发现', icon: 'compass', url: '/pages/discover/index' },
-  { key: 'publish', label: '发布', icon: 'plus-circle', url: '/pages/publish/index' },
-  { key: 'message', label: '消息', icon: 'mail', url: '/pages/message/index' },
+  { key: 'home', label: '首页', icon: 'home', url: '/pages/home/index' },
+  { key: 'publish', label: '发布', icon: 'plus-circle' },
   { key: 'mine', label: '我的', icon: 'user', url: '/pages/mine/index' },
 ]
 
 function go(item: TabItem): void {
-  if (props.active === item.key) return
-  goTab(item.url)
+  if (item.key === 'publish') {
+    openPublish()
+    return
+  }
+  if (props.active === item.key || !item.url) return
+  goRootTab(item.url)
 }
 </script>
 
@@ -67,10 +65,11 @@ function go(item: TabItem): void {
   left: 0;
   display: flex;
   align-items: center;
-  justify-content: space-around;
+  justify-content: center;
+  gap: 78rpx;
   box-sizing: border-box;
-  min-height: calc(120rpx + env(safe-area-inset-bottom));
-  padding-top: 14rpx;
+  min-height: calc(132rpx + env(safe-area-inset-bottom));
+  padding-top: 18rpx;
   padding-bottom: env(safe-area-inset-bottom);
   border-top: 1rpx solid $color-border;
   background: rgba(255, 255, 255, 0.96);
@@ -81,11 +80,18 @@ function go(item: TabItem): void {
   @include flex-column;
   align-items: center;
   justify-content: center;
-  min-width: 112rpx;
+  width: 132rpx;
+  height: 104rpx;
   color: $color-text-helper;
   font-size: 24rpx;
   font-weight: 800;
   line-height: 1.2;
+}
+
+.keep-tabbar__icon {
+  @include flex-center;
+  width: 54rpx;
+  height: 54rpx;
 }
 
 .keep-tabbar__label {
@@ -96,31 +102,22 @@ function go(item: TabItem): void {
   color: $color-text-primary;
 }
 
-.keep-tabbar__dot {
-  position: absolute;
-  top: 2rpx;
-  right: 26rpx;
-  width: 18rpx;
-  height: 18rpx;
-  border: 4rpx solid #fff;
-  border-radius: 50%;
-  background: $color-accent-red;
+.keep-tabbar__item--publish {
+  transform: translateY(-24rpx);
+  color: #fff;
 }
 
-.keep-tabbar__badge {
-  position: absolute;
-  top: -8rpx;
-  right: 14rpx;
-  min-width: 34rpx;
-  height: 34rpx;
-  padding: 0 8rpx;
-  border: 4rpx solid #fff;
-  border-radius: $radius-round;
-  color: #fff;
-  background: $color-accent-red;
-  font-size: 20rpx;
-  font-weight: 900;
-  line-height: 34rpx;
-  text-align: center;
+.keep-tabbar__item--publish .keep-tabbar__icon {
+  width: 96rpx;
+  height: 96rpx;
+  border: 8rpx solid #fff;
+  border-radius: 50%;
+  background: $color-text-primary;
+  box-shadow: 0 14rpx 34rpx rgba(27, 30, 35, 0.18);
+}
+
+.keep-tabbar__item--publish .keep-tabbar__label {
+  margin-top: 8rpx;
+  color: $color-text-primary;
 }
 </style>

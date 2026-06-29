@@ -3,7 +3,7 @@ import { defineStore } from 'pinia'
 import { get, post } from '@/api/request'
 import { envConfig } from '@/config/env'
 import { sendH5LoginCode } from '@/api/modules/user'
-import { goTab } from '@/utils/tab-navigation'
+import { goRootTab } from '@/utils/tab-navigation'
 import {
   clearAuth,
   getStoredUserInfo,
@@ -147,7 +147,7 @@ export const useUserStore = defineStore('user', () => {
 
   function logout(): void {
     clearAuth()
-    goTab('/pages/home/index')
+    goRootTab('/pages/home/index')
   }
 
   async function updateUserInfo(localPatch?: Partial<UserInfo>): Promise<UserInfo | null> {

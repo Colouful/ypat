@@ -91,7 +91,7 @@ import { TARGET_LABELS } from '@/constants/enums'
 import KeepIcon from './KeepIcon.vue'
 import KeepState from './KeepState.vue'
 import type { YpatInfo } from '@/api/types'
-import { goTab } from '@/utils/tab-navigation'
+import { goRootTab } from '@/utils/tab-navigation'
 
 const props = defineProps<{ id: number }>()
 const emit = defineEmits<{
@@ -144,7 +144,7 @@ function preview(index: number): void {
 
 function back(): void {
   if (getCurrentPages().length > 1) uni.navigateBack()
-  else goTab('/pages/home/index')
+  else goRootTab('/pages/home/index')
 }
 
 function copyShareLink(): void {

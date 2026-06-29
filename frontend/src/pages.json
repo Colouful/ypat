@@ -145,6 +145,12 @@
           }
         },
         {
+          "path": "helpcenter",
+          "style": {
+            "navigationStyle": "custom"
+          }
+        },
+        {
           "path": "feedback",
           "style": {
             "navigationStyle": "custom"

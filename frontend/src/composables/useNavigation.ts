@@ -1,8 +1,10 @@
 import { useUserStore } from '@/stores/user'
 import {
-  goTab,
+  goRootTab,
+  openMessage,
+  openPublish,
   hideNavigationLoading,
-  isBottomTabUrl,
+  isRootTabUrl,
   showNavigationLoading,
 } from '@/utils/tab-navigation'
 
@@ -62,14 +64,26 @@ function checkLoginInterception(url: string): boolean {
 export function useNavigation() {
   function navigateTo(url: string, params?: Record<string, string | number | boolean | undefined | null>) {
     const fullUrl = buildUrl(url, params)
+    const path = fullUrl.split('?')[0]
+    if (path === '/pages/publish/index') {
+      openPublish()
+      return
+    }
+    if (path === '/pages/message/index') {
+      openMessage()
+      return
+    }
+    if (isRootTabUrl(path)) {
+      goRootTab(path)
+      return
+    }
     if (!checkLoginInterception(fullUrl)) return
 
     showNavigationLoading()
     uni.navigateTo({
       url: fullUrl,
       fail: () => {
-        const path = fullUrl.split('?')[0]
-        if (isBottomTabUrl(path)) goTab(path)
+        if (isRootTabUrl(path)) goRootTab(path)
       },
       complete: hideNavigationLoading,
     })
@@ -84,7 +98,7 @@ export function useNavigation() {
   }
 
   function switchTab(url: string) {
-    if (isBottomTabUrl(url)) goTab(url)
+    if (isRootTabUrl(url)) goRootTab(url)
   }
 
   function reLaunch(url: string) {
@@ -97,7 +111,7 @@ export function useNavigation() {
     if (pages.length > 1) {
       uni.navigateBack({ delta })
     } else {
-      goTab('/pages/home/index')
+      goRootTab('/pages/home/index')
     }
   }
 

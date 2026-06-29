@@ -44,7 +44,7 @@ import { computed, reactive, ref } from 'vue'
 import { useUserStore } from '@/stores/user'
 import * as userApi from '@/api/modules/user'
 import { GENDER_LABELS, PROFESS_LABELS } from '@/constants/enums'
-import { goTab } from '@/utils/tab-navigation'
+import { goRootTab } from '@/utils/tab-navigation'
 import type { UpdateUserParams } from '@/api/types'
 
 const userStore = useUserStore()
@@ -106,7 +106,7 @@ async function submit(): Promise<void> {
 }
 
 function goHome(): void {
-  goTab('/pages/home/index')
+  goRootTab('/pages/home/index')
 }
 </script>
 

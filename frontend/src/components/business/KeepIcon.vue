@@ -71,6 +71,12 @@ const iconMap: Record<string, IconPart[]> = {
     { tag: 'circle', attrs: { cx: 12, cy: 8, r: 5 } },
     { tag: 'path', attrs: { d: 'M20 21a8 8 0 0 0-16 0' } },
   ],
+  users: [
+    { tag: 'path', attrs: { d: 'M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2' } },
+    { tag: 'circle', attrs: { cx: 9, cy: 7, r: 4 } },
+    { tag: 'path', attrs: { d: 'M22 21v-2a4 4 0 0 0-3-3.9' } },
+    { tag: 'path', attrs: { d: 'M16 3.1a4 4 0 0 1 0 7.8' } },
+  ],
   camera: [
     { tag: 'path', attrs: { d: 'M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3z' } },
     { tag: 'circle', attrs: { cx: 12, cy: 13, r: 3 } },
@@ -100,6 +106,11 @@ const iconMap: Record<string, IconPart[]> = {
   shield: [
     { tag: 'path', attrs: { d: 'M20 13c0 5-3.5 7.5-7.7 8.8a1 1 0 0 1-.6 0C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.2-2.6a1.3 1.3 0 0 1 1.6 0C14.5 3.8 17 5 19 5a1 1 0 0 1 1 1z' } },
     { tag: 'path', attrs: { d: 'm9 12 2 2 4-4' } },
+  ],
+  'help-circle': [
+    { tag: 'circle', attrs: { cx: 12, cy: 12, r: 10 } },
+    { tag: 'path', attrs: { d: 'M9.1 9a3 3 0 1 1 5.8 1c-.5 1.3-2 2-2.9 3' } },
+    { tag: 'path', attrs: { d: 'M12 17h.01' } },
   ],
   wallet: [
     { tag: 'path', attrs: { d: 'M19 7V5a2 2 0 0 0-2-2H5a2 2 0 0 0 0 4h15a2 2 0 0 1 2 2v3' } },

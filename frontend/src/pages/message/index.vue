@@ -6,8 +6,8 @@
           <text class="message-title">消息</text>
           <text class="message-subtitle">约拍申请与合作动态</text>
         </view>
-        <view class="message-top__icon" @tap="goDiscover">
-          <KeepIcon name="compass" :size="42" />
+        <view class="message-top__icon" @tap="goHome">
+          <KeepIcon name="home" :size="42" />
         </view>
       </view>
 
@@ -50,7 +50,7 @@
       </template>
     </view>
 
-    <KeepTabBar active="message" :unread-count="userStore.unreadCount" />
+    <KeepTabBar active="mine" />
   </view>
 </template>
 
@@ -64,7 +64,7 @@ import * as messageApi from '@/api/modules/message'
 import KeepIcon from '@/components/business/KeepIcon.vue'
 import KeepState from '@/components/business/KeepState.vue'
 import KeepTabBar from '@/components/business/KeepTabBar.vue'
-import { goTab } from '@/utils/tab-navigation'
+import { goRootTab } from '@/utils/tab-navigation'
 import type { MessInfo } from '@/api/types'
 import { resolveMessageNavigation } from '@/utils/message-navigation'
 
@@ -124,11 +124,7 @@ async function openDetail(item: MessInfo): Promise<void> {
 }
 
 function goHome(): void {
-  goTab('/pages/home/index')
-}
-
-function goDiscover(): void {
-  goTab('/pages/discover/index')
+  goRootTab('/pages/home/index')
 }
 
 function goLogin(): void {
