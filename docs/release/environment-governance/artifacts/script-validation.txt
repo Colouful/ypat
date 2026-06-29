@@ -1,0 +1,50 @@
+# Shell 脚本验证
+
+**日期**: 2026-06-29
+
+## 1. bash -n 语法检查
+
+```bash
+for s in scripts/deploy/*.sh; do
+  bash -n "$s" && echo "OK: $s"
+done
+```
+
+**结果**:
+
+```
+OK: scripts/deploy/check-tls-expiry.sh
+OK: scripts/deploy/db-migrate-staging.sh
+OK: scripts/deploy/db-preflight.sh
+OK: scripts/deploy/db-verify.sh
+OK: scripts/deploy/deploy-production.sh
+OK: scripts/deploy/deploy-staging.sh
+OK: scripts/deploy/get-fastdfs-digest.sh
+OK: scripts/deploy/install-nginx-config.sh
+OK: scripts/deploy/migrate-fastdfs-data.sh
+OK: scripts/deploy/preflight-production.sh
+OK: scripts/deploy/preflight.sh
+OK: scripts/deploy/rollback-production.sh
+OK: scripts/deploy/rollback-staging.sh
+```
+
+13/13 通过 ✅
+
+## 2. 前端环境校验脚本
+
+```bash
+node scripts/config/validate-frontend-env.mjs development
+✓ frontend environment 'development' passed validation
+
+node scripts/config/validate-frontend-env.mjs staging
+✓ frontend environment 'staging' passed validation
+
+# production 拒绝 staging 域名
+$ VITE_API_BASE_URL=https://panghu.work/api \
+  node scripts/config/validate-frontend-env.mjs production
+✗ frontend environment 'production' failed validation:
+  - VITE_API_BASE_URL 使用禁止的 production 主机名 'panghu.work'：
+    production 必须有独立域名，不能是 staging/localhost/IP
+```
+
+3/3 通过（fail-closed 行为正确）✅
