@@ -183,6 +183,8 @@ async function handleWechatPhoneAuthorization(event: PhoneAuthorizationEvent): P
       iv: detail.iv,
       channel: '0',
       recmobile: invite?.recmobile,
+      inviteCode: invite?.inviteCode,
+      inviteSource: invite?.source,
     })
 
     redirectAfterLogin(user)
@@ -253,6 +255,8 @@ async function handleH5PhoneLogin(): Promise<void> {
       mobile: mobile.value.trim(),
       smsCode: smsCode.value.trim(),
       recmobile: invite?.recmobile,
+      inviteCode: invite?.inviteCode,
+      inviteSource: invite?.source,
     })
     redirectAfterLogin(user)
   } catch (error) {

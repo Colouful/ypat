@@ -9,6 +9,7 @@ import com.ypat.repository.*;
 import com.ypat.util.CommonUtils;
 import com.ypat.util.Constant;
 import com.ypat.util.CopyUtil;
+import com.ypat.util.InviteCodeCodec;
 import com.ypat.util.TimeUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -47,6 +48,8 @@ public class UserService {
     private RecordRepository recordRepository;
     @Autowired
     private UserOrigRepository userOrigRepository;
+    @Autowired
+    private InviteService inviteService;
 
     /**
      *
@@ -165,21 +168,40 @@ public class UserService {
             userOrig.setCredate(new Date());
             userOrigRepository.save(userOrig);
 
-            //推荐人增加拍拍豆
-            if(!StringUtils.isEmpty(userQo.getRecmobile())){
-                UserQo recUserQo = findByMobile(userQo.getRecmobile());
-                if(recUserQo!=null) {
-                    User recUser = get(recUserQo.getId());
-                    recUser.setPpd(recUser.getPpd() + Constant.INVITE_NEED_PPD);
-                    userRepository.save(recUser);
-                    //增加收支记录
-                    Record record = new Record();
-                    record.setCredate(new Date());
-                    record.setPpd(Constant.INVITE_NEED_PPD);
-                    record.setUserid(recUser.getId());
-                    record.setType(RecordType.FRI.value);
-                    recordRepository.save(record);
+            //推荐人增加拍拍豆 - 优先解析 inviteCode（新版安全邀请码），退化到 recmobile（旧版兼容）
+            Long inviterId = null;
+            String inviteCodeUsed = null;
+            String inviteSource = userQo.getInviteSource();
+            if(!StringUtils.isEmpty(userQo.getInviteCode())){
+                Long decoded = InviteCodeCodec.decode(userQo.getInviteCode());
+                if(decoded != null && !decoded.equals(user.getId())){
+                    User inviter = userRepository.findOne(decoded);
+                    if(inviter != null){
+                        inviterId = inviter.getId();
+                        inviteCodeUsed = userQo.getInviteCode();
+                    }
                 }
+            }
+            if(inviterId == null && !StringUtils.isEmpty(userQo.getRecmobile())){
+                UserQo recUserQo = findByMobile(userQo.getRecmobile());
+                if(recUserQo != null && !recUserQo.getId().equals(user.getId())){
+                    inviterId = recUserQo.getId();
+                    if(StringUtils.isEmpty(inviteSource)) inviteSource = "recmobile";
+                }
+            }
+            if(inviterId != null){
+                User recUser = get(inviterId);
+                recUser.setPpd(recUser.getPpd() + Constant.INVITE_NEED_PPD);
+                userRepository.save(recUser);
+                //增加收支记录
+                Record record = new Record();
+                record.setCredate(new Date());
+                record.setPpd(Constant.INVITE_NEED_PPD);
+                record.setUserid(recUser.getId());
+                record.setType(RecordType.FRI.value);
+                recordRepository.save(record);
+                //写入邀请关系（幂等：uk_invitee_userid 兜底）
+                inviteService.bindRelation(inviterId, user.getId(), inviteCodeUsed, inviteSource);
             }
             userQo.setId(user.getId());
             return userQo;

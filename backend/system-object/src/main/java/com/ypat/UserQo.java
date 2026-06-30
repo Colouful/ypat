@@ -34,6 +34,10 @@ public class UserQo extends PageQo implements java.io.Serializable{
     private Integer rectimes;
     private Integer coltimes;
     private String recmobile;
+    /** 邀请码（base36 编码的邀请人 user.id），优先级高于 recmobile。 */
+    private String inviteCode;
+    /** 邀请入口来源：share / qr / manual / recmobile，供运营回溯。 */
+    private String inviteSource;
     private String status;
     private String province;
     private String city;
@@ -243,6 +247,22 @@ public class UserQo extends PageQo implements java.io.Serializable{
 
     public void setRecmobile(String recmobile) {
         this.recmobile = recmobile;
+    }
+
+    public String getInviteCode() {
+        return inviteCode;
+    }
+
+    public void setInviteCode(String inviteCode) {
+        this.inviteCode = inviteCode;
+    }
+
+    public String getInviteSource() {
+        return inviteSource;
+    }
+
+    public void setInviteSource(String inviteSource) {
+        this.inviteSource = inviteSource;
     }
 
     public String getStatus() {
