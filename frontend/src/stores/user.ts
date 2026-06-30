@@ -28,6 +28,8 @@ export interface WechatLoginInput {
 export interface H5PhoneLoginInput {
   mobile: string
   smsCode: string
+  /** 邀请人手机号，仅在首次注册时由后端绑定并发放 +3 拍拍豆。 */
+  recmobile?: string
 }
 
 export const useUserStore = defineStore('user', () => {
@@ -95,13 +97,15 @@ export const useUserStore = defineStore('user', () => {
   }
 
   async function loginByPhone(input: H5PhoneLoginInput): Promise<UserInfo> {
-    return loginByPhoneInternal(input.mobile.trim(), input.smsCode.trim())
+    return loginByPhoneInternal(input.mobile.trim(), input.smsCode.trim(), input.recmobile?.trim())
   }
 
-  async function loginByPhoneInternal(mobile: string, smsCode: string): Promise<UserInfo> {
+  async function loginByPhoneInternal(mobile: string, smsCode: string, recmobile?: string): Promise<UserInfo> {
+    const payload: Record<string, string> = { mobile, smsCode, channel: '2' }
+    if (recmobile && recmobile !== mobile) payload.recmobile = recmobile
     const result = await post<LoginResult>(
       '/user/login',
-      { mobile, smsCode, channel: '2' },
+      payload,
       { withToken: false, showError: false },
     )
     return applyLoginResult(result)

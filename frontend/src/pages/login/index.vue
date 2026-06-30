@@ -54,7 +54,7 @@
           <KeepIcon name="phone" :size="38" color="#FFFFFF" />
           <text>{{ submitting ? '登录中...' : '手机号登录' }}</text>
         </button>
-        <text v-if="debugCode" class="debug-code">开发验证码：{{ debugCode }}</text>
+        <text v-if="debugCode && isDevEnv" class="debug-code">开发验证码：{{ debugCode }}</text>
       </view>
       <!-- #endif -->
 
@@ -92,7 +92,14 @@ import KeepIcon from '@/components/business/KeepIcon.vue'
 import { goRootTab, isRootTabUrl } from '@/utils/tab-navigation'
 import { isPhone } from '@/utils/validate'
 import { isProfileComplete } from '@/utils/profile'
+import {
+  captureInviteFromQuery,
+  consumeInviteContext,
+  getInviteContext,
+} from '@/services/invite-context'
 import type { UserInfo } from '@/api/types'
+
+const isDevEnv = import.meta.env.DEV
 
 interface PhoneAuthorizationEvent {
   detail?: {
@@ -114,9 +121,20 @@ const redirectUrl = ref('')
 let countdownTimer: ReturnType<typeof setInterval> | null = null
 
 // 登录成功后的回跳：资料不完整(对齐旧版 getNextUrl)→ 引导完善资料；
-// 否则保留原目标回跳(登录回跳)。
+// 否则保留原目标回跳(登录回跳)。完善资料后会继续走 redirect，因此
+// 邀请关系绑定结果与目标页跳转互不阻塞。
 function redirectAfterLogin(user: UserInfo): void {
+  consumeInviteContext(user.mobile)
   uni.showToast({ title: '登录成功', icon: 'success' })
+
+  if (!isProfileComplete(user)) {
+    const url = redirectUrl.value
+      ? `/pages-sub/user/complete-info?redirect=${encodeURIComponent(redirectUrl.value)}`
+      : '/pages-sub/user/complete-info'
+    setTimeout(() => uni.redirectTo({ url }), 600)
+    return
+  }
+
   if (redirectUrl.value) {
     const target = redirectUrl.value
     setTimeout(() => {
@@ -125,10 +143,7 @@ function redirectAfterLogin(user: UserInfo): void {
     }, 600)
     return
   }
-  if (!isProfileComplete(user)) {
-    setTimeout(() => uni.redirectTo({ url: '/pages-sub/user/complete-info' }), 600)
-    return
-  }
+
   const pages = getCurrentPages()
   if (pages.length > 1) uni.navigateBack()
   else goRootTab('/pages/home/index')
@@ -161,11 +176,13 @@ async function handleWechatPhoneAuthorization(event: PhoneAuthorizationEvent): P
       uni.login({ provider: 'weixin', success: resolve, fail: reject })
     })
 
+    const invite = getInviteContext()
     const user = await userStore.login({
       code: loginResult.code,
       encryptedData: detail.encryptedData,
       iv: detail.iv,
       channel: '0',
+      recmobile: invite?.recmobile,
     })
 
     redirectAfterLogin(user)
@@ -231,9 +248,11 @@ async function handleH5PhoneLogin(): Promise<void> {
 
   submitting.value = true
   try {
+    const invite = getInviteContext()
     const user = await userStore.loginByPhone({
       mobile: mobile.value.trim(),
       smsCode: smsCode.value.trim(),
+      recmobile: invite?.recmobile,
     })
     redirectAfterLogin(user)
   } catch (error) {
@@ -254,6 +273,11 @@ function goPrivacy(): void {
 
 onLoad((query) => {
   redirectUrl.value = decodeURIComponent(String(query?.redirect || ''))
+  captureInviteFromQuery({
+    inviteCode: query?.inviteCode ? String(query.inviteCode) : null,
+    recmobile: query?.recmobile ? String(query.recmobile) : null,
+    source: query?.source ? String(query.source) : 'login',
+  })
 })
 </script>
 
