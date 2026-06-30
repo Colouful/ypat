@@ -157,9 +157,16 @@
           }
         },
         {
-          "path": "invite-soon",
+          "path": "member/index",
           "style": {
             "navigationStyle": "custom"
+          }
+        },
+        {
+          "path": "member-orders",
+          "style": {
+            "navigationStyle": "custom",
+            "enablePullDownRefresh": true
           }
         },
         {
