@@ -163,7 +163,7 @@ const serviceItems = computed<ServiceItem[]>(() => {
   const items: ServiceItem[] = [
     { title: '我的消息', icon: 'mail', url: '/pages/message/index', badge: messageBadge.value, auth: true },
     { title: '我的主页', icon: 'user', action: goHomepage, auth: true },
-    { title: '好友邀请', icon: 'users', desc: '邀请好友，享拍拍豆奖励', url: '/pages-sub/user/invite-soon', auth: true },
+    { title: '好友邀请', icon: 'users', desc: '邀请好友，享拍拍豆奖励', url: '/pages-sub/user/invite', auth: true },
   ]
   if (realnameAvailable.value) {
     items.push({ title: '实名认证', icon: 'shield', url: '/pages-sub/user/realname', badge: realnameState.value.text, auth: true })
