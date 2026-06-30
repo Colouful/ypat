@@ -157,9 +157,16 @@
           }
         },
         {
-          "path": "invite-soon",
+          "path": "invite",
           "style": {
             "navigationStyle": "custom"
+          }
+        },
+        {
+          "path": "invite-records",
+          "style": {
+            "navigationStyle": "custom",
+            "enablePullDownRefresh": true
           }
         },
         {
@@ -193,6 +200,12 @@
         },
         {
           "path": "message-detail",
+          "style": {
+            "navigationStyle": "custom"
+          }
+        },
+        {
+          "path": "invite-landing",
           "style": {
             "navigationStyle": "custom"
           }

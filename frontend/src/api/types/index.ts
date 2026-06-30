@@ -70,6 +70,10 @@ export interface LoginParams {
   gender?: string
   channel: string
   recmobile?: string
+  /** base36 编码的邀请人 user.id，安全替代 recmobile（避免泄露手机号）。 */
+  inviteCode?: string
+  /** 邀请入口来源：share / qr / manual / recmobile，供运营回溯。 */
+  inviteSource?: string
   mobile?: string
   smsCode?: string
 }
@@ -335,6 +339,38 @@ export interface Article {
 export interface ArticleListParams extends PageParams {
   flag?: string
   status?: string
+}
+
+// ===== 邀请 =====
+
+export interface InviteSummary {
+  inviteCode: string
+  totalInvited: number
+  totalReward: number
+  rewardPpd: number
+}
+
+export interface InviteRule {
+  rewardPpd: number
+  rewardUnit: string
+  ruleText: string
+}
+
+export interface InviteRecord {
+  id: number
+  inviterUserid: number
+  inviteeUserid: number
+  inviteCode?: string
+  source?: string
+  rewardPpd?: number
+  credate?: string
+  inviteeNickname?: string
+  inviteeImgpath?: string
+  inviteeMobileMask?: string
+}
+
+export interface InviteRecordListParams extends PageParams {
+  [key: string]: number | undefined
 }
 
 // ===== 实名认证 =====

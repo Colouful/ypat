@@ -125,4 +125,42 @@ describe('user store login (GAP-AUTH-01)', () => {
     const [, payload] = requestMocks.post.mock.calls[0]
     expect(payload).toMatchObject({ recmobile: '13800138000' })
   })
+
+  it('production WeChat login forwards inviteCode with priority over recmobile', async () => {
+    envMock.envConfig.env = 'production'
+    requestMocks.post.mockResolvedValue({
+      success: true,
+      data: { id: 7, token: 'real-token' },
+      code: '200',
+      message: '',
+    })
+    const store = useUserStore()
+    await store.login({
+      code: 'wx-code',
+      encryptedData: 'enc',
+      iv: 'iv',
+      channel: '0',
+      recmobile: '13800138000',
+      inviteCode: 'IV3F',
+      inviteSource: 'share',
+    })
+
+    const [, payload] = requestMocks.post.mock.calls[0]
+    expect(payload).toMatchObject({ inviteCode: 'IV3F', inviteSource: 'share' })
+  })
+
+  it('H5 phone login forwards inviteCode without recmobile', async () => {
+    requestMocks.post.mockResolvedValue({
+      success: true,
+      data: { id: 8, token: 'h5-token' },
+      code: '200',
+      message: '',
+    })
+    const store = useUserStore()
+    await store.loginByPhone({ mobile: '13900139000', smsCode: '123456', inviteCode: 'IV2A', inviteSource: 'qr' })
+
+    const [, payload] = requestMocks.post.mock.calls[0]
+    expect(payload).toMatchObject({ inviteCode: 'IV2A', inviteSource: 'qr' })
+    expect(payload).not.toHaveProperty('recmobile')
+  })
 })
