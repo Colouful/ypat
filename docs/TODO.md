@@ -18,6 +18,11 @@
   - 建立索引与唯一约束
   - 写入 3 档种子套餐
   - 详见 `docs/sql/pending/README.md`
+  - **2026-06-30 本地 dev 环境已执行**（`codex-ypat-keep-ui-redesign-mysql-1`）：
+    - 4 张表全部创建
+    - 索引 + 唯一约束建好（`uk_invitee_userid` / `uk_out_trade_no` / `idx_user_status`）
+    - 3 档种子套餐写入（MONTH/SEASON/YEAR）
+  - ⏳ 生产 MySQL 待运维执行
 
 - [ ] **真机验证（按 spec §16 明确未验证项）**
   - 微信小程序真机 `getPhoneNumber` / 邀请落地 / 会员支付全链路
