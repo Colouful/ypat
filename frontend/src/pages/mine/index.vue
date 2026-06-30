@@ -66,30 +66,29 @@
         </view>
       </view>
 
-      <view v-for="group in visibleGroups" :key="group.title" class="service-section">
-        <text class="service-section__title">{{ group.title }}</text>
-        <view class="service-card">
-          <view
-            v-for="item in group.items"
-            :key="item.title"
-            class="service-row"
-            :class="{ 'service-row--disabled': item.disabled }"
-            @tap="handleService(item)"
-          >
-            <view class="service-row__icon">
-              <KeepIcon :name="item.icon" :size="38" />
-            </view>
-            <view class="service-row__body">
-              <text class="service-row__title">{{ item.title }}</text>
-              <text v-if="item.desc" class="service-row__desc">{{ item.desc }}</text>
-            </view>
-            <view class="service-row__right">
-              <text v-if="item.badge" class="service-row__badge">{{ item.badge }}</text>
-              <KeepIcon name="chevron-right" :size="34" color="#B3B8BE" />
-            </view>
+      <view class="service-card">
+        <view
+          v-for="item in serviceItems"
+          :key="item.title"
+          class="service-row"
+          :class="{ 'service-row--disabled': item.disabled }"
+          @tap="handleService(item)"
+        >
+          <view class="service-row__icon">
+            <KeepIcon :name="item.icon" :size="38" />
+          </view>
+          <view class="service-row__body">
+            <text class="service-row__title">{{ item.title }}</text>
+            <text v-if="item.desc" class="service-row__desc">{{ item.desc }}</text>
+          </view>
+          <view class="service-row__right">
+            <text v-if="item.badge" class="service-row__badge">{{ item.badge }}</text>
+            <KeepIcon name="chevron-right" :size="34" color="#B3B8BE" />
           </view>
         </view>
       </view>
+
+      <button v-if="isLoggedIn" class="logout" @tap="handleLogout">退出登录</button>
     </view>
 
     <KeepTabBar active="mine" />
@@ -108,9 +107,10 @@ import KeepIcon from '@/components/business/KeepIcon.vue'
 import KeepState from '@/components/business/KeepState.vue'
 import KeepTabBar from '@/components/business/KeepTabBar.vue'
 import { openMessage } from '@/utils/tab-navigation'
+import { isAdminOpenid } from '@/constants/admin'
 import type { ParamInfo } from '@/api/types/area-types'
 
-type ServiceItem = {
+interface ServiceItem {
   title: string
   icon: string
   url?: string
@@ -119,11 +119,6 @@ type ServiceItem = {
   auth?: boolean
   disabled?: boolean
   action?: () => void
-}
-
-type ServiceGroup = {
-  title: string
-  items: ServiceItem[]
 }
 
 const userStore = useUserStore()
@@ -158,47 +153,36 @@ const creditState = computed(() => (
     ? { text: '已信用担保', done: true }
     : { text: '未信用担保', done: false }
 ))
-const isAdmin = computed(() => false)
+// 后端无 role/isAdmin 字段，通过 openid 比对兜底；常量与 backend Const.SYS_ADMIN 同步。
+const isAdmin = computed(() => isAdminOpenid(userInfo.value?.openid))
+const realnameAvailable = computed(() => params.value?.realname !== '0')
+const messageBadge = computed(() => (unreadCount.value > 0 ? String(unreadCount.value) : ''))
 
-const groups = computed<ServiceGroup[]>(() => [
-  {
-    title: '我的服务',
-    items: [
-      { title: '我的消息', icon: 'mail', url: '/pages/message/index', badge: unreadCount.value > 0 ? String(unreadCount.value) : '', auth: true },
-      { title: '我的主页', icon: 'user', action: goHomepage, auth: true },
-      { title: '好友邀请', icon: 'users', desc: '功能完善中', auth: true, disabled: true, action: () => showGapToast('好友邀请奖励接口待迁移') },
-    ],
-  },
-  {
-    title: '账户与信用',
-    items: [
-      ...(params.value?.realname === '0' ? [] : [
-        { title: '实名认证', icon: 'shield', url: '/pages-sub/user/realname', badge: realnameState.value.text, auth: true },
-        { title: '信用担保', icon: 'lock', badge: creditState.value.text, auth: true, disabled: true, action: handleCredit },
-      ]),
-      ...(showWallet.value ? [{ title: '我的钱包', icon: 'wallet', url: '/pages-sub/user/wallet', auth: true }] : []),
-      { title: '收支记录', icon: 'chart', url: '/pages-sub/user/records', auth: true },
-    ],
-  },
-  {
-    title: '平台服务',
-    items: [
-      { title: '帮助中心', icon: 'help-circle', url: '/pages-sub/user/helpcenter' },
-      { title: '意见反馈', icon: 'edit', url: '/pages-sub/user/feedback', auth: true },
-      { title: '关于我们', icon: 'camera', url: '/pages-sub/user/about' },
-      { title: '设置', icon: 'menu', url: '/pages-sub/user/settings', auth: true },
-    ],
-  },
-  {
-    title: '管理员',
-    items: isAdmin.value ? [
-      { title: '消息授权', icon: 'mail', desc: '待接入订阅消息模板授权', disabled: true },
-      { title: '信息审核', icon: 'shield', desc: '新版审核页待迁移', disabled: true },
-    ] : [],
-  },
-])
-
-const visibleGroups = computed(() => groups.value.filter((group) => group.items.length > 0))
+// spec §6.2.4 顺序的连续功能列表，无分类标题；管理员入口在末尾追加。
+const serviceItems = computed<ServiceItem[]>(() => {
+  const items: ServiceItem[] = [
+    { title: '我的消息', icon: 'mail', url: '/pages/message/index', badge: messageBadge.value, auth: true },
+    { title: '我的主页', icon: 'user', action: goHomepage, auth: true },
+    { title: '好友邀请', icon: 'users', desc: '邀请好友，享拍拍豆奖励', url: '/pages-sub/user/invite-soon', auth: true },
+  ]
+  if (realnameAvailable.value) {
+    items.push({ title: '实名认证', icon: 'shield', url: '/pages-sub/user/realname', badge: realnameState.value.text, auth: true })
+    items.push({ title: '信用担保', icon: 'lock', badge: creditState.value.text, auth: true, disabled: true, action: handleCredit })
+  }
+  if (showWallet.value) {
+    items.push({ title: '我的钱包', icon: 'wallet', url: '/pages-sub/user/wallet', auth: true })
+  }
+  items.push({ title: '收支记录', icon: 'chart', url: '/pages-sub/user/records', auth: true })
+  items.push({ title: '帮助中心', icon: 'help-circle', url: '/pages-sub/user/helpcenter' })
+  items.push({ title: '意见反馈', icon: 'edit', url: '/pages-sub/user/feedback', auth: true })
+  items.push({ title: '关于我们', icon: 'camera', url: '/pages-sub/user/about' })
+  items.push({ title: '设置', icon: 'menu', url: '/pages-sub/user/settings', auth: true })
+  if (isAdmin.value) {
+    items.push({ title: '信息审核', icon: 'shield', desc: '管理员入口', url: '/pages-sub/user/admin-audit-soon', auth: true })
+    items.push({ title: '消息授权', icon: 'mail', desc: '订阅消息模板授权（待迁移）', auth: true, disabled: true, action: () => uni.showToast({ title: '订阅消息授权将在切片 2 接入', icon: 'none' }) })
+  }
+  return items
+})
 
 function maskMobile(value?: string): string {
   if (!value) return ''
@@ -226,8 +210,14 @@ function handleService(item: ServiceItem): void {
   }
 }
 
-function showGapToast(title: string): void {
-  uni.showToast({ title, icon: 'none' })
+function handleLogout(): void {
+  uni.showModal({
+    title: '退出登录',
+    content: '退出后需重新登录才能查看消息、钱包等信息。',
+    success: ({ confirm }) => {
+      if (confirm) userStore.logout()
+    },
+  })
 }
 
 function handleCredit(): void {
@@ -478,20 +468,25 @@ onPullDownRefresh(async () => {
   font-weight: 800;
 }
 
-.service-section {
-  margin-top: 34rpx;
-}
-
-.service-section__title {
-  display: block;
-  margin: 0 0 16rpx 8rpx;
-  color: $color-text-primary;
-  font-size: 32rpx;
-  font-weight: 900;
-}
-
 .service-card {
+  margin-top: 34rpx;
   overflow: hidden;
+}
+
+.logout {
+  margin: 36rpx 0 0;
+  height: 92rpx;
+  border-radius: 999rpx;
+  color: $color-accent-red;
+  background: #fff;
+  box-shadow: $shadow-keep-card;
+  font-size: 28rpx;
+  font-weight: 800;
+  line-height: 92rpx;
+}
+
+.logout::after {
+  border: 0;
 }
 
 .service-row {

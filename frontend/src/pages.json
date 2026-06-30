@@ -155,6 +155,18 @@
           "style": {
             "navigationStyle": "custom"
           }
+        },
+        {
+          "path": "invite-soon",
+          "style": {
+            "navigationStyle": "custom"
+          }
+        },
+        {
+          "path": "admin-audit-soon",
+          "style": {
+            "navigationStyle": "custom"
+          }
         }
       ]
     },
