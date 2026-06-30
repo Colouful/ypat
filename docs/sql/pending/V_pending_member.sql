@@ -141,26 +141,120 @@ ON DUPLICATE KEY UPDATE
 --      先备份数据再决定。
 
 -- ===========================================================================
--- 8. 历史数据回填模板（默认注释，未授权请勿启用）
+-- 8. 历史数据回填模板（**默认注释、未授权请勿启用**）
 -- ===========================================================================
--- 用途：如果存在历史已实名 / 报名的"老用户"希望补开会员，按业务规则启用：
+--
+-- 当前决策（2026-06-30）：
+--   脚本 A：暂不执行，默认永久关闭（除非运营确认"老用户补会员活动"）
+--   脚本 B：暂缓执行，上线前根据历史数据统计决定
+-- 详细决策与执行条件见 docs/TODO.md "历史数据回填决策" 段落。
+--
+-- ---------------------------------------------------------------------
+-- 8.1 脚本 A — 老用户补会员（建议不启用）
+-- ---------------------------------------------------------------------
+-- 当前模板会给所有 realnameflag='1' 且尚无会员记录的老用户
+-- 统一开通 BASIC 30 天。**禁止直接执行**。
+--
+-- 启用条件（必须全部满足）：
+--   * 运营书面确认"老用户补会员活动"方案
+--   * 明确目标用户范围（白名单 / 活动 ID / 注册时间段）
+--   * 明确会员等级与有效期
+--   * staging 执行并抽样核对通过
+--   * 执行前生成完整用户清单并审批
+-- 禁止扫全部 realnameflag='1' 用户直接执行。
 --
 -- INSERT INTO `t_user_member` (`user_id`, `level`, `expire_at`, `source_order_no`, `updated_at`)
--- SELECT
---   u.id,
---   'BASIC',
---   DATE_ADD(NOW(), INTERVAL 30 DAY),
---   CONCAT('BACKFILL-', u.id),
---   NOW()
+-- SELECT u.id, 'BASIC', DATE_ADD(NOW(), INTERVAL 30 DAY), CONCAT('BACKFILL-', u.id), NOW()
 -- FROM `t_user` u
 -- WHERE u.realnameflag = '1'
+--   AND u.id IN (<白名单或子查询>)
 --   AND NOT EXISTS (SELECT 1 FROM `t_user_member` m WHERE m.user_id = u.id);
 --
--- 配套邀请关系回填（如果业务上需要补录一批已有的老邀请关系）：
+-- ---------------------------------------------------------------------
+-- 8.2 脚本 B — 历史邀请关系回填（建议上线前评估后再决定）
+-- ---------------------------------------------------------------------
+-- 当前模板会基于旧 recmobile 字段把历史邀请关系写入 t_invite_relation。
+-- 注意：本脚本只补邀请关系，**不会**给邀请人补发拍拍豆余额，
+--       也**不会**写拍拍豆流水。reward_ppd 字段只是标记。
+--
+-- 执行前必须确认（缺一不可）：
+--   1. 旧邀请奖励（拍拍豆 +3）是否已发放
+--   2. 是否存在对应拍拍豆流水（t_record type=FRI）
+--   3. 新版邀请记录展示 reward_ppd=3 时是否与真实余额一致
+--   4. recmobile 是否可能为错误手机号
+--   5. 是否存在自我邀请（invitee.id == inviter.id）
+--   6. 同一被邀请人是否对应多个邀请来源
+--   7. 老用户手机号是否发生过变更
+--
+-- 决策矩阵：
+--   * 旧奖励已发放：可执行，但 reward_ppd=3 仅是标记
+--   * 旧奖励未发放：运营三选一
+--       (a) 不迁移历史邀请（推荐默认）
+--       (b) 仅迁移关系并把 reward_ppd 改为 0
+--       (c) 迁移关系并补发奖励（需要审批 + 财务确认）
+--   * 不建议直接执行下方原模板，需结合 staging 统计结果调整
+--
 -- INSERT INTO `t_invite_relation` (`inviter_userid`, `invitee_userid`, `invite_code`, `source`, `reward_ppd`, `credate`)
 -- SELECT inviter.id, invitee.id, NULL, 'recmobile', 3, NOW()
 -- FROM `t_user` invitee
 -- JOIN `t_user` inviter ON inviter.mobile = invitee.recmobile
--- WHERE invitee.recmobile IS NOT NULL AND inviter.id IS NOT NULL
+-- WHERE invitee.recmobile IS NOT NULL
+--   AND TRIM(invitee.recmobile) <> ''
+--   AND inviter.id IS NOT NULL
+--   AND inviter.id <> invitee.id  -- 排除自我邀请
 --   AND NOT EXISTS (SELECT 1 FROM `t_invite_relation` r WHERE r.invitee_userid = invitee.id);
+-- ===========================================================================
+
+-- ===========================================================================
+-- 9. 上线前只读统计（不修改数据，用于决策回填是否执行）
+-- ===========================================================================
+-- 推荐在 staging / 生产只读副本上执行，结果用于 8.1 / 8.2 决策。
+
+-- 9.1 历史实名认证用户数量
+-- SELECT COUNT(*) AS realname_count
+-- FROM `t_user`
+-- WHERE realnameflag = '1';
+
+-- 9.2 存在旧邀请手机号的用户数量
+-- SELECT COUNT(*) AS with_recmobile_count
+-- FROM `t_user`
+-- WHERE recmobile IS NOT NULL AND TRIM(recmobile) <> '';
+
+-- 9.3 能匹配到真实邀请人的关系数量
+-- SELECT COUNT(*) AS matched_invite_count
+-- FROM `t_user` invitee
+-- JOIN `t_user` inviter
+--   ON inviter.mobile = invitee.recmobile
+-- WHERE invitee.recmobile IS NOT NULL
+--   AND TRIM(invitee.recmobile) <> ''
+--   AND inviter.id <> invitee.id;
+
+-- 9.4 自我邀请数量（必须为 0 否则数据脏）
+-- SELECT COUNT(*) AS self_invite_count
+-- FROM `t_user` invitee
+-- JOIN `t_user` inviter
+--   ON inviter.mobile = invitee.recmobile
+-- WHERE inviter.id = invitee.id;
+
+-- 9.5 无法匹配邀请人的历史数据
+-- SELECT COUNT(*) AS unmatched_count
+-- FROM `t_user` invitee
+-- LEFT JOIN `t_user` inviter
+--   ON inviter.mobile = invitee.recmobile
+-- WHERE invitee.recmobile IS NOT NULL
+--   AND TRIM(invitee.recmobile) <> ''
+--   AND inviter.id IS NULL;
+
+-- ===========================================================================
+-- 10. 决策记录模板（评审用，建议拷贝到 PR 描述里）
+-- ===========================================================================
+-- 脚本 A 决策：
+--   □ 运营书面确认活动    □ 范围白名单   □ 等级与有效期
+--   □ staging 抽样核对   □ 用户清单审批
+--   最终：执行 / 不执行   签字：______   日期：______
+--
+-- 脚本 B 决策：
+--   □ 旧奖励已发放        □ 排除自我邀请
+--   □ staging 抽样核对   □ reward_ppd 取值（3 / 0 / 补发）
+--   最终：执行 / 不执行   签字：______   日期：______
 -- ===========================================================================
