@@ -3,6 +3,7 @@ package com.ypat.controller;
 import com.ypat.BillQo;
 import com.ypat.PubEventQo;
 import com.ypat.service.BillServiceClient;
+import com.ypat.service.MemberServiceClient;
 import com.ypat.service.OrderServiceClient;
 import com.ypat.service.PubEventServiceClient;
 import com.ypat.third.wxpay.sdk.WXPayClient;
@@ -37,6 +38,8 @@ public class WXPayNotifyController {
     private BillServiceClient billServiceClient;
     @Autowired
     private PubEventServiceClient pubEventServiceClient;
+    @Autowired
+    private MemberServiceClient memberServiceClient;
 
     @PostMapping(value = "/wxpay/notify", produces = {"application/xml;charset=UTF-8"})
     public void wxpayNotify(@RequestBody String data, HttpServletResponse response) throws Exception{
@@ -49,9 +52,16 @@ public class WXPayNotifyController {
             Map<String, String> req = wxPayClient.processResponseXml(requestXml);
             String return_code = req.get(RETURN_CODE);
             if(return_code.equals(WXPayConstants.SUCCESS)) {
-                //根据订单号查询业务状态
-                BillQo billQo = MapUtils.map2Java(BillQo.class, req);
-                billServiceClient.add(billQo);
+                String outTradeNo = req.get("out_trade_no");
+                if (outTradeNo != null && outTradeNo.startsWith("M")) {
+                    // 切片 3 会员订单：通过 Feign 走 Feign 内部 markPaid，幂等
+                    String transactionId = req.get("transaction_id");
+                    Boolean granted = memberServiceClient.markPaid(outTradeNo, transactionId, System.currentTimeMillis());
+                    logger.info("会员支付回调 outTradeNo={} granted={}", outTradeNo, granted);
+                } else {
+                    BillQo billQo = MapUtils.map2Java(BillQo.class, req);
+                    billServiceClient.add(billQo);
+                }
                 reps.put(RETURN_CODE, WXPayConstants.SUCCESS);
             } else {
                 throw new Exception("接收数据异常");
