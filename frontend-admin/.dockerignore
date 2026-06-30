@@ -1,0 +1,30 @@
+# 依赖
+node_modules
+.pnpm-store
+
+# 构建产物
+dist
+coverage
+
+# 本地环境文件（保留 .env.docker 供 Docker 构建使用）
+.env
+.env.local
+.env.development
+.env.production
+.env.staging
+!.env.docker
+
+# 编辑器 / IDE
+.vscode
+.idea
+*.swp
+*.swo
+
+# Git
+.git
+.gitignore
+
+# 日志与临时文件
+*.log
+npm-debug.log*
+.DS_Store

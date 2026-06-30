@@ -53,12 +53,13 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
     @Override
     protected void configure( HttpSecurity http) throws Exception {
         http.csrf().disable()
+                .cors().and()
                 .sessionManagement()
                 .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
                 .and()
                 .authorizeRequests()
                 .antMatchers(HttpMethod.OPTIONS).permitAll()
-                .antMatchers(HttpMethod.POST, "/user/login","/user/sms/code","/bd/login","/bd/code","/wxpay/notify","/wxpub/notify").permitAll()
+                .antMatchers(HttpMethod.POST, "/user/login","/user/sms/code","/bd/login","/bd/code","/wxpay/notify","/wxpub/notify","/admin/login").permitAll()
                 .antMatchers(HttpMethod.GET,
                         "/user/code",
                         "/ypat/tc/list",
@@ -72,7 +73,8 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
                         "/param/list",
                         "/product/list",
                         "/wxpay/notify",
-                        "/wxpub/notify").permitAll()
+                        "/wxpub/notify",
+                        "/admin/captcha").permitAll()
                 .anyRequest().authenticated();
 
         http.headers().cacheControl();
@@ -88,16 +90,18 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
         web.ignoring().antMatchers("/favicon.ico","/css/**","/webjars/**","/styles/**","/scripts/**","/images/**","/**.html");
     }
 
-    /**
-     *
     @Bean
     public WebMvcConfigurer corsConfigurer() {
         return new WebMvcConfigurerAdapter() {
             @Override
             public void addCorsMappings(CorsRegistry registry) {
-                registry.addMapping("/**");
+                registry.addMapping("/**")
+                        .allowedOrigins("*")
+                        .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
+                        .allowedHeaders("*")
+                        .allowCredentials(false)
+                        .maxAge(3600);
             }
         };
     }
-     */
 }
