@@ -1,0 +1,57 @@
+// ========== 全局样式入口 ==========
+
+@use 'variables' as *;
+@use 'reset.scss';
+@use 'element.scss';
+@use 'transition.scss';
+
+// 通用工具类
+.flex {
+  display: flex;
+}
+
+.flex-center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.flex-between {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.text-ellipsis {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.cursor-pointer {
+  cursor: pointer;
+}
+
+// 页面容器
+.page-container {
+  padding: $spacing-lg;
+  background-color: $bg-page;
+  min-height: calc(100vh - #{$layout-header-height} - #{$layout-breadcrumb-height} - #{$layout-tabs-height});
+}
+
+// 搜索区
+.search-bar {
+  background-color: $bg-card;
+  padding: $spacing-lg;
+  border-radius: $radius-base;
+  margin-bottom: $spacing-base;
+  box-shadow: $shadow-light;
+}
+
+// 表格区
+.table-container {
+  background-color: $bg-card;
+  padding: $spacing-lg;
+  border-radius: $radius-base;
+  box-shadow: $shadow-light;
+}

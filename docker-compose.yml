@@ -214,6 +214,30 @@ services:
         max-size: "20m"
         max-file: "5"
 
+  admin-web:
+    build:
+      context: ./frontend-admin
+      dockerfile: Dockerfile
+      args:
+        APP_ENV: docker
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:18896:8080"
+    depends_on:
+      wap:
+        condition: service_healthy
+    networks:
+      - ypat_ypat-net
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+    logging:
+      driver: json-file
+      options:
+        max-size: "20m"
+        max-file: "5"
+
   nginx:
     image: nginx:1.25-alpine
     restart: unless-stopped
