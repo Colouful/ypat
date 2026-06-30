@@ -341,6 +341,53 @@ export interface ArticleListParams extends PageParams {
   status?: string
 }
 
+// ===== 会员 =====
+
+export interface MemberPlan {
+  id: number
+  code: string
+  name: string
+  durationDays: number
+  priceFen: number
+  originPriceFen?: number
+  benefits?: string
+  status?: string
+  sortNo?: number
+  credate?: string
+}
+
+export interface MemberStatus {
+  level: string
+  expireAt?: string
+  active: boolean
+  sourceOrderNo?: string
+}
+
+export interface MemberOrderCreateResult {
+  outTradeNo: string
+  appId: string
+  timeStamp: string
+  nonceStr: string
+  packageValue: string
+  signType: string
+  paySign: string
+}
+
+export interface MemberOrder {
+  id: number
+  outTradeNo: string
+  userId: number
+  planId: number
+  planCode: string
+  priceFen: number
+  durationDays: number
+  status: string
+  statusTxt?: string
+  wxTransactionId?: string
+  paidAt?: string
+  credate?: string
+}
+
 // ===== 邀请 =====
 
 export interface InviteSummary {

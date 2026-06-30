@@ -170,6 +170,19 @@
           }
         },
         {
+          "path": "member/index",
+          "style": {
+            "navigationStyle": "custom"
+          }
+        },
+        {
+          "path": "member-orders",
+          "style": {
+            "navigationStyle": "custom",
+            "enablePullDownRefresh": true
+          }
+        },
+        {
           "path": "admin-audit-soon",
           "style": {
             "navigationStyle": "custom"
