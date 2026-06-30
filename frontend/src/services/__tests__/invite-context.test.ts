@@ -23,8 +23,19 @@ describe('invite-context', () => {
   })
 
   it('captures inviteCode independently of recmobile', () => {
-    const ctx = captureInviteFromQuery({ inviteCode: 'YPAT-XYZ' })
-    expect(ctx?.inviteCode).toBe('YPAT-XYZ')
+    const ctx = captureInviteFromQuery({ inviteCode: 'IV3F' })
+    expect(ctx?.inviteCode).toBe('IV3F')
+  })
+
+  it('captures source when provided', () => {
+    const ctx = captureInviteFromQuery({ inviteCode: 'IV3F', source: 'share' })
+    expect(ctx?.source).toBe('share')
+  })
+
+  it('preserves inviteCode alongside recmobile', () => {
+    const ctx = captureInviteFromQuery({ inviteCode: 'IV3F', recmobile: '13800138000' })
+    expect(ctx?.inviteCode).toBe('IV3F')
+    expect(ctx?.recmobile).toBe('13800138000')
   })
 
   it('expires after 24 hours', () => {

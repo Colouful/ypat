@@ -23,6 +23,10 @@ export interface WechatLoginInput {
   avatarurl?: string
   gender?: string
   recmobile?: string
+  /** 安全邀请码（base36 编码邀请人 user.id），优先级高于 recmobile。 */
+  inviteCode?: string
+  /** 邀请入口来源，仅用于运营回溯。 */
+  inviteSource?: string
 }
 
 export interface H5PhoneLoginInput {
@@ -30,6 +34,8 @@ export interface H5PhoneLoginInput {
   smsCode: string
   /** 邀请人手机号，仅在首次注册时由后端绑定并发放 +3 拍拍豆。 */
   recmobile?: string
+  inviteCode?: string
+  inviteSource?: string
 }
 
 export const useUserStore = defineStore('user', () => {
@@ -90,6 +96,8 @@ export const useUserStore = defineStore('user', () => {
         avatarurl: input.avatarurl,
         gender: input.gender,
         recmobile: input.recmobile,
+        inviteCode: input.inviteCode,
+        inviteSource: input.inviteSource,
       },
       { withToken: false, showError: false },
     )
@@ -97,12 +105,24 @@ export const useUserStore = defineStore('user', () => {
   }
 
   async function loginByPhone(input: H5PhoneLoginInput): Promise<UserInfo> {
-    return loginByPhoneInternal(input.mobile.trim(), input.smsCode.trim(), input.recmobile?.trim())
+    return loginByPhoneInternal(input.mobile.trim(), input.smsCode.trim(), {
+      recmobile: input.recmobile?.trim(),
+      inviteCode: input.inviteCode?.trim(),
+      inviteSource: input.inviteSource,
+    })
   }
 
-  async function loginByPhoneInternal(mobile: string, smsCode: string, recmobile?: string): Promise<UserInfo> {
+  interface LoginByPhoneExtras {
+    recmobile?: string
+    inviteCode?: string
+    inviteSource?: string
+  }
+
+  async function loginByPhoneInternal(mobile: string, smsCode: string, extras?: LoginByPhoneExtras): Promise<UserInfo> {
     const payload: Record<string, string> = { mobile, smsCode, channel: '2' }
-    if (recmobile && recmobile !== mobile) payload.recmobile = recmobile
+    if (extras?.recmobile && extras.recmobile !== mobile) payload.recmobile = extras.recmobile
+    if (extras?.inviteCode) payload.inviteCode = extras.inviteCode
+    if (extras?.inviteSource) payload.inviteSource = extras.inviteSource
     const result = await post<LoginResult>(
       '/user/login',
       payload,
