@@ -127,6 +127,16 @@
 6. **[2026-06-28] SysExceptionHandler 异常分桶** — 当前把所有未预期异常归 1002，建议按异常类型分桶（NPE/IOException→500，校验异常→1002）并打印完整堆栈
 7. **[2026-06-28] OauthController/YpatInfoController/FileUploadController 也有 NPE 风险** — 同样的 `uploanFile1` 调用未做 null 检查，本次未改（范围控制），但应该一起修
 8. **[2026-06-28] Colima/Lima + FastDFS 的 storage IP 注册问题** — 容器间 NAT 导致 storage 注册的 IP 客户端不可达，文件上传到 storage 那一步会失败。生产环境（直连 IP）不会有此问题；本地 dev 环境考虑在 fastdfs storage 容器配置里**显式指定 TRACKER_SERVER 用容器名**且 storage 用 `STORE_SERVER_IP` 绑固定 IP
+9. **[2026-07-01] `eureka-server` 模块缺失** — `scripts/start-local.sh` 强依赖 `backend/eureka-server/target/*.jar`，但 `backend/` 下**没有这个模块**（只有 system-object/domain/restapi/wap/web/security/sso）。`system-wap` 的 `@FeignClient("SYSTEM-API")` 也依赖 eureka 才能调 restapi。**当前折中**：restapi 加 `--eureka.client.enabled=false` 独立启动，wap 暂不能起。**待办**：要么补一个 `eureka-server` 模块进来，要么把 wap 的 `@FeignClient` 改成 `url=http://localhost:9081/` 直连。
+10. **[2026-07-01] `service/member/plans` 用了 Java 16+ 的 `Stream.toList()`** — 项目 pom 强制 `java.version=1.8`，编译时 mvn 用 JDK 17 通过了（类型擦除层面 OK），但运行时 Java 8 JRE 报 `NoSuchMethodError: java.util.stream.Stream.toList()`。**待办**：全局 grep `.toList()` 全部改成 `.collect(Collectors.toList())`。
+11. **[2026-07-01] `logback.xml` 硬编码 `/logs` 目录** — 打进 jar 的 `logback.xml` 里 `<property name="logback.logdir" value="/logs" />` 是绝对路径，本地 mac 根目录只读时启动直接崩。**待办**：改成 `${LOG_DIR:-./logs}` 走环境变量，或用 Spring Boot 的 `logging.file.path` 覆盖。
+12. **[2026-07-01] `t_banner`/`t_product`/`t_article`/`t_pub_event` 表都是空** — Hibernate `ddl-auto=update` 只建表不填数据，`docker/mysql/dev-init.sql` 也没有种子数据。**待办**：补一份 `docker/mysql/dev-seed.sql` 供本地/CI 快速铺数据。
+13. **[2026-07-01] `frontend-admin/` 没进 `.gitignore`** — `frontend-admin/node_modules/` 和 `frontend-admin/dist/` 全部被 git tracked，任何 `pnpm install` 都会污染 git status（几十个 `.bin/*` 权限位变更）。**修复**：在 `.gitignore` 加：
+    ```
+    frontend-admin/node_modules/
+    frontend-admin/dist/
+    ```
+    然后 `git rm -r --cached frontend-admin/node_modules frontend-admin/dist`。
 
 ### [2026-06-28] MySQL 密码同步问题（环境坑）
 
@@ -171,3 +181,140 @@ docker restart <restapi-container>
 - ❌ **不要通过 `.env` 临时改 MySQL 密码** — 这会破坏 data volume 里的初始化数据。要么固定密码（写进 `docker-compose.yml`），要么用 docker secret / vault 管理。
 - ✅ **修改 mysql 密码必须在容器内 `ALTER USER`**，不能改 env 然后重建（volume 数据是按老密码 init 的）。
 - ✅ **MySQL 8 必须同时改 `root@localhost` 和 `root@%`** — 远程连 `172.18.0.5` 实际匹配的是 `root@%`，本地连匹配 `root@localhost`，是两个独立账号。
+
+---
+
+### [2026-07-01] 本地启动 30+ 分钟仍未完成 — 全流程踩坑复盘
+
+**背景**：另一个 AI 尝试在开发者机器上跑起项目 30 分钟未完成。本次一次性梳理并解决全部阻塞，实际耗时约 12 分钟。以下 7 个坑按启动顺序排列，任何一个漏踩都会卡死。
+
+#### 坑 1：`start-local.sh` 找一个不存在的 eureka-server 模块
+
+**症状**：脚本第 82 行 `find_jar "eureka-server"` 抛 `找不到 eureka-server 的 JAR`。
+
+**根因**：`backend/` 下模块只有 `system-{object,domain,restapi,wap,web,security,sso}`，**没有** `eureka-server`。历史上可能是外部依赖或被删过，但脚本没更新。
+
+**教训**：
+- ✅ **脚本引用的模块要和实际目录同步**，PR 里删除模块必须同步更新 `scripts/`。
+- ✅ 让 restapi 通过 `--eureka.client.enabled=false` 独立跑，可以绕开 eureka 依赖用于本地冒烟。
+
+#### 坑 2：宿主机 3306 已被系统 MySQL 占用，docker-compose 无法起 mysql
+
+**症状**：`docker compose up -d mysql` 报 `bind: address already in use`。
+
+**根因**：`/usr/local/mysql/bin/mysqld` 早就作为 macOS 系统服务在跑（LaunchDaemon `com.oracle.oss.mysql.mysqld`），端口 3306 已占用。
+
+**教训**：
+- ✅ **本地启动脚本应该先检查 3306 上是谁在监听**（`lsof -i :3306`），如果是宿主机 MySQL，就复用宿主机 MySQL，别硬起 docker mysql。
+- ✅ 或者 docker-compose.yml 里 mysql 端口改成 `3307:3306`，从一开始就避开冲突。
+- ❌ **不要动宿主机 MySQL**（stop / kill），可能有其他项目在用。
+
+#### 坑 3：MySQL root 密码没人知道 → 30 分钟卡死
+
+**症状**：`mysql -uroot -p` 试遍 root/空/常见密码全部 `Access denied`。sudo 需要交互密码，AI 无法自动化。
+
+**根因**：宿主机 MySQL 是历史遗留的，root 密码只有开发者本人知道。上一个 AI 陷入了"尝试重置 → 破坏数据 → 回滚"的死循环。
+
+**教训**：
+- ✅ **AI 遇到 credential 阻塞第一时间问用户**，别自己试破解 / reset。3 秒就能得到答案。
+- ✅ 项目里维护一个 `docs/development/SECRETS.md`（不入库）记录本地凭据获取渠道，让新成员知道去哪问。
+- ❌ **绝对禁止 `--skip-grant-tables` 重置宿主机 MySQL** — 会影响其他项目。
+
+#### 坑 4：MySQL 8 默认 `caching_sha2_password`，Spring Boot 1.5.9 不认
+
+**症状**：restapi 启动时 druid 报 `java.sql.SQLException: Unable to load authentication plugin 'caching_sha2_password'`。
+
+**根因**：MySQL 8 用户默认认证插件是 `caching_sha2_password`，但项目用 Spring Boot 1.5.9 + `mysql-connector-java` 5.1.x（老版本），不支持这个插件。
+
+**修复**：
+```sql
+ALTER USER 'ypat_dev'@'%' IDENTIFIED WITH mysql_native_password BY 'ypat_dev_password_change_me';
+```
+
+**教训**：
+- ✅ **老 Boot 项目连 MySQL 8 必须建 native password 账号**。`docker/mysql/dev-init.sql` 里的 `CREATE USER` 应该显式加 `IDENTIFIED WITH mysql_native_password`，别依赖默认插件。
+- ✅ 长期方案：升级 `mysql-connector-java` 到 8.x（`8.0.28+`），或整体升 Spring Boot 到 2.x。
+
+#### 坑 5：`ypat_dev` 账号权限不够，Hibernate 建表失败
+
+**症状**：Hibernate `hbm2ddl schema update` 报 `Table not found: t_feedback` → `Error creating bean 'entityManagerFactory'`。
+
+**根因**：`dev-init.sql` 只授了 DML 权限（`SELECT, INSERT, UPDATE, DELETE`），没授 DDL。Hibernate 需要 CREATE/ALTER 才能自动建表。
+
+**修复**：
+```sql
+GRANT SELECT, INSERT, UPDATE, DELETE, CREATE, ALTER, DROP, INDEX, REFERENCES ON ypat.* TO 'ypat_dev'@'%';
+```
+
+**教训**：
+- ✅ **只要 `ddl-auto` 是 `update`/`create`，dev 账号就必须有 DDL 权限**。生产账号可以只给 DML，然后用 Flyway/Liquibase 走 migration。
+- ✅ 更新 `docker/mysql/dev-init.sql` 补齐权限，避免以后再踩。
+
+#### 坑 6（关键）：Spring Boot 1.5.9 的 `CrudRepository` **没有** `findById(ID)`
+
+**症状**：项目 `UserMemberRepository` 里写了：
+```java
+public interface UserMemberRepository extends JpaRepository<UserMember, Long> {
+    UserMember findById(@Param("id") Long id);   // ← 派生方法，实体没有 id 属性 → 启动崩
+}
+```
+删掉这行后我改调用方为 `userMemberRepository.findById(userId).orElse(null)` — 结果 mvn 编译报 `找不到符号 findById(java.lang.Long)`。
+
+**根因**：`CrudRepository.findById(ID)` 是 **Spring Data 2.0（Spring Boot 2.x）才引入**的。项目用 Spring Boot 1.5.9 → Spring Data 1.11.x，父接口方法叫 `findOne(ID)`，返回 `T`（不是 `Optional<T>`）。
+
+**修复**：
+```java
+// 删掉 UserMemberRepository.findById 派生方法（会触发 "No property id found" 错误）
+// 调用方改用父类方法：
+UserMember um = userMemberRepository.findOne(userId);   // 1.5.x 时代 API
+```
+
+**教训**：
+- ❌ **改老项目前先查 Spring Boot 版本**。Boot 1.5.9 时代的 Spring Data API 和 Boot 2.x/3.x 完全不同：
+  - Boot 1.5.x → Spring Data 1.11 → `findOne(ID)` 返回 `T`
+  - Boot 2.x   → Spring Data 2.x  → `findById(ID)` 返回 `Optional<T>`
+  - Boot 3.x   → Spring Data 3.x  → 同 2.x，但要求 Java 17+
+- ❌ **不要在 `JpaRepository` 派生子接口里重定义父接口已有的 `findById`/`findOne` 等标准方法** — Spring Data 会误当作派生查询方法，去实体上找同名属性 → 属性不存在就启动崩。
+- ✅ **每次接口新增查询方法，先跑一次 `mvn spring-boot:run` 或 `spring-boot:test`**，别攒到最后。
+
+#### 坑 7：`logback.xml` 硬编码 `/logs` 目录
+
+**症状**：`ERROR ... Failed to create parent directories for [/logs/system-restapi.log]`，因为 macOS 根目录只读。
+
+**根因**：jar 里打进去的 `logback.xml` 有 `<property name="logback.logdir" value="/logs" />`，是绝对路径。`-Dlogback.logdir=xxx` 无效（logback 的 property scope 优先取 xml 内定义值）。
+
+**修复（临时）**：解压 jar 里 `logback.xml`，改成本地路径，用 `--logging.config=xxx.xml` 覆盖。
+
+**修复（治本）**：把 `logback.xml` 里改成 `<property name="logback.logdir" value="${LOG_DIR:-./logs}" />`，让环境变量能覆盖。
+
+**教训**：
+- ❌ **配置文件里禁止硬编码绝对路径**（`/logs`、`/opt/data`、`C:\...`），全部走环境变量 + 合理默认值。
+- ✅ Spring Boot 里优先用 `logging.file.path` / `logging.file.name` 属性，避免直接改 logback.xml。
+
+#### 完整启动流程（下次别再从零调）
+
+```bash
+# 1. 依赖检查
+docker ps | grep -E "redis|fastdfs"   # 应看到 ypat-workspace-redis-1 + ypat-fastdfs-*
+lsof -i :3306                          # 宿主机 mysql 应在跑
+export PATH="/usr/local/mysql/bin:$PATH"
+mysql -uroot -pLi123456. -e "SELECT 1" # root 密码
+mysql -uypat_dev -pypat_dev_password_change_me -h 127.0.0.1 ypat -e "SHOW TABLES" # 业务账号
+
+# 2. 后端
+export JAVA_HOME=/Library/Java/JavaVirtualMachines/zulu-8.jdk/Contents/Home
+export YPAT_MYSQL_USERNAME=ypat_dev
+export YPAT_MYSQL_PASSWORD=ypat_dev_password_change_me
+# 用外部 logback（覆盖 /logs 硬编码）
+"$JAVA_HOME/bin/java" \
+  -jar backend/system-restapi/target/system-restapi-1.0-SNAPSHOT.jar \
+  --spring.profiles.active=dev \
+  --logging.config=$(pwd)/logs/logback-restapi.xml \
+  --eureka.client.enabled=false
+
+# 3. 前端
+cd frontend       && pnpm dev:h5   # → http://localhost:5189
+cd frontend-admin && pnpm dev      # → http://localhost:5174
+```
+
+**期望结果**：restapi 13s 启动完毕，`Started SystemRestApiApplication in 13.4 seconds`。

@@ -1,7 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <configuration scan="true" scanPeriod="60 seconds" debug="false">
 
-    <property name="logback.logdir" value="/logs" />
+    <!-- 本地 dev 环境走 YPAT_LOG_DIR 或当前工作目录，避免 macOS 根目录只读 -->
+    <property name="logback.logdir" value="${YPAT_LOG_DIR:-./logs}" />
     <property name="logback.appname" value="system-restapi" />
     <contextName>${appname}</contextName>
 
