@@ -54,10 +54,10 @@ onMounted(fetchList)
       <el-table-column label="状态" width="120" align="center"><template #default="{row}"><StatusTag :status="row.status" type="article"/></template></el-table-column>
       <el-table-column label="操作" width="220" align="center" fixed="right">
         <template #default="{row}">
-          <el-button type="primary" link size="small" @click="openEdit(row)">编辑</el-button>
-          <el-button type="info" link size="small" @click="preview(row.imgpath)">查看图片</el-button>
-          <el-button type="success" link size="small" v-if="row.status !== ArticleStatus.YFB.value" @click="doUpDown(row, ArticleStatus.YFB.value)">发布</el-button>
-          <el-button type="warning" link size="small" v-else @click="doUpDown(row, ArticleStatus.YCH.value)">撤回</el-button>
+          <el-button type="primary" link size="small" @click="openEdit(row as unknown as Banner)">编辑</el-button>
+          <el-button type="info" link size="small" @click="preview((row as unknown as Banner).imgpath)">查看图片</el-button>
+          <el-button type="success" link size="small" v-if="row.status !== ArticleStatus.YFB.value" @click="doUpDown(row as unknown as Banner, ArticleStatus.YFB.value)">发布</el-button>
+          <el-button type="warning" link size="small" v-else @click="doUpDown(row as unknown as Banner, ArticleStatus.YCH.value)">撤回</el-button>
         </template>
       </el-table-column>
     </el-table>

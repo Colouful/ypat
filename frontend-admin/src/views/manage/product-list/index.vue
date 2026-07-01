@@ -54,9 +54,9 @@ onMounted(fetchList)
       <el-table-column label="状态" width="120" align="center"><template #default="{row}"><StatusTag :status="row.status" type="product"/></template></el-table-column>
       <el-table-column label="操作" width="180" align="center" fixed="right">
         <template #default="{row}">
-          <el-button type="primary" link size="small" @click="openEdit(row)">修改</el-button>
-          <el-button type="success" link size="small" v-if="row.status !== ProductStatus.UP.value" @click="doUpDown(row, ProductStatus.UP.value)">上架</el-button>
-          <el-button type="info" link size="small" v-else @click="doUpDown(row, ProductStatus.DOWN.value)">下架</el-button>
+          <el-button type="primary" link size="small" @click="openEdit(row as unknown as Product)">修改</el-button>
+          <el-button type="success" link size="small" v-if="row.status !== ProductStatus.UP.value" @click="doUpDown(row as unknown as Product, ProductStatus.UP.value)">上架</el-button>
+          <el-button type="info" link size="small" v-else @click="doUpDown(row as unknown as Product, ProductStatus.DOWN.value)">下架</el-button>
         </template>
       </el-table-column>
     </el-table>

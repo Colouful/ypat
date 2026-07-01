@@ -61,7 +61,7 @@ async function submit() {
         <el-form-item label="约拍日期" prop="patdate"><el-date-picker v-model="form.patdate" type="date" value-format="YYYY-MM-DD"/></el-form-item>
         <el-form-item label="城市" prop="city"><el-input v-model="form.city"/></el-form-item>
         <el-form-item label="收费方式"><el-radio-group v-model="form.chargeway"><el-radio v-for="o in getYpatChargeWayOptions()" :key="o.value" :label="o.value">{{ o.label }}</el-radio></el-radio-group></el-form-item>
-        <el-form-item label="风格"><el-checkbox-group v-model="form.patstyle"><el-checkbox v-for="o in getYpatPatstyleOptions()" :key="o.value" :label="o.value">{{ o.label }}</el-checkbox></el-checkbox-group></el-form-item>
+        <el-form-item label="风格"><el-checkbox-group v-model="form.patstyleList"><el-checkbox v-for="o in getYpatPatstyleOptions()" :key="o.value" :label="o.value">{{ o.label }}</el-checkbox></el-checkbox-group></el-form-item>
         <el-form-item label="描述" prop="describ"><el-input v-model="form.describ" type="textarea" :rows="4"/></el-form-item>
         <el-form-item label="头像">
           <el-upload :auto-upload="false" :show-file-list="false" :on-change="(f: any) => uploadAvatar(f.raw)"><el-button type="primary">上传头像</el-button></el-upload>
