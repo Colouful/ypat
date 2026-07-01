@@ -4,11 +4,12 @@
 // ============================================================
 
 // ------------------------------------------------------------
-// Colors - Primary
+// Colors - Primary（红色主题：基于截图）
 // ------------------------------------------------------------
-$color-primary: #23C268;
-$color-primary-dark: #17A857;
-$color-primary-light: #C9F4D9;
+$color-primary: #FF4D5E;
+$color-primary-dark: #E63E4F;
+$color-primary-light: #FFE5E8;
+$color-primary-soft: #FFF1F2;
 
 // ------------------------------------------------------------
 // Colors - Accent
@@ -92,7 +93,7 @@ $shadow-sm: 0 2rpx 8rpx rgba(0, 0, 0, 0.04);
 $shadow-md: 0 4rpx 16rpx rgba(0, 0, 0, 0.08);
 $shadow-lg: 0 8rpx 32rpx rgba(0, 0, 0, 0.12);
 $shadow-keep-card: 0 6rpx 24rpx rgba(20, 24, 31, 0.04);
-$shadow-keep-button: 0 20rpx 44rpx rgba(35, 194, 104, 0.28);
+$shadow-keep-button: 0 20rpx 44rpx rgba(255, 77, 94, 0.28);
 
 // ------------------------------------------------------------
 // Keep Visual Radius

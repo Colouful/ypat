@@ -13,7 +13,8 @@ public enum UserProfess {
     gr("4","个人"),
     yy("5","演员"),
     sj("6","商家"),
-    qt("7","其他");
+    qt("7","其他"),
+    sr("8","素人模特");
 
     public String value;
     public String name;
@@ -30,6 +31,17 @@ public enum UserProfess {
             }
         }
         return "";
+    }
+
+    /**
+     * 校验 code 是否为合法值
+     */
+    public static boolean isValid(String code){
+        if(code == null) return false;
+        for(UserProfess p : UserProfess.values()){
+            if(p.value.equals(code)) return true;
+        }
+        return false;
     }
 
 }

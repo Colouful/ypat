@@ -61,6 +61,8 @@ public class YpatInfo implements java.io.Serializable{
     private List<YpatImg> ypatImgs;
     private String recomflag;
     private String reason;
+    private Integer isNationwide;
+    private Long workId;
 
     public Long getId() {
         return id;
@@ -260,5 +262,21 @@ public class YpatInfo implements java.io.Serializable{
 
     public void setReason(String reason) {
         this.reason = reason;
+    }
+
+    public Integer getIsNationwide() {
+        return isNationwide;
+    }
+
+    public void setIsNationwide(Integer isNationwide) {
+        this.isNationwide = isNationwide;
+    }
+
+    public Long getWorkId() {
+        return workId;
+    }
+
+    public void setWorkId(Long workId) {
+        this.workId = workId;
     }
 }

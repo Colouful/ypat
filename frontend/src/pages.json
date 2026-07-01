@@ -8,7 +8,14 @@
       }
     },
     {
-      "path": "pages/discover/index",
+      "path": "pages/work/index",
+      "style": {
+        "navigationStyle": "custom",
+        "enablePullDownRefresh": true
+      }
+    },
+    {
+      "path": "pages/work-discover-bridge/index",
       "style": {
         "navigationStyle": "custom"
       }
@@ -225,6 +232,94 @@
         },
         {
           "path": "invite-landing",
+          "style": {
+            "navigationStyle": "custom"
+          }
+        }
+      ]
+    },
+    {
+      "root": "pages-sub/work",
+      "pages": [
+        {
+          "path": "list",
+          "style": {
+            "navigationStyle": "custom",
+            "enablePullDownRefresh": true
+          }
+        },
+        {
+          "path": "detail",
+          "style": {
+            "navigationStyle": "custom"
+          }
+        },
+        {
+          "path": "publish",
+          "style": {
+            "navigationStyle": "custom"
+          }
+        },
+        {
+          "path": "filter",
+          "style": {
+            "navigationStyle": "custom"
+          }
+        },
+        {
+          "path": "my-works",
+          "style": {
+            "navigationStyle": "custom"
+          }
+        }
+      ]
+    },
+    {
+      "root": "pages-sub/publish",
+      "pages": [
+        {
+          "path": "entry",
+          "style": {
+            "navigationStyle": "custom"
+          }
+        },
+        {
+          "path": "target-select",
+          "style": {
+            "navigationStyle": "custom"
+          }
+        },
+        {
+          "path": "appointment",
+          "style": {
+            "navigationStyle": "custom"
+          }
+        },
+        {
+          "path": "work-form",
+          "style": {
+            "navigationStyle": "custom"
+          }
+        }
+      ]
+    },
+    {
+      "root": "pages-sub/common",
+      "pages": [
+        {
+          "path": "region-picker",
+          "style": {
+            "navigationStyle": "custom"
+          }
+        },
+        {
+          "path": "tag-picker",
+          "style": {
+            "navigationStyle": "custom"
+          }
+        },
+        {
+          "path": "media-preview",
           "style": {
             "navigationStyle": "custom"
           }

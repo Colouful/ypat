@@ -64,6 +64,11 @@ public class YpatInfoQo extends PageQo implements java.io.Serializable {
     private String patstyleTxt;
     private String statusTxt;
 
+    /** 是否全国（0否/1是） */
+    private String isNationwide;
+    /** 来自作品发起的约拍（关联 t_work.id） */
+    private String workId;
+
     private String profess;
     private String gender;
     private String mobile;
@@ -373,6 +378,22 @@ public class YpatInfoQo extends PageQo implements java.io.Serializable {
 
     public void setReason(String reason) {
         this.reason = reason;
+    }
+
+    public String getIsNationwide() {
+        return isNationwide;
+    }
+
+    public void setIsNationwide(String isNationwide) {
+        this.isNationwide = isNationwide;
+    }
+
+    public String getWorkId() {
+        return workId;
+    }
+
+    public void setWorkId(String workId) {
+        this.workId = workId;
     }
 
     @Override

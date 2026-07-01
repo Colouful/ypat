@@ -22,7 +22,19 @@ public enum ResponseCode {
     FAIL_NET(401, "token无效"),
     FAIL_VAL(403, "无权限"),
     FAIL_NOTFOUND(404, "未找到"),
-    FAIL_SER(500, "内部错误");
+    FAIL_SER(500, "内部错误"),
+    // 4001~4011 作品模块错误码
+    FAIL_VIDEO_OVERSIZE(4001, "视频大小不能超过 200MB"),
+    FAIL_IMG_OVERCOUNT(4002, "最多只能上传九张图片"),
+    FAIL_IMG_VIDEO_MIX(4003, "图片和视频不能同时上传"),
+    FAIL_FILE_TYPE(4004, "文件格式不支持"),
+    FAIL_UPLOAD(4005, "文件上传失败，请重试"),
+    FAIL_IMG_TOTAL_OVERSIZE(4006, "图片总大小不能超过 100MB"),
+    FAIL_VIDEO_COUNT(4007, "视频只能上传一个"),
+    FAIL_TAG_OVERCOUNT(4008, "主题标签最多选择 5 个"),
+    FAIL_DESC_SENSITIVE(4009, "描述包含敏感联系方式"),
+    FAIL_WORK_NOT_FOUND(4010, "作品不存在或已下架"),
+    FAIL_WORK_FORBIDDEN(4011, "无权操作该作品");
 
     private int code;
     private String msg;

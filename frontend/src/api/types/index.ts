@@ -443,3 +443,9 @@ export interface OauthInfo {
   status: '0' | '1' | '2' | '3' | string
   statusTxt?: string
 }
+
+// 作品模块 re-export
+export * from './work'
+export * from './media'
+export * from './dict'
+export * from './quick-apply'

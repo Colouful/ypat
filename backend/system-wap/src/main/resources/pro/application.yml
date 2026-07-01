@@ -16,8 +16,8 @@ spring:
     time-zone: GMT+8
   http:
     multipart:
-      max-file-size: 100Mb
-      max-request-size: 100Mb
+      max-file-size: 200Mb
+      max-request-size: 400Mb
 eureka:
   client:
     serviceUrl:
