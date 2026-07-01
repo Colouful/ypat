@@ -8,7 +8,7 @@
         <text :class="{ 'work-tab__cat-text--active': activeCategory === cat.value }">{{ cat.label }}</text>
       </view>
       <view class="work-tab__cat work-tab__cat--filter" @tap="filterVisible = true">
-        <text class="work-tab__filter-icon">⚙</text>
+        <KeepIcon name="sliders" :size="20" :color="filterCount > 0 ? '#23C268' : '#83888F'" />
         <text :class="{ 'work-tab__cat-text--active': filterCount > 0 }">筛选</text>
         <text v-if="filterCount > 0" class="work-tab__filter-badge">{{ filterCount }}</text>
       </view>
@@ -46,6 +46,7 @@ import WorkFilterPanel from '@/components/business/WorkFilterPanel.vue'
 import { getList } from '@/api/modules/work'
 import { useUserStore } from '@/stores/user'
 import type { WorkListItem, WorkListResult } from '@/api/types/work'
+import KeepIcon from '@/components/business/KeepIcon.vue'
 
 const userStore = useUserStore()
 

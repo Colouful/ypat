@@ -201,6 +201,23 @@ const iconMap: Record<string, IconPart[]> = {
     { tag: 'path', attrs: { d: 'm15 9-6 6' } },
     { tag: 'path', attrs: { d: 'm9 9 6 6' } },
   ],
+  video: [
+    { tag: 'rect', attrs: { x: 2, y: 6, width: 14, height: 12, rx: 2 } },
+    { tag: 'path', attrs: { d: 'm22 8-6 4 6 4z' } },
+  ],
+  plus: [
+    { tag: 'path', attrs: { d: 'M12 5v14' } },
+    { tag: 'path', attrs: { d: 'M5 12h14' } },
+  ],
+  warning: [
+    { tag: 'path', attrs: { d: 'M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z' } },
+    { tag: 'path', attrs: { d: 'M12 9v4' } },
+    { tag: 'path', attrs: { d: 'M12 17h.01' } },
+  ],
+  'map-pin-fill': [
+    { tag: 'path', attrs: { d: 'M20 10c0 6-8 12-8 12S4 16 4 10a8 8 0 0 1 16 0z' } },
+    { tag: 'circle', attrs: { cx: 12, cy: 10, r: 3, fill: 'currentColor', stroke: 'none' } },
+  ],
 }
 
 const iconParts = computed(() => iconMap[props.name] || iconMap.sparkles)

@@ -2,7 +2,7 @@
   <view v-if="visible" class="work-filter" @tap="onMaskTap">
     <view class="work-filter__panel" @tap.stop>
       <view class="work-filter__row">
-        <text class="work-filter__row-label">📍 选择地区</text>
+        <text class="work-filter__row-label">选择地区</text>
         <view class="work-filter__row-value">
           <text>{{ regionLabel || '全部' }}</text>
           <text class="work-filter__row-arrow">›</text>

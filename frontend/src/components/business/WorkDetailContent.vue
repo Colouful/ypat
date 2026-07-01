@@ -17,7 +17,7 @@
         </text>
       </view>
       <view v-if="!work.isOwner" class="work-detail__complain" @tap="emit('complain')">
-        <text class="work-detail__complain-icon">⚠</text>
+        <text class="work-detail__complain-icon"></text>
         <text>投诉</text>
       </view>
     </view>
@@ -35,7 +35,7 @@
 
     <view v-if="work.tags && work.tags.length" class="work-detail__tags">
       <view v-for="t in work.tags" :key="t.id" class="work-detail__tag">
-        <text class="work-detail__tag-icon">●</text>
+        <KeepIcon name="circle-x" :size="20" color="#23C268" />
         <text>{{ t.name }}</text>
       </view>
     </view>
@@ -51,6 +51,7 @@
 </template>
 
 <script setup lang="ts">
+import KeepIcon from './KeepIcon.vue'
 import { PROFESS_LABELS } from '@/constants/enums'
 import type { WorkDetail } from '@/api/types/work'
 

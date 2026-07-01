@@ -57,7 +57,7 @@ const items: TabItem[] = [
 
 const activeColor = '#1A1D1F'
 const inactiveColor = '#B3B8BE'
-const primaryColor = '#FF4D5E'
+const primaryColor = '#23C268'
 
 function go(item: TabItem): void {
   if (item.key === 'publish') {

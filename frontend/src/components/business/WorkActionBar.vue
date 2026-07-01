@@ -1,13 +1,13 @@
 <template>
   <view class="work-action-bar">
     <view class="work-action-bar__btn" @tap="onLike">
-      <text class="work-action-bar__icon" :class="{ 'work-action-bar__icon--active': work.isLiked }">👍</text>
+      <KeepIcon name="star" :size="40" :color="work.isLiked ? '#23C268' : '#83888F'" />
     </view>
     <view class="work-action-bar__btn" @tap="onFavorite">
-      <text class="work-action-bar__icon">☆</text>
+      <KeepIcon name="gem" :size="40" :color="work.isFavorited ? '#23C268' : '#83888F'" />
     </view>
     <view class="work-action-bar__btn" @tap="onShare">
-      <text class="work-action-bar__icon">↻</text>
+      <KeepIcon name="handshake" :size="40" color="#83888F" />
     </view>
     <view v-if="!work.isOwner" class="work-action-bar__primary" @tap="onApply">
       <text>立即约拍</text>
@@ -19,6 +19,7 @@
 </template>
 
 <script setup lang="ts">
+import KeepIcon from './KeepIcon.vue'
 import type { WorkDetail } from '@/api/types/work'
 
 const props = withDefaults(defineProps<{
@@ -93,12 +94,12 @@ function onOffline() { emit('offline') }
     height: 80rpx;
     line-height: 80rpx;
     text-align: center;
-    background: linear-gradient(90deg, #FF8FA0 0%, #FF6B7E 100%);
+    background: $color-primary;
     color: #FFFFFF;
     border-radius: 999rpx;
     font-size: 30rpx;
     font-weight: 600;
-    box-shadow: 0 12rpx 24rpx rgba(255, 77, 94, 0.28);
+    box-shadow: 0 12rpx 24rpx rgba(35, 194, 104, 0.28);
     &--offline {
       background: $color-text-helper;
       box-shadow: none;

@@ -3,11 +3,11 @@
     <!-- 2 个独立按钮：上传照片 + 上传视频（图片和视频互斥） -->
     <view v-if="!hasAny" class="media-uploader__buttons">
       <view class="media-uploader__btn" @tap="onChooseImage">
-        <text class="media-uploader__btn-icon">🖼</text>
+        <KeepIcon name="image" :size="48" color="#83888F" />
         <text class="media-uploader__btn-text">上传照片</text>
       </view>
       <view class="media-uploader__btn" @tap="onChooseVideo">
-        <text class="media-uploader__btn-icon">📹</text>
+        <KeepIcon name="video" :size="48" color="#83888F" />
         <text class="media-uploader__btn-text">上传视频</text>
       </view>
     </view>
@@ -52,6 +52,7 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
+import KeepIcon from './KeepIcon.vue'
 import type { MediaItem } from '@/api/types/media'
 import {
   chooseImages, chooseVideo,

@@ -3,7 +3,7 @@
     <text class="publish-entry__title">您可以发布</text>
     <view class="publish-entry__card" @tap="emit('appointment')">
       <view class="publish-entry__icon publish-entry__icon--camera">
-        <text class="publish-entry__svg">📷</text>
+        <KeepIcon name="camera" :size="56" color="#FFFFFF" />
       </view>
       <view class="publish-entry__info">
         <text class="publish-entry__card-title">发布约拍</text>
@@ -12,7 +12,7 @@
     </view>
     <view class="publish-entry__card" @tap="emit('work')">
       <view class="publish-entry__icon publish-entry__icon--image">
-        <text class="publish-entry__svg">🖼</text>
+        <KeepIcon name="image" :size="56" color="#FFFFFF" />
       </view>
       <view class="publish-entry__info">
         <text class="publish-entry__card-title">发布作品</text>
@@ -23,6 +23,8 @@
 </template>
 
 <script setup lang="ts">
+import KeepIcon from './KeepIcon.vue'
+
 const emit = defineEmits<{
   (e: 'appointment'): void
   (e: 'work'): void
@@ -32,7 +34,7 @@ const emit = defineEmits<{
 <style lang="scss" scoped>
 .publish-entry {
   padding: 48rpx 32rpx 32rpx;
-  background: #FFFFFF;
+  background: $color-bg-page;
   min-height: 100vh;
   &__title {
     display: block;
@@ -56,16 +58,8 @@ const emit = defineEmits<{
     justify-content: center;
     flex-shrink: 0;
     margin-right: 24rpx;
-    &--camera {
-      background: linear-gradient(135deg, #FF8FA0 0%, #FF6B7E 100%);
-    }
-    &--image {
-      background: linear-gradient(135deg, #FFA0AE 0%, #FF7A8A 100%);
-    }
-  }
-  &__svg {
-    font-size: 56rpx;
-    color: #FFFFFF;
+    &--camera { background: linear-gradient(135deg, $color-primary 0%, $color-primary-dark 100%); }
+    &--image { background: linear-gradient(135deg, $color-primary-light 0%, $color-primary 100%); }
   }
   &__info {
     flex: 1;
@@ -75,7 +69,7 @@ const emit = defineEmits<{
     display: block;
     font-size: 36rpx;
     font-weight: 600;
-    color: $color-primary;
+    color: $color-text-primary;
     margin-bottom: 12rpx;
   }
   &__card-desc {
