@@ -30,6 +30,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 /**
  * 会员数据服务。不调 wxPayClient（跨模块），微信统一下单由 system-wap/MemberController 完成。
@@ -57,7 +58,7 @@ public class MemberService {
 
     public List<MemberPlanQo> listActivePlans() {
         List<MemberPlan> plans = memberPlanRepository.findByStatusOrderBySortNoAsc("1");
-        return plans.stream().map(p -> CopyUtil.copy(p, MemberPlanQo.class)).toList();
+        return plans.stream().map(p -> CopyUtil.copy(p, MemberPlanQo.class)).collect(Collectors.toList());
     }
 
     /**
@@ -79,7 +80,7 @@ public class MemberService {
         MemberStatusQo qo = new MemberStatusQo();
         qo.setLevel(LEVEL_NONE);
         if (userId == null) return qo;
-        UserMember um = userMemberRepository.findById(userId);
+        UserMember um = userMemberRepository.findOne(userId);
         if (um == null) return qo;
         qo.setLevel(um.getLevel());
         qo.setExpireAt(um.getExpireAt());
@@ -151,7 +152,7 @@ public class MemberService {
         Page<MemberOrder> page = memberOrderRepository.findByUserIdOrderByCredateDesc(userId, pageable);
         List<MemberOrderQo> content = page.getContent().stream()
                 .map(o -> CopyUtil.copy(o, MemberOrderQo.class))
-                .toList();
+                .collect(Collectors.toList());
         Map<String, Object> body = new HashMap<>();
         body.put("content", content);
         body.put("totalElements", page.getTotalElements());
@@ -178,7 +179,7 @@ public class MemberService {
     }
 
     private void grantMemberDuration(Long userId, int durationDays, String sourceOrderNo) {
-        UserMember um = userMemberRepository.findById(userId);
+        UserMember um = userMemberRepository.findOne(userId);
         Date now = new Date();
         Date base = (um != null && um.getExpireAt() != null && um.getExpireAt().after(now))
                 ? um.getExpireAt()
