@@ -18,9 +18,12 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * 管理端 - 通用文件上传 Controller。
@@ -42,12 +45,32 @@ public class AdminUploadController {
     @Autowired
     private SystemConfig systemConfig;
 
+    private static final long MAX_IMAGE_SIZE = 10 * 1024 * 1024;
+    private static final Set<String> ALLOWED_IMAGE_EXTENSIONS = new HashSet<>(Arrays.asList("jpg", "jpeg", "png", "gif", "webp"));
+
     /**
-     * 通用图片上传（无水印）。
-     *
-     * @param files 文件数组
-     * @return 上传后的可访问 URL 列表
+     * 校验图片文件类型、大小和扩展名。
      */
+    private void validateImageFile(MultipartFile file) {
+        if (file == null || file.isEmpty()) {
+            return;
+        }
+        String contentType = file.getContentType();
+        if (contentType == null || !contentType.startsWith("image/")) {
+            throw new SysException(ResponseCode.FAIL_PARA.getCode(), "仅允许上传图片文件");
+        }
+        if (file.getSize() > MAX_IMAGE_SIZE) {
+            throw new SysException(ResponseCode.FAIL_PARA.getCode(), "图片大小不能超过10MB");
+        }
+        String originalFilename = file.getOriginalFilename();
+        if (originalFilename == null || !originalFilename.contains(".")) {
+            throw new SysException(ResponseCode.FAIL_PARA.getCode(), "文件扩展名不合法");
+        }
+        String ext = originalFilename.substring(originalFilename.lastIndexOf('.') + 1).toLowerCase();
+        if (!ALLOWED_IMAGE_EXTENSIONS.contains(ext)) {
+            throw new SysException(ResponseCode.FAIL_PARA.getCode(), "仅支持 jpg/jpeg/png/gif/webp 格式的图片");
+        }
+    }
     @PostMapping("/upload")
     public ResponseApiBody upload(@RequestParam("files") MultipartFile[] files) throws IOException {
         if (files == null || files.length == 0) {
@@ -59,6 +82,7 @@ public class AdminUploadController {
             if (file == null || file.isEmpty()) {
                 continue;
             }
+            validateImageFile(file);
             String fileId = fastDFSClient.uploanFile1(file.getInputStream(), file.getOriginalFilename());
             if (fileId == null) {
                 throw new SysException(ResponseCode.FAIL_MARK.getCode(), "文件上传失败");
@@ -89,6 +113,7 @@ public class AdminUploadController {
             if (file == null || file.isEmpty()) {
                 continue;
             }
+            validateImageFile(file);
             String fileId = fastDFSClient.uploanFile1(
                     imageMarkUtil.waterMake(file.getInputStream()),
                     ImageConst.IMAGE_TYPE);

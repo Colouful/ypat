@@ -15,6 +15,10 @@ spring:
   jackson:
     time-zone: GMT+8
   http:
+    encoding:
+      charset: UTF-8
+      enabled: true
+      force: true
     multipart:
       max-file-size: 100Mb
       max-request-size: 100Mb

@@ -71,7 +71,7 @@ async function handleLogout(): Promise<void> {
   align-items: center;
   justify-content: space-between;
   padding: 0 $spacing-lg;
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
+  box-shadow: 0 1px 4px rgb(0 0 0 / 4%);
 }
 
 .collapse-btn {

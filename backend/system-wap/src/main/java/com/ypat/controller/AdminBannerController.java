@@ -6,6 +6,8 @@ import com.ypat.ResponseCode;
 import com.ypat.SysException;
 import com.ypat.service.BannerServiceClient;
 import com.ypat.third.baidu.ai.GsonUtils;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonParser;
 import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -57,7 +59,7 @@ public class AdminBannerController {
         }
 
         String json = bannerServiceClient.findPage(qo);
-        Object pageData = GsonUtils.fromJson(json, Object.class);
+        JsonElement pageData = JsonParser.parseString(json);
         return ResponseApiBody.success(pageData);
     }
 
@@ -70,7 +72,7 @@ public class AdminBannerController {
             throw new SysException(ResponseCode.FAIL_PARA);
         }
         String json = bannerServiceClient.get(id);
-        Object data = GsonUtils.fromJson(json, Object.class);
+        JsonElement data = JsonParser.parseString(json);
         return ResponseApiBody.success(data);
     }
 
@@ -88,7 +90,7 @@ public class AdminBannerController {
 
         logger.info("管理端横幅保存：id={}, title={}", bannerQo.getId(), bannerQo.getTitle());
         String res = bannerServiceClient.add(bannerQo);
-        Object resData = GsonUtils.fromJson(res, Object.class);
+        JsonElement resData = JsonParser.parseString(res);
         return ResponseApiBody.success(resData);
     }
 
@@ -110,7 +112,7 @@ public class AdminBannerController {
         qo.setStatus(status);
 
         String res = bannerServiceClient.upDown(qo);
-        Object resData = GsonUtils.fromJson(res, Object.class);
+        JsonElement resData = JsonParser.parseString(res);
         return ResponseApiBody.success(resData);
     }
 }

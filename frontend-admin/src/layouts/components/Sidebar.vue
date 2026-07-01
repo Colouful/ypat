@@ -53,6 +53,8 @@ function isActive(path: string): boolean {
 </template>
 
 <style scoped lang="scss">
+@use "sass:color";
+
 .sidebar {
   position: fixed;
   top: 0;
@@ -74,8 +76,8 @@ function isActive(path: string): boolean {
   display: flex;
   align-items: center;
   justify-content: center;
-  background-color: darken($bg-sidebar, 5%);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  background-color: color.adjust($bg-sidebar, $lightness: -5%);
+  border-bottom: 1px solid rgb(255 255 255 / 5%);
 }
 
 .logo-text {

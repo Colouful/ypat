@@ -90,6 +90,14 @@ public class JwtTokenUtil implements Serializable {
         return generateToken(claims);
     }
 
+    public String generateAdminToken(SecurityUserDetails userDetails) {
+        Map<String, Object> claims = new HashMap<>();
+        claims.put(CLAIM_KEY_USER, userDetails.getUserId());
+        claims.put(CLAIM_KEY_CREATED, new Date());
+        claims.put(Const.CLAIM_KEY_ADMIN, true);
+        return generateToken(claims);
+    }
+
     String generateToken(Map<String, Object> claims) {
         return Jwts.builder()
                 .setClaims(claims)
@@ -113,6 +121,16 @@ public class JwtTokenUtil implements Serializable {
         }
         return refreshedToken;
     }
+
+    public Boolean isAdminToken(String token) {
+        try {
+            final Claims claims = getClaimsFromToken(token);
+            return claims != null && Boolean.TRUE.equals(claims.get(Const.CLAIM_KEY_ADMIN));
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
 
     public Boolean validateToken(String token) {
         try {

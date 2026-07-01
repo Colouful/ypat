@@ -11,6 +11,8 @@ import com.ypat.service.YpatServiceClient;
 import com.ypat.third.wxmess.WxMessClient;
 import com.ypat.util.FastDFSClient;
 import com.ypat.third.baidu.ai.GsonUtils;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonParser;
 import com.ypat.util.ImageMarkUtil;
 import com.ypat.config.SystemConfig;
 
@@ -100,7 +102,7 @@ public class AdminYpatController {
         }
 
         String json = ypatServiceClient.findPage(qo);
-        Object pageData = GsonUtils.fromJson(json, Object.class);
+        JsonElement pageData = JsonParser.parseString(json);
         return ResponseApiBody.success(pageData);
     }
 
@@ -115,7 +117,7 @@ public class AdminYpatController {
             throw new SysException(ResponseCode.FAIL_PARA);
         }
         String json = ypatServiceClient.get(id, null);
-        Object data = GsonUtils.fromJson(json, Object.class);
+        JsonElement data = JsonParser.parseString(json);
         return ResponseApiBody.success(data);
     }
 
@@ -136,7 +138,7 @@ public class AdminYpatController {
 
         logger.info("管理端约拍审核：id={}, flag={}", id, flag);
         String res = ypatServiceClient.audit(id, flag, null, reason);
-        Object resData = GsonUtils.fromJson(res, Object.class);
+        JsonElement resData = JsonParser.parseString(res);
 
         // 微信消息推送（兼容旧逻辑，失败不影响主流程）
         pushAuditMessage(id, flag, reason);
@@ -163,7 +165,7 @@ public class AdminYpatController {
 
         logger.info("管理端约拍推荐：id={}, recomflag={}", id, recomflag);
         String res = ypatServiceClient.upRecom(id, recomflag);
-        Object resData = GsonUtils.fromJson(res, Object.class);
+        JsonElement resData = JsonParser.parseString(res);
         return ResponseApiBody.success(resData);
     }
 
@@ -213,7 +215,7 @@ public class AdminYpatController {
         ypatInfoQo.setUserid(user.getId());
         ypatInfoQo.setPics(picsList);
         String res = ypatServiceClient.submit(ypatInfoQo);
-        Object resData = GsonUtils.fromJson(res, Object.class);
+        JsonElement resData = JsonParser.parseString(res);
         return ResponseApiBody.success(resData);
     }
 

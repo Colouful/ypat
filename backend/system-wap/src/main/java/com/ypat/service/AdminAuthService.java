@@ -4,6 +4,7 @@ import com.ypat.ResponseApiBody;
 import com.ypat.ResponseCode;
 import com.ypat.SysException;
 import com.ypat.UserQo;
+import com.ypat.comm.Const;
 import com.ypat.model.SecurityUserDetails;
 import com.ypat.third.baidu.ai.GsonUtils;
 import com.ypat.util.JwtTokenUtil;
@@ -73,16 +74,24 @@ public class AdminAuthService {
             throw new SysException(ResponseCode.FAIL_PASSWORD);
         }
 
-        // 生成 JWT Token
+        // 管理员白名单校验
+        if (!Const.ADMIN_USER_IDS.contains(String.valueOf(user.getId()))) {
+            logger.warn("管理端登录失败：非管理员用户，mobile={}", maskMobile(mobile));
+            throw new SysException(ResponseCode.FAIL_VAL);
+        }
+
+        // 生成管理员 JWT Token
         SecurityUserDetails userDetails = new SecurityUserDetails();
         userDetails.setUserId(user.getId().toString());
         userDetails.setUsername(StringUtils.defaultIfBlank(user.getName(), user.getMobile()));
         userDetails.setMobile(user.getMobile());
+        userDetails.setAdmin(true);
 
-        String token = jwtTokenUtil.generateToken(userDetails);
+        String token = jwtTokenUtil.generateAdminToken(userDetails);
 
         Map<String, Object> res = new HashMap<>(8);
         res.put("token", token);
+        res.put("admin", true);
         res.put("id", user.getId());
         res.put("mobile", user.getMobile());
         res.put("name", user.getName());
@@ -105,6 +114,10 @@ public class AdminAuthService {
 
         if (!jwtTokenUtil.validateToken(token)) {
             throw new SysException(ResponseCode.FAIL_NET);
+        }
+
+        if (!jwtTokenUtil.isAdminToken(token)) {
+            throw new SysException(ResponseCode.FAIL_VAL);
         }
 
         String userId = jwtTokenUtil.getUserFromToken(token);

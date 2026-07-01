@@ -13,7 +13,7 @@ $color-info: #909399;
 
 // 背景色
 $bg-page: #f0f2f5;
-$bg-card: #ffffff;
+$bg-card: #fff;
 $bg-sidebar: #304156;
 $bg-sidebar-hover: #263445;
 $bg-sidebar-active: #1d6fd1;
@@ -24,7 +24,7 @@ $text-regular: #606266;
 $text-secondary: #909399;
 $text-placeholder: #c0c4cc;
 $text-sidebar: #bfcbd9;
-$text-sidebar-active: #ffffff;
+$text-sidebar-active: #fff;
 
 // 边框色
 $border-base: #dcdfe6;
@@ -37,9 +37,9 @@ $radius-base: 6px;
 $radius-lg: 8px;
 
 // 阴影
-$shadow-base: 0 2px 4px rgba(0, 0, 0, 0.08);
-$shadow-light: 0 2px 12px 0 rgba(0, 0, 0, 0.06);
-$shadow-dark: 0 4px 16px rgba(0, 0, 0, 0.12);
+$shadow-base: 0 2px 4px rgb(0 0 0 / 8%);
+$shadow-light: 0 2px 12px 0 rgb(0 0 0 / 6%);
+$shadow-dark: 0 4px 16px rgb(0 0 0 / 12%);
 
 // 间距
 $spacing-xs: 4px;
@@ -56,8 +56,8 @@ $layout-breadcrumb-height: 36px;
 $layout-tabs-height: 36px;
 
 // 字体
-$font-family: 'PingFang SC', 'Helvetica Neue', Helvetica, 'Hiragino Sans GB',
-  'Microsoft YaHei', Arial, sans-serif;
+$font-family: 'PingFang SC', 'Helvetica Neue', helvetica, 'Hiragino Sans GB',
+  'Microsoft YaHei', arial, sans-serif;
 $font-size-base: 14px;
 $font-size-sm: 12px;
 $font-size-lg: 16px;

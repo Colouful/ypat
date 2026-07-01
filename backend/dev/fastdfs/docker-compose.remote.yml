@@ -1,0 +1,66 @@
+name: ypat-remote-fastdfs
+
+services:
+  fastdfs-tracker:
+    image: "${YPAT_FASTDFS_IMAGE:-ygqygq2/fastdfs-nginx:latest}"
+    container_name: ypat-remote-fastdfs-tracker
+    hostname: fastdfs-tracker
+    command: ["tracker"]
+    network_mode: host
+    environment:
+      PORT: "22122"
+    volumes:
+      - "${YPAT_FASTDFS_TRACKER_DATA_DIR:-/opt/ypat-data/fastdfs/tracker}:/var/fdfs"
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+    logging:
+      driver: json-file
+      options:
+        max-size: "20m"
+        max-file: "5"
+
+  fastdfs-storage:
+    image: "${YPAT_FASTDFS_IMAGE:-ygqygq2/fastdfs-nginx:latest}"
+    container_name: ypat-remote-fastdfs-storage
+    hostname: fastdfs-storage
+    command: ["storage"]
+    network_mode: host
+    depends_on:
+      - fastdfs-tracker
+    environment:
+      TRACKER_SERVER: "${FASTDFS_HOST_IP:?FASTDFS_HOST_IP is required}:22122"
+      GROUP_NAME: "group1"
+    volumes:
+      - "${YPAT_FASTDFS_STORAGE_DATA_DIR:-/opt/ypat-data/fastdfs/storage}:/var/fdfs"
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 2G
+    logging:
+      driver: json-file
+      options:
+        max-size: "20m"
+        max-file: "5"
+
+  fastdfs-nginx:
+    image: nginx:1.25-alpine
+    container_name: ypat-remote-fastdfs-nginx
+    network_mode: host
+    depends_on:
+      - fastdfs-storage
+    volumes:
+      - ./nginx-remote.conf:/etc/nginx/conf.d/default.conf:ro
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+    logging:
+      driver: json-file
+      options:
+        max-size: "20m"
+        max-file: "5"

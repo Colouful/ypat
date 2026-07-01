@@ -33,29 +33,40 @@ public class JwtTokenFilter extends OncePerRequestFilter {
     private JwtTokenUtil jwtTokenUtil;
 
     @Override
-    protected void doFilterInternal ( HttpServletRequest request, HttpServletResponse response, FilterChain chain) throws ServletException, IOException {
-        String authHeader = request.getHeader( Const.HEADER_STRING );
-        String getRequestURL =request.getRequestURL().toString();
-        logger.info("请求URL："+getRequestURL);
-        if (authHeader != null ) {
+    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain chain) throws ServletException, IOException {
+        String authHeader = request.getHeader(Const.HEADER_STRING);
+        String getRequestURL = request.getRequestURL().toString();
+        logger.info("请求URL：" + getRequestURL);
+        ParamRequestWrapper paramRequestWrapper = new ParamRequestWrapper(request);
+        if (authHeader != null) {
             final String authToken = authHeader;
             if (SecurityContextHolder.getContext().getAuthentication() == null) {
                 if (jwtTokenUtil.validateToken(authToken)) {
                     String userId = jwtTokenUtil.getUserFromToken(authToken);
-                    logger.debug("token正确："+userId);
+                    logger.debug("token正确：" + userId);
+
+                    boolean isAdmin = jwtTokenUtil.isAdminToken(authToken);
+                    String requestURI = request.getRequestURI();
+                    if (requestURI.contains("/admin/") && !isAdmin) {
+                        logger.warn("非管理员Token访问/admin/路径：{}" ,getRequestURL);
+                        chain.doFilter(paramRequestWrapper, response);
+                        return;
+                    }
+
                     SecurityUserDetails userDetails = new SecurityUserDetails();
                     userDetails.setUserId(userId);
-                    UsernamePasswordAuthenticationToken authentication  = new UsernamePasswordAuthenticationToken( userDetails, null, userDetails.getAuthorities());
+                    userDetails.setAdmin(isAdmin);
+                    UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
                     SecurityContextHolder.getContext().setAuthentication(authentication);
-                }else{
+                } else {
                     logger.error("token校验错误：");
                 }
-            }else{
+            } else {
                 logger.error("token错误：");
             }
         }
-        ParamRequestWrapper paramRequestWrapper = new ParamRequestWrapper(request);
         chain.doFilter(paramRequestWrapper, response);
     }
+
 }
 

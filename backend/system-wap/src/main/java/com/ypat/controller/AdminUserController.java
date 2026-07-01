@@ -8,6 +8,8 @@ import com.ypat.UserQo;
 import com.ypat.service.OauthServiceClient;
 import com.ypat.service.UserServiceClient;
 import com.ypat.third.baidu.ai.GsonUtils;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonParser;
 import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -97,7 +99,7 @@ public class AdminUserController {
         }
 
         String json = userServiceClient.findPage(userQo);
-        Object pageData = GsonUtils.fromJson(json, Object.class);
+        JsonElement pageData = JsonParser.parseString(json);
 
         return ResponseApiBody.success(pageData);
     }
@@ -150,7 +152,7 @@ public class AdminUserController {
         logger.info("管理端实名审核：id={}, flag={}", id, flag);
 
         String result = oauthServiceClient.audit(id, flag);
-        Object resData = GsonUtils.fromJson(result, Object.class);
+        JsonElement resData = JsonParser.parseString(result);
 
         Map<String, Object> res = new HashMap<>(4);
         res.put("success", true);

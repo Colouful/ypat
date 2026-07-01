@@ -32,7 +32,7 @@ import { goRootTab, openPublish, type RootTabUrl } from '@/utils/tab-navigation'
 type TabKey = 'home' | 'discover' | 'publish' | 'message' | 'mine'
 
 type TabItem = {
-  key: TabKey
+  key: 'home' | 'publish' | 'mine'
   label: string
   icon: string
   url?: RootTabUrl
@@ -45,9 +45,7 @@ const props = withDefaults(defineProps<{
 
 const items: TabItem[] = [
   { key: 'home', label: '首页', icon: 'home', url: '/pages/home/index' },
-  { key: 'discover', label: '发现', icon: 'compass', url: '/pages/discover/index' },
   { key: 'publish', label: '发布', icon: 'plus-circle' },
-  { key: 'message', label: '消息', icon: 'mail', url: '/pages/message/index' },
   { key: 'mine', label: '我的', icon: 'user', url: '/pages/mine/index' },
 ]
 

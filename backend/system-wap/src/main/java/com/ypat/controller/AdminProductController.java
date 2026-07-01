@@ -6,6 +6,8 @@ import com.ypat.ResponseCode;
 import com.ypat.SysException;
 import com.ypat.service.ProductServiceClient;
 import com.ypat.third.baidu.ai.GsonUtils;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonParser;
 import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -57,7 +59,7 @@ public class AdminProductController {
         }
 
         String json = productServiceClient.findPage(qo);
-        Object pageData = GsonUtils.fromJson(json, Object.class);
+        JsonElement pageData = JsonParser.parseString(json);
         return ResponseApiBody.success(pageData);
     }
 
@@ -70,7 +72,7 @@ public class AdminProductController {
             throw new SysException(ResponseCode.FAIL_PARA);
         }
         String json = productServiceClient.get(id);
-        Object data = GsonUtils.fromJson(json, Object.class);
+        JsonElement data = JsonParser.parseString(json);
         return ResponseApiBody.success(data);
     }
 
@@ -85,7 +87,7 @@ public class AdminProductController {
 
         logger.info("管理端产品保存：id={}, name={}", productQo.getId(), productQo.getName());
         String res = productServiceClient.add(productQo);
-        Object resData = GsonUtils.fromJson(res, Object.class);
+        JsonElement resData = JsonParser.parseString(res);
         return ResponseApiBody.success(resData);
     }
 
@@ -107,7 +109,7 @@ public class AdminProductController {
         qo.setStatus(status);
 
         String res = productServiceClient.upDown(qo);
-        Object resData = GsonUtils.fromJson(res, Object.class);
+        JsonElement resData = JsonParser.parseString(res);
         return ResponseApiBody.success(resData);
     }
 }

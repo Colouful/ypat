@@ -139,8 +139,8 @@ onMounted(() => {
     content: '';
     position: absolute;
     inset: 0;
-    background-image: radial-gradient(circle at 20% 50%, rgba(64, 158, 255, 0.08) 0%, transparent 50%),
-      radial-gradient(circle at 80% 20%, rgba(103, 194, 58, 0.06) 0%, transparent 50%);
+    background-image: radial-gradient(circle at 20% 50%, rgb(64 158 255 / 8%) 0%, transparent 50%),
+      radial-gradient(circle at 80% 20%, rgb(103 194 58 / 6%) 0%, transparent 50%);
   }
 }
 
@@ -150,7 +150,7 @@ onMounted(() => {
   height: 460px;
   border-radius: $radius-lg;
   overflow: hidden;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 20px 60px rgb(0 0 0 / 30%);
   position: relative;
   z-index: 1;
 }
@@ -233,7 +233,7 @@ onMounted(() => {
   width: 100%;
 }
 
-@media (max-width: 768px) {
+@media (width <= 768px) {
   .login-card {
     width: 90%;
     flex-direction: column;

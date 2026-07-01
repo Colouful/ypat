@@ -1,5 +1,9 @@
 package com.ypat.comm;
 
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Set;
+
 public class Const {
 
     public static final long EXPIRATION_TIME = 31536000; //432_000;// 5天(以毫秒ms计) //1year
@@ -18,10 +22,28 @@ public class Const {
     public static final String PAGE_MESS = "pages/mine/message/index?type=rectimesCount&name=收到的约拍";
     public static final String SYS_ADMIN = "o5ZmB4kyCVPskEOaO0PK1He0Kl7w";
 
+    public static final String CLAIM_KEY_ADMIN = "admin";
+    public static final String ROLE_ADMIN = "ROLE_ADMIN";
+    public static final Set<String> ADMIN_USER_IDS = loadAdminUserIds();
+
     public static final String TEMP_0 = "bcu2sYUoDPwIcB-1Jyx_HAoJVZtzgvuEyR8d0qf-dXE";//拍摄模板
     public static final String TEMP_1 = "_uTkXi5VM9BOAXOMMUdibQPioXMwNfngC90CJgynSTg";//实名认证审核
     public static final String TEMP_2 = "i6ydNmF4EKyAQomQuopOeCWHKmMytHDjP3W0anbEq4w";//发布信息审核
     public static final String TEMP_3 = "Bv1tvnuGZeKpwRxTz-QtOt_btN0tlkDjMgyeP-Iz16s";//新订单通知
+
+    private static Set<String> loadAdminUserIds() {
+        String value = env("YPAT_ADMIN_USER_IDS", "1");
+        Set<String> ids = new HashSet<>();
+        if (value != null && !value.trim().isEmpty()) {
+            for (String id : value.split(",")) {
+                String trimmed = id.trim();
+                if (!trimmed.isEmpty()) {
+                    ids.add(trimmed);
+                }
+            }
+        }
+        return Collections.unmodifiableSet(ids);
+    }
 
     private static String env(String name, String defaultValue) {
         String value = System.getenv(name);

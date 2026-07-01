@@ -14,6 +14,11 @@ spring:
       max-wait: -1
   jackson:
     time-zone: GMT+8
+  http:
+    encoding:
+      charset: UTF-8
+      enabled: true
+      force: true
 eureka:
   client:
     serviceUrl:

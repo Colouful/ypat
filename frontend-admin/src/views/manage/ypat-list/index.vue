@@ -72,5 +72,9 @@ onMounted(fetchList)
 </template>
 
 <style scoped lang="scss">
-.pagination-wrapper { display: flex; justify-content: flex-end; margin-top: $spacing-lg; }
+.pagination-wrapper {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: $spacing-lg;
+}
 </style>

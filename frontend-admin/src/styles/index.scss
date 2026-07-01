@@ -1,9 +1,9 @@
 // ========== 全局样式入口 ==========
 
 @use 'variables' as *;
-@use 'reset.scss';
-@use 'element.scss';
-@use 'transition.scss';
+@use 'reset';
+@use 'element';
+@use 'transition';
 
 // 通用工具类
 .flex {

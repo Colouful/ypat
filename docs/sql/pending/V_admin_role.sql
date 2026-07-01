@@ -1,0 +1,2 @@
+ALTER TABLE t_user ADD COLUMN is_admin TINYINT(1) NOT NULL DEFAULT 0 COMMENT '是否管理员';
+UPDATE t_user SET is_admin=1 WHERE id=1;

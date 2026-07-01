@@ -11,25 +11,19 @@
   --el-color-primary-light-8: #c4d9f2;
   --el-color-primary-light-9: #e0eaf8;
   --el-color-primary-dark-2: #296ba8;
-
   --el-color-success: #{$color-success};
   --el-color-warning: #{$color-warning};
   --el-color-danger: #{$color-danger};
   --el-color-info: #{$color-info};
-
   --el-bg-color: #{$bg-card};
   --el-bg-color-page: #{$bg-page};
-
   --el-text-color-primary: #{$text-primary};
   --el-text-color-regular: #{$text-regular};
   --el-text-color-secondary: #{$text-secondary};
-
   --el-border-color: #{$border-base};
   --el-border-color-light: #{$border-light};
-
   --el-font-family: #{$font-family};
   --el-font-size-base: #{$font-size-base};
-
   --el-border-radius-base: #{$radius-base};
 }
 
@@ -42,6 +36,7 @@
 .el-table {
   --el-table-header-bg-color: #{$bg-page};
   --el-table-header-text-color: #{$text-regular};
+
   font-size: #{$font-size-base};
 
   th.el-table__cell {

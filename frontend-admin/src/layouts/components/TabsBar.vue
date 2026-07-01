@@ -100,7 +100,7 @@ function handleClose(path: string): void {
   border-radius: 50%;
 
   &:hover {
-    background-color: rgba(0, 0, 0, 0.15);
+    background-color: rgb(0 0 0 / 15%);
   }
 }
 </style>

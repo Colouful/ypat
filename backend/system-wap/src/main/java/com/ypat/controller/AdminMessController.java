@@ -6,6 +6,8 @@ import com.ypat.ResponseCode;
 import com.ypat.SysException;
 import com.ypat.service.MessServiceClient;
 import com.ypat.third.baidu.ai.GsonUtils;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonParser;
 import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -70,7 +72,7 @@ public class AdminMessController {
         }
 
         String json = messServiceClient.findPage(qo);
-        Object pageData = GsonUtils.fromJson(json, Object.class);
+        JsonElement pageData = JsonParser.parseString(json);
         return ResponseApiBody.success(pageData);
     }
 }

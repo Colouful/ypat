@@ -75,6 +75,7 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
                         "/wxpay/notify",
                         "/wxpub/notify",
                         "/admin/captcha").permitAll()
+                .antMatchers("/admin/**").hasRole("ADMIN")
                 .anyRequest().authenticated();
 
         http.headers().cacheControl();
@@ -95,13 +96,26 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
         return new WebMvcConfigurerAdapter() {
             @Override
             public void addCorsMappings(CorsRegistry registry) {
+                String origins = env("YPAT_CORS_ORIGINS", "*");
+                String[] originArray = origins.split(",");
+                boolean allowAll = "*".equals(origins);
+                if (!allowAll) {
+                    for (int i = 0; i < originArray.length; i++) {
+                        originArray[i] = originArray[i].trim();
+                    }
+                }
                 registry.addMapping("/**")
-                        .allowedOrigins("*")
+                        .allowedOrigins(allowAll ? new String[]{"*"} : originArray)
                         .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
                         .allowedHeaders("*")
-                        .allowCredentials(false)
+                        .allowCredentials(!allowAll)
                         .maxAge(3600);
             }
         };
+    }
+
+    private String env(String name, String defaultValue) {
+        String value = System.getenv(name);
+        return value == null || value.trim().isEmpty() ? defaultValue : value;
     }
 }

@@ -1,5 +1,6 @@
 package com.ypat.model;
 
+import com.ypat.comm.Const;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -19,9 +20,20 @@ public class SecurityUserDetails implements UserDetails {
 
     private String mobile;
 
+    private boolean admin;
+
+    public boolean isAdmin() {
+        return admin;
+    }
+
+    public void setAdmin(boolean admin) {
+        this.admin = admin;
+    }
+
     public String getMobile() {
         return mobile;
     }
+
 
     public void setMobile(String mobile) {
         this.mobile = mobile;
@@ -66,6 +78,9 @@ public class SecurityUserDetails implements UserDetails {
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
         List<GrantedAuthority> authorities = new ArrayList<>();
+        if (admin) {
+            authorities.add(new SimpleGrantedAuthority(Const.ROLE_ADMIN));
+        }
         return authorities;
     }
 

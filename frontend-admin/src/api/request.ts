@@ -83,7 +83,7 @@ service.interceptors.response.use(
         case 500:
           ElMessage.error('服务器内部错误')
           break
-        default:
+        default: {
           // 尝试解析后端返回的错误信息
           const errorData = error.response.data
           if (errorData && typeof errorData === 'object' && 'msg' in errorData) {
@@ -91,6 +91,7 @@ service.interceptors.response.use(
           } else {
             ElMessage.error(`请求错误 (${status})`)
           }
+        }
       }
     } else if (error.code === 'ECONNABORTED') {
       ElMessage.error('请求超时，请稍后重试')
