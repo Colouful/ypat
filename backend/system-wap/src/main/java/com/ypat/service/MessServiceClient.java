@@ -38,4 +38,7 @@ public interface MessServiceClient {
     @PostMapping("/service/mess/add")
     String add(@RequestBody MessInfoQo messInfoQo);
 
+    @PostMapping("/service/mess/findPage")
+    String findPage(@RequestBody MessInfoQo messInfoQo);
+
 }

@@ -166,7 +166,7 @@ onMounted(() => {
               type="primary"
               link
               size="small"
-              @click="handleAudit(row)"
+              @click="handleAudit(row as unknown as OauthQo)"
             >
               审核
             </el-button>

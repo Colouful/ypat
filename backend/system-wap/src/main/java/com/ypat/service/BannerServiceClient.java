@@ -16,4 +16,10 @@ public interface BannerServiceClient {
     @PostMapping("/service/banner/findPage")
     String findPage(@RequestBody BannerQo bannerQo);
 
+    @PostMapping("/service/banner/add")
+    String add(@RequestBody BannerQo bannerQo);
+
+    @PostMapping("/service/banner/upDown")
+    String upDown(@RequestBody BannerQo bannerQo);
+
 }
