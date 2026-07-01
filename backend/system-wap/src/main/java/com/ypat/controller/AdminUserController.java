@@ -54,6 +54,11 @@ public class AdminUserController {
     @GetMapping("/list")
     public ResponseApiBody list(
             @RequestParam(value = "status", required = false) String status,
+            @RequestParam(value = "nickname", required = false) String nickname,
+            @RequestParam(value = "mobile", required = false) String mobile,
+            @RequestParam(value = "regisdate", required = false) String regisdate,
+            @RequestParam(value = "gender", required = false) String gender,
+            @RequestParam(value = "id", required = false) Long id,
             @RequestParam(value = "page", required = false, defaultValue = "0") Integer page,
             @RequestParam(value = "size", required = false, defaultValue = "10") Integer size) {
 
@@ -64,15 +69,33 @@ public class AdminUserController {
             size = DEFAULT_SIZE;
         }
 
-        // 构建 UserQo 查询参数（UserQo extends PageQo，有 page/size 字段）
         UserQo userQo = new UserQo();
         userQo.setPage(page);
         userQo.setSize(size);
         if (StringUtils.isNotBlank(status)) {
             userQo.setStatus(status);
         }
+        if (StringUtils.isNotBlank(nickname)) {
+            userQo.setNickname(nickname);
+        }
+        if (StringUtils.isNotBlank(mobile)) {
+            userQo.setMobile(mobile);
+        }
+        if (StringUtils.isNotBlank(regisdate)) {
+            try {
+                java.text.SimpleDateFormat sdf = new java.text.SimpleDateFormat("yyyy-MM-dd");
+                userQo.setRegisdate(sdf.parse(regisdate));
+            } catch (java.text.ParseException e) {
+                logger.warn("注册日期格式错误：{}", regisdate);
+            }
+        }
+        if (StringUtils.isNotBlank(gender)) {
+            userQo.setGender(gender);
+        }
+        if (id != null) {
+            userQo.setId(id);
+        }
 
-        // 调用微服务获取分页数据
         String json = userServiceClient.findPage(userQo);
         Object pageData = GsonUtils.fromJson(json, Object.class);
 

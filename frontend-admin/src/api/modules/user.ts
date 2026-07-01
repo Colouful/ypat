@@ -18,6 +18,11 @@ export interface OauthQo {
 /** 用户列表查询参数 */
 export interface UserListQuery extends PageQuery {
   status?: string
+  nickname?: string
+  mobile?: string
+  regisdate?: string
+  gender?: string
+  id?: number
 }
 
 /**

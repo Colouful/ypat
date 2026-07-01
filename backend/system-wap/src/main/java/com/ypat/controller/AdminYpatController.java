@@ -1,0 +1,258 @@
+package com.ypat.controller;
+
+import com.ypat.ResponseApiBody;
+import com.ypat.ResponseCode;
+import com.ypat.SysException;
+import com.ypat.UserQo;
+import com.ypat.YpatInfoQo;
+import com.ypat.comm.ImageConst;
+import com.ypat.service.UserServiceClient;
+import com.ypat.service.YpatServiceClient;
+import com.ypat.third.wxmess.WxMessClient;
+import com.ypat.util.FastDFSClient;
+import com.ypat.third.baidu.ai.GsonUtils;
+import com.ypat.util.ImageMarkUtil;
+import com.ypat.config.SystemConfig;
+
+import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang.time.DateFormatUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
+
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+/**
+ * 管理端 - 约拍申请/作品 Controller。
+ *
+ * <p>对应旧后台：审核系统-申请列表、发布作品。</p>
+ */
+@RestController
+@RequestMapping("/admin/ypat")
+public class AdminYpatController {
+
+    private static final Logger logger = LoggerFactory.getLogger(AdminYpatController.class);
+
+    private static final int DEFAULT_PAGE = 0;
+    private static final int DEFAULT_SIZE = 10;
+
+    @Autowired
+    private YpatServiceClient ypatServiceClient;
+
+    @Autowired
+    private UserServiceClient userServiceClient;
+
+    @Autowired
+    private FastDFSClient fastDFSClient;
+
+    @Autowired
+    private ImageMarkUtil imageMarkUtil;
+
+    @Autowired
+    private SystemConfig systemConfig;
+
+    @Autowired(required = false)
+    private WxMessClient wxMessClient;
+
+    /**
+     * 申请列表分页查询。
+     *
+     * <p>对应旧后台：GET /manage/list</p>
+     */
+    @GetMapping("/list")
+    public ResponseApiBody list(
+            @RequestParam(value = "status", required = false) String status,
+            @RequestParam(value = "nickname", required = false) String nickname,
+            @RequestParam(value = "mobile", required = false) String mobile,
+            @RequestParam(value = "recomflag", required = false) String recomflag,
+            @RequestParam(value = "page", required = false, defaultValue = "0") Integer page,
+            @RequestParam(value = "size", required = false, defaultValue = "10") Integer size) {
+
+        if (page == null || page < 0) {
+            page = DEFAULT_PAGE;
+        }
+        if (size == null || size <= 0) {
+            size = DEFAULT_SIZE;
+        }
+
+        YpatInfoQo qo = new YpatInfoQo();
+        qo.setPage(page);
+        qo.setSize(size);
+        if (StringUtils.isNotBlank(status)) {
+            qo.setStatus(status);
+        }
+        if (StringUtils.isNotBlank(nickname)) {
+            qo.setNickname(nickname);
+        }
+        if (StringUtils.isNotBlank(mobile)) {
+            qo.setMobile(mobile);
+        }
+        if (StringUtils.isNotBlank(recomflag)) {
+            qo.setRecomflag(recomflag);
+        }
+
+        String json = ypatServiceClient.findPage(qo);
+        Object pageData = GsonUtils.fromJson(json, Object.class);
+        return ResponseApiBody.success(pageData);
+    }
+
+    /**
+     * 申请详情。
+     *
+     * <p>对应旧后台：GET /manage/detail</p>
+     */
+    @GetMapping("/detail")
+    public ResponseApiBody detail(@RequestParam("id") Long id) {
+        if (id == null) {
+            throw new SysException(ResponseCode.FAIL_PARA);
+        }
+        String json = ypatServiceClient.get(id, null);
+        Object data = GsonUtils.fromJson(json, Object.class);
+        return ResponseApiBody.success(data);
+    }
+
+    /**
+     * 审核。
+     *
+     * <p>对应旧后台：POST /manage/audit</p>
+     */
+    @PostMapping("/audit")
+    public ResponseApiBody audit(
+            @RequestParam("id") Long id,
+            @RequestParam("flag") String flag,
+            @RequestParam(value = "reason", required = false) String reason) {
+
+        if (id == null || StringUtils.isBlank(flag)) {
+            throw new SysException(ResponseCode.FAIL_PARA);
+        }
+
+        logger.info("管理端约拍审核：id={}, flag={}", id, flag);
+        String res = ypatServiceClient.audit(id, flag, null, reason);
+        Object resData = GsonUtils.fromJson(res, Object.class);
+
+        // 微信消息推送（兼容旧逻辑，失败不影响主流程）
+        pushAuditMessage(id, flag, reason);
+
+        Map<String, Object> result = new HashMap<>(4);
+        result.put("success", true);
+        result.put("data", resData);
+        return ResponseApiBody.success(result);
+    }
+
+    /**
+     * 上推荐 / 取消推荐。
+     *
+     * <p>对应旧后台：POST /manage/upRecom</p>
+     */
+    @PostMapping("/recom")
+    public ResponseApiBody recom(
+            @RequestParam("id") Long id,
+            @RequestParam("recomflag") String recomflag) {
+
+        if (id == null || StringUtils.isBlank(recomflag)) {
+            throw new SysException(ResponseCode.FAIL_PARA);
+        }
+
+        logger.info("管理端约拍推荐：id={}, recomflag={}", id, recomflag);
+        String res = ypatServiceClient.upRecom(id, recomflag);
+        Object resData = GsonUtils.fromJson(res, Object.class);
+        return ResponseApiBody.success(resData);
+    }
+
+    /**
+     * 发布作品（后台代提交）。
+     *
+     * <p>对应旧后台：POST /ypat/submit</p>
+     */
+    @PostMapping("/submit")
+    public ResponseApiBody submit(
+            YpatInfoQo ypatInfoQo,
+            @RequestParam(value = "file", required = false) MultipartFile file,
+            @RequestParam(value = "files", required = false) MultipartFile[] files) throws IOException {
+
+        if (ypatInfoQo.getPatdate() == null) {
+            throw new SysException(ResponseCode.FAIL_PARA.getCode(), "patdate不能为空");
+        }
+
+        // 1. 创建临时用户（头像）
+        UserQo userQo = new UserQo();
+        if (file != null && !file.isEmpty()) {
+            String fileId = fastDFSClient.uploanFile1(file.getInputStream(), ImageConst.IMAGE_TYPE);
+            userQo.setImgpath(systemConfig.getFdfs_path() + fileId);
+        }
+        userQo.setNickname(ypatInfoQo.getNickname());
+        userQo.setGender(ypatInfoQo.getGender());
+        userQo.setProfess(ypatInfoQo.getProfess());
+        userQo.setName("wm");
+        userQo.setMobile(genTempMobile());
+        String userJson = userServiceClient.add(userQo);
+        UserQo user = GsonUtils.fromJson(userJson, UserQo.class);
+
+        // 2. 上传作品图片（加水印）
+        List<String> picsList = new ArrayList<>();
+        if (files != null && files.length > 0) {
+            for (MultipartFile multipartFile : files) {
+                InputStream inputStream = multipartFile.getInputStream();
+                InputStream waterStream = imageMarkUtil.waterMake(inputStream);
+                String fileId = fastDFSClient.uploanFile1(waterStream, ImageConst.IMAGE_TYPE);
+                picsList.add(systemConfig.getFdfs_path() + fileId);
+            }
+        }
+        if (picsList.isEmpty()) {
+            throw new SysException(ResponseCode.FAIL_PARA.getCode(), "请至少上传一张作品图片");
+        }
+
+        ypatInfoQo.setUserid(user.getId());
+        ypatInfoQo.setPics(picsList);
+        String res = ypatServiceClient.submit(ypatInfoQo);
+        Object resData = GsonUtils.fromJson(res, Object.class);
+        return ResponseApiBody.success(resData);
+    }
+
+    private String genTempMobile() {
+        StringBuilder sb = new StringBuilder("1");
+        java.util.Random r = new java.util.Random();
+        for (int i = 0; i < 10; i++) {
+            sb.append(r.nextInt(10));
+        }
+        return sb.toString();
+    }
+
+    private void pushAuditMessage(Long id, String flag, String reason) {
+        try {
+            if (wxMessClient == null) {
+                return;
+            }
+            String accessToken = wxMessClient.getAccessToken();
+            if (accessToken == null) {
+                return;
+            }
+            String ypatJson = ypatServiceClient.get(id, null);
+            YpatInfoQo ypatInfoQo = GsonUtils.fromJson(ypatJson, YpatInfoQo.class);
+            if (ypatInfoQo == null || ypatInfoQo.getUserQo() == null) {
+                return;
+            }
+            Map<String, String> contentMap = new HashMap<>();
+            contentMap.put("time", DateFormatUtils.format(new Date(), "yyyy-MM-dd HH:mm:ss"));
+            String content = ypatInfoQo.getDescrib();
+            if (StringUtils.isNotEmpty(content) && content.length() >= 10) {
+                content = content.substring(0, 10) + "...";
+            }
+            contentMap.put("content", content);
+            // 消息模板字段简化为通用结果
+            contentMap.put("result", "2".equals(flag) ? "审核通过" : "审核未通过");
+            contentMap.put("note", StringUtils.isEmpty(reason) ? "无" : reason);
+            wxMessClient.sendMsg(accessToken, ypatInfoQo.getUserQo().getOpenid(), com.ypat.enums.MessType.audit, "", contentMap);
+        } catch (Exception e) {
+            logger.error("约拍审核消息推送失败：", e);
+        }
+    }
+}

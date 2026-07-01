@@ -16,4 +16,10 @@ public interface ArticleServiceClient {
     @PostMapping("/service/article/findPage")
     String findPage(@RequestBody ArticleQo articleQo);
 
+    @PostMapping("/service/article/add")
+    String add(@RequestBody ArticleQo articleQo);
+
+    @PostMapping("/service/article/upDown")
+    String upDown(@RequestBody ArticleQo articleQo);
+
 }
