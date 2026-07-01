@@ -14,10 +14,15 @@ backend-base/*.iml
 backend-base/*/target/
 backend-base/*/*.iml
 
-# Frontend
+# Frontend (H5, uni-app)
 frontend/node_modules/
 frontend/dist/
 frontend/.hbuilderx/
+
+# Frontend Admin (Vue3 + Vite)
+frontend-admin/node_modules/
+frontend-admin/dist/
+frontend-admin/.vite/
 
 # IDE
 .vscode/
@@ -25,6 +30,10 @@ frontend/.hbuilderx/
 *.swp
 *.swo
 *~
+
+# AI tool metadata（不应入库）
+.codebuddy/
+.claude/
 
 # OS
 .DS_Store
