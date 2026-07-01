@@ -48,7 +48,7 @@ const targets: TargetItem[] = [
   }
   &__card {
     position: relative;
-    background: linear-gradient(135deg, #FFFAFA 0%, #FFF0F2 100%);
+    background: linear-gradient(135deg, #F5F6F8 0%, $color-primary-light 100%);
     border-radius: 16rpx;
     padding: 80rpx 24rpx 48rpx;
     display: flex;

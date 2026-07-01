@@ -37,7 +37,7 @@
       <text class="work-publish-form__label work-publish-form__label--inline">约拍返片</text>
       <view class="work-publish-form__switch">
         <text class="work-publish-form__switch-text">是否约拍返片</text>
-        <switch :checked="form.returnPhotoFlagBool" @change="(e: any) => form.returnPhotoFlagBool = e.detail.value" color="#FF4D5E" />
+        <switch :checked="form.returnPhotoFlagBool" @change="(e: any) => form.returnPhotoFlagBool = e.detail.value" color="#23C268" />
       </view>
     </view>
 
@@ -243,13 +243,13 @@ async function onSubmit() {
     width: 100%;
     height: 88rpx;
     line-height: 88rpx;
-    background: linear-gradient(90deg, #FF8FA0 0%, #FF6B7E 100%);
+    background: linear-gradient(90deg, #C9F4D9 0%, #17A857 100%);
     color: #FFFFFF;
     font-size: 30rpx;
     font-weight: 600;
     border-radius: 999rpx;
     border: none;
-    box-shadow: 0 12rpx 24rpx rgba(255, 77, 94, 0.28);
+    box-shadow: 0 12rpx 24rpx rgba(35, 194, 104, 0.28);
     &::after { border: none; }
     &[disabled] {
       background: $color-text-helper;

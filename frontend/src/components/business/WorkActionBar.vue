@@ -93,12 +93,12 @@ function onOffline() { emit('offline') }
     height: 80rpx;
     line-height: 80rpx;
     text-align: center;
-    background: linear-gradient(90deg, #FF8FA0 0%, #FF6B7E 100%);
+    background: linear-gradient(90deg, #C9F4D9 0%, #17A857 100%);
     color: #FFFFFF;
     border-radius: 999rpx;
     font-size: 30rpx;
     font-weight: 600;
-    box-shadow: 0 12rpx 24rpx rgba(255, 77, 94, 0.28);
+    box-shadow: 0 12rpx 24rpx rgba(35, 194, 104, 0.28);
     &--offline {
       background: $color-text-helper;
       box-shadow: none;

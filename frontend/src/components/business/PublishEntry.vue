@@ -57,10 +57,10 @@ const emit = defineEmits<{
     flex-shrink: 0;
     margin-right: 24rpx;
     &--camera {
-      background: linear-gradient(135deg, #FF8FA0 0%, #FF6B7E 100%);
+      background: linear-gradient(135deg, #C9F4D9 0%, #17A857 100%);
     }
     &--image {
-      background: linear-gradient(135deg, #FFA0AE 0%, #FF7A8A 100%);
+      background: linear-gradient(135deg, $color-primary-light 0%, $color-primary 100%);
     }
   }
   &__svg {

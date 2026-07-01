@@ -73,7 +73,7 @@
         <text class="appointment-publish-form__value">{{ regionText || '请选择面向地区' }}</text>
         <text v-if="config && config.allowNationwide" class="appointment-publish-form__nationwide">
           <text>全国</text>
-          <switch :checked="form.isNationwide" @change="(e: any) => { form.isNationwide = e.detail.value; if (e.detail.value) form.region = null }" color="#FF4D5E" />
+          <switch :checked="form.isNationwide" @change="(e: any) => { form.isNationwide = e.detail.value; if (e.detail.value) form.region = null }" color="#23C268" />
         </text>
         <text class="appointment-publish-form__arrow">›</text>
       </view>
@@ -400,13 +400,13 @@ async function onSubmit() {
     width: 100%;
     height: 88rpx;
     line-height: 88rpx;
-    background: linear-gradient(90deg, #FF8FA0 0%, #FF6B7E 100%);
+    background: linear-gradient(90deg, #C9F4D9 0%, #17A857 100%);
     color: #FFFFFF;
     font-size: 30rpx;
     font-weight: 600;
     border-radius: 999rpx;
     border: none;
-    box-shadow: 0 12rpx 24rpx rgba(255, 77, 94, 0.28);
+    box-shadow: 0 12rpx 24rpx rgba(35, 194, 104, 0.28);
     &::after { border: none; }
     &[disabled] {
       background: $color-text-helper;
