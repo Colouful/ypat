@@ -62,7 +62,7 @@
       </view>
     </view>
 
-    <KeepTabBar active="home" />
+    <KeepTabBar active="discover" />
   </view>
 </template>
 

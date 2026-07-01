@@ -10,25 +10,37 @@ describe('mp-weixin component styles', () => {
     expect(source).not.toMatch(/\.keep-tabbar__[^{]+\s+(text|view|image|button|navigator)\b/)
   })
 
-  it('uses an svg notched tabbar background with project theme color', () => {
+  it('uses the Keep-style translucent tabbar with active color changes', () => {
     const file = fileURLToPath(new URL('../KeepTabBar.vue', import.meta.url))
     const source = readFileSync(file, 'utf8')
 
-    expect(source).toContain('keep-tabbar__bg')
-    expect(source).toContain('tabbarBgSvg')
-    expect(source).toContain('data:image/svg+xml')
-    expect(source).toContain("fill=\"${tabbarFill}\"")
+    expect(source).not.toContain('keep-tabbar__bg')
+    expect(source).not.toContain('tabbarBgSvg')
+    expect(source).not.toContain('data:image/svg+xml')
+    expect(source).toContain("label: '发现'")
+    expect(source).toContain("label: '消息'")
+    expect(source).toContain('activeColor')
+    expect(source).toContain('inactiveColor')
+    expect(source).toContain(':color="active === item.key ? activeColor : inactiveColor"')
     expect(source).toContain('keep-tabbar__item--publish')
-    expect(source).toContain('background: $color-primary')
-    expect(source).toContain("'M0,54'")
-    expect(source).toContain("'Q750,14 750,54'")
-    expect(source).not.toContain('keep-tabbar__notch')
-    expect(source).not.toContain('#ff2d3d')
     expect(source).toContain('bottom: 0')
-    expect(source).toContain('height: 132rpx')
-    expect(source).not.toContain('height: calc(150rpx + env(safe-area-inset-bottom))')
+    expect(source).toContain('height: calc(148rpx + env(safe-area-inset-bottom))')
+    expect(source).toContain('background: rgba(255, 255, 255, 0.98)')
+    expect(source).toContain('backdrop-filter: blur(24rpx)')
+    expect(source).toContain('border-top: 1rpx solid $color-border')
+    expect(source).toContain('color: $color-text-helper')
+    expect(source).toContain('color: $color-text-primary')
     expect(source).toContain('font-size: 22rpx')
-    expect(source).not.toContain('height: calc(156rpx + env(safe-area-inset-bottom))')
+  })
+
+  it('maps mini-program image icons to existing asset names and color tokens', () => {
+    const file = fileURLToPath(new URL('../KeepIcon.vue', import.meta.url))
+    const source = readFileSync(file, 'utf8')
+
+    expect(source).toContain("users: 'user'")
+    expect(source).toContain("'help-circle': 'sparkles'")
+    expect(source).toContain('normalizeHexColor')
+    expect(source).toContain('mpImageIconName.value')
   })
 
   it('keeps publish submit button themed in disabled state', () => {

@@ -294,7 +294,7 @@ onPullDownRefresh(async () => {
 }
 
 .mine-scroll {
-  padding: 0 32rpx calc(176rpx + env(safe-area-inset-bottom));
+  padding: 0 32rpx calc(172rpx + env(safe-area-inset-bottom));
 }
 
 .mine-top {

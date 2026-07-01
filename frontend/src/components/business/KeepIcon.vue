@@ -207,13 +207,27 @@ const iconParts = computed(() => iconMap[props.name] || iconMap.sparkles)
 
 const iconName = computed(() => (iconMap[props.name] ? props.name : 'sparkles'))
 
+const mpImageIconAlias: Record<string, string> = {
+  users: 'user',
+  'help-circle': 'sparkles',
+}
+
+const mpImageIconName = computed(() => mpImageIconAlias[iconName.value] || iconName.value)
+
 const normalizedSize = computed(() => {
   if (typeof props.size === 'number') return `${props.size}rpx`
   return props.size
 })
 
+function normalizeHexColor(value: string): string {
+  const color = value.trim().toUpperCase()
+  const shorthandMatch = color.match(/^#([0-9A-F])([0-9A-F])([0-9A-F])$/)
+  if (!shorthandMatch) return color
+  return `#${shorthandMatch[1]}${shorthandMatch[1]}${shorthandMatch[2]}${shorthandMatch[2]}${shorthandMatch[3]}${shorthandMatch[3]}`
+}
+
 const colorToken = computed(() => {
-  const color = props.color.toUpperCase()
+  const color = normalizeHexColor(props.color)
   if (color === '#23C268') return 'brand'
   if (color === '#83888F') return 'secondary'
   if (color === '#B3B8BE') return 'helper'
@@ -224,7 +238,7 @@ const colorToken = computed(() => {
   return 'primary'
 })
 
-const imageSource = computed(() => `/static/icons/${iconName.value}-${colorToken.value}.png`)
+const imageSource = computed(() => `/static/icons/${mpImageIconName.value}-${colorToken.value}.png`)
 
 const iconStyle = computed(() => ({
   width: normalizedSize.value,

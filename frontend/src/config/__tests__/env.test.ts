@@ -44,7 +44,8 @@ describe('envConfig', () => {
       delete (import.meta.env as Record<string, string | undefined>).VITE_API_BASE_URL
       const result = await loadEnvConfig()
       expect(result.env).toBe('development')
-      expect(result.apiBaseUrl).toBe('http://localhost:8088')
+      expect(result.apiBaseUrl).toBe('http://localhost:8080/api')
+      expect(result.imageBaseUrl).toBe('http://localhost:8080/files')
     })
   })
 

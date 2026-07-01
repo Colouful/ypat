@@ -20,6 +20,9 @@ const FORBIDDEN_PRODUCTION_HOSTS = [
   '127.0.0.1',
 ]
 
+const DEFAULT_DEVELOPMENT_API_BASE_URL = 'http://localhost:8080/api'
+const DEFAULT_DEVELOPMENT_IMAGE_BASE_URL = 'http://localhost:8080/files'
+
 function assertSecureRemoteUrl(
   env: 'staging' | 'production',
   name: string,
@@ -74,8 +77,11 @@ function getEnvConfig(): EnvConfig {
     assertSecureRemoteUrl('production', 'API 地址', rawApiBaseUrl)
   }
 
-  const apiBaseUrl = normalizeBaseUrl(rawApiBaseUrl || 'http://localhost:8088')
-  const imageBaseUrl = normalizeBaseUrl(import.meta.env.VITE_IMAGE_BASE_URL || apiBaseUrl)
+  const apiBaseUrl = normalizeBaseUrl(rawApiBaseUrl || DEFAULT_DEVELOPMENT_API_BASE_URL)
+  const imageBaseUrl = normalizeBaseUrl(
+    import.meta.env.VITE_IMAGE_BASE_URL
+      || (rawApiBaseUrl ? apiBaseUrl : DEFAULT_DEVELOPMENT_IMAGE_BASE_URL),
+  )
 
   if (env === 'staging') {
     assertSecureRemoteUrl('staging', '图片地址', imageBaseUrl)
