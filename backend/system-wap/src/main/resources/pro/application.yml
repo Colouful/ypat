@@ -20,8 +20,8 @@ spring:
       enabled: true
       force: true
     multipart:
-      max-file-size: 100Mb
-      max-request-size: 100Mb
+      max-file-size: 200Mb
+      max-request-size: 400Mb
 eureka:
   client:
     serviceUrl:

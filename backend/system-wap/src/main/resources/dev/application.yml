@@ -3,6 +3,10 @@ server:
   tomcat:
     max-http-post-size: -1
 spring:
+  http:
+    multipart:
+      max-file-size: 200Mb
+      max-request-size: 400Mb
   redis:
     host: ${YPAT_REDIS_HOST:localhost}
     port: ${YPAT_REDIS_PORT:6379}

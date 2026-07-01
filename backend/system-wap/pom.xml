@@ -114,6 +114,11 @@
             <artifactId>system-object</artifactId>
             <version>${project.version}</version>
         </dependency>
+        <dependency>
+            <groupId>com.ypat</groupId>
+            <artifactId>system-domain</artifactId>
+            <version>${project.version}</version>
+        </dependency>
 
         <dependency>
             <groupId>dom4j</groupId>

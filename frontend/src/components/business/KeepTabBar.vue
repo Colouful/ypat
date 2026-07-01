@@ -11,14 +11,18 @@
         }"
         @tap="go(item)"
       >
-        <view class="keep-tabbar__icon">
+        <view class="keep-tabbar__icon" :class="item.key === 'publish' ? 'keep-tabbar__icon--publish' : ''">
+          <text v-if="item.key === 'publish'" class="keep-tabbar__publish-plus">+</text>
           <KeepIcon
+            v-else
             :name="item.icon"
-            :size="item.key === 'publish' ? 54 : 46"
-            :color="active === item.key ? activeColor : inactiveColor"
+            :size="46"
+            :color="active === item.key ? primaryColor : inactiveColor"
           />
         </view>
-        <text class="keep-tabbar__label">{{ item.label }}</text>
+        <text class="keep-tabbar__label" :class="{ 'keep-tabbar__label--active': active === item.key }">
+          {{ item.label }}
+        </text>
         <view v-if="item.dot" class="keep-tabbar__dot" />
       </view>
     </view>
@@ -29,10 +33,10 @@
 import KeepIcon from './KeepIcon.vue'
 import { goRootTab, openPublish, type RootTabUrl } from '@/utils/tab-navigation'
 
-type TabKey = 'home' | 'discover' | 'publish' | 'message' | 'mine'
+type TabKey = 'home' | 'work' | 'publish' | 'message' | 'mine'
 
 type TabItem = {
-  key: 'home' | 'publish' | 'mine'
+  key: TabKey
   label: string
   icon: string
   url?: RootTabUrl
@@ -45,12 +49,15 @@ const props = withDefaults(defineProps<{
 
 const items: TabItem[] = [
   { key: 'home', label: '首页', icon: 'home', url: '/pages/home/index' },
+  { key: 'work', label: '作品', icon: 'compass', url: '/pages/work/index' },
   { key: 'publish', label: '发布', icon: 'plus-circle' },
+  { key: 'message', label: '消息', icon: 'mail', url: '/pages/message/index' },
   { key: 'mine', label: '我的', icon: 'user', url: '/pages/mine/index' },
 ]
 
 const activeColor = '#1A1D1F'
 const inactiveColor = '#B3B8BE'
+const primaryColor = '#FF4D5E'
 
 function go(item: TabItem): void {
   if (item.key === 'publish') {
@@ -97,7 +104,7 @@ function go(item: TabItem): void {
   flex: 1;
   min-width: 0;
   height: 112rpx;
-  color: $color-text-helper;
+  color: $color-text-primary;
   font-size: 22rpx;
   font-weight: 700;
   line-height: 1.2;
@@ -114,14 +121,15 @@ function go(item: TabItem): void {
 .keep-tabbar__label {
   display: block;
   margin-top: 6rpx;
-  color: currentColor;
+  color: $color-text-helper;
   font-size: 22rpx;
   font-weight: 700;
   line-height: 1;
+  &--active { color: $color-primary; }
 }
 
 .keep-tabbar__item--active {
-  color: $color-text-primary;
+  color: $color-primary;
   font-weight: 900;
 }
 
@@ -131,6 +139,7 @@ function go(item: TabItem): void {
 
 .keep-tabbar__item--active .keep-tabbar__label {
   font-weight: 900;
+  color: $color-primary;
 }
 
 .keep-tabbar__dot {
@@ -140,12 +149,27 @@ function go(item: TabItem): void {
   width: 10rpx;
   height: 10rpx;
   border-radius: 50%;
-  background: $color-accent-red;
+  background: $color-primary;
   transform: translateX(24rpx);
 }
 
 .keep-tabbar__item--publish .keep-tabbar__icon {
   width: 60rpx;
   height: 60rpx;
+}
+
+.keep-tabbar__icon--publish {
+  background: $color-primary;
+  border-radius: 50%;
+  width: 56rpx;
+  height: 56rpx;
+}
+
+.keep-tabbar__publish-plus {
+  color: #FFFFFF;
+  font-size: 44rpx;
+  font-weight: 400;
+  line-height: 56rpx;
+  text-align: center;
 }
 </style>

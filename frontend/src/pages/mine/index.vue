@@ -2,36 +2,55 @@
   <view class="mine-page">
     <view class="mine-scroll" :style="{ paddingTop: statusBarHeight + 20 + 'px' }">
       <view class="mine-top">
-        <view class="mine-top__icon" @tap="goSettings">
-          <KeepIcon name="menu" :size="46" />
+        <view class="mine-top__icon" @tap="goCenter">
+          <KeepIcon name="menu" :size="42" />
         </view>
         <view class="mine-top__mail" @tap="goMessage">
-          <KeepIcon name="mail" :size="48" />
+          <KeepIcon name="mail" :size="42" />
           <text v-if="unreadCount > 0" class="mine-top__badge">{{ unreadCount > 9 ? '9+' : unreadCount }}</text>
         </view>
       </view>
 
-      <view v-if="isLoggedIn" class="profile-card">
-        <view class="profile-card__main" @tap="goProfile">
-          <image class="profile-card__avatar" :src="avatar" mode="aspectFill" />
-          <view class="profile-card__body">
-            <view class="profile-card__name-row">
-              <text class="profile-card__name">{{ displayName }}</text>
-              <text v-if="genderLabel" class="profile-card__gender">{{ genderLabel }}</text>
+      <template v-if="isLoggedIn">
+        <view class="mine-head" @tap="goCenter">
+          <image class="mine-head__avatar" :src="avatar" mode="aspectFill" />
+          <view class="mine-head__body">
+            <view class="mine-head__name-row">
+              <text class="mine-head__name">{{ displayName }}</text>
+              <view v-if="realnameState.done" class="mine-head__verified">
+                <KeepIcon name="check" :size="24" color="#fff" />
+              </view>
+              <text v-if="genderLabel" class="mine-head__gender">{{ genderLabel }}</text>
             </view>
-            <text class="profile-card__meta">{{ professLabel || '未设置身份' }} · {{ userInfo?.city || '未设置城市' }}</text>
-            <view class="profile-card__tags">
-              <text class="profile-tag" :class="{ 'profile-tag--ok': realnameState.done }">{{ realnameState.text }}</text>
-              <text class="profile-tag" :class="{ 'profile-tag--ok': creditState.done }">{{ creditState.text }}</text>
+            <view class="mine-head__stats">
+              <text>发布 <text class="mine-head__stat-num">{{ userInfo?.pubtimes || 0 }}</text></text>
+              <text>收藏 <text class="mine-head__stat-num">{{ userInfo?.coltimes || 0 }}</text></text>
+              <text>约拍 <text class="mine-head__stat-num">{{ receivedCount || userInfo?.rectimes || 0 }}</text></text>
             </view>
           </view>
-          <KeepIcon name="chevron-right" :size="42" color="#B3B8BE" />
+          <KeepIcon name="chevron-right" :size="36" color="#B3B8BE" />
         </view>
-        <view class="profile-card__actions">
-          <view class="profile-action" @tap="goProfile">个人资料</view>
-          <view class="profile-action profile-action--primary" @tap="goHomepage">个人主页</view>
+
+        <view class="mine-pills">
+          <view class="pill" @tap="goEditInfo">
+            <text>{{ professLabel || '未设置身份' }}</text>
+          </view>
+          <view v-if="realnameAvailable" class="pill" :class="{ 'pill--ok': realnameState.done }" @tap="goRealname">
+            <text>{{ realnameState.done ? '已实名 ✓' : realnameState.text }}</text>
+          </view>
+          <view v-if="realnameAvailable" class="pill" :class="{ 'pill--ok': creditState.done }" @tap="handleCredit">
+            <text>{{ creditState.text }}</text>
+          </view>
         </view>
-      </view>
+
+        <view class="mine-member" @tap="goMember">
+          <view class="mine-member__left">
+            <text class="mine-member__title">◆ 爱去拍 · 信用会员</text>
+            <text class="mine-member__desc">专属曝光 · 优先约拍 · 更多权益</text>
+          </view>
+          <view class="mine-member__cta">立即开通 ›</view>
+        </view>
+      </template>
 
       <view v-else class="login-panel">
         <KeepState
@@ -43,52 +62,98 @@
         />
       </view>
 
-      <view class="core-grid">
-        <view v-if="showWallet" class="core-item" @tap="goWallet">
-          <KeepIcon name="wallet" :size="50" />
-          <text class="core-item__value">{{ userInfo?.ppd || 0 }}</text>
-          <text class="core-item__label">我的钱包</text>
+      <view class="mine-qgrid">
+        <view class="qgrid__item" @tap="goPublish">
+          <view class="qgrid__icon">
+            <KeepIcon name="camera" :size="40" />
+          </view>
+          <text class="qgrid__label">我的发布</text>
         </view>
-        <view class="core-item" @tap="goPublish">
-          <KeepIcon name="camera" :size="50" />
-          <text class="core-item__value">{{ userInfo?.pubtimes || 0 }}</text>
-          <text class="core-item__label">我的发布</text>
+        <view class="qgrid__item" @tap="goApply">
+          <view class="qgrid__icon">
+            <KeepIcon name="check" :size="40" />
+          </view>
+          <text class="qgrid__label">我的约拍</text>
         </view>
-        <view class="core-item" @tap="goApply">
-          <KeepIcon name="check" :size="50" />
-          <text class="core-item__value">{{ receivedCount }}</text>
-          <text class="core-item__label">我的约拍</text>
+        <view class="qgrid__item" @tap="goFavorite">
+          <view class="qgrid__icon">
+            <KeepIcon name="star" :size="40" />
+          </view>
+          <text class="qgrid__label">我的收藏</text>
         </view>
-        <view class="core-item" @tap="goFavorite">
-          <KeepIcon name="star" :size="50" />
-          <text class="core-item__value">{{ userInfo?.coltimes || 0 }}</text>
-          <text class="core-item__label">我的收藏</text>
+        <view class="qgrid__item" @tap="goWallet">
+          <view class="qgrid__icon">
+            <KeepIcon name="wallet" :size="40" />
+          </view>
+          <text class="qgrid__label">我的钱包</text>
         </view>
       </view>
 
-      <view class="service-card">
-        <view
-          v-for="item in serviceItems"
-          :key="item.title"
-          class="service-row"
-          :class="{ 'service-row--disabled': item.disabled }"
-          @tap="handleService(item)"
-        >
-          <view class="service-row__icon">
-            <KeepIcon :name="item.icon" :size="38" />
+      <view class="mine-tabs">
+        <text
+          v-for="tab in tabs"
+          :key="tab.key"
+          class="mine-tabs__item"
+          :class="{ 'mine-tabs__item--on': activeTab === tab.key }"
+          @tap="activeTab = tab.key"
+        >{{ tab.label }}</text>
+      </view>
+
+      <view v-if="activeTab === 'overview'" class="data-card">
+        <view class="data-card__toprow">
+          <view class="data-card__col">
+            <view class="data-card__big">
+              <KeepIcon name="chart" :size="26" color="#17A857" />
+              <text>累计约拍</text>
+            </view>
+            <view class="data-card__num">
+              <text>{{ receivedCount || userInfo?.rectimes || 0 }}</text>
+              <text class="data-card__unit">次</text>
+            </view>
           </view>
-          <view class="service-row__body">
-            <text class="service-row__title">{{ item.title }}</text>
-            <text v-if="item.desc" class="service-row__desc">{{ item.desc }}</text>
+          <view class="data-card__coin" @tap="goWallet">
+            <text>◎ 拍拍豆 {{ userInfo?.ppd || 0 }} ›</text>
           </view>
-          <view class="service-row__right">
-            <text v-if="item.badge" class="service-row__badge">{{ item.badge }}</text>
-            <KeepIcon name="chevron-right" :size="34" color="#B3B8BE" />
+        </view>
+        <view class="data-card__mini">
+          <view class="mini-cell">
+            <view class="mini-cell__t">
+              <KeepIcon name="star" :size="24" color="#17A857" />
+              <text>被收藏</text>
+            </view>
+            <view class="mini-cell__v">
+              <text>{{ userInfo?.coltimes || 0 }}</text>
+              <text class="mini-cell__unit">次</text>
+            </view>
+          </view>
+          <view class="mini-cell">
+            <view class="mini-cell__t">
+              <KeepIcon name="image" :size="24" color="#17A857" />
+              <text>作品</text>
+            </view>
+            <view class="mini-cell__v">
+              <text>{{ userInfo?.pubtimes || 0 }}</text>
+              <text class="mini-cell__unit">组</text>
+            </view>
           </view>
         </view>
       </view>
 
-      <button v-if="isLoggedIn" class="logout" @tap="handleLogout">退出登录</button>
+      <view v-else-if="activeTab === 'apply'" class="data-card link-card" @tap="goApply">
+        <view class="link-card__body">
+          <text class="link-card__title">查看全部约拍记录</text>
+          <text class="link-card__desc">收到的申请、进行中和已完成的约拍</text>
+        </view>
+        <KeepIcon name="chevron-right" :size="36" color="#B3B8BE" />
+      </view>
+
+      <view v-else class="data-card link-card" @tap="goPublish">
+        <view class="link-card__body">
+          <text class="link-card__title">查看全部作品</text>
+          <text class="link-card__desc">你已发布的约拍与作品动态</text>
+        </view>
+        <KeepIcon name="chevron-right" :size="36" color="#B3B8BE" />
+      </view>
     </view>
 
     <KeepTabBar active="mine" />
@@ -107,31 +172,27 @@ import KeepIcon from '@/components/business/KeepIcon.vue'
 import KeepState from '@/components/business/KeepState.vue'
 import KeepTabBar from '@/components/business/KeepTabBar.vue'
 import { openMessage } from '@/utils/tab-navigation'
-import { isAdminOpenid } from '@/constants/admin'
 import type { ParamInfo } from '@/api/types/area-types'
 
-interface ServiceItem {
-  title: string
-  icon: string
-  url?: string
-  desc?: string
-  badge?: string
-  auth?: boolean
-  disabled?: boolean
-  action?: () => void
-}
+type TabKey = 'overview' | 'apply' | 'works'
 
 const userStore = useUserStore()
 const appStore = useAppStore()
 const params = ref<ParamInfo | null>(null)
 const receivedCount = ref(0)
+const activeTab = ref<TabKey>('overview')
+
+const tabs: { key: TabKey; label: string }[] = [
+  { key: 'overview', label: '数据概览' },
+  { key: 'apply', label: '约拍记录' },
+  { key: 'works', label: '我的作品' },
+]
 
 const statusBarHeight = computed(() => appStore.statusBarHeight)
 const unreadCount = computed(() => userStore.unreadCount)
 const isLoggedIn = computed(() => userStore.isLoggedIn)
 const userInfo = computed(() => userStore.userInfo)
 const avatar = computed(() => userInfo.value?.imgpath || userInfo.value?.avatarurl || '/static/default-avatar.png')
-const showWallet = computed(() => params.value?.realname !== '0')
 const displayName = computed(() => userInfo.value?.nickname || maskMobile(userInfo.value?.mobile) || '未设置昵称')
 const genderLabel = computed(() => {
   const gender = userInfo.value?.gender
@@ -150,40 +211,10 @@ const realnameState = computed(() => {
 })
 const creditState = computed(() => (
   userInfo.value?.creditflag === '1'
-    ? { text: '已信用担保', done: true }
+    ? { text: '信用担保 ✓', done: true }
     : { text: '未信用担保', done: false }
 ))
-// 后端无 role/isAdmin 字段，通过 openid 比对兜底；常量与 backend Const.SYS_ADMIN 同步。
-const isAdmin = computed(() => isAdminOpenid(userInfo.value?.openid))
 const realnameAvailable = computed(() => params.value?.realname !== '0')
-const messageBadge = computed(() => (unreadCount.value > 0 ? String(unreadCount.value) : ''))
-
-// spec §6.2.4 顺序的连续功能列表，无分类标题；管理员入口在末尾追加。
-const serviceItems = computed<ServiceItem[]>(() => {
-  const items: ServiceItem[] = [
-    { title: '我的消息', icon: 'mail', url: '/pages/message/index', badge: messageBadge.value, auth: true },
-    { title: '我的主页', icon: 'user', action: goHomepage, auth: true },
-    { title: '好友邀请', icon: 'users', desc: '邀请好友，享拍拍豆奖励', url: '/pages-sub/user/invite', auth: true },
-    { title: '会员中心', icon: 'star', desc: '开通会员享专属权益', url: '/pages-sub/user/member/index', auth: true },
-  ]
-  if (realnameAvailable.value) {
-    items.push({ title: '实名认证', icon: 'shield', url: '/pages-sub/user/realname', badge: realnameState.value.text, auth: true })
-    items.push({ title: '信用担保', icon: 'lock', badge: creditState.value.text, auth: true, disabled: true, action: handleCredit })
-  }
-  if (showWallet.value) {
-    items.push({ title: '我的钱包', icon: 'wallet', url: '/pages-sub/user/wallet', auth: true })
-  }
-  items.push({ title: '收支记录', icon: 'chart', url: '/pages-sub/user/records', auth: true })
-  items.push({ title: '帮助中心', icon: 'help-circle', url: '/pages-sub/user/helpcenter' })
-  items.push({ title: '意见反馈', icon: 'edit', url: '/pages-sub/user/feedback', auth: true })
-  items.push({ title: '关于我们', icon: 'camera', url: '/pages-sub/user/about' })
-  items.push({ title: '设置', icon: 'menu', url: '/pages-sub/user/settings', auth: true })
-  if (isAdmin.value) {
-    items.push({ title: '信息审核', icon: 'shield', desc: '管理员入口', url: '/pages-sub/user/admin-audit-soon', auth: true })
-    items.push({ title: '消息授权', icon: 'mail', desc: '订阅消息模板授权（待迁移）', auth: true, disabled: true, action: () => uni.showToast({ title: '订阅消息授权将在切片 2 接入', icon: 'none' }) })
-  }
-  return items
-})
 
 function maskMobile(value?: string): string {
   if (!value) return ''
@@ -194,31 +225,6 @@ function requireLogin(): boolean {
   if (isLoggedIn.value) return true
   uni.navigateTo({ url: '/pages/login/index' })
   return false
-}
-
-function handleService(item: ServiceItem): void {
-  if (item.auth && !requireLogin()) return
-  if (item.action) {
-    item.action()
-    return
-  }
-  if (item.url) {
-    if (item.url === '/pages/message/index') {
-      openMessage()
-      return
-    }
-    uni.navigateTo({ url: item.url })
-  }
-}
-
-function handleLogout(): void {
-  uni.showModal({
-    title: '退出登录',
-    content: '退出后需重新登录才能查看消息、钱包等信息。',
-    success: ({ confirm }) => {
-      if (confirm) userStore.logout()
-    },
-  })
 }
 
 function handleCredit(): void {
@@ -264,13 +270,13 @@ async function loadReceivedCount(): Promise<void> {
 
 function goLogin(): void { uni.navigateTo({ url: '/pages/login/index' }) }
 function goMessage(): void { openMessage() }
-function goProfile(): void { if (requireLogin()) uni.navigateTo({ url: '/pages-sub/user/profile' }) }
-function goSettings(): void { if (requireLogin()) uni.navigateTo({ url: '/pages-sub/user/settings' }) }
-function goHomepage(): void {
+function goCenter(): void {
   if (!requireLogin()) return
-  const id = userInfo.value?.id
-  uni.navigateTo({ url: id ? `/pages-sub/user/profile?id=${id}` : '/pages-sub/user/profile' })
+  uni.navigateTo({ url: '/pages-sub/user/center' })
 }
+function goEditInfo(): void { if (requireLogin()) uni.navigateTo({ url: '/pages-sub/user/edit-info' }) }
+function goRealname(): void { if (requireLogin()) uni.navigateTo({ url: '/pages-sub/user/realname' }) }
+function goMember(): void { if (requireLogin()) uni.navigateTo({ url: '/pages-sub/user/member/index' }) }
 function goPublish(): void { if (requireLogin()) uni.navigateTo({ url: '/pages-sub/ypat/my-publish' }) }
 function goApply(): void { if (requireLogin()) uni.navigateTo({ url: '/pages-sub/ypat/my-apply' }) }
 function goFavorite(): void { if (requireLogin()) uni.navigateTo({ url: '/pages-sub/ypat/my-favorite' }) }
@@ -287,7 +293,6 @@ onPullDownRefresh(async () => {
 </script>
 
 <style lang="scss">
-
 .mine-page {
   min-height: 100vh;
   background: $color-bg-page;
@@ -332,61 +337,54 @@ onPullDownRefresh(async () => {
   text-align: center;
 }
 
-.profile-card,
-.login-panel,
-.core-grid,
-.service-card {
-  border-radius: $radius-keep-card;
-  background: #fff;
-  box-shadow: $shadow-keep-card;
-}
-
-.profile-card {
-  margin-top: 34rpx;
-  padding: 30rpx;
-}
-
-.profile-card__main {
+.mine-head {
   display: flex;
   align-items: center;
   gap: 24rpx;
+  margin-top: 28rpx;
+  padding: 20rpx 8rpx;
 }
 
-.profile-card__avatar {
-  width: 124rpx;
-  height: 124rpx;
+.mine-head__avatar {
+  width: 128rpx;
+  height: 128rpx;
   flex: none;
   border-radius: 50%;
   background: $color-bg-chip;
 }
 
-.profile-card__body {
+.mine-head__body {
   min-width: 0;
   flex: 1;
 }
 
-.profile-card__name-row,
-.profile-card__tags,
-.profile-card__actions {
+.mine-head__name-row {
   display: flex;
   align-items: center;
   gap: 12rpx;
 }
 
-.profile-card__name {
-  max-width: 330rpx;
+.mine-head__name {
+  max-width: 320rpx;
   overflow: hidden;
   color: $color-text-primary;
-  font-size: 40rpx;
+  font-size: 42rpx;
   font-weight: 900;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.profile-card__gender,
-.profile-tag {
+.mine-head__verified {
+  @include flex-center;
+  width: 36rpx;
+  height: 36rpx;
+  border-radius: 50%;
+  background: $color-primary;
+}
+
+.mine-head__gender {
   flex: none;
-  padding: 5rpx 14rpx;
+  padding: 4rpx 14rpx;
   border-radius: $radius-round;
   color: $color-text-secondary;
   background: $color-bg-chip;
@@ -394,164 +392,269 @@ onPullDownRefresh(async () => {
   font-weight: 800;
 }
 
-.profile-card__meta {
-  display: block;
-  margin-top: 10rpx;
+.mine-head__stats {
+  display: flex;
+  gap: 28rpx;
+  margin-top: 14rpx;
   color: $color-text-secondary;
   font-size: 26rpx;
   font-weight: 700;
 }
 
-.profile-card__tags {
+.mine-head__stat-num {
+  margin: 0 4rpx;
+  color: $color-text-primary;
+  font-weight: 900;
+}
+
+.mine-pills {
+  display: flex;
   flex-wrap: wrap;
-  margin-top: 16rpx;
+  gap: 14rpx;
+  margin-top: 8rpx;
+  padding: 0 8rpx;
 }
 
-.profile-tag--ok {
-  color: $color-primary-dark;
-  background: $color-primary-light;
-}
-
-.profile-card__actions {
-  margin-top: 28rpx;
-}
-
-.profile-action {
-  flex: 1;
-  height: 76rpx;
+.pill {
+  padding: 10rpx 22rpx;
   border-radius: $radius-round;
   color: $color-text-primary;
-  background: $color-bg-chip;
-  font-size: 26rpx;
-  font-weight: 900;
-  line-height: 76rpx;
-  text-align: center;
+  background: #fff;
+  box-shadow: $shadow-keep-card;
+  font-size: 24rpx;
+  font-weight: 800;
 }
 
-.profile-action--primary {
+.pill--ok {
+  color: $color-primary-dark;
+  background: $color-primary-light;
+  box-shadow: none;
+}
+
+.mine-member {
+  display: flex;
+  align-items: center;
+  margin-top: 28rpx;
+  padding: 32rpx 30rpx;
+  border-radius: $radius-keep-card;
+  background: linear-gradient(110deg, #2A2D3A, #3C3550);
   color: #fff;
-  background: $color-text-primary;
+  overflow: hidden;
+}
+
+.mine-member__left {
+  flex: 1;
+  min-width: 0;
+}
+
+.mine-member__title {
+  display: block;
+  font-size: 30rpx;
+  font-weight: 900;
+}
+
+.mine-member__desc {
+  display: block;
+  margin-top: 10rpx;
+  opacity: 0.75;
+  font-size: 24rpx;
+  font-weight: 700;
+}
+
+.mine-member__cta {
+  flex: none;
+  padding: 16rpx 28rpx;
+  border-radius: $radius-round;
+  color: #5A3A00;
+  background: linear-gradient(135deg, #FFE08A, #F5B642);
+  font-size: 26rpx;
+  font-weight: 900;
 }
 
 .login-panel {
   margin-top: 34rpx;
-}
-
-.core-grid {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 10rpx;
-  margin-top: 28rpx;
-  padding: 28rpx 16rpx;
-}
-
-.core-item {
-  @include flex-column;
-  align-items: center;
-  gap: 10rpx;
-  min-width: 0;
-  color: $color-text-primary;
-}
-
-.core-item__value {
-  max-width: 100%;
-  overflow: hidden;
-  font-size: 32rpx;
-  font-weight: 900;
-  line-height: 1.1;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.core-item__label {
-  color: $color-text-secondary;
-  font-size: 23rpx;
-  font-weight: 800;
-}
-
-.service-card {
-  margin-top: 34rpx;
-  overflow: hidden;
-}
-
-.logout {
-  margin: 36rpx 0 0;
-  height: 92rpx;
-  border-radius: 999rpx;
-  color: $color-accent-red;
+  border-radius: $radius-keep-card;
   background: #fff;
   box-shadow: $shadow-keep-card;
-  font-size: 28rpx;
-  font-weight: 800;
-  line-height: 92rpx;
 }
 
-.logout::after {
-  border: 0;
-}
-
-.service-row {
+.mine-qgrid {
   display: flex;
+  margin-top: 28rpx;
+  padding: 32rpx 0;
+  border-radius: $radius-keep-card;
+  background: #fff;
+  box-shadow: $shadow-keep-card;
+}
+
+.qgrid__item {
+  flex: 1;
+  @include flex-column;
   align-items: center;
-  gap: 20rpx;
-  padding: 30rpx;
-  border-bottom: 1rpx solid $color-border;
-}
-
-.service-row:last-child {
-  border-bottom: 0;
-}
-
-.service-row--disabled {
-  opacity: 0.68;
-}
-
-.service-row__icon {
-  @include flex-center;
-  width: 72rpx;
-  height: 72rpx;
-  flex: none;
-  border-radius: 24rpx;
+  gap: 12rpx;
   color: $color-text-primary;
+}
+
+.qgrid__icon {
+  @include flex-center;
+  width: 76rpx;
+  height: 76rpx;
+  border-radius: 24rpx;
   background: $color-bg-chip;
 }
 
-.service-row__body {
-  min-width: 0;
-  flex: 1;
-}
-
-.service-row__title,
-.service-row__desc {
-  display: block;
-}
-
-.service-row__title {
-  color: $color-text-primary;
-  font-size: 29rpx;
-  font-weight: 900;
-}
-
-.service-row__desc {
-  margin-top: 6rpx;
-  color: $color-text-helper;
-  font-size: 23rpx;
-  font-weight: 700;
-}
-
-.service-row__right {
-  display: flex;
-  align-items: center;
-  gap: 10rpx;
-}
-
-.service-row__badge {
-  max-width: 150rpx;
-  overflow: hidden;
+.qgrid__label {
   color: $color-text-secondary;
   font-size: 24rpx;
   font-weight: 800;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+}
+
+.mine-tabs {
+  display: flex;
+  align-items: baseline;
+  gap: 44rpx;
+  margin-top: 40rpx;
+  padding: 0 12rpx;
+}
+
+.mine-tabs__item {
+  position: relative;
+  color: $color-text-helper;
+  font-size: 28rpx;
+  font-weight: 800;
+}
+
+.mine-tabs__item--on {
+  color: $color-text-primary;
+  font-size: 34rpx;
+  font-weight: 900;
+}
+
+.mine-tabs__item--on::after {
+  content: '';
+  position: absolute;
+  right: 0;
+  bottom: -14rpx;
+  left: 0;
+  height: 6rpx;
+  border-radius: 4rpx;
+  background: $color-text-primary;
+}
+
+.data-card {
+  margin-top: 28rpx;
+  padding: 32rpx;
+  border-radius: $radius-keep-card;
+  background: #fff;
+  box-shadow: $shadow-keep-card;
+}
+
+.data-card__toprow {
+  display: flex;
+  align-items: flex-start;
+}
+
+.data-card__col {
+  flex: 1;
+  min-width: 0;
+}
+
+.data-card__big {
+  display: flex;
+  align-items: center;
+  gap: 8rpx;
+  color: $color-primary-dark;
+  font-size: 26rpx;
+  font-weight: 800;
+}
+
+.data-card__num {
+  display: flex;
+  align-items: baseline;
+  margin-top: 10rpx;
+  color: $color-text-primary;
+  font-size: 60rpx;
+  font-weight: 900;
+  line-height: 1.1;
+}
+
+.data-card__unit {
+  margin-left: 6rpx;
+  color: $color-text-secondary;
+  font-size: 24rpx;
+  font-weight: 700;
+}
+
+.data-card__coin {
+  padding: 14rpx 24rpx;
+  border-radius: $radius-round;
+  color: #B26B00;
+  background: #FFF3E0;
+  font-size: 24rpx;
+  font-weight: 900;
+}
+
+.data-card__mini {
+  display: flex;
+  gap: 18rpx;
+  margin-top: 26rpx;
+}
+
+.mini-cell {
+  flex: 1;
+  padding: 22rpx 24rpx;
+  border-radius: 24rpx;
+  background: $color-bg-chip;
+}
+
+.mini-cell__t {
+  display: flex;
+  align-items: center;
+  gap: 8rpx;
+  color: $color-primary-dark;
+  font-size: 24rpx;
+  font-weight: 800;
+}
+
+.mini-cell__v {
+  display: flex;
+  align-items: baseline;
+  margin-top: 10rpx;
+  color: $color-text-primary;
+  font-size: 36rpx;
+  font-weight: 900;
+}
+
+.mini-cell__unit {
+  margin-left: 6rpx;
+  color: $color-text-secondary;
+  font-size: 22rpx;
+  font-weight: 700;
+}
+
+.link-card {
+  display: flex;
+  align-items: center;
+  gap: 20rpx;
+}
+
+.link-card__body {
+  flex: 1;
+  min-width: 0;
+}
+
+.link-card__title {
+  display: block;
+  color: $color-text-primary;
+  font-size: 30rpx;
+  font-weight: 900;
+}
+
+.link-card__desc {
+  display: block;
+  margin-top: 8rpx;
+  color: $color-text-helper;
+  font-size: 24rpx;
+  font-weight: 700;
 }
 </style>
