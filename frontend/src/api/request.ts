@@ -1,4 +1,8 @@
 import { envConfig } from '@/config/env'
+
+// 启动时打印 baseURL，便于调试 IDE 代理/缓存问题
+// eslint-disable-next-line no-console
+console.log('[YPAT] envConfig loaded:', JSON.stringify({ apiBaseUrl: envConfig.apiBaseUrl, env: envConfig.env }))
 import {
   clearAuth,
   getToken,
@@ -253,7 +257,17 @@ function showBusinessGuide(code: string): void {
   }
 }
 
+// 第一次 API 请求时打印实际 baseURL，便于排查 IDE 代理/缓存问题
+let _envConfigLogged = false
+function logEnvConfigOnce() {
+  if (_envConfigLogged) return
+  _envConfigLogged = true
+  // eslint-disable-next-line no-console
+  console.log('[YPAT] apiBaseUrl =', envConfig.apiBaseUrl, '| env =', envConfig.env)
+}
+
 export function request<T = unknown>(config: RequestConfig): Promise<ApiResult<T>> {
+  logEnvConfigOnce()
   const {
     url,
     method = 'GET',
