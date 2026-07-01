@@ -25,6 +25,7 @@ export const staticRoutes: RouteRecordRaw[] = [
 /** 主布局路由 */
 export const layoutRoute: RouteRecordRaw = {
   path: '/',
+  name: 'AdminLayout',
   component: () => import('@/layouts/AdminLayout.vue'),
   redirect: '/dashboard',
   children: [

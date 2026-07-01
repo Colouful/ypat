@@ -58,7 +58,7 @@ export const usePermissionStore = defineStore('permission', () => {
         }
 
         routes.push({
-          path: item.path,
+          path: item.path.replace(/^\//, ''),
           name: item.path.replace(/\//g, '-').slice(1),
           component,
           meta: {
@@ -80,7 +80,7 @@ export const usePermissionStore = defineStore('permission', () => {
    */
   function createPlaceholderRoute(item: MenuItem): RouteRecordRaw {
     return {
-      path: item.path,
+      path: item.path.replace(/^\//, ''),
       name: item.path.replace(/\//g, '-').slice(1),
       component: () => import('@/components/common/PagePlaceholder.vue'),
       meta: {
