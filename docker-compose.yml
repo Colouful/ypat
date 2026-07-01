@@ -3,7 +3,7 @@
 # 使用 docker compose up -d 启动
 services:
   mysql:
-    image: mysql:8.0.36
+    image: mysql:8.0
     restart: unless-stopped
     environment:
       MYSQL_ROOT_PASSWORD: "${YPAT_LOCAL_MYSQL_ROOT_PASSWORD:?YPAT_LOCAL_MYSQL_ROOT_PASSWORD is required}"

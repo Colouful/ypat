@@ -46,6 +46,12 @@ EXPOSE 8080
 
 # nginx 镜像默认用户为 root，master 进程需要 root 绑定低端口；
 # 这里监听 8080，因此可以降级到 nginx 用户运行 worker 进程
+# 需要提前给 nginx 用户创建/授权缓存目录，否则 worker 起不来
+RUN mkdir -p /var/cache/nginx/client_temp /var/cache/nginx/proxy_temp \
+             /var/cache/nginx/fastcgi_temp /var/cache/nginx/uwsgi_temp \
+             /var/cache/nginx/scgi_temp \
+    && chown -R nginx:nginx /var/cache/nginx /var/run \
+    && touch /var/run/nginx.pid && chown nginx:nginx /var/run/nginx.pid
 USER nginx
 
 HEALTHCHECK --interval=10s --timeout=5s --start-period=5s --retries=3 \
