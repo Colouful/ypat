@@ -124,10 +124,16 @@ export const useAppStore = defineStore('app', () => {
       },
     })
 
-    // 网络状态变化
-    uni.onNetworkStatusChange((res) => {
-      networkType.value = res.networkType
-    })
+    // 网络状态变化（兼容低基础库/IDE 模拟器，避免 addListener of undefined 报错）
+    try {
+      if (typeof uni.onNetworkStatusChange === 'function') {
+        uni.onNetworkStatusChange((res: { isConnected?: boolean; networkType: string }) => {
+          networkType.value = res.networkType
+        })
+      }
+    } catch (e) {
+      // 静默降级
+    }
 
     isReady.value = true
   }
