@@ -254,12 +254,15 @@ onLoad((query) => {
 
 .input {
   width: 100%;
-  padding: 18rpx 22rpx;
+  box-sizing: border-box;
+  padding: 22rpx;
   border-radius: 16rpx;
   color: $color-text-primary;
   background: $color-bg-page;
   font-size: 30rpx;
   font-weight: 700;
+  line-height: 1.4;
+  min-height: 88rpx;
 }
 
 .input-placeholder {
