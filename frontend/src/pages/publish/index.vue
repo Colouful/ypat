@@ -53,7 +53,7 @@ onShow(() => {
 .publish-page {
   box-sizing: border-box;
   min-height: 100vh;
-  padding-bottom: calc(168rpx + env(safe-area-inset-bottom));
+  padding-bottom: calc(172rpx + env(safe-area-inset-bottom));
   background: $color-bg-page;
 }
 

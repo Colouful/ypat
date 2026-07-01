@@ -1,6 +1,5 @@
 <template>
   <view class="keep-tabbar">
-    <image class="keep-tabbar__bg" :src="tabbarBgSvg" mode="widthFix" />
     <view class="keep-tabbar__items">
       <view
         v-for="item in items"
@@ -15,29 +14,29 @@
         <view class="keep-tabbar__icon">
           <KeepIcon
             :name="item.icon"
-            :size="item.key === 'publish' ? 58 : 48"
-            color="#FFFFFF"
+            :size="item.key === 'publish' ? 54 : 46"
+            :color="active === item.key ? activeColor : inactiveColor"
           />
         </view>
         <text class="keep-tabbar__label">{{ item.label }}</text>
-        <view v-if="active === item.key && item.key !== 'publish'" class="keep-tabbar__dot" />
+        <view v-if="item.dot" class="keep-tabbar__dot" />
       </view>
     </view>
   </view>
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
 import KeepIcon from './KeepIcon.vue'
 import { goRootTab, openPublish, type RootTabUrl } from '@/utils/tab-navigation'
 
-type TabKey = 'home' | 'publish' | 'mine'
+type TabKey = 'home' | 'discover' | 'publish' | 'message' | 'mine'
 
 type TabItem = {
   key: TabKey
   label: string
   icon: string
   url?: RootTabUrl
+  dot?: boolean
 }
 
 const props = withDefaults(defineProps<{
@@ -46,29 +45,14 @@ const props = withDefaults(defineProps<{
 
 const items: TabItem[] = [
   { key: 'home', label: '首页', icon: 'home', url: '/pages/home/index' },
+  { key: 'discover', label: '发现', icon: 'compass', url: '/pages/discover/index' },
   { key: 'publish', label: '发布', icon: 'plus-circle' },
+  { key: 'message', label: '消息', icon: 'mail', url: '/pages/message/index' },
   { key: 'mine', label: '我的', icon: 'user', url: '/pages/mine/index' },
 ]
 
-const tabbarFill = '#23C268'
-
-const tabbarBgSvg = computed(() => {
-  const path = [
-    'M0,54',
-    'Q0,14 40,14',
-    'H270',
-    'C315,14 312,92 375,92',
-    'C438,92 435,14 480,14',
-    'H710',
-    'Q750,14 750,54',
-    'V190',
-    'H0',
-    'Z',
-  ].join(' ')
-  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="750" height="190" viewBox="0 0 750 190"><path d="${path}" fill="${tabbarFill}"/></svg>`
-
-  return `data:image/svg+xml,${encodeURIComponent(svg)}`
-})
+const activeColor = '#1A1D1F'
+const inactiveColor = '#B3B8BE'
 
 function go(item: TabItem): void {
   if (item.key === 'publish') {
@@ -89,32 +73,22 @@ function go(item: TabItem): void {
   bottom: 0;
   left: 0;
   box-sizing: border-box;
-  height: 132rpx;
-  background: transparent;
-}
-
-.keep-tabbar__bg {
-  position: absolute;
-  z-index: 1;
-  right: 0;
-  bottom: 0;
-  left: 0;
-  width: 100%;
-  pointer-events: none;
-  filter: drop-shadow(0 18rpx 34rpx rgba(20, 24, 31, 0.22));
+  height: calc(148rpx + env(safe-area-inset-bottom));
+  border-top: 1rpx solid $color-border;
+  background: rgba(255, 255, 255, 0.98);
+  box-shadow: 0 -10rpx 28rpx rgba(20, 24, 31, 0.06);
+  backdrop-filter: blur(24rpx);
 }
 
 .keep-tabbar__items {
   position: relative;
-  z-index: 2;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 128rpx;
   box-sizing: border-box;
-  height: 132rpx;
-  padding-top: 34rpx;
-  padding-bottom: 2rpx;
+  height: 100%;
+  padding-top: 10rpx;
+  padding-bottom: calc(12rpx + env(safe-area-inset-bottom));
 }
 
 .keep-tabbar__item {
@@ -122,61 +96,58 @@ function go(item: TabItem): void {
   @include flex-column;
   align-items: center;
   justify-content: center;
-  width: 118rpx;
-  height: 86rpx;
-  color: #fff;
+  flex: 1;
+  min-width: 0;
+  height: 112rpx;
+  color: $color-text-helper;
   font-size: 22rpx;
-  font-weight: 800;
+  font-weight: 700;
   line-height: 1.2;
+  transition: color 0.18s ease;
 }
 
 .keep-tabbar__icon {
   @include flex-center;
   width: 54rpx;
   height: 54rpx;
+  transition: transform 0.18s ease;
 }
 
 .keep-tabbar__label {
   display: block;
   margin-top: 6rpx;
-  color: #fff;
+  color: currentColor;
   font-size: 22rpx;
-  font-weight: 800;
+  font-weight: 700;
   line-height: 1;
 }
 
 .keep-tabbar__item--active {
-  color: #fff;
+  color: $color-text-primary;
+  font-weight: 900;
+}
+
+.keep-tabbar__item--active .keep-tabbar__icon {
+  transform: translateY(-2rpx);
+}
+
+.keep-tabbar__item--active .keep-tabbar__label {
+  font-weight: 900;
 }
 
 .keep-tabbar__dot {
   position: absolute;
-  bottom: -4rpx;
-  left: 50%;
-  width: 8rpx;
-  height: 8rpx;
+  top: 12rpx;
+  right: 50%;
+  width: 10rpx;
+  height: 10rpx;
   border-radius: 50%;
-  background: #fff;
-  transform: translateX(-50%);
-}
-
-.keep-tabbar__item--publish {
-  width: 126rpx;
-  height: 126rpx;
-  transform: translateY(-50rpx);
-  color: #fff;
+  background: $color-accent-red;
+  transform: translateX(24rpx);
 }
 
 .keep-tabbar__item--publish .keep-tabbar__icon {
-  width: 100rpx;
-  height: 100rpx;
-  border: 10rpx solid #fff;
-  border-radius: 50%;
-  background: $color-primary;
-  box-shadow: 0 14rpx 28rpx rgba(35, 194, 104, 0.24);
-}
-
-.keep-tabbar__item--publish .keep-tabbar__label {
-  display: none;
+  width: 60rpx;
+  height: 60rpx;
 }
 </style>

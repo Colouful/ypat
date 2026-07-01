@@ -2,6 +2,8 @@ import { getStoredUserInfo, getToken } from '@/services/auth-storage'
 
 export const ROOT_TAB_URLS = [
   '/pages/home/index',
+  '/pages/discover/index',
+  '/pages/message/index',
   '/pages/mine/index',
 ] as const
 
