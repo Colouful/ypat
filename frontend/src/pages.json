@@ -89,6 +89,12 @@
           }
         },
         {
+          "path": "center",
+          "style": {
+            "navigationStyle": "custom"
+          }
+        },
+        {
           "path": "edit-info",
           "style": {
             "navigationStyle": "custom"
