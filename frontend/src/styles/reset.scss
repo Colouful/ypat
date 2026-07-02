@@ -39,8 +39,7 @@ movable-view {
   box-sizing: border-box;
 }
 
-img,
-image {
+[class*="image"] {
   display: block;
   width: 100%;
   height: auto;
