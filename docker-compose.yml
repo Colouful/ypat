@@ -144,12 +144,18 @@ services:
     environment:
       TZ: Asia/Shanghai
       SPRING_PROFILES_ACTIVE: dev
+      # ca2a4653 起 wap 内部有 @Autowired Repository，需要直连 MySQL
+      SPRING_DATASOURCE_URL: "jdbc:mysql://mysql:3306/ypat?characterEncoding=utf8&useSSL=false"
+      SPRING_DATASOURCE_USERNAME: "${YPAT_DB_USERNAME:?YPAT_DB_USERNAME is required}"
+      SPRING_DATASOURCE_PASSWORD: "${YPAT_DB_PASSWORD:?YPAT_DB_PASSWORD is required}"
       SPRING_REDIS_HOST: redis
       SPRING_REDIS_PASSWORD: "${YPAT_LOCAL_REDIS_PASSWORD}"
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: "http://eureka:8761/eureka/"
       EUREKA_INSTANCE_PREFER_IP_ADDRESS: "true"
       YPAT_FDFS_PUBLIC_BASE_URL: "${YPAT_FDFS_PUBLIC_BASE_URL:-http://localhost:8888}"
     depends_on:
+      mysql:
+        condition: service_healthy
       redis:
         condition: service_healthy
       eureka:

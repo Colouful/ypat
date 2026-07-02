@@ -54,8 +54,10 @@ public class Work implements Serializable {
     private String city;
     private String area;
 
-    // 关联（非持久化字段，用于查询时填充）
-    @Transient
+    // user 用只读的 @ManyToOne 关联到 userid 列，让 JPA Criteria 能 root.join("user", ...)
+    // insertable=false/updatable=false：仅只读关联，写入通过 userid Long 字段完成，避免双写冲突
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "userid", referencedColumnName = "id", insertable = false, updatable = false)
     @JsonIgnore
     private User user;
     @Transient

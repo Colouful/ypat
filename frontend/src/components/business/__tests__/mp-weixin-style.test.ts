@@ -45,8 +45,9 @@ describe('mp-weixin component styles', () => {
     const file = fileURLToPath(new URL('../YpatPublishForm.vue', import.meta.url))
     const source = readFileSync(file, 'utf8')
 
-    expect(source).toMatch(/\.publish-submit__button\[disabled\]\s*\{[^}]*background-color:\s*\$color-primary/s)
-    expect(source).not.toMatch(/\.publish-submit__button\[disabled\]\s*\{[^}]*opacity:/s)
+    // 组件 WXSS 禁止 [disabled] 属性选择器，改用 --disabled class 绑定；保留品牌主色而非 opacity 淡化
+    expect(source).toMatch(/\.publish-submit__button--disabled\s*\{[^}]*background-color:\s*\$color-primary/s)
+    expect(source).not.toMatch(/\.publish-submit__button--disabled\s*\{[^}]*opacity:/s)
   })
 
   it('does not reference browser-only DOM constructors in publish form events', () => {

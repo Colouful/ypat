@@ -1,7 +1,10 @@
 <template>
   <view class="keep-icon" :style="iconStyle" aria-hidden="true">
-    <!-- 统一用 SVG 兜底（之前 MP-WEIXIN 分支依赖 static/icons/*.png，但项目未提供，
-         导致运行时 500 Internal Server Error。SVG 在所有平台都正常工作）-->
+    <!-- #ifdef MP-WEIXIN -->
+    <!-- 微信小程序 WXML 不支持内联 <svg>，把 SVG 序列化成 data URL 用 <image> 渲染 -->
+    <image class="keep-icon__image" :src="svgDataUrl" mode="aspectFit" />
+    <!-- #endif -->
+    <!-- #ifndef MP-WEIXIN -->
     <svg
       class="keep-icon__svg"
       viewBox="0 0 24 24"
@@ -20,6 +23,7 @@
         <polyline v-else-if="part.tag === 'polyline'" v-bind="part.attrs" />
       </template>
     </svg>
+    <!-- #endif -->
   </view>
 </template>
 
@@ -243,9 +247,25 @@ const colorToken = computed(() => {
   return 'primary'
 })
 
-// 删除 imageSource 计算：之前用于 MP-WEIXIN 分支的 PNG fallback
-// 统一用 SVG 后不再需要，可减小编译后 vendor.js 体积
-// mpImageIconName/mpImageIconAlias 已删除（不再被引用）
+// MP-WEIXIN 用 data URL 承载 SVG：WXML 不支持 <svg> 标签，只能用 <image src>
+// data URL SVG 里 currentColor 没有 CSS 上下文，需退化成具体颜色（沿用文本主色）
+const svgDataUrl = computed(() => {
+  const color = props.color === 'currentColor' ? '#1A1D1F' : props.color
+  const partsSvg = iconParts.value
+    .map((part) => {
+      const attrsStr = Object.entries(part.attrs)
+        .map(([k, v]) => `${k}="${String(v).replace(/currentColor/g, color)}"`)
+        .join(' ')
+      return `<${part.tag} ${attrsStr}/>`
+    })
+    .join('')
+  const svg =
+    `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" ` +
+    `fill="none" stroke="${color}" stroke-width="${props.strokeWidth}" ` +
+    `stroke-linecap="round" stroke-linejoin="round">${partsSvg}</svg>`
+  return `data:image/svg+xml,${encodeURIComponent(svg)}`
+})
+// colorToken 保留供后续按 token 处理颜色（当前 SVG 数据 URL 直接用 hex）
 
 const iconStyle = computed(() => ({
   width: normalizedSize.value,

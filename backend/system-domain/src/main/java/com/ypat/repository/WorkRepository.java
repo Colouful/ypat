@@ -48,8 +48,10 @@ public interface WorkRepository extends JpaRepository<Work, Long>, JpaSpecificat
     @Query("update Work w set w.likeCount = w.likeCount + 1 where w.id = :id and w.deletedFlag = 0")
     int incrLikeCount(@Param("id") Long id);
 
+    // Hibernate 5.0 update HQL 不支持 case 里做算术，改用 where 条件保护：
+    // likeCount > 0 时才减，为 0 时 update 影响 0 行，逻辑等价
     @Modifying
-    @Query("update Work w set w.likeCount = case when w.likeCount > 0 then w.likeCount - 1 else 0 end where w.id = :id and w.deletedFlag = 0")
+    @Query("update Work w set w.likeCount = w.likeCount - 1 where w.id = :id and w.likeCount > 0 and w.deletedFlag = 0")
     int decrLikeCount(@Param("id") Long id);
 
     /**
@@ -59,8 +61,9 @@ public interface WorkRepository extends JpaRepository<Work, Long>, JpaSpecificat
     @Query("update Work w set w.favoriteCount = w.favoriteCount + 1 where w.id = :id and w.deletedFlag = 0")
     int incrFavoriteCount(@Param("id") Long id);
 
+    // 见 decrLikeCount 说明
     @Modifying
-    @Query("update Work w set w.favoriteCount = case when w.favoriteCount > 0 then w.favoriteCount - 1 else 0 end where w.id = :id and w.deletedFlag = 0")
+    @Query("update Work w set w.favoriteCount = w.favoriteCount - 1 where w.id = :id and w.favoriteCount > 0 and w.deletedFlag = 0")
     int decrFavoriteCount(@Param("id") Long id);
 
     /**

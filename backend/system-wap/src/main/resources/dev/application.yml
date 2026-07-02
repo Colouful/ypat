@@ -22,9 +22,22 @@ spring:
       max-wait: -1
   jackson:
     time-zone: GMT+8
+  # 数据源（wap 里 @Autowired 的 Repository 在 ca2a4653 引入，必须配 datasource
+  # 才能启动。不显式指定 driver-class-name，让 Druid 走 SPI 自动加载，避开
+  # Spring Boot 1.5.9 LaunchedURLClassLoader.definePackageIfNecessary NPE）
+  datasource:
+    url: ${YPAT_MYSQL_URL:jdbc:mysql://localhost:3306/ypat?characterEncoding=utf8&useSSL=false}
+    username: ${YPAT_MYSQL_USERNAME:root}
+    password: ${YPAT_MYSQL_PASSWORD:}
+    initialSize: 2
+    minIdle: 2
+    maxActive: 10
+    maxWait: 60000
+    validationQuery: SELECT 1 FROM DUAL
+    testWhileIdle: true
+    testOnBorrow: false
+    testOnReturn: false
   jpa:
-    # 手动指定，避免 Druid 触发 Class.forName("com.mysql.jdbc.Driver") 导致
-    # Spring Boot 1.5.9 LaunchedURLClassLoader.definePackageIfNecessary NPE
     database: mysql
     database-platform: org.hibernate.dialect.MySQL5Dialect
     hibernate:

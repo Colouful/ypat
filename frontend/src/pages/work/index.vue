@@ -102,7 +102,18 @@ async function load(reset = false) {
       params.city = userStore.userInfo.city
     }
     const res = await getList(params)
-    const data: WorkListResult = (res && res.data) || { page: 1, size: 0, total: 0, items: [] }
+    // wap 转发 restapi 时会双层包 res（{code,msg,res:{code,msg,res:{items,...}}}），
+    // 前端 mapBackendResponse 只解一层，这里再解一层兜底；同时保证 items 永远是数组
+    let payload: any = res?.data
+    if (payload && typeof payload === 'object' && 'res' in payload && payload.res && typeof payload.res === 'object' && 'items' in payload.res) {
+      payload = payload.res
+    }
+    const data: WorkListResult = {
+      page: payload?.page ?? 1,
+      size: payload?.size ?? 0,
+      total: Number(payload?.total ?? 0),
+      items: Array.isArray(payload?.items) ? payload.items : [],
+    }
     if (reset) {
       items.value = data.items
       page.value = 2
@@ -145,54 +156,61 @@ onMounted(() => load(true))
     width: 100%;
     white-space: nowrap;
     background: #FFFFFF;
-    border-bottom: 2rpx solid $color-border;
+    box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.04);
+    position: sticky;
+    top: 0;
+    z-index: 10;
   }
   &__categories-row {
     display: flex;
     align-items: center;
     min-width: 100%;
-    padding: 16rpx 32rpx;
-    gap: 16rpx;
+    padding: 16rpx 24rpx;
+    gap: 12rpx;
   }
   &__cat {
     flex: none;
-    padding: 8rpx 0;
-    position: relative;
+    padding: 12rpx 28rpx;
+    border-radius: 999rpx;
+    background: $color-bg-chip;
+    font-size: 28rpx;
+    color: $color-text-secondary;
+    line-height: 1;
+    transition: transform 0.15s ease, background-color 0.2s ease, color 0.2s ease;
+    &:active {
+      transform: scale(0.94);
+    }
     &--active {
+      background: $color-primary-light;
+      color: $color-primary-dark;
       font-weight: 600;
     }
     &--filter {
       margin-left: auto;
       display: flex;
       align-items: center;
-      gap: 4rpx;
+      gap: 6rpx;
+      background: $color-bg-chip;
+      position: relative;
     }
   }
   &__cat-text--active {
-    color: $color-primary;
-    &::after {
-      content: '';
-      position: absolute;
-      bottom: 0;
-      left: 50%;
-      transform: translateX(-50%);
-      width: 32rpx;
-      height: 4rpx;
-      background: $color-primary;
-      border-radius: 2rpx;
-    }
-  }
-  &__filter-icon {
-    font-size: 28rpx;
+    color: $color-primary-dark;
   }
   &__filter-badge {
+    position: absolute;
+    top: -6rpx;
+    right: -6rpx;
     background: $color-primary;
     color: #FFFFFF;
     font-size: 20rpx;
     padding: 0 8rpx;
     border-radius: 999rpx;
     min-width: 28rpx;
+    height: 28rpx;
+    line-height: 28rpx;
     text-align: center;
+    box-shadow: 0 2rpx 4rpx rgba(35, 194, 104, 0.35);
   }
   &__list { padding: 16rpx 24rpx; }
   &__columns {

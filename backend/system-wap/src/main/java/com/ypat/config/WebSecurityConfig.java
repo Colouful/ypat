@@ -59,13 +59,12 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
                 .and()
                 .authorizeRequests()
                 .antMatchers(HttpMethod.OPTIONS).permitAll()
-                .antMatchers(HttpMethod.POST, "/user/login","/user/sms/code","/bd/login","/bd/code","/wxpay/notify","/wxpub/notify","/admin/login").permitAll()
+                .antMatchers(HttpMethod.POST, "/user/login","/user/sms/code","/bd/login","/bd/code","/wxpay/notify","/wxpub/notify","/admin/login","/work/list").permitAll()
                 .antMatchers(HttpMethod.GET,
                         "/user/code",
                         "/ypat/tc/list",
                         "/ypat/zx/list",
                         "/ypat/get",
-                        "/work/list",
                         "/work/get",
                         "/dict/work-tag",
                         "/banner/list",

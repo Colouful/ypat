@@ -111,7 +111,7 @@
 
     <text class="publish-tip">提交后将进入审核，审核通过后展示在广场。</text>
     <view class="publish-submit">
-      <button class="publish-submit__button" :disabled="submitting || processing" :loading="submitting" @tap="submit">
+      <button class="publish-submit__button" :class="{ 'publish-submit__button--disabled': submitting || processing }" :disabled="submitting || processing" :loading="submitting" @tap="submit">
         {{ submitting ? '提交中...' : '发布约拍' }}
       </button>
     </view>
@@ -622,7 +622,8 @@ function reset(): void {
   border: 0;
 }
 
-.publish-submit__button[disabled] {
+// 组件 WXSS 禁止 [disabled] 属性选择器，改用 class 绑定；保留品牌主色，不用 opacity 淡化
+.publish-submit__button--disabled {
   color: #fff;
   background: $color-primary;
   background-color: $color-primary;

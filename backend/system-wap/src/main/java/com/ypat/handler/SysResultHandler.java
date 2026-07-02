@@ -47,8 +47,16 @@ public class SysResultHandler implements ResponseBodyAdvice<Object> {
         } else if (body instanceof String) {
             String jsonStr = (String) body;
             Object resBody = GsonUtils.fromJson(jsonStr, Object.class);
-            ResponseApiBody apiBody = ResponseApiBody.success(resBody);
             response.getHeaders().setContentType(MediaType.APPLICATION_JSON_UTF8);
+            // Feign 转发的响应本身已经是 restapi 包装的 {code, msg, res} 结构：直接透传，
+            // 避免再包一层导致前端出现双层嵌套（原逻辑一直有这个 bug）
+            if (resBody instanceof java.util.Map) {
+                java.util.Map<?, ?> map = (java.util.Map<?, ?>) resBody;
+                if (map.containsKey("code") && (map.containsKey("res") || map.containsKey("msg"))) {
+                    return jsonStr;
+                }
+            }
+            ResponseApiBody apiBody = ResponseApiBody.success(resBody);
             return GsonUtils.toJson(apiBody);
         } else {
             return body;

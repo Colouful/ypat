@@ -52,7 +52,7 @@
 
     <view class="work-publish-form__bottom-spacer" />
     <view class="work-publish-form__submit">
-      <button class="work-publish-form__btn" :disabled="submitting" @tap="onSubmit">
+      <button class="work-publish-form__btn" :class="{ 'work-publish-form__btn--disabled': submitting }" :disabled="submitting" @tap="onSubmit">
         {{ submitting ? '提交中...' : '确认发布' }}
       </button>
     </view>
@@ -251,7 +251,8 @@ async function onSubmit() {
     border: none;
     box-shadow: 0 12rpx 24rpx rgba(35, 194, 104, 0.28);
     &::after { border: none; }
-    &[disabled] {
+    // 组件 WXSS 禁止 [disabled] 属性选择器，改用 class 绑定
+    &--disabled {
       background: $color-text-helper;
       color: #FFFFFF;
       box-shadow: none;

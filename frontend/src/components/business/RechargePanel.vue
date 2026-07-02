@@ -14,7 +14,7 @@
     </view>
 
     <!-- #ifdef MP-WEIXIN -->
-    <button class="pay" :disabled="!selected || paying" :loading="paying" @tap="pay">
+    <button class="pay" :class="{ 'pay--disabled': !selected || paying }" :disabled="!selected || paying" :loading="paying" @tap="pay">
       {{ paying ? '处理中...' : `立即支付 ¥${selected ? formatPrice(selected.oldval) : '0.00'}` }}
     </button>
     <!-- #endif -->
@@ -177,6 +177,6 @@ onUnload(() => {
 .product__amount { display: block; color: $color-text-primary; font-size: 30rpx; font-weight: 600; }
 .product__price { display: block; margin-top: 12rpx; color: #f26a3d; font-size: 27rpx; }
 .pay { margin-top: 40rpx; height: 92rpx; line-height: 92rpx; border-radius: 999rpx; color: #fff; background: $color-primary; }
-.pay[disabled] { opacity: .45; }
+.pay--disabled { opacity: .45; }
 .pay::after { border: 0; }
 </style>
