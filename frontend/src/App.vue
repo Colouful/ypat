@@ -24,18 +24,43 @@ function setupNavigationInterceptors(): void {
 }
 
 onLaunch(() => {
-  const userStore = useUserStore()
-  const appStore = useAppStore()
+  // 同步设置拦截器（轻量，必须在第一次跳转前完成）
   setupNavigationInterceptors()
-  userStore.restoreSession()
-  appStore.initApp()
+
+  // 异步初始化 store，不阻塞首屏渲染
+  setTimeout(() => {
+    try {
+      const appStore = useAppStore()
+      appStore.initApp()
+    } catch (e) {
+      console.error('[App] initApp failed:', e)
+    }
+  }, 0)
+
+  // 用户会话恢复（包含 token 解析），用 try-catch 隔离
+  // 失败也不阻塞主流程
+  setTimeout(() => {
+    try {
+      const userStore = useUserStore()
+      userStore.restoreSession()
+    } catch (e) {
+      console.error('[App] restoreSession failed:', e)
+    }
+  }, 0)
 })
 
 onShow(() => {
-  const userStore = useUserStore()
-  if (userStore.isLoggedIn) {
-    userStore.refreshUnreadCount()
-  }
+  // 用 setTimeout 异步化，避免阻塞主线程
+  setTimeout(() => {
+    try {
+      const userStore = useUserStore()
+      if (userStore.isLoggedIn) {
+        userStore.refreshUnreadCount()
+      }
+    } catch (e) {
+      console.error('[App] refreshUnreadCount failed:', e)
+    }
+  }, 0)
 })
 </script>
 

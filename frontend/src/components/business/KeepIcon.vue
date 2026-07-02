@@ -219,15 +219,6 @@ const iconMap: Record<string, IconPart[]> = {
 
 const iconParts = computed(() => iconMap[props.name] || iconMap.sparkles)
 
-const iconName = computed(() => (iconMap[props.name] ? props.name : 'sparkles'))
-
-const mpImageIconAlias: Record<string, string> = {
-  users: 'user',
-  'help-circle': 'sparkles',
-}
-
-const mpImageIconName = computed(() => mpImageIconAlias[iconName.value] || iconName.value)
-
 const normalizedSize = computed(() => {
   if (typeof props.size === 'number') return `${props.size}rpx`
   return props.size
@@ -252,7 +243,9 @@ const colorToken = computed(() => {
   return 'primary'
 })
 
-const imageSource = computed(() => `/static/icons/${mpImageIconName.value}-${colorToken.value}.png`)
+// 删除 imageSource 计算：之前用于 MP-WEIXIN 分支的 PNG fallback
+// 统一用 SVG 后不再需要，可减小编译后 vendor.js 体积
+// mpImageIconName/mpImageIconAlias 已删除（不再被引用）
 
 const iconStyle = computed(() => ({
   width: normalizedSize.value,

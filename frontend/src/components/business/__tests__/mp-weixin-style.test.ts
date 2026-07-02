@@ -35,10 +35,10 @@ describe('mp-weixin component styles', () => {
     const file = fileURLToPath(new URL('../KeepIcon.vue', import.meta.url))
     const source = readFileSync(file, 'utf8')
 
-    expect(source).toContain("users: 'user'")
-    expect(source).toContain("'help-circle': 'sparkles'")
+    // KeepIcon 现在统一用 SVG 兜底（之前依赖 static/icons/*.png 的 MP-WEIXIN
+    // 分支已删除以避免 500 Internal Server Error 错误）
+    expect(source).toContain('class="keep-icon__svg"')
     expect(source).toContain('normalizeHexColor')
-    expect(source).toContain('mpImageIconName.value')
   })
 
   it('keeps publish submit button themed in disabled state', () => {
