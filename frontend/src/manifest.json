@@ -69,6 +69,7 @@
       "base": "/"
     },
     "optimization": {
+      "subPackages": true,
       "treeShaking": {
         "enable": true
       }

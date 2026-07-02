@@ -333,5 +333,19 @@
     "navigationBarBackgroundColor": "#FFFFFF",
     "backgroundColor": "#F5F6F8",
     "backgroundTextStyle": "dark"
+  },
+  "preloadRule": {
+    "pages/work/index": {
+      "network": "all",
+      "packages": ["pages-sub/ypat", "pages-sub/work"]
+    },
+    "pages/home/index": {
+      "network": "all",
+      "packages": ["pages-sub/ypat", "pages-sub/user"]
+    },
+    "pages/publish/index": {
+      "network": "all",
+      "packages": ["pages-sub/publish", "pages-sub/common"]
+    }
   }
 }
