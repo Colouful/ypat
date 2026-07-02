@@ -27,7 +27,8 @@
           </view>
         </view>
       </view>
-      <view v-if="loading" class="work-tab__loading">加载中...</view>
+      <WorkListSkeleton v-if="loading && items.length === 0" />
+      <view v-else-if="loading" class="work-tab__loading">加载中...</view>
       <view v-else-if="!hasMore && items.length === 0" class="work-tab__empty">暂无作品</view>
       <view v-else-if="!hasMore" class="work-tab__nomore">— 已加载全部 —</view>
     </view>
@@ -38,11 +39,12 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref, watch } from 'vue'
+import { computed, onMounted, ref, shallowRef, watch } from 'vue'
 import KeepPageNav from '@/components/business/KeepPageNav.vue'
 import KeepTabBar from '@/components/business/KeepTabBar.vue'
 import WorkCard from '@/components/business/WorkCard.vue'
 import WorkFilterPanel from '@/components/business/WorkFilterPanel.vue'
+import WorkListSkeleton from '@/components/business/WorkListSkeleton.vue'
 import { getList } from '@/api/modules/work'
 import { useUserStore } from '@/stores/user'
 import type { WorkListItem, WorkListResult } from '@/api/types/work'
@@ -62,7 +64,9 @@ const activeCategory = ref('')
 const filterVisible = ref(false)
 const filterValue = ref({ region: '', gender: '', profession: '' })
 
-const items = ref<WorkListItem[]>([])
+// 大数组用 shallowRef 避免深响应（不递归代理），
+// 提升瀑布流卡片渲染性能
+const items = shallowRef<WorkListItem[]>([])
 const page = ref(1)
 const pageSize = 20
 const total = ref(0)

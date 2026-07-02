@@ -1,7 +1,15 @@
 <template>
   <view class="work-detail-page">
     <KeepPageNav title="作品详情" />
-    <view v-if="loading" class="work-detail-page__loading">加载中...</view>
+    <view v-if="loading" class="work-detail-page__loading">
+      <view class="work-detail-page__skel-user">
+        <view class="work-detail-page__skel-avatar skeleton-pulse" />
+        <view class="work-detail-page__skel-name skeleton-pulse" />
+      </view>
+      <view class="work-detail-page__skel-block skeleton-pulse" />
+      <view class="work-detail-page__skel-block work-detail-page__skel-block--short skeleton-pulse" />
+      <view class="work-detail-page__skel-action skeleton-pulse" />
+    </view>
     <view v-else-if="work">
       <WorkDetailContent :work="work" @complain="onComplain" />
       <WorkActionBar :work="work"
@@ -157,5 +165,44 @@ onShareAppMessage(() => ({
     color: $color-text-helper;
     font-size: 26rpx;
   }
+  &__skel-user {
+    display: flex;
+    align-items: center;
+    gap: 16rpx;
+    padding: 24rpx 32rpx;
+  }
+  &__skel-avatar {
+    width: 80rpx;
+    height: 80rpx;
+    border-radius: 40rpx;
+    background: $color-bg-page;
+  }
+  &__skel-name {
+    flex: 1;
+    height: 32rpx;
+    border-radius: 8rpx;
+    background: $color-bg-page;
+  }
+  &__skel-block {
+    height: 400rpx;
+    margin: 0 32rpx 16rpx;
+    border-radius: 16rpx;
+    background: $color-bg-page;
+    &--short { height: 120rpx; }
+  }
+  &__skel-action {
+    height: 80rpx;
+    margin: 32rpx 32rpx 0;
+    border-radius: 999rpx;
+    background: $color-bg-page;
+  }
+}
+
+.skeleton-pulse {
+  animation: pulse 1.4s ease-in-out infinite;
+}
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
 }
 </style>

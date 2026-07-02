@@ -7,20 +7,23 @@
           <WorkCard :work="item" @tap="goDetail(item)" />
         </template>
       </WorkWaterfall>
+      <WorkListSkeleton v-if="loading" />
       <view v-if="!loading && items.length === 0" class="my-works-page__empty">暂无作品</view>
     </view>
   </view>
 </template>
 
 <script setup lang="ts">
-import { onMounted, ref } from 'vue'
+import { onMounted, ref, shallowRef } from 'vue'
 import KeepPageNav from '@/components/business/KeepPageNav.vue'
 import WorkCard from '@/components/business/WorkCard.vue'
 import WorkWaterfall from '@/components/business/WorkWaterfall.vue'
+import WorkListSkeleton from '@/components/business/WorkListSkeleton.vue'
 import { getMyWorks } from '@/api/modules/work'
 import type { WorkListItem } from '@/api/types/work'
 
-const items = ref<WorkListItem[]>([])
+// 大数组用 shallowRef 避免深响应
+const items = shallowRef<WorkListItem[]>([])
 const loading = ref(true)
 
 onMounted(async () => {
