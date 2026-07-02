@@ -405,6 +405,22 @@ public class WorkService {
         final String nickname = qo.getNickname();
         final String mobile = qo.getMobile();
         final String tagIds = qo.getTagIds();
+        final List<Long> filterTagIds = parseTagIds(tagIds);
+        final List<Long> matchingWorkIds = new ArrayList<>();
+        if (StringUtils.isNotBlank(tagIds)) {
+            for (WorkTagRel rel : workTagRelRepository.findAll()) {
+                if (filterTagIds.contains(rel.getTagId()) && !matchingWorkIds.contains(rel.getWorkId())) {
+                    matchingWorkIds.add(rel.getWorkId());
+                }
+            }
+            if (matchingWorkIds.isEmpty()) {
+                Map<String, Object> res = new HashMap<>();
+                res.put("content", Collections.emptyList());
+                res.put("totalElements", 0L);
+                res.put("totalPages", 0);
+                return res;
+            }
+        }
 
         Specification<Work> spec = (root, query, cb) -> {
             List<Predicate> ps = new ArrayList<>();
@@ -412,6 +428,7 @@ public class WorkService {
             if (StringUtils.isNotBlank(status)) ps.add(cb.equal(root.get("status"), status));
             if (StringUtils.isNotBlank(city)) ps.add(cb.equal(root.get("city"), city));
             if (StringUtils.isNotBlank(mediaType)) ps.add(cb.equal(root.get("mediaType"), mediaType));
+            if (StringUtils.isNotBlank(tagIds)) ps.add(root.get("id").in(matchingWorkIds));
             if (StringUtils.isNotBlank(nickname) || StringUtils.isNotBlank(mobile)) {
                 Join<Object, Object> userJoin = root.join("user", JoinType.LEFT);
                 if (StringUtils.isNotBlank(nickname)) ps.add(cb.like(userJoin.<String>get("nickname"), "%" + nickname + "%"));
@@ -424,7 +441,7 @@ public class WorkService {
             new PageRequest(page - 1, size, new Sort(new Sort.Order(Sort.Direction.DESC, "publishTime"))));
         List<WorkAdminListItem> items = new ArrayList<>();
         for (Work work : result.getContent()) {
-            WorkAdminListItem item = toAdminListItem(work, parseTagIds(tagIds));
+            WorkAdminListItem item = toAdminListItem(work);
             if (item != null) items.add(item);
         }
         Map<String, Object> res = new HashMap<>();
@@ -481,11 +498,13 @@ public class WorkService {
         if (!WorkStatus.shtg.value.equals(flag) && !WorkStatus.shbtg.value.equals(flag)) {
             throw new SysException(ResponseCode.FAIL_PARA);
         }
+        ensureAdminWorkExists(workId);
         workRepository.updateStatusAndAuditReason(workId, flag, reason);
     }
 
     public void adminOffline(Long workId, String reason) {
         if (workId == null) throw new SysException(ResponseCode.FAIL_PARA);
+        ensureAdminWorkExists(workId);
         workRepository.updateStatusAndAuditReason(workId, WorkStatus.xj.value, reason);
     }
 
@@ -671,9 +690,8 @@ public class WorkService {
         }
     }
 
-    private WorkAdminListItem toAdminListItem(Work work, List<Long> filterTagIds) {
-        List<String> tags = loadWorkTagNames(work.getId(), filterTagIds);
-        if (!filterTagIds.isEmpty() && tags.isEmpty()) return null;
+    private WorkAdminListItem toAdminListItem(Work work) {
+        List<String> tags = loadWorkTagNames(work.getId(), Collections.emptyList());
         WorkAdminListItem item = new WorkAdminListItem();
         item.setId(work.getId());
         item.setDescription(work.getDescription());
@@ -700,6 +718,14 @@ public class WorkService {
         }
         item.setTags(tags);
         return item;
+    }
+
+    private Work ensureAdminWorkExists(Long workId) {
+        Work work = workRepository.findOne(workId);
+        if (work == null || work.getDeletedFlag() != null && work.getDeletedFlag() == 1) {
+            throw new SysException(ResponseCode.FAIL_WORK_NOT_FOUND);
+        }
+        return work;
     }
 
     private List<Long> parseTagIds(String tagIds) {
