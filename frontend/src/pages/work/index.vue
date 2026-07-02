@@ -1,18 +1,20 @@
 <template>
   <view class="work-tab">
     <KeepPageNav title="作品" />
-    <view class="work-tab__categories">
-      <view v-for="cat in categories" :key="cat.value"
-            :class="['work-tab__cat', { 'work-tab__cat--active': activeCategory === cat.value }]"
-            @tap="onCategoryChange(cat.value)">
-        <text :class="{ 'work-tab__cat-text--active': activeCategory === cat.value }">{{ cat.label }}</text>
+    <scroll-view class="work-tab__categories" scroll-x>
+      <view class="work-tab__categories-row">
+        <view v-for="cat in categories" :key="cat.value"
+              :class="['work-tab__cat', { 'work-tab__cat--active': activeCategory === cat.value }]"
+              @tap="onCategoryChange(cat.value)">
+          <text :class="{ 'work-tab__cat-text--active': activeCategory === cat.value }">{{ cat.label }}</text>
+        </view>
+        <view class="work-tab__cat work-tab__cat--filter" @tap="filterVisible = true">
+          <KeepIcon name="sliders" :size="20" :color="filterCount > 0 ? '#23C268' : '#83888F'" />
+          <text :class="{ 'work-tab__cat-text--active': filterCount > 0 }">筛选</text>
+          <text v-if="filterCount > 0" class="work-tab__filter-badge">{{ filterCount }}</text>
+        </view>
       </view>
-      <view class="work-tab__cat work-tab__cat--filter" @tap="filterVisible = true">
-        <KeepIcon name="sliders" :size="20" :color="filterCount > 0 ? '#23C268' : '#83888F'" />
-        <text :class="{ 'work-tab__cat-text--active': filterCount > 0 }">筛选</text>
-        <text v-if="filterCount > 0" class="work-tab__filter-badge">{{ filterCount }}</text>
-      </view>
-    </view>
+    </scroll-view>
 
     <view class="work-tab__list">
       <view class="work-tab__columns">
@@ -39,7 +41,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref, shallowRef, watch } from 'vue'
+import { computed, onMounted, ref, shallowRef } from 'vue'
 import KeepPageNav from '@/components/business/KeepPageNav.vue'
 import KeepTabBar from '@/components/business/KeepTabBar.vue'
 import WorkCard from '@/components/business/WorkCard.vue'
@@ -140,15 +142,20 @@ onMounted(() => load(true))
   background: #FFFFFF;
   padding-bottom: calc(148rpx + env(safe-area-inset-bottom));
   &__categories {
+    width: 100%;
+    white-space: nowrap;
+    background: #FFFFFF;
+    border-bottom: 2rpx solid $color-border;
+  }
+  &__categories-row {
     display: flex;
     align-items: center;
-    background: #FFFFFF;
+    min-width: 100%;
     padding: 16rpx 32rpx;
-    border-bottom: 2rpx solid $color-border;
     gap: 16rpx;
   }
   &__cat {
-    flex-shrink: 0;
+    flex: none;
     padding: 8rpx 0;
     position: relative;
     &--active {
