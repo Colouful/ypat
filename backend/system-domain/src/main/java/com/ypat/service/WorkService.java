@@ -3,6 +3,7 @@ package com.ypat.service;
 import com.ypat.PageQo;
 import com.ypat.ResponseCode;
 import com.ypat.SysException;
+import com.ypat.WorkAdminListItem;
 import com.ypat.WorkDetailQo;
 import com.ypat.WorkListItem;
 import com.ypat.WorkListQo;
@@ -394,6 +395,100 @@ public class WorkService {
         return res;
     }
 
+    public Map<String, Object> adminPageList(WorkListQo qo) {
+        if (qo == null) qo = new WorkListQo();
+        final int page = qo.getPage() == null || qo.getPage() < 1 ? 1 : qo.getPage();
+        final int size = qo.getSize() == null || qo.getSize() < 1 ? 10 : Math.min(qo.getSize(), 50);
+        final String status = qo.getStatus();
+        final String city = qo.getCity();
+        final String mediaType = qo.getMediaType();
+        final String nickname = qo.getNickname();
+        final String mobile = qo.getMobile();
+        final String tagIds = qo.getTagIds();
+
+        Specification<Work> spec = (root, query, cb) -> {
+            List<Predicate> ps = new ArrayList<>();
+            ps.add(cb.equal(root.get("deletedFlag"), 0));
+            if (StringUtils.isNotBlank(status)) ps.add(cb.equal(root.get("status"), status));
+            if (StringUtils.isNotBlank(city)) ps.add(cb.equal(root.get("city"), city));
+            if (StringUtils.isNotBlank(mediaType)) ps.add(cb.equal(root.get("mediaType"), mediaType));
+            if (StringUtils.isNotBlank(nickname) || StringUtils.isNotBlank(mobile)) {
+                Join<Object, Object> userJoin = root.join("user", JoinType.LEFT);
+                if (StringUtils.isNotBlank(nickname)) ps.add(cb.like(userJoin.<String>get("nickname"), "%" + nickname + "%"));
+                if (StringUtils.isNotBlank(mobile)) ps.add(cb.equal(userJoin.get("mobile"), mobile));
+            }
+            return cb.and(ps.toArray(new Predicate[0]));
+        };
+
+        Page<Work> result = workRepository.findAll(spec,
+            new PageRequest(page - 1, size, new Sort(new Sort.Order(Sort.Direction.DESC, "publishTime"))));
+        List<WorkAdminListItem> items = new ArrayList<>();
+        for (Work work : result.getContent()) {
+            WorkAdminListItem item = toAdminListItem(work, parseTagIds(tagIds));
+            if (item != null) items.add(item);
+        }
+        Map<String, Object> res = new HashMap<>();
+        res.put("content", items);
+        res.put("totalElements", result.getTotalElements());
+        res.put("totalPages", result.getTotalPages());
+        return res;
+    }
+
+    public Map<String, Object> adminDetail(Long workId) {
+        if (workId == null) throw new SysException(ResponseCode.FAIL_PARA);
+        Work work = workRepository.findOne(workId);
+        if (work == null || work.getDeletedFlag() != null && work.getDeletedFlag() == 1) {
+            throw new SysException(ResponseCode.FAIL_WORK_NOT_FOUND);
+        }
+        Map<String, Object> detail = new HashMap<>();
+        detail.put("id", work.getId());
+        detail.put("description", work.getDescription());
+        detail.put("device", work.getDevice());
+        detail.put("shootLocation", work.getShootLocation());
+        detail.put("returnPhotoFlag", work.getReturnPhotoFlag());
+        detail.put("mediaType", work.getMediaType());
+        detail.put("mediaTypeTxt", "2".equals(work.getMediaType()) ? "视频" : "图片");
+        detail.put("status", work.getStatus());
+        detail.put("statusTxt", WorkStatus.getNameByCode(work.getStatus()));
+        detail.put("auditReason", work.getAuditReason());
+        detail.put("readCount", work.getReadCount());
+        detail.put("likeCount", work.getLikeCount());
+        detail.put("favoriteCount", work.getFavoriteCount());
+        detail.put("publishTime", work.getPublishTime());
+        detail.put("city", work.getCity());
+        detail.put("area", work.getArea());
+        detail.put("medias", workMediaRepository.findByWorkIdOrderBySortNoAsc(workId));
+        detail.put("tags", loadWorkTagNames(workId, Collections.emptyList()));
+        User user = userRepository.findById(work.getUserid());
+        if (user != null) {
+            Map<String, Object> userMap = new HashMap<>();
+            userMap.put("id", user.getId());
+            userMap.put("nickname", user.getNickname());
+            userMap.put("mobile", user.getMobile());
+            userMap.put("gender", user.getGender());
+            userMap.put("profession", user.getProfess());
+            userMap.put("city", user.getCity());
+            userMap.put("area", user.getArea());
+            detail.put("user", userMap);
+        }
+        return detail;
+    }
+
+    public void adminAudit(Long workId, String flag, String reason) {
+        if (workId == null || StringUtils.isBlank(flag) || !WorkStatus.isValid(flag)) {
+            throw new SysException(ResponseCode.FAIL_PARA);
+        }
+        if (!WorkStatus.shtg.value.equals(flag) && !WorkStatus.shbtg.value.equals(flag)) {
+            throw new SysException(ResponseCode.FAIL_PARA);
+        }
+        workRepository.updateStatusAndAuditReason(workId, flag, reason);
+    }
+
+    public void adminOffline(Long workId, String reason) {
+        if (workId == null) throw new SysException(ResponseCode.FAIL_PARA);
+        workRepository.updateStatusAndAuditReason(workId, WorkStatus.xj.value, reason);
+    }
+
     /**
      * 我的作品
      */
@@ -574,6 +669,56 @@ public class WorkService {
             case "6": return YpatTarget.sjfw.value;
             default: return YpatTarget.wysf.value;
         }
+    }
+
+    private WorkAdminListItem toAdminListItem(Work work, List<Long> filterTagIds) {
+        List<String> tags = loadWorkTagNames(work.getId(), filterTagIds);
+        if (!filterTagIds.isEmpty() && tags.isEmpty()) return null;
+        WorkAdminListItem item = new WorkAdminListItem();
+        item.setId(work.getId());
+        item.setDescription(work.getDescription());
+        item.setMediaType(work.getMediaType());
+        item.setMediaTypeTxt("2".equals(work.getMediaType()) ? "视频" : "图片");
+        item.setStatus(work.getStatus());
+        item.setStatusTxt(WorkStatus.getNameByCode(work.getStatus()));
+        item.setAuditReason(work.getAuditReason());
+        item.setReadCount(work.getReadCount());
+        item.setLikeCount(work.getLikeCount());
+        item.setFavoriteCount(work.getFavoriteCount());
+        item.setPublishTime(work.getPublishTime());
+        List<WorkMedia> medias = workMediaRepository.findByWorkIdOrderBySortNoAsc(work.getId());
+        if (!medias.isEmpty()) item.setCoverUrl(medias.get(0).getUrl());
+        User user = userRepository.findById(work.getUserid());
+        if (user != null) {
+            item.setUserId(user.getId());
+            item.setNickname(user.getNickname());
+            item.setMobile(user.getMobile());
+            item.setGender(user.getGender());
+            item.setProfession(user.getProfess());
+            item.setCity(user.getCity());
+            item.setArea(user.getArea());
+        }
+        item.setTags(tags);
+        return item;
+    }
+
+    private List<Long> parseTagIds(String tagIds) {
+        List<Long> ids = new ArrayList<>();
+        if (StringUtils.isBlank(tagIds)) return ids;
+        for (String raw : tagIds.split(",")) {
+            try { ids.add(Long.parseLong(raw.trim())); } catch (NumberFormatException ignored) {}
+        }
+        return ids;
+    }
+
+    private List<String> loadWorkTagNames(Long workId, List<Long> filterTagIds) {
+        List<String> names = new ArrayList<>();
+        for (WorkTagRel rel : workTagRelRepository.findByWorkId(workId)) {
+            if (!filterTagIds.isEmpty() && !filterTagIds.contains(rel.getTagId())) continue;
+            WorkTag tag = workTagRepository.findOne(rel.getTagId());
+            if (tag != null) names.add(tag.getName());
+        }
+        return names;
     }
 
     private boolean YesNoValid(String s) {
