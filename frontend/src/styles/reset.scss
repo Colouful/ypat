@@ -29,11 +29,17 @@ swiper,
 swiper-item,
 cover-view,
 movable-area,
-movable-view,
-text {
+movable-view {
   box-sizing: border-box;
 }
 
+// text / image / button / input / textarea 用属性选择器避免
+// 微信小程序组件 wxss 禁用 tag selector 的限制
+[class*="text"] {
+  box-sizing: border-box;
+}
+
+img,
 image {
   display: block;
   width: 100%;

@@ -7,6 +7,10 @@ spring:
     multipart:
       max-file-size: 200Mb
       max-request-size: 400Mb
+    encoding:
+      charset: UTF-8
+      enabled: true
+      force: true
   redis:
     host: ${YPAT_REDIS_HOST:localhost}
     port: ${YPAT_REDIS_PORT:6379}
@@ -18,11 +22,18 @@ spring:
       max-wait: -1
   jackson:
     time-zone: GMT+8
-  http:
-    encoding:
-      charset: UTF-8
-      enabled: true
-      force: true
+  jpa:
+    # 手动指定，避免 Druid 触发 Class.forName("com.mysql.jdbc.Driver") 导致
+    # Spring Boot 1.5.9 LaunchedURLClassLoader.definePackageIfNecessary NPE
+    database: mysql
+    database-platform: org.hibernate.dialect.MySQL5Dialect
+    hibernate:
+      ddl-auto: update
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.MySQL5Dialect
+        format_sql: false
+    show-sql: false
 eureka:
   client:
     serviceUrl:

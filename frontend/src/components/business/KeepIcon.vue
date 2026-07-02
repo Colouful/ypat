@@ -1,9 +1,7 @@
 <template>
   <view class="keep-icon" :style="iconStyle" aria-hidden="true">
-    <!-- #ifdef MP-WEIXIN -->
-    <image class="keep-icon__image" :src="imageSource" mode="aspectFit" />
-    <!-- #endif -->
-    <!-- #ifndef MP-WEIXIN -->
+    <!-- 统一用 SVG 兜底（之前 MP-WEIXIN 分支依赖 static/icons/*.png，但项目未提供，
+         导致运行时 500 Internal Server Error。SVG 在所有平台都正常工作）-->
     <svg
       class="keep-icon__svg"
       viewBox="0 0 24 24"
@@ -22,7 +20,6 @@
         <polyline v-else-if="part.tag === 'polyline'" v-bind="part.attrs" />
       </template>
     </svg>
-    <!-- #endif -->
   </view>
 </template>
 

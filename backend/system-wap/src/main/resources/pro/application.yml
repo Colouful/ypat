@@ -14,14 +14,6 @@ spring:
       max-wait: -1
   jackson:
     time-zone: GMT+8
-  http:
-    encoding:
-      charset: UTF-8
-      enabled: true
-      force: true
-    multipart:
-      max-file-size: 200Mb
-      max-request-size: 400Mb
 eureka:
   client:
     serviceUrl:
