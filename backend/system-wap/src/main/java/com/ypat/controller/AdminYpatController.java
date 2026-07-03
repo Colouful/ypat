@@ -288,7 +288,7 @@ public class AdminYpatController {
                 throw new SysException(code, msg);
             }
             JsonElement resElement = object.get("res");
-            if (resElement == null || resElement.isJsonNull()) {
+            if (resElement == null || resElement.isJsonNull() || !resElement.isJsonObject()) {
                 throw new SysException(ResponseCode.FAIL_SER, "服务响应格式错误");
             }
             return resElement;

@@ -92,11 +92,25 @@ public class AdminYpatControllerSourceTest {
         assertParseResponseFail(controller, "{\"code\":200}", "服务响应格式错误");
         assertParseResponseFail(controller, "{\"code\":200,\"msg\":\"ok\"}", "服务响应格式错误");
         assertParseResponseFail(controller, "{\"code\":200,\"res\":null}", "服务响应格式错误");
+        assertParseResponseFail(controller, "{\"code\":200,\"res\":[]}", "服务响应格式错误");
+        assertParseResponseFail(controller, "{\"code\":200,\"res\":123}", "服务响应格式错误");
+        assertParseResponseFail(controller, "{\"code\":200,\"res\":true}", "服务响应格式错误");
+        assertParseResponseFail(controller, "{\"code\":200,\"res\":\"x\"}", "服务响应格式错误");
         assertParseResponseFail(controller, "[]", "服务响应格式错误");
         assertParseResponseFail(controller, "123", "服务响应格式错误");
         assertParseResponseFail(controller, "null", "服务响应格式错误");
         assertParseResponseFail(controller, "{not-json", "服务响应格式错误");
         assertParseResponseFail(controller, "", "服务响应格式错误");
+    }
+
+    @Test
+    public void normalizePageUsesDefaultForMissingAndNegativeRequests() throws Exception {
+        AdminYpatController controller = new AdminYpatController();
+
+        assertEquals(0, invokeNormalizePage(controller, null));
+        assertEquals(0, invokeNormalizePage(controller, -1));
+        assertEquals(0, invokeNormalizePage(controller, 0));
+        assertEquals(3, invokeNormalizePage(controller, 3));
     }
 
     @Test
@@ -122,6 +136,12 @@ public class AdminYpatControllerSourceTest {
         Method method = AdminYpatController.class.getDeclaredMethod("parseResponseRes", String.class);
         method.setAccessible(true);
         return (JsonElement) method.invoke(controller, json);
+    }
+
+    private int invokeNormalizePage(AdminYpatController controller, Integer page) throws Exception {
+        Method method = AdminYpatController.class.getDeclaredMethod("normalizePage", Integer.class);
+        method.setAccessible(true);
+        return (Integer) method.invoke(controller, new Object[]{page});
     }
 
     private int invokeNormalizeSize(AdminYpatController controller, Integer size) throws Exception {
