@@ -43,7 +43,7 @@ async function submit() {
   loading.value = true
   try {
     await submitYpat(form.value)
-    ElMessage.success('发布成功')
+    ElMessage.success('代发约拍成功')
     router.push('/manage/ypat-list')
   } finally { loading.value = false }
 }
@@ -52,7 +52,7 @@ async function submit() {
 <template>
   <div class="ypat-edit-page">
     <el-card>
-      <template #header>发布作品</template>
+      <template #header>后台代发约拍</template>
       <el-form ref="formRef" :model="form" :rules="rules" label-width="100px">
         <el-form-item label="昵称" prop="nickname"><el-input v-model="form.nickname"/></el-form-item>
         <el-form-item label="性别"><el-radio-group v-model="form.gender"><el-radio v-for="o in getGenderOptions()" :key="o.value" :label="o.value">{{ o.label }}</el-radio></el-radio-group></el-form-item>
