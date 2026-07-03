@@ -13,3 +13,34 @@ server:
 spring:
   application:
     name: ypat-backend-v2
+
+  # ── Flyway: PR-07a bootstrap. PR-07b produces the real baseline.
+  # ────────────────────────────────────────────────────────────
+  flyway:
+    # Disabled in this PR. We don't yet have a real baseline to
+    # apply (V1__baseline_schema.sql is still the .gitkeep-only
+    # placeholder in db/migration/mysql/). Enabling this BEFORE
+    # the baseline lands would either:
+    #   - fail boot with "no migrations found", or
+    #   - if baseline-on-migrate=true, attempt to baseline an
+    #     empty migration set and confuse the schema_history table.
+    # PR-07b flips enabled=true the moment V1__baseline_schema.sql
+    # is committed.
+    enabled: false
+
+    # Baseline configuration is fixed at PR-07b, not here.
+    # When enabled flips on:
+    #   baseline-on-migrate: true   # don't error on non-empty DB
+    #   baseline-version: 1          # V1__ is the baseline anchor
+    #   locations: classpath:db/migration
+    #   sql-migration-suffixes: .sql
+    #   validate-on-migrate: true   # refuse drift from checksum
+
+  # ── ddl-auto: PR-01b anchor.
+  # ─────────────────────────────
+  # Backend-v2 starts with `none` here too, matching the legacy
+  # PR-01a fix. PR-12 / PR-01b flips this to `validate` once the
+  # baseline is committed.
+  jpa:
+    hibernate:
+      ddl-auto: none

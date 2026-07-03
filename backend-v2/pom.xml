@@ -59,6 +59,24 @@
             <artifactId>spring-boot-starter-web</artifactId>
         </dependency>
 
+        <!-- Flyway: schema migration tool. PR-07a brings it in
+             but keeps it disabled until PR-07b produces the real
+             baseline. The dep is required so application.yml can
+             reference spring.flyway.* keys without a startup
+             property-not-found warning once Flyway is enabled. -->
+        <dependency>
+            <groupId>org.flywaydb</groupId>
+            <artifactId>flyway-core</artifactId>
+        </dependency>
+
+        <!-- Flyway MySQL module: required for Flyway 8.2+ on MySQL
+             specifically. Without this, flyway-core will throw
+             "no database type plugin found" on first migrate. -->
+        <dependency>
+            <groupId>org.flywaydb</groupId>
+            <artifactId>flyway-mysql</artifactId>
+        </dependency>
+
         <!-- Test scope only. JUnit 5 ships with Spring Boot 2.7.x
              starter test, so no explicit junit-jupiter dep needed. -->
         <dependency>
