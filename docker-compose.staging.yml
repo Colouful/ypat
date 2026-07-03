@@ -189,6 +189,7 @@ services:
       YPAT_MYSQL_URL: "jdbc:mysql://mysql:3306/ypat?characterEncoding=utf8&useSSL=false"
       YPAT_MYSQL_USERNAME: "root"
       YPAT_MYSQL_PASSWORD: "${YPAT_LOCAL_MYSQL_ROOT_PASSWORD}"
+      YPAT_REDIS_HOST: redis
       YPAT_REDIS_PASSWORD: "${YPAT_LOCAL_REDIS_PASSWORD}"
       YPAT_EUREKA_DEFAULT_ZONE: "http://eureka:8761/eureka/"
       YPAT_SSO_JWT_SIGNING_KEY: "${YPAT_SSO_JWT_SIGNING_KEY:-yPat-sso-dev-signing-key-please-rotate-in-prod-32bytes}"
