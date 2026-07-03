@@ -45,6 +45,9 @@ public class YpatInfoAdminFilterSourceTest {
         assertFalse(source.contains("criteriaBuilder.like(root.get(\"patstyle\"), \"%\" + queryQo.getPatstyle() + \"%\")"));
         assertTrue(source.contains("queryQo.getPatstyle().split(\",\")"));
         assertTrue(source.contains(".trim()"));
+        assertTrue(source.contains("Set<String> patstyles"));
+        assertTrue(source.contains("patstyles.add(patstyle)"));
+        assertTrue(source.contains("new SysException(ResponseCode.FAIL_PARA, \"patstyle参数错误\")"));
         assertTrue(source.contains("criteriaBuilder.or("));
         assertTrue(source.contains("criteriaBuilder.equal(root.get(\"patstyle\"), patstyle)"));
         assertTrue(source.contains("criteriaBuilder.like(root.get(\"patstyle\"), patstyle + \",%\")"));

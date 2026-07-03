@@ -253,7 +253,14 @@ public class AdminYpatController {
         if (element != null && element.isJsonObject()) {
             JsonObject object = element.getAsJsonObject();
             if (object.has("code")) {
-                int code = object.get("code").getAsInt();
+                JsonElement codeElement = object.get("code");
+                if (codeElement == null
+                        || codeElement.isJsonNull()
+                        || !codeElement.isJsonPrimitive()
+                        || !codeElement.getAsJsonPrimitive().isNumber()) {
+                    throw new SysException(ResponseCode.FAIL_SER, "服务响应格式错误");
+                }
+                int code = codeElement.getAsInt();
                 if (code != ResponseCode.SUCCESS.getCode()) {
                     String msg = object.has("msg") && !object.get("msg").isJsonNull()
                             ? object.get("msg").getAsString()
