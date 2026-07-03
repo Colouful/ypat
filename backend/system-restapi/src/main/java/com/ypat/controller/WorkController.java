@@ -53,6 +53,32 @@ public class WorkController {
         return ResponseApiBody.success(page);
     }
 
+    @PostMapping("/admin/list")
+    public ResponseApiBody adminList(@RequestBody WorkListQo qo) {
+        Map<String, Object> page = workService.adminPageList(qo);
+        return ResponseApiBody.success(page);
+    }
+
+    @GetMapping("/admin/detail")
+    public ResponseApiBody adminDetail(@RequestParam("id") Long id) {
+        return ResponseApiBody.success(workService.adminDetail(id));
+    }
+
+    @PostMapping("/admin/audit")
+    public ResponseApiBody adminAudit(@RequestParam("id") Long id,
+                                      @RequestParam("flag") String flag,
+                                      @RequestParam(value = "reason", required = false) String reason) {
+        workService.adminAudit(id, flag, reason);
+        return ResponseApiBody.success("审核完成");
+    }
+
+    @PostMapping("/admin/offline")
+    public ResponseApiBody adminOffline(@RequestParam("id") Long id,
+                                        @RequestParam(value = "reason", required = false) String reason) {
+        workService.adminOffline(id, reason);
+        return ResponseApiBody.success("已下架");
+    }
+
     @GetMapping("/my")
     public ResponseApiBody my(@RequestParam("userId") String userId,
                               @RequestParam("page") Integer page,
