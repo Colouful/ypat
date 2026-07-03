@@ -24,12 +24,14 @@ const queryParams = reactive<WorkListQuery>({
 const tableData = ref<WorkAdminInfo[]>([])
 const total = ref(0)
 const loading = ref(false)
+let listRequestSeq = 0
 
 const detailVisible = ref(false)
 const detailId = ref<number>()
 
 const auditVisible = ref(false)
 const currentWork = ref<WorkAdminInfo | null>(null)
+const offlineIds = ref<Set<number>>(new Set())
 
 const currentPage = computed(() => (queryParams.page ?? 0) + 1)
 
@@ -71,13 +73,18 @@ function getCity(row: WorkAdminInfo): string {
 }
 
 async function fetchList(): Promise<void> {
+  const requestSeq = ++listRequestSeq
   loading.value = true
   try {
     const res = await getWorkList(queryParams)
-    tableData.value = res.data.content || []
-    total.value = res.data.totalElements || 0
+    if (requestSeq === listRequestSeq) {
+      tableData.value = res.data.content || []
+      total.value = res.data.totalElements || 0
+    }
   } finally {
-    loading.value = false
+    if (requestSeq === listRequestSeq) {
+      loading.value = false
+    }
   }
 }
 
@@ -118,15 +125,24 @@ function openAudit(row: WorkAdminInfo): void {
 }
 
 async function handleOffline(row: WorkAdminInfo): Promise<void> {
+  if (offlineIds.value.has(row.id)) return
+
   await ElMessageBox.confirm(`确定要下架作品 #${row.id} 吗？`, '下架确认', {
     type: 'warning',
     confirmButtonText: '确认下架',
     cancelButtonText: '取消',
   })
 
-  await offlineWork(row.id, '后台下架')
-  ElMessage.success('作品下架成功')
-  fetchList()
+  offlineIds.value = new Set(offlineIds.value).add(row.id)
+  try {
+    await offlineWork(row.id, '后台下架')
+    ElMessage.success('作品下架成功')
+    fetchList()
+  } finally {
+    const nextOfflineIds = new Set(offlineIds.value)
+    nextOfflineIds.delete(row.id)
+    offlineIds.value = nextOfflineIds
+  }
 }
 
 onMounted(() => {
@@ -247,6 +263,8 @@ onMounted(() => {
             type="danger"
             link
             size="small"
+            :loading="offlineIds.has((row as WorkAdminInfo).id)"
+            :disabled="offlineIds.has((row as WorkAdminInfo).id)"
             @click="handleOffline(row as WorkAdminInfo)"
           >
             下架

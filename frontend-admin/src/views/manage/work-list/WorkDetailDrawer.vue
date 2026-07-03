@@ -19,6 +19,7 @@ const localVisible = computed({
 
 const loading = ref(false)
 const detail = ref<WorkAdminInfo | null>(null)
+let detailRequestSeq = 0
 
 function getRecordString(record: Record<string, unknown> | undefined, key: string): string {
   const value = record?.[key]
@@ -66,31 +67,44 @@ const authorGender = computed(() =>
 )
 
 async function loadDetail(): Promise<void> {
-  if (!props.id) {
-    detail.value = null
+  const requestedId = props.id
+  const requestSeq = ++detailRequestSeq
+
+  detail.value = null
+
+  if (!requestedId) {
+    loading.value = false
     return
   }
 
   loading.value = true
   try {
-    const res = await getWorkDetail(props.id)
-    detail.value = res.data
+    const res = await getWorkDetail(requestedId)
+    if (requestSeq === detailRequestSeq && props.visible && props.id === requestedId) {
+      detail.value = res.data
+    }
   } finally {
-    loading.value = false
+    if (requestSeq === detailRequestSeq) {
+      loading.value = false
+    }
   }
 }
 
 watch(
   () => [props.visible, props.id] as const,
-  ([visible, id]) => {
+  ([visible, id], previousValue) => {
+    const [prevVisible, prevId] = previousValue ?? []
     if (visible && id) {
+      if (!prevVisible || prevId !== id) {
+        detail.value = null
+      }
       loadDetail()
       return
     }
 
-    if (!visible) {
-      detail.value = null
-    }
+    detailRequestSeq += 1
+    detail.value = null
+    loading.value = false
   },
   { immediate: true },
 )
