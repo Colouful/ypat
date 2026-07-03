@@ -1,0 +1,188 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+
+  backend-v2 — YPAT modular monolith, Spring Boot 3.5 + Java 21 (now active).
+
+  PR-12 lifts backend-v2 from the 2.7.18 jump-board to its final
+  Spring Boot 3.5 + Java 21 form, and turns Spring Modulith on.
+  After this PR:
+    * parent = spring-boot-starter-parent 3.5.x
+    * Java release / source / target = 21
+    * jakarta.* (no more javax.* in Spring imports)
+    * spring-modulith-bom + spring-modulith-starter-test on the
+      classpath
+    * ModulePackageStructureTest (PR-06) gets a sibling
+      ModulithStructureTest that calls
+      ApplicationModules.of(...).verify()
+    * CI workflow upgraded to JDK 21
+
+  Why now and not earlier:
+    Spring Modulith 1.x is built for Spring Boot 3.x. PR-04 had
+    to pick 2.7.18 so we could compile the legacy backend on
+    JDK 17 in parallel (PR-05). Once backend-v2 owns enough
+    surface area to make Modulith's boundary rules meaningful,
+    PR-12 does the second jump.
+-->
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
+                             https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <groupId>com.ypat</groupId>
+    <artifactId>backend-v2</artifactId>
+    <version>1.0.0-SNAPSHOT</version>
+    <packaging>jar</packaging>
+    <name>YPAT Backend v2 (Spring Boot 3.5 + Java 21)</name>
+
+    <parent>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-parent</artifactId>
+        <version>3.5.15</version>
+        <relativePath/>
+    </parent>
+
+    <properties>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+
+        <!-- Pin Java 21 across all plugin executions so any
+             developer or CI agent that picks a newer JDK still
+             compiles with the right bytecode level. -->
+        <java.version>21</java.version>
+        <maven.compiler.source>21</maven.compiler.source>
+        <maven.compiler.target>21</maven.compiler.target>
+        <maven.compiler.release>21</maven.compiler.release>
+
+        <!-- ArchUnit: pinned to 1.x for the Spring Modulith rule
+             surface. 1.4.x tracks Spring Boot 3.5. -->
+        <archunit.version>1.4.1</archunit.version>
+
+        <!-- Spring Modulith: 1.4.x is the Spring Boot 3.5 line. -->
+        <spring-modulith.version>1.4.1</spring-modulith.version>
+    </properties>
+
+    <dependencyManagement>
+        <dependencies>
+            <!-- Spring Modulith BOM pulls in the right Modulith
+                 artifacts aligned with the Spring Boot version. -->
+            <dependency>
+                <groupId>org.springframework.modulith</groupId>
+                <artifactId>spring-modulith-bom</artifactId>
+                <version>${spring-modulith.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
+
+    <dependencies>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-web</artifactId>
+        </dependency>
+
+        <!-- spring-boot-starter-jdbc: enables Spring Boot's
+             DataSource auto-configuration. Flyway needs a
+             DataSource bean before it can do anything; without
+             this starter the DataSource bean is never created
+             and Flyway silently no-ops. We picked jdbc over
+             jpa because backend-v2 ships zero @Entity yet
+             (PR-15 follow-up adds them) and we don't want to
+             pay Hibernate's startup cost in the meantime. -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-jdbc</artifactId>
+        </dependency>
+
+        <!-- MySQL JDBC driver. Spring Boot 3.5 BOM-managed
+             (mysql-connector-j, replaces the legacy mysql-connector-java
+             5.x driver classpath). The container uses
+             com.mysql.cj.jdbc.Driver (matches application.yml). -->
+        <dependency>
+            <groupId>com.mysql</groupId>
+            <artifactId>mysql-connector-j</artifactId>
+            <scope>runtime</scope>
+        </dependency>
+
+        <!-- Spring Data Redis: powers the Redis-backed token
+             blacklist (PR-14) and any future rate-limit / cache
+             UseCase. Already used by the legacy backend via
+             spring-boot-starter-data-redis from the Boot 1.5.9
+             BOM; we re-declare it explicitly here so v2 is
+             self-describing. -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-data-redis</artifactId>
+        </dependency>
+
+        <!-- Flyway: schema migration tool. PR-07a brings it in
+             but keeps it disabled until PR-07b produces the real
+             baseline.
+
+             Version: pinned to 10.x because Spring Boot 3.5.x
+             defaults to Flyway 10. Flyway 11 (the latest at the
+             time of writing) silently disables Spring Boot's
+             FlywayAutoConfiguration due to module path changes,
+             which is why no Flyway log appeared on first boot.
+             10.20.1 is the last 10.x release. -->
+        <dependency>
+            <groupId>org.flywaydb</groupId>
+            <artifactId>flyway-core</artifactId>
+            <version>10.20.1</version>
+        </dependency>
+
+        <!-- Flyway MySQL module: required for Flyway 8.2+ on MySQL
+             specifically. Without this, flyway-core will throw
+             "no database type plugin found" on first migrate. -->
+        <dependency>
+            <groupId>org.flywaydb</groupId>
+            <artifactId>flyway-mysql</artifactId>
+            <version>10.20.1</version>
+        </dependency>
+
+        <!-- Tencent Cloud COS Java SDK v5. -->
+        <dependency>
+            <groupId>com.qcloud</groupId>
+            <artifactId>cos_api</artifactId>
+            <version>5.6.97</version>
+        </dependency>
+
+        <!-- Spring Modulith: brings in ApplicationModules and
+             the verify() entry point. The actual rule test lives
+             in src/test/java/com/ypat/architecture. -->
+        <dependency>
+            <groupId>org.springframework.modulith</groupId>
+            <artifactId>spring-modulith-starter-core</artifactId>
+        </dependency>
+
+        <!-- Test scope. -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>com.tngtech.archunit</groupId>
+            <artifactId>archunit-junit5</artifactId>
+            <version>${archunit.version}</version>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.springframework.modulith</groupId>
+            <artifactId>spring-modulith-starter-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-maven-plugin</artifactId>
+            </plugin>
+        </plugins>
+    </build>
+</project>
