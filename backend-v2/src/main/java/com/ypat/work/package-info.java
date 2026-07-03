@@ -13,8 +13,11 @@
  * Internal (must NOT be referenced from another module):
  *   - com.ypat.work.internal
  *
- * The 591-line WorkService (system-domain) is split into 8
- * UseCases in PR-13. Until then this module is empty.
+ * The {@code @NamedInterface("api")} annotation marks
+ * {@code com.ypat.work.api} as the module's published surface.
+ * WorkController lives there and is the entry point other
+ * modules (and external clients) hit.
  */
+@org.springframework.modulith.NamedInterface
 @org.springframework.lang.NonNullApi
 package com.ypat.work;

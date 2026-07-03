@@ -14,6 +14,10 @@
  *     module in PR-17 (member becomes a sub-domain).
  *   - This package-info claims the whole "user" space; member/
  *     is reserved for the legacy imports that we will re-route.
+ *   - The {@code @NamedInterface("api")} annotation marks
+ *     {@code com.ypat.user.api} as the module's published
+ *     surface; UserController lives there.
  */
+@org.springframework.modulith.NamedInterface
 @org.springframework.lang.NonNullApi
 package com.ypat.user;
