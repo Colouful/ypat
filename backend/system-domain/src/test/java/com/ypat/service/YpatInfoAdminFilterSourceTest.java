@@ -41,6 +41,7 @@ public class YpatInfoAdminFilterSourceTest {
     public void ypatAdminWorkIdFilterRejectsInvalidInputWithBusinessError() throws Exception {
         String source = read("src/main/java/com/ypat/service/YpatInfoService.java");
 
+        assertTrue(source.contains("info.setWorkId(parseWorkIdValue(ypatInfo.getWorkId()))"));
         assertTrue(source.contains("catch (NumberFormatException"));
         assertTrue(source.contains("workId <= 0"));
         assertTrue(source.contains("new SysException(ResponseCode.FAIL_PARA"));
@@ -56,6 +57,7 @@ public class YpatInfoAdminFilterSourceTest {
         YpatInfoQo validQo = new YpatInfoQo();
         validQo.setWorkId("12");
         assertEquals(Long.valueOf(12L), service.parseWorkIdFilter(validQo));
+        assertEquals(Long.valueOf(12L), service.parseWorkIdValue("12"));
 
         assertWorkIdFailPara(service, "abc");
         assertWorkIdFailPara(service, "0");

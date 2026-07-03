@@ -46,6 +46,7 @@ public class YpatInfoService {
         YpatInfo info = new YpatInfo();
         if(ypatInfo.getId()==null){
             info = CopyUtil.copy(ypatInfo, YpatInfo.class);
+            info.setWorkId(parseWorkIdValue(ypatInfo.getWorkId()));
             info.setReadtimes(0);
             info.setPattimes(0);
             info.setColtimes(0);
@@ -59,6 +60,9 @@ public class YpatInfoService {
                 throw new SysException(ResponseCode.FAIL_NOT);
             }
             CopyUtil.copyIgnoreNull(ypatInfo,info);
+            if(ypatInfo.getWorkId()!=null){
+                info.setWorkId(parseWorkIdValue(ypatInfo.getWorkId()));
+            }
             ypatInfoRepository.save(info);
         }
         //保存图片信息
@@ -384,8 +388,15 @@ public class YpatInfoService {
 
     Long parseWorkIdFilter(YpatInfoQo queryQo) {
         if(CommonUtils.isNotNull(queryQo.getWorkId())){
+            return parseWorkIdValue(queryQo.getWorkId());
+        }
+        return null;
+    }
+
+    Long parseWorkIdValue(String rawWorkId) {
+        if(CommonUtils.isNotNull(rawWorkId)){
             try {
-                Long workId = Long.valueOf(queryQo.getWorkId());
+                Long workId = Long.valueOf(rawWorkId);
                 if(workId <= 0){
                     throw new SysException(ResponseCode.FAIL_PARA, "workId参数错误");
                 }
