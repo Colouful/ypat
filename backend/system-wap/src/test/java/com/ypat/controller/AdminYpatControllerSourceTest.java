@@ -54,6 +54,9 @@ public class AdminYpatControllerSourceTest {
                 "backend/system-wap/src/main/java/com/ypat/controller/AdminYpatController.java",
                 "AdminYpatController.java should exist");
 
+        assertTrue(source.contains("private static final int MAX_SIZE = 50"));
+        assertTrue(source.contains("qo.setSize(normalizeSize(size))"));
+        assertTrue(source.contains("return Math.min(size, MAX_SIZE)"));
         assertTrue(source.contains("@RequestParam(value = \"target\", required = false) String target"));
         assertTrue(source.contains("@RequestParam(value = \"patstyle\", required = false) String patstyle"));
         assertTrue(source.contains("@RequestParam(value = \"chargeway\", required = false) String chargeway"));
@@ -81,6 +84,8 @@ public class AdminYpatControllerSourceTest {
         assertParseResponseFail(controller, "{\"code\":500,\"msg\":true}", ResponseCode.FAIL_SER.getMsg());
         assertParseResponseFail(controller, "{\"code\":null,\"msg\":\"bad\"}", "服务响应格式错误");
         assertParseResponseFail(controller, "{\"code\":\"x\",\"msg\":\"bad\"}", "服务响应格式错误");
+        assertParseResponseFail(controller, "{\"code\":200}", "服务响应格式错误");
+        assertParseResponseFail(controller, "{\"code\":200,\"msg\":\"ok\"}", "服务响应格式错误");
         assertParseResponseFail(controller, "{not-json", "服务响应格式错误");
         assertParseResponseFail(controller, "", "服务响应格式错误");
     }

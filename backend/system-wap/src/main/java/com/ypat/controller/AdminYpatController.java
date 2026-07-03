@@ -46,6 +46,7 @@ public class AdminYpatController {
 
     private static final int DEFAULT_PAGE = 0;
     private static final int DEFAULT_SIZE = 10;
+    private static final int MAX_SIZE = 50;
 
     @Autowired
     private YpatServiceClient ypatServiceClient;
@@ -84,16 +85,9 @@ public class AdminYpatController {
             @RequestParam(value = "page", required = false, defaultValue = "0") Integer page,
             @RequestParam(value = "size", required = false, defaultValue = "10") Integer size) {
 
-        if (page == null || page < 0) {
-            page = DEFAULT_PAGE;
-        }
-        if (size == null || size <= 0) {
-            size = DEFAULT_SIZE;
-        }
-
         YpatInfoQo qo = new YpatInfoQo();
-        qo.setPage(page);
-        qo.setSize(size);
+        qo.setPage(normalizePage(page));
+        qo.setSize(normalizeSize(size));
         if (StringUtils.isNotBlank(status)) {
             qo.setStatus(status);
         }
@@ -248,6 +242,17 @@ public class AdminYpatController {
         return sb.toString();
     }
 
+    private int normalizePage(Integer page) {
+        return page == null || page < 0 ? DEFAULT_PAGE : page;
+    }
+
+    private int normalizeSize(Integer size) {
+        if (size == null || size <= 0) {
+            return DEFAULT_SIZE;
+        }
+        return Math.min(size, MAX_SIZE);
+    }
+
     private JsonElement parseResponseRes(String json) {
         if (StringUtils.isBlank(json)) {
             throw new SysException(ResponseCode.FAIL_SER, "服务响应格式错误");
@@ -278,6 +283,9 @@ public class AdminYpatController {
                             ? msgElement.getAsString()
                             : ResponseCode.FAIL_SER.getMsg();
                     throw new SysException(code, msg);
+                }
+                if (!object.has("res")) {
+                    throw new SysException(ResponseCode.FAIL_SER, "服务响应格式错误");
                 }
             }
             if (object.has("res")) {
