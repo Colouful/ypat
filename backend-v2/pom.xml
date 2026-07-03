@@ -77,6 +77,18 @@
             <artifactId>flyway-mysql</artifactId>
         </dependency>
 
+        <!-- Tencent Cloud COS Java SDK v5.
+             PR-10 introduces the storage abstraction; PR-11 wires
+             it into the new work-read code. Version is pinned
+             because the SDK has had breaking changes between
+             minors historically; pick a stable release and stick
+             with it until we have a reason to move. -->
+        <dependency>
+            <groupId>com.qcloud</groupId>
+            <artifactId>cos_api</artifactId>
+            <version>5.6.97</version>
+        </dependency>
+
         <!-- Test scope only. JUnit 5 ships with Spring Boot 2.7.x
              starter test, so no explicit junit-jupiter dep needed. -->
         <dependency>
