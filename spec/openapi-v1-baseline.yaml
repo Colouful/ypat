@@ -1,0 +1,59 @@
+openapi: 3.0.3
+info:
+  title: YPAT Backend API (Baseline v1)
+  version: 1.0.0-baseline
+  description: |
+    Baseline snapshot of YPAT backend HTTP API surface.
+
+    ## Status
+
+    **PLACEHOLDER.** This file is intentionally near-empty and acts as the
+    contract anchor for the architecture upgrade (refactor/backend-arch-upgrade).
+
+    ## Why a placeholder
+
+    The current production backend runs on Spring Boot 1.5.9 (Java 8) with
+    **zero Swagger/OpenAPI annotations** on its 59 controllers. There is no
+    springdoc-openapi version that supports Spring Boot 1.5.9, and pulling in
+    legacy springfox would expand PR-00's blast radius without buying us
+    anything yet.
+
+    ## When the real baseline lands
+
+    The real `openapi-v1-baseline.yaml` will be auto-generated from the new
+    `backend-v2` module (PR-04) using `springdoc-openapi-starter-webmvc-ui:2.x`
+    on Spring Boot 2.7.18, then reviewed and locked. Until then this file
+    carries the metadata + structure so Spectral can lint what exists and
+    fail any breaking change against the placeholder schema.
+
+    ## How to keep it honest
+
+    * Any new endpoint added during the upgrade **must** appear here before merge.
+    * Any breaking change (path / method / request shape / response shape)
+      requires an explicit migration plan recorded in
+      `docs/architecture/breaking-changes.md` and approval from the upgrade lead.
+
+servers:
+  - url: http://localhost:9081
+    description: Local development (system-restapi)
+  - url: https://api.production-ci.example.invalid
+    description: Production CI placeholder (NEVER used at runtime)
+
+# No paths yet. Spectral rules below treat empty paths list as a violation
+# so the first PR after PR-04 must populate at least one operation.
+paths: {}
+
+components:
+  schemas: {}
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+    legacyHsAuth:
+      type: http
+      scheme: bearer
+      description: |
+        Legacy HS256 JWT carried over from the v1 OAuth2/JWT/Session stack.
+        Accepted during the dual-stack window only (see upgrade plan §阶段 4).
+      bearerFormat: JWT

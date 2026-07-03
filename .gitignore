@@ -14,6 +14,13 @@ backend-base/*.iml
 backend-base/*/target/
 backend-base/*/*.iml
 
+# Backend v2 (PR-04+) — modular monolith jump-board
+backend-v2/target/
+backend-v2/.idea/
+backend-v2/*.iml
+backend-v2/*/target/
+backend-v2/*/*.iml
+
 # Frontend (H5, uni-app)
 frontend/node_modules/
 frontend/dist/
@@ -64,3 +71,6 @@ frontend/.env.production
 # FastDFS local dev runtime data (logs, pids, binlog, uploaded files) — keep docker-compose.yml
 backend/dev/fastdfs/tracker_data/
 backend/dev/fastdfs/storage_data/
+backend-v2/app.jar
+scripts/dev-private.pem
+scripts/dev-private.key

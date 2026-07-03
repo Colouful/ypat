@@ -1,0 +1,39 @@
+# backend-v2 docker profile.
+#
+# Overrides for the docker-compose service. Picked up when
+# SPRING_PROFILES_ACTIVE=docker. Uses the Docker network's
+# hostname `mysql` and `redis` instead of 127.0.0.1 so the v2
+# container can talk to the existing ypat-workspace-mysql-1 /
+# ypat-workspace-redis-1.
+
+spring:
+  datasource:
+    url: jdbc:mysql://mysql:3306/ypat?characterEncoding=utf8&useSSL=false&serverTimezone=Asia/Shanghai
+    username: ypat_dev
+    password: ypat_dev_password_change_me
+  data:
+    redis:
+      host: redis
+      port: 6379
+      password: redis
+      timeout: 2s
+      connect-timeout: 2s
+
+# Auth (PR-14 follow-up): a fixed RSA public key for the dev
+# container. Production swaps in a JWKS URL. The matching private
+# key lives in scripts/dev-private.pem — used by
+# scripts/generate-test-token.py to mint Bearer tokens for
+# smoke tests.
+ypat:
+  auth:
+    rs256-public-key: |
+      -----BEGIN PUBLIC KEY-----
+      MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAwMy92OL/f37+j8QWdmhf
+      N7UbZc6DX+4uL3m/yvptwv8syNuEiHVvw8IOEMApGMMhY9Uei6B7DPUAEke8zijc
+      kT+lLZZ++W7vttFL2S3I/wrkx3g/fEEhQqv94rUdqUIlZwlLb6YDx5GSUomS+k3P
+      X1OS7SZG/3beKsUijeGIEzbL7HMgZcyB7lHWVKJBfzWEjdd2bYUS6BJfoElWfnfl
+      8LgtyIQ3yhrMaANyRi0OlPkLkm44mzOqqjdoLqgNtMdHjZCLo8BKXsmZlyMq0cDm
+      X5wglikI/OwTDD2w6bnPg/bfSOu0ax1oh+QGkkiJYXoD+pRrlM2BfTI/qlXeMfx0
+      GQIDAQAB
+      -----END PUBLIC KEY-----
+    redis-prefix: "bl:"
