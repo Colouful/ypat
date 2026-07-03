@@ -1,11 +1,12 @@
 # 预发环境部署指南
 
-> 文档日期：2026-06-29 · 基线 SHA：b4af32a · 负责人：devops
+> 文档日期：2026-07-03 · 基线 SHA：fdd03799 · 负责人：devops
 > 入口脚本：[`scripts/deploy/deploy-staging.sh`](../../scripts/deploy/deploy-staging.sh)
 > 前置检查：[`scripts/deploy/preflight.sh`](../../scripts/deploy/preflight.sh) · [`scripts/deploy/db-preflight.sh`](../../scripts/deploy/db-preflight.sh) · [`scripts/deploy/check-tls-expiry.sh`](../../scripts/deploy/check-tls-expiry.sh)
 > Nginx 配置：[`scripts/deploy/install-nginx-config.sh`](../../scripts/deploy/install-nginx-config.sh)
 > 数据库迁移：[`scripts/deploy/db-migrate-staging.sh`](../../scripts/deploy/db-migrate-staging.sh)
 > FastDFS 数据迁移：[`scripts/deploy/migrate-fastdfs-data.sh`](../../scripts/deploy/migrate-fastdfs-data.sh)
+> 事故复盘：[`../deploy/LESSONS.md`](../deploy/LESSONS.md) — 所有改动前先读过
 
 ## 1. 当前预发环境
 
@@ -78,10 +79,13 @@ cd /opt/ypat && git fetch && git checkout <commit-sha>
 1. 记录当前版本，写入 `releases/<timestamp>/deployment-info.txt`。
 2. `pnpm install --frozen-lockfile && pnpm run build:h5:staging`。
 3. 备份并复制新前端到 `releases/<timestamp>/frontend`。
-4. `mvn -Ppre clean package -DskipTests=false` 构建后端。
+4. **后端不再本地 mvn 预先打 jar**：`docker compose -f docker-compose.staging.yml build <service>` 在镜像内跑 maven（multi-stage Dockerfile 自包含）。
 5. 原子切换 `current` 符号链接；`previous` 指向上一个版本。
 6. `docker compose -f docker-compose.staging.yml config` 校验。
-7. `docker compose ... build && up -d`。
+7. **重建单服务只用 `--no-deps --force-recreate`**（参见 LESSONS.md #2）：
+   ```bash
+   docker compose -f docker-compose.staging.yml up -d --no-deps --force-recreate <service>
+   ```
 8. 输出 release 路径与 git SHA，便于回滚。
 
 ### 4.2 手工步骤（仅排障时使用）
@@ -92,9 +96,15 @@ cd frontend
 pnpm install --frozen-lockfile
 pnpm run build:h5:staging
 
-# 后端构建（pre profile）
-cd ../backend
-mvn clean package -Ppre -DskipTests=false
+# 后端构建 — multi-stage Docker（2026-07-03 起不再本地 mvn）
+docker compose -f docker-compose.staging.yml build wap
+docker compose -f docker-compose.staging.yml build restapi
+docker compose -f docker-compose.staging.yml build system-web
+
+# ⚠️ 千万不要跑:
+#   mvn clean package -Ppre
+#   这是历史做法，现在的 Dockerfile 不再 COPY target/*.jar，本地打的 jar 不会进镜像
+#   复盘见 docs/deploy/LESSONS.md #1
 
 # 部署前端
 mkdir -p /var/www/<staging-domain>
@@ -108,11 +118,40 @@ cp -r ../frontend/dist/build/h5/* /var/www/<staging-domain>/
 ./scripts/deploy/install-nginx-config.sh
 nginx -t && systemctl reload nginx
 
-# Docker
-docker compose -f docker-compose.staging.yml build
+# Docker — 单服务重建必须用 --no-deps
+docker compose -f docker-compose.staging.yml build wap restapi system-web
 docker compose -f docker-compose.staging.yml up -d
 docker compose -f backend/dev/fastdfs/docker-compose.staging.yml up -d
 ```
+
+### 4.3 单人部署速查（2026-07-03 后规定）
+
+```bash
+# 1. 拉最新代码（服务器就在 /opt/ypat）
+git pull --ff-only origin main
+
+# 2. 验证 wap 镜像里新代码真的进去了 (LESSONS #1 防御)
+docker buildx build --target=build \
+  --progress=plain \
+  -f backend/system-wap/Dockerfile backend 2>&1 | tail -20
+
+# 3. 重建并启动（整个 stack — 首次冷启动 OK）
+docker compose -f docker-compose.staging.yml build
+docker compose -f docker-compose.staging.yml up -d
+
+# 4. 等健康检查通过（约 60 秒）
+docker compose -f docker-compose.staging.yml ps
+
+# 5. 切到运行中镜像（永远 atomic 执行,见 LESSONS #3）
+SVC=wap
+docker tag $(docker compose -f docker-compose.staging.yml images -q $SVC) ypat-$SVC:stable
+```
+
+> **绝不执行的命令**（每一行都是 LESSONS 里的真实坑）：
+>
+> - ❌ `docker compose up -d --force-recreate <svc>` （会把 mysql/redis/eureka 全 recreate 掉，详见 LESSONS #2）
+> - ❌ `mvn clean package -Ppre`（本地打 jar 但镜像不会用，旧坑详见 LESSONS #1）
+> - ❌ `docker exec -it ... mysql ... < dev-seed.sql`（2026-07-03 起 seed 顶部已带 SET NAMES utf8mb4，但如果镜像里的 mysql 命令行客户端默认 latin1，老 issue 仍会重现，详见 LESSONS #4）
 
 ## 5. 部署后验证
 
@@ -162,6 +201,7 @@ openssl s_client -connect <staging-domain>:443 -servername <staging-domain> < /d
 
 ## 9. 相关文档
 
+- 事故复盘 / Lessons Learned：[`../deploy/LESSONS.md`](../deploy/LESSONS.md) — **必读**
 - 预发回滚：[`STAGING_ROLLBACK.md`](STAGING_ROLLBACK.md)
 - 生产部署：[`PRODUCTION_DEPLOYMENT.md`](PRODUCTION_DEPLOYMENT.md)
 - 环境隔离：[`ENVIRONMENT_ISOLATION.md`](ENVIRONMENT_ISOLATION.md)

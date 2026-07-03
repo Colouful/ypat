@@ -1,8 +1,9 @@
 # 预发环境回滚指南
 
-> 文档日期：2026-06-29 · 基线 SHA：b4af32a · 负责人：devops
+> 文档日期：2026-07-03 · 基线 SHA：fdd03799 · 负责人：devops
 > 入口脚本：[`scripts/deploy/rollback-staging.sh`](../../scripts/deploy/rollback-staging.sh)
 > 部署入口：[`scripts/deploy/deploy-staging.sh`](../../scripts/deploy/deploy-staging.sh) · 详见 [`STAGING_DEPLOYMENT.md`](STAGING_DEPLOYMENT.md)
+> 事故复盘：[`../deploy/LESSONS.md`](../deploy/LESSONS.md)
 
 ## 1. 范围声明（必读）
 
@@ -165,6 +166,7 @@ nginx -t && systemctl status nginx
 
 ## 9. 相关文档
 
+- 事故复盘：[`../deploy/LESSONS.md`](../deploy/LESSONS.md) — **必读**
 - 预发部署：[`STAGING_DEPLOYMENT.md`](STAGING_DEPLOYMENT.md)
 - 数据库迁移：[`DATABASE_MIGRATION.md`](DATABASE_MIGRATION.md)
 - 备份恢复：[`BACKUP_AND_RECOVERY.md`](BACKUP_AND_RECOVERY.md)
