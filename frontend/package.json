@@ -15,7 +15,7 @@
     "build:h5:staging": "uni build --mode staging",
     "build:h5:production": "uni build --mode production",
     "build:mp-weixin": "uni build -p mp-weixin --mode development",
-    "build:mp-weixin:staging": "uni build -p mp-weixin --mode staging",
+    "build:mp-weixin:staging": "UNI_OUTPUT_DIR=dist/build/mp-weixin-staging uni build -p mp-weixin --mode staging",
     "build:mp-weixin:production": "uni build -p mp-weixin --mode production",
     "build:mp-baidu": "uni build -p mp-baidu",
     "build:app": "uni build -p app",
