@@ -1,10 +1,7 @@
 package com.ypat.work.infrastructure;
 
 import com.ypat.work.infrastructure.persistence.StubWorkReadRepository;
-import com.ypat.work.infrastructure.persistence.StubWorkReadRepository.MediaRow;
-import com.ypat.work.infrastructure.persistence.StubWorkReadRepository.Page;
 import com.ypat.work.infrastructure.persistence.StubWorkReadRepository.WorkRow;
-import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Repository;
 
 import java.util.Collections;
@@ -15,14 +12,15 @@ import java.util.Optional;
 /**
  * PR-11: in-memory implementation of {@link StubWorkReadRepository}.
  *
- * Used only when {@code ypat.work.stub=true} (test / staging-only
- * profile). The real JPA / native-query implementation lands with
- * PR-15 once the v2 User entity is in place.
+ * Default profile — present everywhere until the JPA-backed
+ * implementation lands with PR-15. PR-15 will mark this with
+ * {@code @Profile("stub | test")} so the production boot picks
+ * the JPA version automatically.
  *
  * Why ship a stub at all:
- *   - Lets the controller (also part of PR-11) compile and run
- *     against something during the cut-over smoke test, before
- *     the JPA implementation is ready.
+ *   - Lets the controller compile and run against something
+ *     during the cut-over smoke test, before the JPA
+ *     implementation is ready.
  *   - Lets the UseCases have unit tests without a Testcontainers
  *     MySQL. {@code StubWorkReadRepository} is the mock target;
  *     the stub provides a real (if empty) implementation when
@@ -34,7 +32,6 @@ import java.util.Optional;
  * shape).
  */
 @Repository
-@Profile("stub | test")
 public class InMemoryWorkReadRepository implements StubWorkReadRepository {
 
     @Override

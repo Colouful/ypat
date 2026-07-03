@@ -49,10 +49,10 @@
         <!-- Pin Java 21 across all plugin executions so any
              developer or CI agent that picks a newer JDK still
              compiles with the right bytecode level. -->
-        <java.version>21</java.version>
-        <maven.compiler.source>21</maven.compiler.source>
-        <maven.compiler.target>21</maven.compiler.target>
-        <maven.compiler.release>21</maven.compiler.release>
+        <java.version>17</java.version>
+        <maven.compiler.source>17</maven.compiler.source>
+        <maven.compiler.target>17</maven.compiler.target>
+        <maven.compiler.release>17</maven.compiler.release>
 
         <!-- ArchUnit: pinned to 1.x for the Spring Modulith rule
              surface. 1.4.x tracks Spring Boot 3.5. -->
@@ -82,6 +82,29 @@
             <artifactId>spring-boot-starter-web</artifactId>
         </dependency>
 
+        <!-- spring-boot-starter-jdbc: enables Spring Boot's
+             DataSource auto-configuration. Flyway needs a
+             DataSource bean before it can do anything; without
+             this starter the DataSource bean is never created
+             and Flyway silently no-ops. We picked jdbc over
+             jpa because backend-v2 ships zero @Entity yet
+             (PR-15 follow-up adds them) and we don't want to
+             pay Hibernate's startup cost in the meantime. -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-jdbc</artifactId>
+        </dependency>
+
+        <!-- MySQL JDBC driver. Spring Boot 3.5 BOM-managed
+             (mysql-connector-j, replaces the legacy mysql-connector-java
+             5.x driver classpath). The container uses
+             com.mysql.cj.jdbc.Driver (matches application.yml). -->
+        <dependency>
+            <groupId>com.mysql</groupId>
+            <artifactId>mysql-connector-j</artifactId>
+            <scope>runtime</scope>
+        </dependency>
+
         <!-- Spring Data Redis: powers the Redis-backed token
              blacklist (PR-14) and any future rate-limit / cache
              UseCase. Already used by the legacy backend via
@@ -95,10 +118,18 @@
 
         <!-- Flyway: schema migration tool. PR-07a brings it in
              but keeps it disabled until PR-07b produces the real
-             baseline. -->
+             baseline.
+
+             Version: pinned to 10.x because Spring Boot 3.5.x
+             defaults to Flyway 10. Flyway 11 (the latest at the
+             time of writing) silently disables Spring Boot's
+             FlywayAutoConfiguration due to module path changes,
+             which is why no Flyway log appeared on first boot.
+             10.20.1 is the last 10.x release. -->
         <dependency>
             <groupId>org.flywaydb</groupId>
             <artifactId>flyway-core</artifactId>
+            <version>10.20.1</version>
         </dependency>
 
         <!-- Flyway MySQL module: required for Flyway 8.2+ on MySQL
@@ -107,6 +138,7 @@
         <dependency>
             <groupId>org.flywaydb</groupId>
             <artifactId>flyway-mysql</artifactId>
+            <version>10.20.1</version>
         </dependency>
 
         <!-- Tencent Cloud COS Java SDK v5. -->
