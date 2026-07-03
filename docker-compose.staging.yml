@@ -133,6 +133,16 @@ services:
       EUREKA_INSTANCE_PREFER_IP_ADDRESS: "true"
       YPAT_FDFS_PUBLIC_BASE_URL: "${YPAT_FDFS_PUBLIC_BASE_URL:-https://panghu.work/files}"
       YPAT_LOG_DIR: /logs
+      # 2026-07-03: EnvironmentConfigurationValidator 在 staging profile 强制要求
+      YPAT_MYSQL_URL: "jdbc:mysql://mysql:3306/ypat?characterEncoding=utf8&useSSL=false"
+      YPAT_MYSQL_USERNAME: "root"
+      YPAT_MYSQL_PASSWORD: "${YPAT_LOCAL_MYSQL_ROOT_PASSWORD}"
+      YPAT_REDIS_HOST: redis
+      YPAT_REDIS_PASSWORD: "${YPAT_LOCAL_REDIS_PASSWORD}"
+      YPAT_EUREKA_DEFAULT_ZONE: "http://eureka:8761/eureka/"
+      YPAT_SSO_JWT_SIGNING_KEY: "${YPAT_SSO_JWT_SIGNING_KEY:-yPat-sso-dev-signing-key-please-rotate-in-prod-32bytes}"
+      YPAT_LOCAL_MYSQL_ROOT_PASSWORD: "${YPAT_LOCAL_MYSQL_ROOT_PASSWORD}"
+      YPAT_LOCAL_REDIS_PASSWORD: "${YPAT_LOCAL_REDIS_PASSWORD}"
     depends_on:
       mysql:
         condition: service_healthy
@@ -174,6 +184,16 @@ services:
       EUREKA_INSTANCE_PREFER_IP_ADDRESS: "true"
       YPAT_FDFS_PUBLIC_BASE_URL: "${YPAT_FDFS_PUBLIC_BASE_URL:-https://panghu.work/files}"
       YPAT_LOG_DIR: /logs
+      # 2026-07-03: EnvironmentConfigurationValidator 在 staging profile 强制要求
+      # 这些变量从 .env 注入,缺一启动就 abort
+      YPAT_MYSQL_URL: "jdbc:mysql://mysql:3306/ypat?characterEncoding=utf8&useSSL=false"
+      YPAT_MYSQL_USERNAME: "root"
+      YPAT_MYSQL_PASSWORD: "${YPAT_LOCAL_MYSQL_ROOT_PASSWORD}"
+      YPAT_REDIS_PASSWORD: "${YPAT_LOCAL_REDIS_PASSWORD}"
+      YPAT_EUREKA_DEFAULT_ZONE: "http://eureka:8761/eureka/"
+      YPAT_SSO_JWT_SIGNING_KEY: "${YPAT_SSO_JWT_SIGNING_KEY:-yPat-sso-dev-signing-key-please-rotate-in-prod-32bytes}"
+      YPAT_LOCAL_MYSQL_ROOT_PASSWORD: "${YPAT_LOCAL_MYSQL_ROOT_PASSWORD}"
+      YPAT_LOCAL_REDIS_PASSWORD: "${YPAT_LOCAL_REDIS_PASSWORD}"
     depends_on:
       redis:
         condition: service_healthy
@@ -217,6 +237,16 @@ services:
       EUREKA_INSTANCE_PREFER_IP_ADDRESS: "true"
       YPAT_FDFS_PUBLIC_BASE_URL: "${YPAT_FDFS_PUBLIC_BASE_URL:-https://panghu.work/files}"
       YPAT_LOG_DIR: /logs
+      # 2026-07-03: EnvironmentConfigurationValidator 在 staging profile 强制要求
+      YPAT_MYSQL_URL: "jdbc:mysql://mysql:3306/ypat?characterEncoding=utf8&useSSL=false"
+      YPAT_MYSQL_USERNAME: "root"
+      YPAT_MYSQL_PASSWORD: "${YPAT_LOCAL_MYSQL_ROOT_PASSWORD}"
+      YPAT_REDIS_HOST: redis
+      YPAT_REDIS_PASSWORD: "${YPAT_LOCAL_REDIS_PASSWORD}"
+      YPAT_EUREKA_DEFAULT_ZONE: "http://eureka:8761/eureka/"
+      YPAT_SSO_JWT_SIGNING_KEY: "${YPAT_SSO_JWT_SIGNING_KEY:-yPat-sso-dev-signing-key-please-rotate-in-prod-32bytes}"
+      YPAT_LOCAL_MYSQL_ROOT_PASSWORD: "${YPAT_LOCAL_MYSQL_ROOT_PASSWORD}"
+      YPAT_LOCAL_REDIS_PASSWORD: "${YPAT_LOCAL_REDIS_PASSWORD}"
     depends_on:
       redis:
         condition: service_healthy
