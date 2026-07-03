@@ -71,3 +71,6 @@ frontend/.env.production
 # FastDFS local dev runtime data (logs, pids, binlog, uploaded files) — keep docker-compose.yml
 backend/dev/fastdfs/tracker_data/
 backend/dev/fastdfs/storage_data/
+backend-v2/app.jar
+scripts/dev-private.pem
+scripts/dev-private.key

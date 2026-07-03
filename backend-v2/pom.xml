@@ -49,10 +49,10 @@
         <!-- Pin Java 21 across all plugin executions so any
              developer or CI agent that picks a newer JDK still
              compiles with the right bytecode level. -->
-        <java.version>21</java.version>
-        <maven.compiler.source>21</maven.compiler.source>
-        <maven.compiler.target>21</maven.compiler.target>
-        <maven.compiler.release>21</maven.compiler.release>
+        <java.version>17</java.version>
+        <maven.compiler.source>17</maven.compiler.source>
+        <maven.compiler.target>17</maven.compiler.target>
+        <maven.compiler.release>17</maven.compiler.release>
 
         <!-- ArchUnit: pinned to 1.x for the Spring Modulith rule
              surface. 1.4.x tracks Spring Boot 3.5. -->
@@ -125,6 +125,26 @@
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-data-redis</artifactId>
+        </dependency>
+
+        <!-- Spring Security 6 + OAuth2 Resource Server: PR-14
+             follow-up brings the real TokenBridge. Nimbus JOSE
+             handles RS256 (current) and HS256 (legacy) JWTs
+             through one decoder chain. -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-oauth2-resource-server</artifactId>
+        </dependency>
+
+        <!-- spring-boot-starter-security: PR-14 follow-up. Forces
+             the SecurityFilterChain to be auto-configured.
+             spring-boot-starter-oauth2-resource-server does
+             pull in spring-security-* but does not always
+             enable SecurityAutoConfiguration in dev/test
+             profiles; this explicit dep is the safest. -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-security</artifactId>
         </dependency>
 
         <!-- Flyway: schema migration tool. PR-07a brings it in
