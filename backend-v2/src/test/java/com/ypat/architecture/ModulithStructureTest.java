@@ -70,9 +70,14 @@ class ModulithStructureTest {
     void generatesComponentDiagram() throws IOException {
         // Spring Modulith 1.4 Documenter.writeDocumentation() takes
         // no args and writes to target/spring-modulith-docs/ by
-        // default. Operators pick it up from CI artifacts.
+        // default. Output is .adoc (AsciiDoc) + .puml (PlantUML)
+        // — the .html form needs an asciidoctor step we don't run
+        // in CI. Operators pick the artifacts up from the CI run
+        // and convert locally with `asciidoctor all-docs.adoc`.
         ApplicationModules modules = ApplicationModules.of("com.ypat");
         new Documenter(modules).writeDocumentation();
-        assertThat(Path.of("target/spring-modulith-docs/components.html")).exists();
+        Path out = Path.of("target/spring-modulith-docs");
+        assertThat(out.resolve("all-docs.adoc")).exists();
+        assertThat(out.resolve("components.puml")).exists();
     }
 }
