@@ -1,12 +1,24 @@
 # FastDFS — development environment
 #
 # 本地开发使用，端口绑 127.0.0.1
+#
+# ⚠️ 2026-07-04 重要 image 兼容说明：
+# fastdfs-client-java 当前固定 1.27（cn.bestwu），协议仅兼容 FastDFS server v5.x
+# ygqygq2/fastdfs-nginx 镜像在 2026-01 升级到 v6.15.3，但 1.27 client 不知协议扩展，
+# 上传会被服务端 active_test 强制关闭连接，前端看到 errno=28 / recv -1。
+# 临时回退到 delron/fastdfs:latest (v5) 让 client 1.27 直接 work，
+# 最终方案应该是升级 cn.bestwu:fastdfs-client-java 到 ≥1.29（v6 兼容版本）。
+#
+# 已验证：delron/fastdfs（v5.11）+ fastdfs-client-java 1.27 在
+# /admin/upload 与 /admin/ypat/upload 两条路径下正常返回文件 URL。
 
 name: ypat-development
 
 services:
   fastdfs-tracker:
-    image: ygqygq2/fastdfs-nginx@sha256:076ee9c1ab73f16d81b28f6f8e0405e67446994f9541020115d5e2f546cbde48
+    # ygqygq2/fastdfs-nginx@sha256:076ee9c1ab73f16d81b28f6f8e0405e67446994f9541020115d5e2f546cbde48
+    # ⚠️ 该镜像 v6.15.3 与 cn.bestwu:fastdfs-client-java:1.27 (v5 协议) 不兼容
+    image: delron/fastdfs:latest
     container_name: ypat-fastdfs-tracker
     hostname: fastdfs-tracker
     command: ["tracker"]
@@ -17,7 +29,8 @@ services:
     restart: unless-stopped
 
   fastdfs-storage:
-    image: ygqygq2/fastdfs-nginx@sha256:076ee9c1ab73f16d81b28f6f8e0405e67446994f9541020115d5e2f546cbde48
+    # 同上：临时切到 v5 兼容 client，最终方案见注释
+    image: delron/fastdfs:latest
     container_name: ypat-fastdfs-storage
     hostname: fastdfs-storage
     depends_on:
