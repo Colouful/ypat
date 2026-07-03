@@ -263,36 +263,37 @@ public class AdminYpatController {
         } catch (RuntimeException e) {
             throw new SysException(ResponseCode.FAIL_SER, "服务响应格式错误");
         }
-        if (element != null && element.isJsonObject()) {
-            JsonObject object = element.getAsJsonObject();
-            if (object.has("code")) {
-                JsonElement codeElement = object.get("code");
-                if (codeElement == null
-                        || codeElement.isJsonNull()
-                        || !codeElement.isJsonPrimitive()
-                        || !codeElement.getAsJsonPrimitive().isNumber()) {
-                    throw new SysException(ResponseCode.FAIL_SER, "服务响应格式错误");
-                }
-                int code = codeElement.getAsInt();
-                if (code != ResponseCode.SUCCESS.getCode()) {
-                    JsonElement msgElement = object.get("msg");
-                    String msg = msgElement != null
-                            && !msgElement.isJsonNull()
-                            && msgElement.isJsonPrimitive()
-                            && msgElement.getAsJsonPrimitive().isString()
-                            ? msgElement.getAsString()
-                            : ResponseCode.FAIL_SER.getMsg();
-                    throw new SysException(code, msg);
-                }
-                if (!object.has("res")) {
-                    throw new SysException(ResponseCode.FAIL_SER, "服务响应格式错误");
-                }
-            }
-            if (object.has("res")) {
-                return object.get("res");
-            }
+        if (element == null || !element.isJsonObject()) {
+            throw new SysException(ResponseCode.FAIL_SER, "服务响应格式错误");
         }
-        return element;
+
+        JsonObject object = element.getAsJsonObject();
+        if (object.has("code")) {
+            JsonElement codeElement = object.get("code");
+            if (codeElement == null
+                    || codeElement.isJsonNull()
+                    || !codeElement.isJsonPrimitive()
+                    || !codeElement.getAsJsonPrimitive().isNumber()) {
+                throw new SysException(ResponseCode.FAIL_SER, "服务响应格式错误");
+            }
+            int code = codeElement.getAsInt();
+            if (code != ResponseCode.SUCCESS.getCode()) {
+                JsonElement msgElement = object.get("msg");
+                String msg = msgElement != null
+                        && !msgElement.isJsonNull()
+                        && msgElement.isJsonPrimitive()
+                        && msgElement.getAsJsonPrimitive().isString()
+                        ? msgElement.getAsString()
+                        : ResponseCode.FAIL_SER.getMsg();
+                throw new SysException(code, msg);
+            }
+            JsonElement resElement = object.get("res");
+            if (resElement == null || resElement.isJsonNull()) {
+                throw new SysException(ResponseCode.FAIL_SER, "服务响应格式错误");
+            }
+            return resElement;
+        }
+        return object;
     }
 
     private void pushAuditMessage(Long id, String flag, String reason) {

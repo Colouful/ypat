@@ -77,17 +77,36 @@ public class AdminYpatControllerSourceTest {
         assertTrue(data.isJsonObject());
         assertTrue(data.getAsJsonObject().get("ok").getAsBoolean());
 
+        JsonElement rawPage = invokeParseResponseRes(controller, "{\"content\":[],\"totalElements\":0}");
+        assertTrue(rawPage.isJsonObject());
+        assertTrue(rawPage.getAsJsonObject().has("content"));
+
         assertParseResponseFail(controller, "{\"code\":500,\"msg\":{}}", ResponseCode.FAIL_SER.getMsg());
         assertParseResponseFail(controller, "{\"code\":500,\"msg\":[]}", ResponseCode.FAIL_SER.getMsg());
         assertParseResponseFail(controller, "{\"code\":500,\"msg\":null}", ResponseCode.FAIL_SER.getMsg());
         assertParseResponseFail(controller, "{\"code\":500,\"msg\":123}", ResponseCode.FAIL_SER.getMsg());
         assertParseResponseFail(controller, "{\"code\":500,\"msg\":true}", ResponseCode.FAIL_SER.getMsg());
+        assertParseResponseFail(controller, "{\"code\":1002,\"msg\":\"参数错误\"}", 1002, "参数错误");
         assertParseResponseFail(controller, "{\"code\":null,\"msg\":\"bad\"}", "服务响应格式错误");
         assertParseResponseFail(controller, "{\"code\":\"x\",\"msg\":\"bad\"}", "服务响应格式错误");
         assertParseResponseFail(controller, "{\"code\":200}", "服务响应格式错误");
         assertParseResponseFail(controller, "{\"code\":200,\"msg\":\"ok\"}", "服务响应格式错误");
+        assertParseResponseFail(controller, "{\"code\":200,\"res\":null}", "服务响应格式错误");
+        assertParseResponseFail(controller, "[]", "服务响应格式错误");
+        assertParseResponseFail(controller, "123", "服务响应格式错误");
+        assertParseResponseFail(controller, "null", "服务响应格式错误");
         assertParseResponseFail(controller, "{not-json", "服务响应格式错误");
         assertParseResponseFail(controller, "", "服务响应格式错误");
+    }
+
+    @Test
+    public void normalizeSizeUsesDefaultsAndCapsLargeRequests() throws Exception {
+        AdminYpatController controller = new AdminYpatController();
+
+        assertEquals(10, invokeNormalizeSize(controller, null));
+        assertEquals(10, invokeNormalizeSize(controller, 0));
+        assertEquals(10, invokeNormalizeSize(controller, 10));
+        assertEquals(50, invokeNormalizeSize(controller, 999));
     }
 
     private String readSource(String modulePath, String repoPath, String message) throws IOException {
@@ -105,14 +124,24 @@ public class AdminYpatControllerSourceTest {
         return (JsonElement) method.invoke(controller, json);
     }
 
+    private int invokeNormalizeSize(AdminYpatController controller, Integer size) throws Exception {
+        Method method = AdminYpatController.class.getDeclaredMethod("normalizeSize", Integer.class);
+        method.setAccessible(true);
+        return (Integer) method.invoke(controller, new Object[]{size});
+    }
+
     private void assertParseResponseFail(AdminYpatController controller, String json, String expectedMessage) throws Exception {
+        assertParseResponseFail(controller, json, ResponseCode.FAIL_SER.getCode(), expectedMessage);
+    }
+
+    private void assertParseResponseFail(AdminYpatController controller, String json, int expectedCode, String expectedMessage) throws Exception {
         try {
             invokeParseResponseRes(controller, json);
         } catch (InvocationTargetException e) {
             Throwable cause = e.getCause();
             assertTrue(cause instanceof SysException);
             SysException sysException = (SysException) cause;
-            assertEquals(ResponseCode.FAIL_SER.getCode(), sysException.getCode());
+            assertEquals(expectedCode, sysException.getCode());
             assertEquals(expectedMessage, sysException.getMsg());
             return;
         }
