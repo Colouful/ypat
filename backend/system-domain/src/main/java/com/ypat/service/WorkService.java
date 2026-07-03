@@ -498,13 +498,19 @@ public class WorkService {
         if (!WorkStatus.shtg.value.equals(flag) && !WorkStatus.shbtg.value.equals(flag)) {
             throw new SysException(ResponseCode.FAIL_PARA);
         }
-        ensureAdminWorkExists(workId);
+        Work work = ensureAdminWorkExists(workId);
+        if (!WorkStatus.ytj.value.equals(work.getStatus())) {
+            throw new SysException(ResponseCode.FAIL_PARA, "仅待审核作品可审核");
+        }
         workRepository.updateStatusAndAuditReason(workId, flag, reason);
     }
 
     public void adminOffline(Long workId, String reason) {
         if (workId == null) throw new SysException(ResponseCode.FAIL_PARA);
-        ensureAdminWorkExists(workId);
+        Work work = ensureAdminWorkExists(workId);
+        if (!WorkStatus.shtg.value.equals(work.getStatus())) {
+            throw new SysException(ResponseCode.FAIL_PARA, "仅审核通过作品可下架");
+        }
         workRepository.updateStatusAndAuditReason(workId, WorkStatus.xj.value, reason);
     }
 

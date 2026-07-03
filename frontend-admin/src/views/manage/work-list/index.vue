@@ -17,6 +17,7 @@ const queryParams = reactive<WorkListQuery>({
   mobile: '',
   city: '',
   mediaType: '',
+  tagIds: '',
   page: 0,
   size: 10,
 })
@@ -72,6 +73,10 @@ function getCity(row: WorkAdminInfo): string {
   return getDisplayText(row.city, getRecordString(row.user, 'city'))
 }
 
+function getTags(row: WorkAdminInfo): string[] {
+  return Array.isArray(row.tags) ? row.tags.filter(Boolean) : []
+}
+
 async function fetchList(): Promise<void> {
   const requestSeq = ++listRequestSeq
   loading.value = true
@@ -99,6 +104,7 @@ function handleReset(): void {
   queryParams.mobile = ''
   queryParams.city = ''
   queryParams.mediaType = ''
+  queryParams.tagIds = ''
   queryParams.page = 0
   fetchList()
 }
@@ -192,6 +198,9 @@ onMounted(() => {
             />
           </el-select>
         </el-form-item>
+        <el-form-item label="标签ID">
+          <el-input v-model="queryParams.tagIds" placeholder="多个ID用英文逗号分隔" clearable />
+        </el-form-item>
         <el-form-item>
           <el-button type="primary" @click="handleSearch">查询</el-button>
           <el-button @click="handleReset">重置</el-button>
@@ -241,6 +250,27 @@ onMounted(() => {
           {{ getMediaTypeLabel((row as WorkAdminInfo).mediaType) }}
         </template>
       </el-table-column>
+      <el-table-column label="标签" min-width="160" show-overflow-tooltip>
+        <template #default="{ row }">
+          <template v-if="getTags(row as WorkAdminInfo).length">
+            <el-tag
+              v-for="tag in getTags(row as WorkAdminInfo)"
+              :key="tag"
+              size="small"
+              class="tag-item"
+            >
+              {{ tag }}
+            </el-tag>
+          </template>
+          <span v-else>-</span>
+        </template>
+      </el-table-column>
+      <el-table-column label="互动" width="130" align="center">
+        <template #default="{ row }">
+          {{ (row as WorkAdminInfo).readCount ?? 0 }} / {{ (row as WorkAdminInfo).likeCount ?? 0 }} /
+          {{ (row as WorkAdminInfo).favoriteCount ?? 0 }}
+        </template>
+      </el-table-column>
       <el-table-column label="状态" width="120" align="center">
         <template #default="{ row }">
           <el-tag :type="getWorkStatusInfo((row as WorkAdminInfo).status).type" size="small">
@@ -254,7 +284,13 @@ onMounted(() => {
           <el-button type="primary" link size="small" @click="openDetail(row as WorkAdminInfo)">
             详情
           </el-button>
-          <el-button type="success" link size="small" @click="openAudit(row as WorkAdminInfo)">
+          <el-button
+            v-if="(row as WorkAdminInfo).status === WorkStatus.PENDING.value"
+            type="success"
+            link
+            size="small"
+            @click="openAudit(row as WorkAdminInfo)"
+          >
             审核
           </el-button>
           <el-button
@@ -303,5 +339,9 @@ onMounted(() => {
   display: flex;
   justify-content: flex-end;
   margin-top: $spacing-lg;
+}
+
+.tag-item + .tag-item {
+  margin-left: $spacing-xs;
 }
 </style>

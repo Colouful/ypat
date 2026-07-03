@@ -17,6 +17,9 @@ export interface WorkAdminInfo {
   readCount?: number
   likeCount?: number
   favoriteCount?: number
+  device?: string
+  shootLocation?: string
+  returnPhotoFlag?: string | number
   publishTime?: string
   userId?: number
   nickname?: string

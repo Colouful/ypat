@@ -46,6 +46,16 @@ function getMediaTypeLabel(value?: string): string {
   return value || '-'
 }
 
+function getReturnPhotoLabel(value?: string | number): string {
+  if (String(value) === '1') return '是'
+  if (String(value) === '0') return '否'
+  return '-'
+}
+
+const tagList = computed(() =>
+  Array.isArray(detail.value?.tags) ? detail.value.tags.filter(Boolean) : [],
+)
+
 const authorName = computed(() =>
   getTextValue(detail.value?.nickname, getRecordString(detail.value?.user, 'nickname')),
 )
@@ -128,6 +138,15 @@ watch(
             <el-descriptions-item label="城市">{{ authorCity }}</el-descriptions-item>
             <el-descriptions-item label="职业">{{ authorProfession }}</el-descriptions-item>
             <el-descriptions-item label="性别">{{ authorGender }}</el-descriptions-item>
+            <el-descriptions-item label="设备">
+              {{ detail.device || '-' }}
+            </el-descriptions-item>
+            <el-descriptions-item label="拍摄地点">
+              {{ detail.shootLocation || '-' }}
+            </el-descriptions-item>
+            <el-descriptions-item label="约拍返片">
+              {{ getReturnPhotoLabel(detail.returnPhotoFlag) }}
+            </el-descriptions-item>
             <el-descriptions-item label="媒体类型">
               {{ getMediaTypeLabel(detail.mediaType) }}
             </el-descriptions-item>
@@ -148,6 +167,16 @@ watch(
         <div class="section">
           <div class="section-title">作品描述</div>
           <div class="description-box">{{ detail.description || '-' }}</div>
+        </div>
+
+        <div class="section">
+          <div class="section-title">作品标签</div>
+          <div v-if="tagList.length" class="tag-list">
+            <el-tag v-for="tag in tagList" :key="tag" size="small">
+              {{ tag }}
+            </el-tag>
+          </div>
+          <el-empty v-else description="暂无标签" :image-size="72" />
         </div>
 
         <div class="section">
@@ -227,6 +256,12 @@ watch(
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
   gap: $spacing-base;
+}
+
+.tag-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: $spacing-sm;
 }
 
 .media-card {

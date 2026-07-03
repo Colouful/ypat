@@ -72,7 +72,6 @@ export interface YpatSubmitForm {
   nickname: string
   gender: string
   profess: string
-  pics: string[]
 }
 
 /**
@@ -104,8 +103,37 @@ export function recomYpat(id: number, recomflag: string): Promise<ApiResult<unkn
 }
 
 /**
- * 发布作品
+ * 后台代发约拍
  */
-export function submitYpat(data: YpatSubmitForm): Promise<ApiResult<unknown>> {
-  return post('/admin/ypat/submit', data)
+export function submitYpat(
+  data: YpatSubmitForm,
+  avatarFile: File | undefined,
+  files: File[],
+): Promise<ApiResult<unknown>> {
+  const formData = new FormData()
+  appendFormValue(formData, 'describ', data.describ)
+  appendFormValue(formData, 'target', data.target)
+  appendFormValue(formData, 'patdate', data.patdate)
+  appendFormValue(formData, 'chargeway', data.chargeway)
+  appendFormValue(formData, 'chargeamt', data.chargeamt)
+  appendFormValue(formData, 'province', data.province)
+  appendFormValue(formData, 'city', data.city)
+  appendFormValue(formData, 'area', data.area)
+  appendFormValue(formData, 'patstyle', data.patstyle)
+  appendFormValue(formData, 'nickname', data.nickname)
+  appendFormValue(formData, 'gender', data.gender)
+  appendFormValue(formData, 'profess', data.profess)
+  if (avatarFile) {
+    formData.append('file', avatarFile)
+  }
+  files.forEach((file) => formData.append('files', file))
+  return post('/admin/ypat/submit', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  })
+}
+
+function appendFormValue(formData: FormData, key: string, value: string | number | undefined): void {
+  if (value !== undefined && value !== '') {
+    formData.append(key, String(value))
+  }
 }

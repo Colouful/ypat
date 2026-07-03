@@ -54,9 +54,13 @@ public class WorkServiceAdminSourceTest {
     public void adminStatusChangesValidateWorkExistsBeforeUpdating() throws Exception {
         String source = read("src/main/java/com/ypat/service/WorkService.java");
 
-        assertTrue(source.contains("ensureAdminWorkExists(workId);"));
+        assertTrue(source.contains("Work work = ensureAdminWorkExists(workId);"));
         assertTrue(source.contains("private Work ensureAdminWorkExists(Long workId)"));
         assertTrue(source.contains("ResponseCode.FAIL_WORK_NOT_FOUND"));
+        assertTrue(source.contains("!WorkStatus.ytj.value.equals(work.getStatus())"));
+        assertTrue(source.contains("仅待审核作品可审核"));
+        assertTrue(source.contains("!WorkStatus.shtg.value.equals(work.getStatus())"));
+        assertTrue(source.contains("仅审核通过作品可下架"));
     }
 
     @Test
