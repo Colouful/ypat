@@ -23,6 +23,28 @@ const FORBIDDEN_PRODUCTION_HOSTS = [
 const DEFAULT_DEVELOPMENT_API_BASE_URL = 'http://localhost:8080/api'
 const DEFAULT_DEVELOPMENT_IMAGE_BASE_URL = 'http://localhost:8080/files'
 
+/**
+ * 解析 https URL 的 host 与 port。
+ * 不使用 WHATWG `new URL()`：微信小程序运行时没有全局 URL 构造函数，
+ * 直接 new URL() 会抛错。此处用字符串解析，H5 与小程序均可用。
+ */
+function parseHttpsHostPort(value: string): { hostname: string; port: string } | null {
+  const match = /^https:\/\/([^/?#]+)/.exec(value)
+  if (!match) {
+    return null
+  }
+  let authority = match[1]
+  const atIndex = authority.lastIndexOf('@')
+  if (atIndex !== -1) {
+    authority = authority.slice(atIndex + 1)
+  }
+  const colonIndex = authority.lastIndexOf(':')
+  if (colonIndex !== -1) {
+    return { hostname: authority.slice(0, colonIndex), port: authority.slice(colonIndex + 1) }
+  }
+  return { hostname: authority, port: '' }
+}
+
 function assertSecureRemoteUrl(
   env: 'staging' | 'production',
   name: string,
@@ -31,17 +53,15 @@ function assertSecureRemoteUrl(
   if (!value.startsWith('https://')) {
     throw new Error(`${name} must use HTTPS in ${env} environment, got: ${value}`)
   }
-  let hostname: string
-  try {
-    hostname = new URL(value).hostname
-  } catch {
+  const parsed = parseHttpsHostPort(value)
+  if (!parsed) {
     throw new Error(`${name} is not a valid URL: ${value}`)
   }
+  const { hostname, port } = parsed
   if (hostname === 'localhost' || /^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$/.test(hostname)) {
     throw new Error(`${name} cannot use localhost or IP address in ${env} environment, got: ${hostname}`)
   }
   // 禁止显式非标准端口
-  const port = new URL(value).port
   if (port && port !== '443') {
     throw new Error(`${name} cannot use non-standard port in ${env} environment, got: ${port}`)
   }
