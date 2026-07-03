@@ -48,6 +48,7 @@ describe('后台发布枚举', () => {
 
   it('作品状态筛选不应包含暂存', () => {
     expect(getWorkStatusOptions().map((o) => o.value)).toEqual(['1', '2', '3', '4'])
+    expect(getWorkStatusOptions().map((o) => o.label)).toEqual(['待审核', '审核通过', '审核未通过', '已下架'])
     expect(WorkStatus.OFFLINE.value).toBe('4')
   })
 })

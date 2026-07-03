@@ -18,18 +18,18 @@ describe('后台作品 API', () => {
     const api = await import('@/api/modules/work')
 
     await expect(
-      api.getWorkList({ page: 0, size: 10, status: '1', category: '0', gender: '1', profession: '2' }) as unknown as Promise<unknown>,
+      api.getWorkList({ page: 0, size: 10, status: '1', city: '上海', mediaType: '1', tagIds: '10,11' }) as unknown as Promise<unknown>,
     ).resolves.toMatchObject({
       url: '/admin/work/list',
-      params: { page: 0, size: 10, status: '1', category: '0', gender: '1', profession: '2' },
+      params: { page: 0, size: 10, status: '1', city: '上海', mediaType: '1', tagIds: '10,11' },
     })
     expect(getMock).toHaveBeenNthCalledWith(1, '/admin/work/list', {
       page: 0,
       size: 10,
       status: '1',
-      category: '0',
-      gender: '1',
-      profession: '2',
+      city: '上海',
+      mediaType: '1',
+      tagIds: '10,11',
     })
 
     await expect(api.getWorkDetail(12) as unknown as Promise<unknown>).resolves.toMatchObject({
