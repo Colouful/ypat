@@ -75,6 +75,8 @@ public class AdminYpatControllerSourceTest {
         assertTrue(data.getAsJsonObject().get("ok").getAsBoolean());
 
         assertParseResponseFail(controller, "{\"code\":500,\"msg\":{}}", ResponseCode.FAIL_SER.getMsg());
+        assertParseResponseFail(controller, "{\"code\":500,\"msg\":[]}", ResponseCode.FAIL_SER.getMsg());
+        assertParseResponseFail(controller, "{\"code\":500,\"msg\":null}", ResponseCode.FAIL_SER.getMsg());
         assertParseResponseFail(controller, "{\"code\":500,\"msg\":123}", ResponseCode.FAIL_SER.getMsg());
         assertParseResponseFail(controller, "{\"code\":500,\"msg\":true}", ResponseCode.FAIL_SER.getMsg());
         assertParseResponseFail(controller, "{\"code\":null,\"msg\":\"bad\"}", "服务响应格式错误");
