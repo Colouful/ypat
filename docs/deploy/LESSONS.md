@@ -287,3 +287,51 @@ uni-app 3.0 (vite) 对 `api/modules/`、`stores/`、`constants/` 这种跨页面
 3. 极端情况：换用 `gcr.io/distroless/java:8` 之类的更小 base，压缩拉取量。
 
 短期不解决也可以——团队成员本地 build 过一次后，Docker 层缓存就能复用，下次只下增量。
+
+---
+
+## 9. fastdfs server v6 + java client v5 协议不兼容：admin 上传 1015 (2026-07-04)
+
+| 项 | 值 |
+| --- | --- |
+| 事故 ID | LESSONS-2026-07-04-01 |
+| 触发操作 | 前端 admin `/admin/ypat/upload` 与 `/admin/upload` 上传图片 |
+| 现象 | HTTP 200，业务 `{"code":1015, "msg":"作品图片上传失败"}`；本地 wap 日志 `recv package size -1 != 10`；服务器 wap 日志 `MyException: getStoreStorage fail, errno code: 28` |
+| 业务影响 | 后台约拍作品编辑页、banner 文章图片上传全部失败，本地与服务器同症状 |
+| 已恢复 | 是 (回退 fastdfs server image 到 v5) |
+
+### 事件
+
+排查路径：
+
+1. 错误码 1015 = FAIL_MARK = "水印失败"。但 controller 抛的 message 是 "作品图片上传失败" — 实际不是水印，是 controller 自己 throw（`fileId == null` 的分支）。
+2. `FastDFSClient` 把 uploadFile 内部异常吞了变 null。要拿到原始错误必须看 wap 容器日志。
+3. wap 日志分两条：本地 `recv package size -1 != 10`，服务器 `MyException: errno code: 28`（不同 stack trace 来自 Java client 异常封装差异，但同根因）。
+4. fastdfs storage 日志：`WARNING - sf_nio.c:951, expect pkg length: 262144, recv pkg length: 12` — storage 期望 256 KB 协议缓冲区，client 只发 12 字节，storage 主动断开。
+5. **ygqygq2/fastdfs-nginx 镜像 OCI 标签里写 `V6.15.3`，fastdfs-client-java 1.27 (cn.bestwu) 是 v5 协议 client。** v6 server 在 active_test 阶段用 256 KB buffer，v5 client 不识别 → 上传失败。
+
+### 根因
+
+两个 FastDFS 组件的"协议主版本"不匹配：
+
+| 组件 | 当前版本 | 协议主版本 |
+| --- | --- | --- |
+| `ygqygq2/fastdfs-nginx@sha256:076ee9c1...` image | V6.15.3 | 6.x |
+| `cn.bestwu:fastdfs-client-java:1.27` | 1.27 (2018 release) | 5.x |
+
+这两个组件应在 2026-01 image 升级时一起升级 client，但代码仓只锁 image digest，没动 pom 版本，所以从那天起所有上传都是隐性失败的。用户报告这天才暴露是因为 admin 上传功能此前没人调试过。
+
+### 长期防御
+
+1. **临时 fix（2026-07-04 applied）**：dev/staging fastdfs image 钉到 `delron/fastdfs:latest` (FastDFS V5.11 + nginx)，与现有 client 1.27 协议匹配。验证：本地 /admin/ypat/upload 返回 url。
+2. **彻底 fix（待办 TODO）**：升级 `cn.bestwu:fastdfs-client-java` 到 1.29+ 系列（v6 兼容），同时把 image 留回 ygqygq2 v6。**风险评估**：升级需要 mvn 拉到新 client jar（项目内网不一定通）；升级后客户端有破坏性改动（StorageClient1 API 调整）需要联调测试。综合估算 1-2 天工作量。
+3. **CI 检查**：dev/staging 启动后跑一条"上传测试图 → 期待 200" 的冒烟，把 fail 暴露在部署环节而不是用户上传图片时才暴露。
+4. **doc 同步**：`docs/release/STAGING_DEPLOYMENT.md` 的 `install-nginx-config.sh` / `db-migrate-staging.sh` 描述里写明 fastdfs 协议版本兼容性是硬约束。
+
+### 修复 checklist
+
+- [ ] dev docker-compose already `delron/fastdfs:latest` (2026-07-04)
+- [ ] 服务器 fastdfs image 替换（待进行）— 通过 `docker compose ... build` 重新拉新 image / 改环境变量 `YPAT_FASTDFS_IMAGE=delron/fastdfs:latest`
+- [ ] 服务器 fastdfs tracker+storage 数据卷保留，data 目录预初始化 mark 用新 IP — 重启即可
+- [ ] 长期 fix：升级 java client 到 v6 兼容版本
+
