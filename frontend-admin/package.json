@@ -53,6 +53,6 @@
     "meow": "^13.2.0"
   },
   "pnpm": {
-    "onlyBuiltDependencies": ["meow"]
+    "onlyBuiltDependencies": ["@parcel/watcher", "esbuild", "meow", "vue-demi"]
   }
 }
