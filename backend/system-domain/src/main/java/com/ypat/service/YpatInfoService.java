@@ -346,6 +346,18 @@ public class YpatInfoService {
                 if(CommonUtils.isNotNull(queryQo.getStatus())){
                     predicatesList.add(criteriaBuilder.equal(root.get("status"), queryQo.getStatus()));
                 }
+                if(CommonUtils.isNotNull(queryQo.getTarget())){
+                    predicatesList.add(criteriaBuilder.equal(root.get("target"), queryQo.getTarget()));
+                }
+                if(CommonUtils.isNotNull(queryQo.getPatstyle())){
+                    predicatesList.add(criteriaBuilder.like(root.get("patstyle"), "%" + queryQo.getPatstyle() + "%"));
+                }
+                if(CommonUtils.isNotNull(queryQo.getChargeway())){
+                    predicatesList.add(criteriaBuilder.equal(root.get("chargeway"), queryQo.getChargeway()));
+                }
+                if(CommonUtils.isNotNull(queryQo.getWorkId())){
+                    predicatesList.add(criteriaBuilder.equal(root.get("workId"), Long.valueOf(queryQo.getWorkId())));
+                }
                 if(CommonUtils.isNotNull(queryQo.getProfess())){
                     predicatesList.add(criteriaBuilder.notEqual(root.get("target"), queryQo.getProfess()));
                 }

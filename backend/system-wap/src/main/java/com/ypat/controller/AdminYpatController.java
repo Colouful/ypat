@@ -75,6 +75,11 @@ public class AdminYpatController {
             @RequestParam(value = "nickname", required = false) String nickname,
             @RequestParam(value = "mobile", required = false) String mobile,
             @RequestParam(value = "recomflag", required = false) String recomflag,
+            @RequestParam(value = "target", required = false) String target,
+            @RequestParam(value = "patstyle", required = false) String patstyle,
+            @RequestParam(value = "chargeway", required = false) String chargeway,
+            @RequestParam(value = "city", required = false) String city,
+            @RequestParam(value = "workId", required = false) String workId,
             @RequestParam(value = "page", required = false, defaultValue = "0") Integer page,
             @RequestParam(value = "size", required = false, defaultValue = "10") Integer size) {
 
@@ -99,6 +104,21 @@ public class AdminYpatController {
         }
         if (StringUtils.isNotBlank(recomflag)) {
             qo.setRecomflag(recomflag);
+        }
+        if (StringUtils.isNotBlank(target)) {
+            qo.setTarget(target);
+        }
+        if (StringUtils.isNotBlank(patstyle)) {
+            qo.setPatstyle(patstyle);
+        }
+        if (StringUtils.isNotBlank(chargeway)) {
+            qo.setChargeway(chargeway);
+        }
+        if (StringUtils.isNotBlank(city)) {
+            qo.setCity(city);
+        }
+        if (StringUtils.isNotBlank(workId)) {
+            qo.setWorkId(workId);
         }
 
         String json = ypatServiceClient.findPage(qo);
