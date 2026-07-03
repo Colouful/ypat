@@ -50,7 +50,7 @@
       </template>
     </view>
 
-    <KeepTabBar active="message" />
+    <KeepTabBar active="mine" />
   </view>
 </template>
 

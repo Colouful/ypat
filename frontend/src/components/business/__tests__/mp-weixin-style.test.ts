@@ -17,9 +17,14 @@ describe('mp-weixin component styles', () => {
     expect(source).not.toContain('keep-tabbar__bg')
     expect(source).not.toContain('tabbarBgSvg')
     expect(source).not.toContain('data:image/svg+xml')
-    expect(source).toContain("label: '作品'")
-    expect(source).toContain("label: '消息'")
-    expect(source).toContain("keep-tabbar__publish-plus")
+    expect(source).toContain("label: '首页'")
+    expect(source).toContain("label: '发布'")
+    expect(source).toContain("label: '我的'")
+    expect(source).not.toContain("label: '发现'")
+    expect(source).not.toContain("label: '消息'")
+    expect(source).toContain('activeColor')
+    expect(source).toContain('inactiveColor')
+    expect(source).toContain(':color="active === item.key ? activeColor : inactiveColor"')
     expect(source).toContain('keep-tabbar__item--publish')
     expect(source).toContain('bottom: 0')
     expect(source).toContain('height: calc(148rpx + env(safe-area-inset-bottom))')
@@ -35,17 +40,15 @@ describe('mp-weixin component styles', () => {
     const file = fileURLToPath(new URL('../KeepIcon.vue', import.meta.url))
     const source = readFileSync(file, 'utf8')
 
-    // KeepIcon 现在统一用 SVG 兜底（之前依赖 static/icons/*.png 的 MP-WEIXIN
-    // 分支已删除以避免 500 Internal Server Error 错误）
     expect(source).toContain('class="keep-icon__svg"')
     expect(source).toContain('normalizeHexColor')
+    expect(source).toContain('svgDataUrl')
   })
 
   it('keeps publish submit button themed in disabled state', () => {
     const file = fileURLToPath(new URL('../YpatPublishForm.vue', import.meta.url))
     const source = readFileSync(file, 'utf8')
 
-    // 组件 WXSS 禁止 [disabled] 属性选择器，改用 --disabled class 绑定；保留品牌主色而非 opacity 淡化
     expect(source).toMatch(/\.publish-submit__button--disabled\s*\{[^}]*background-color:\s*\$color-primary/s)
     expect(source).not.toMatch(/\.publish-submit__button--disabled\s*\{[^}]*opacity:/s)
   })

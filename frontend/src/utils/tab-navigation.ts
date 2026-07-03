@@ -2,8 +2,6 @@ import { getStoredUserInfo, getToken } from '@/services/auth-storage'
 
 export const ROOT_TAB_URLS = [
   '/pages/home/index',
-  '/pages/work/index',
-  '/pages/message/index',
   '/pages/mine/index',
 ] as const
 
@@ -13,21 +11,14 @@ export function isRootTabUrl(url: string): url is RootTabUrl {
   return ROOT_TAB_URLS.includes(url.split('?')[0] as RootTabUrl)
 }
 
-// 幂等：多次 show 只调一次 uni.showLoading；多次 hide 只调一次 uni.hideLoading。
-// 收敛所有异常路径（拦截器 complete 与 native complete 回调双触发、promise .then 额外触发等），
-// 避免 "showLoading 与 hideLoading 必须配对使用" 警告
-let navLoadingActive = false
-
 export function showNavigationLoading(title = '加载中...'): void {
-  if (navLoadingActive) return
-  navLoadingActive = true
   uni.showLoading({ title, mask: true })
 }
 
 export function hideNavigationLoading(): void {
-  if (!navLoadingActive) return
-  navLoadingActive = false
-  uni.hideLoading()
+  setTimeout(() => {
+    uni.hideLoading()
+  }, 180)
 }
 
 function isLoggedIn(): boolean {

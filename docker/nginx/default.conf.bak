@@ -96,11 +96,4 @@ server {
         font/ttf
         font/otf;
     gzip_disable "msie6";          # IE6 不支持
-    # PR-22 final: legacy freeze block (scripts/freeze-legacy.sh)
-    location ~ ^/api/(.*)$ {
-        if ($request_method !~ "^(GET|HEAD|OPTIONS)$") {
-            add_header Content-Type application/json always;
-            return 403 "{\"error\":\"LEGACY_FROZEN\"}";
-        }
-    }
 }
