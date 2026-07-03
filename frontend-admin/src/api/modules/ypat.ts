@@ -17,7 +17,21 @@ export interface YpatInfo {
   professTxt: string
   target: string
   targetTxt: string
+  patstyle?: string
+  patstyleTxt?: string
+  chargeway?: string
+  chargewayTxt?: string
+  chargeamt?: number
+  province?: string
   city: string
+  area?: string
+  isNationwide?: string
+  workId?: string
+  patdate?: string
+  patarea?: string
+  patslice?: string
+  creditflag?: string
+  realnameflag?: string
   pubdate: string
   status: string
   statusTxt: string
@@ -38,6 +52,10 @@ export interface YpatListQuery extends PageQuery {
   mobile?: string
   city?: string
   recomflag?: string
+  target?: string
+  patstyle?: string
+  chargeway?: string
+  workId?: string
 }
 
 /** 发布作品表单 */

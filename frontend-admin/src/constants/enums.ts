@@ -96,28 +96,56 @@ export const getOrderTypeOptions = () => Object.values(OrderType).map((o) => ({ 
 
 /** 约拍对象 */
 export const YpatTarget = {
-  MODEL: { value: '1', name: '模特' },
-  PHOTOGRAPHER: { value: '2', name: '摄影师' },
-  STUDIO: { value: '3', name: '影楼' },
-}
+  PHOTOGRAPHER: { value: '0', name: '约摄影师' },
+  MODEL: { value: '1', name: '约模特' },
+  VIDEOGRAPHER: { value: '2', name: '约摄像师' },
+  MERCHANT: { value: '3', name: '约商家' },
+  MAKEUP: { value: '4', name: '约化妆师' },
+  RETOUCHER: { value: '5', name: '约修图师' },
+} as const
 export const getYpatTargetOptions = () => Object.values(YpatTarget).map((o) => ({ label: o.name, value: o.value }))
 
 /** 约拍风格（多选，逗号拼接） */
 export const YpatPatstyle = {
-  ART: { value: '1', name: '艺术' },
-  WEDDING: { value: '2', name: '婚纱' },
-  CHILD: { value: '3', name: '儿童' },
-  PET: { value: '4', name: '宠物' },
-  COMMERCIAL: { value: '5', name: '商业' },
-}
+  RETRO: { value: '0', name: '复古' },
+  INS: { value: '1', name: 'INS' },
+  FILM: { value: '2', name: '胶片' },
+  GIRLISH: { value: '3', name: '少女' },
+  DARK: { value: '4', name: '暗黑' },
+  MOOD: { value: '5', name: '情绪' },
+  NIGHT: { value: '6', name: '夜景' },
+  EUROPEAN: { value: '7', name: '欧美' },
+  BUSINESS: { value: '8', name: '商务' },
+  KOREAN: { value: '9', name: '韩系' },
+  JAPANESE: { value: '10', name: '日系' },
+  COUPLE: { value: '11', name: '情侣' },
+  SAMPLE: { value: '12', name: '样片' },
+} as const
 export const getYpatPatstyleOptions = () => Object.values(YpatPatstyle).map((o) => ({ label: o.name, value: o.value }))
 
 /** 收费方式 */
 export const YpatChargeWay = {
-  FREE: { value: '1', name: '免费' },
-  CHARGE: { value: '2', name: '收费' },
-}
+  FREE: { value: '0', name: '免费互拍' },
+  CHARGE: { value: '1', name: '收费拍摄' },
+  CAN_PAY: { value: '2', name: '可付费' },
+  NEGOTIATE: { value: '3', name: '费用面议' },
+} as const
 export const getYpatChargeWayOptions = () => Object.values(YpatChargeWay).map((o) => ({ label: o.name, value: o.value }))
+
+/** 作品状态 */
+export const WorkStatus = {
+  DRAFT: { value: '0', name: '暂存', type: 'info' as const },
+  PENDING: { value: '1', name: '待审核', type: 'warning' as const },
+  APPROVED: { value: '2', name: '审核通过', type: 'success' as const },
+  REJECTED: { value: '3', name: '审核未通过', type: 'danger' as const },
+  OFFLINE: { value: '4', name: '已下架', type: 'info' as const },
+} as const
+export const getWorkStatusOptions = () => [
+  WorkStatus.PENDING,
+  WorkStatus.APPROVED,
+  WorkStatus.REJECTED,
+  WorkStatus.OFFLINE,
+]
 
 /** 性别 */
 export const Gender = {
