@@ -35,6 +35,9 @@ export interface WorkListQuery extends PageQuery {
   nickname?: string
   mobile?: string
   city?: string
+  category?: string
+  gender?: string
+  profession?: string
   mediaType?: string
   tagIds?: string
 }

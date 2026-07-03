@@ -141,10 +141,10 @@ export const WorkStatus = {
   OFFLINE: { value: '4', name: '已下架', type: 'info' as const },
 } as const
 export const getWorkStatusOptions = () => [
-  WorkStatus.PENDING,
-  WorkStatus.APPROVED,
-  WorkStatus.REJECTED,
-  WorkStatus.OFFLINE,
+  { label: WorkStatus.PENDING.name, value: WorkStatus.PENDING.value },
+  { label: WorkStatus.APPROVED.name, value: WorkStatus.APPROVED.value },
+  { label: WorkStatus.REJECTED.name, value: WorkStatus.REJECTED.value },
+  { label: WorkStatus.OFFLINE.name, value: WorkStatus.OFFLINE.value },
 ]
 
 /** 性别 */

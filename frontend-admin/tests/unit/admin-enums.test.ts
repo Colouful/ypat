@@ -42,6 +42,7 @@ describe('后台发布枚举', () => {
 
   it('收费方式应与后端值对齐', () => {
     expect(getYpatChargeWayOptions().map((o) => o.value)).toEqual(['0', '1', '2', '3'])
+    expect(getYpatChargeWayOptions().map((o) => o.label)).toEqual(['免费互拍', '收费拍摄', '可付费', '费用面议'])
     expect(YpatChargeWay.FREE.value).toBe('0')
   })
 
