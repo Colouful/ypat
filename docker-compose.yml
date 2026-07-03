@@ -70,8 +70,8 @@ services:
 
   eureka:
     build:
-      context: ./backend-base/base-eureka
-      dockerfile: Dockerfile
+      context: ./backend-base
+      dockerfile: base-eureka/Dockerfile
     restart: unless-stopped
     ports:
       - "127.0.0.1:${YPAT_LOCAL_EUREKA_PORT:-8761}:8761"
@@ -97,8 +97,8 @@ services:
 
   restapi:
     build:
-      context: ./backend/system-restapi
-      dockerfile: Dockerfile
+      context: ./backend
+      dockerfile: system-restapi/Dockerfile
     restart: unless-stopped
     expose:
       - "9081"
@@ -138,8 +138,8 @@ services:
 
   wap:
     build:
-      context: ./backend/system-wap
-      dockerfile: Dockerfile
+      context: ./backend
+      dockerfile: system-wap/Dockerfile
     restart: unless-stopped
     ports:
       - "127.0.0.1:${YPAT_LOCAL_WAP_PORT:-8081}:8081"
@@ -184,8 +184,8 @@ services:
 
   system-web:
     build:
-      context: ./backend/system-web
-      dockerfile: Dockerfile
+      context: ./backend
+      dockerfile: system-web/Dockerfile
     restart: unless-stopped
     ports:
       - "127.0.0.1:${YPAT_LOCAL_WEB_PORT:-8082}:8082"

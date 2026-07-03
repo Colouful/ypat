@@ -1,0 +1,6 @@
+**/target
+**/*.iml
+**/logs
+E:\.m2
+dev
+.idea
