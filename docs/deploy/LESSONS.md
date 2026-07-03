@@ -269,3 +269,21 @@ uni-app 3.0 (vite) 对 `api/modules/`、`stores/`、`constants/` 这种跨页面
 3. **mysql 字符集**：服务端加 `--skip-character-set-client-handshake --init-connect='SET NAMES utf8mb4'`；客户端 SQL 顶部必须 `SET NAMES utf8mb4`。
 4. **Jackson + Gson 混用**：admin 列表接口不要走 ResponseApiBody 强类型对象图，直接用字符串规避；或者迁移到强类型 Feign 客户端（见 LESSONS 5）。
 5. **Dokcerfile multi-stage**：业务项目都必须 multi-stage，不再依赖外部预先 mvn。`build.context` 必须指向父 pom 所在目录。
+
+---
+
+## 8. 首次 multi-stage build 拉 maven 镜像很慢 (2026-07-03 follow-up)
+
+| 项 | 值 |
+| --- | --- |
+| 状态 | **遗留观察，待优化** |
+| 观察 | 第一次 `docker compose build wap` 从 docker.io 拉 maven:3.8-eclipse-temurin-8（约 1.2 GB），本机外网慢时 10 分钟起步；多数团队靠 GFW 内网，走其它 registry |
+| 业务影响 | 首次部署到新环境阻塞；CI 上没暖缓存第一次 build 慢 |
+
+### 建议（评估中）
+
+1. 把 maven 镜像 base 锁成项目内网 registry 镜像，例如 `registry.cn-hangzhou.aliyuncs.com/ypat/maven:3.8-jdk8`，先推到内网再用。
+2. 写一个暖缓存 CI job，每天构建一次并把镜像保留 N 天。
+3. 极端情况：换用 `gcr.io/distroless/java:8` 之类的更小 base，压缩拉取量。
+
+短期不解决也可以——团队成员本地 build 过一次后，Docker 层缓存就能复用，下次只下增量。
