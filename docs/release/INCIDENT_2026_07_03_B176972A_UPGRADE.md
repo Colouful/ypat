@@ -114,6 +114,22 @@ mysql / redis / eureka / restapi / wap / system-web 6 个 service 都加一行 `
 
 ## 4. 经验教训
 
+### 4.0 关键发现(2026-07-03 20:14 second session)
+
+**wap 启动失败的真实根因**(之前误判为"死锁/futex_wait_queue"):
+
+1. **环境变量缺失**:`EnvironmentConfigurationValidator`(origin/main 引入的 fail-closed 校验)在 staging profile 强制要求 `YPAT_REDIS_HOST`、`YPAT_REDIS_PASSWORD` 等 10 个变量,缺一启动就 abort。**这不是死锁,是立即抛 IllegalStateException**。
+2. **JPA 兼容性问题**(`Caused by: java.lang.NullPointerException` at `DatabaseLookup.getDatabase`):Spring Boot 1.5.9 + MySQL Connector/J 8.0+ 已知 bug。wap/restapi/system-web 都没用 JPA,但通过 `@EnableFeignClients` 自动扫到 `system-domain` 的 `JpaConfiguration`,意外启用了 JPA 自动配置 → NPE → 启动失败。
+3. **logback file appender 隐藏了真实错误**:`/logs/system-wap.log` 是 file appender,docker logs 只能看到 stdout(banner 之后的 ERROR 看不到)。调试时必须用 jre 镜像 + 简单 logback.xml 让所有日志输出到 console。
+
+**当前线上状态**:
+- system-web / restapi / eureka: ✅ 用新 jar,healthy
+- wap: ⚠️ 用 13fb747 旧 jar(stable),healthy 但 `/api/work/list` 401(因 13fb747 时代的 WebSecurityConfig 没有 `/work/list` permitAll,7712805c 才加)
+
+**修 wap 启动的两个 commit**(已在 origin/main):
+- `3a864045` — 在 compose 加 staging 必需环境变量
+- `39f8b110` — wap service 加 `YPAT_REDIS_HOST`
+
 ### 4.1 文档缺失
 
 - 文档假设 `deploy@82.156.14.216` + `/opt/ypat` + `preflight.sh` + `deploy-staging.sh`,**实际是 root + 直接 docker compose + 自定义脚本**
