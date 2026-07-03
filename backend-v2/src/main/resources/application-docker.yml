@@ -1,0 +1,16 @@
+# backend-v2 docker profile.
+#
+# Overrides for the docker-compose service. Picked up when
+# SPRING_PROFILES_ACTIVE=docker. Uses the Docker network's
+# hostname `mysql` and `redis` instead of 127.0.0.1 so the v2
+# container can talk to the existing ypat-workspace-mysql-1 /
+# ypat-workspace-redis-1.
+
+spring:
+  datasource:
+    url: jdbc:mysql://mysql:3306/ypat?characterEncoding=utf8&useSSL=false&serverTimezone=Asia/Shanghai
+    username: ypat_dev
+    password: ypat_dev_password_change_me
+  redis:
+    host: redis
+    password: redis

@@ -14,6 +14,13 @@ backend-base/*.iml
 backend-base/*/target/
 backend-base/*/*.iml
 
+# Backend v2 (PR-04+) — modular monolith jump-board
+backend-v2/target/
+backend-v2/.idea/
+backend-v2/*.iml
+backend-v2/*/target/
+backend-v2/*/*.iml
+
 # Frontend (H5, uni-app)
 frontend/node_modules/
 frontend/dist/
