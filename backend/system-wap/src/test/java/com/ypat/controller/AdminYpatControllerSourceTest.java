@@ -29,6 +29,25 @@ public class AdminYpatControllerSourceTest {
         assertFalse(source.contains("ResponseApiBody.success(pageData)"));
     }
 
+    @Test
+    public void adminYpatListAcceptsAndForwardsPublishFilters() throws IOException {
+        String source = readSource(
+                "src/main/java/com/ypat/controller/AdminYpatController.java",
+                "backend/system-wap/src/main/java/com/ypat/controller/AdminYpatController.java",
+                "AdminYpatController.java should exist");
+
+        assertTrue(source.contains("@RequestParam(value = \"target\", required = false) String target"));
+        assertTrue(source.contains("@RequestParam(value = \"patstyle\", required = false) String patstyle"));
+        assertTrue(source.contains("@RequestParam(value = \"chargeway\", required = false) String chargeway"));
+        assertTrue(source.contains("@RequestParam(value = \"city\", required = false) String city"));
+        assertTrue(source.contains("@RequestParam(value = \"workId\", required = false) String workId"));
+        assertTrue(source.contains("qo.setTarget(target)"));
+        assertTrue(source.contains("qo.setPatstyle(patstyle)"));
+        assertTrue(source.contains("qo.setChargeway(chargeway)"));
+        assertTrue(source.contains("qo.setCity(city)"));
+        assertTrue(source.contains("qo.setWorkId(workId)"));
+    }
+
     private String readSource(String modulePath, String repoPath, String message) throws IOException {
         Path path = Paths.get(modulePath);
         if (!Files.exists(path)) {

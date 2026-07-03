@@ -51,4 +51,28 @@ public class YpatInfoAdminFilterSourceTest {
         assertTrue(source.contains("criteriaBuilder.like(root.get(\"patstyle\"), \"%,\" + patstyle)"));
         assertTrue(source.contains("criteriaBuilder.like(root.get(\"patstyle\"), \"%,\" + patstyle + \",%\")"));
     }
+
+    @Test
+    public void ypatAdminAuditOnlyUpdatesReviewFields() throws Exception {
+        String source = read("src/main/java/com/ypat/service/YpatInfoService.java");
+        String auditMethod = methodBody(source,
+                "public void audit(Long id, String flag, String recomflag, String reason)",
+                "public void delete(Long id)");
+
+        assertTrue(auditMethod.contains("info.setStatus(flag)"));
+        assertTrue(auditMethod.contains("info.setRecomflag(recomflag)"));
+        assertTrue(auditMethod.contains("info.setReason(reason)"));
+        assertFalse(auditMethod.contains("setTarget"));
+        assertFalse(auditMethod.contains("setPatstyle"));
+        assertFalse(auditMethod.contains("setChargeway"));
+        assertFalse(auditMethod.contains("setWorkId"));
+    }
+
+    private String methodBody(String source, String startToken, String endToken) {
+        int start = source.indexOf(startToken);
+        assertTrue(start >= 0);
+        int end = source.indexOf(endToken, start);
+        assertTrue(end > start);
+        return source.substring(start, end);
+    }
 }
