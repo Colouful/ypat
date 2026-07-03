@@ -35,7 +35,7 @@ watch(
 )
 
 async function handleAudit(flag: string): Promise<void> {
-  if (!props.data) return
+  if (loading.value || !props.data) return
 
   const workId = props.data.id
   loading.value = true

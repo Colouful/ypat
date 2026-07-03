@@ -127,14 +127,13 @@ function openAudit(row: WorkAdminInfo): void {
 async function handleOffline(row: WorkAdminInfo): Promise<void> {
   if (offlineIds.value.has(row.id)) return
 
-  await ElMessageBox.confirm(`确定要下架作品 #${row.id} 吗？`, '下架确认', {
-    type: 'warning',
-    confirmButtonText: '确认下架',
-    cancelButtonText: '取消',
-  })
-
   offlineIds.value = new Set(offlineIds.value).add(row.id)
   try {
+    await ElMessageBox.confirm(`确定要下架作品 #${row.id} 吗？`, '下架确认', {
+      type: 'warning',
+      confirmButtonText: '确认下架',
+      cancelButtonText: '取消',
+    })
     await offlineWork(row.id, '后台下架')
     ElMessage.success('作品下架成功')
     fetchList()
