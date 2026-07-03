@@ -43,6 +43,8 @@ public class YpatInfoAdminFilterSourceTest {
         String source = read("src/main/java/com/ypat/service/YpatInfoService.java");
 
         assertFalse(source.contains("criteriaBuilder.like(root.get(\"patstyle\"), \"%\" + queryQo.getPatstyle() + \"%\")"));
+        assertTrue(source.contains("queryQo.getPatstyle().split(\",\")"));
+        assertTrue(source.contains(".trim()"));
         assertTrue(source.contains("criteriaBuilder.or("));
         assertTrue(source.contains("criteriaBuilder.equal(root.get(\"patstyle\"), patstyle)"));
         assertTrue(source.contains("criteriaBuilder.like(root.get(\"patstyle\"), patstyle + \",%\")"));

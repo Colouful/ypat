@@ -351,13 +351,20 @@ public class YpatInfoService {
                     predicatesList.add(criteriaBuilder.equal(root.get("target"), queryQo.getTarget()));
                 }
                 if(CommonUtils.isNotNull(queryQo.getPatstyle())){
-                    String patstyle = queryQo.getPatstyle();
-                    predicatesList.add(criteriaBuilder.or(
-                            criteriaBuilder.equal(root.get("patstyle"), patstyle),
-                            criteriaBuilder.like(root.get("patstyle"), patstyle + ",%"),
-                            criteriaBuilder.like(root.get("patstyle"), "%," + patstyle),
-                            criteriaBuilder.like(root.get("patstyle"), "%," + patstyle + ",%")
-                    ));
+                    List<Predicate> patstylePredicates = new ArrayList<Predicate>();
+                    for (String rawPatstyle : queryQo.getPatstyle().split(",")) {
+                        String patstyle = rawPatstyle.trim();
+                        if("".equals(patstyle)){
+                            continue;
+                        }
+                        patstylePredicates.add(criteriaBuilder.equal(root.get("patstyle"), patstyle));
+                        patstylePredicates.add(criteriaBuilder.like(root.get("patstyle"), patstyle + ",%"));
+                        patstylePredicates.add(criteriaBuilder.like(root.get("patstyle"), "%," + patstyle));
+                        patstylePredicates.add(criteriaBuilder.like(root.get("patstyle"), "%," + patstyle + ",%"));
+                    }
+                    if(!CollectionUtils.isEmpty(patstylePredicates)){
+                        predicatesList.add(criteriaBuilder.or(patstylePredicates.toArray(new Predicate[patstylePredicates.size()])));
+                    }
                 }
                 if(CommonUtils.isNotNull(queryQo.getChargeway())){
                     predicatesList.add(criteriaBuilder.equal(root.get("chargeway"), queryQo.getChargeway()));

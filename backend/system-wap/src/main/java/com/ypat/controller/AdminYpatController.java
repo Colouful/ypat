@@ -12,6 +12,7 @@ import com.ypat.third.wxmess.WxMessClient;
 import com.ypat.util.FastDFSClient;
 import com.ypat.third.baidu.ai.GsonUtils;
 import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.ypat.util.ImageMarkUtil;
 import com.ypat.config.SystemConfig;
@@ -122,8 +123,7 @@ public class AdminYpatController {
         }
 
         String json = ypatServiceClient.findPage(qo);
-        JsonElement pageData = JsonParser.parseString(json);
-        return ResponseApiBody.success(pageData);
+        return ResponseApiBody.success(parseResponseRes(json));
     }
 
     /**
@@ -246,6 +246,26 @@ public class AdminYpatController {
             sb.append(r.nextInt(10));
         }
         return sb.toString();
+    }
+
+    private JsonElement parseResponseRes(String json) {
+        JsonElement element = JsonParser.parseString(json);
+        if (element != null && element.isJsonObject()) {
+            JsonObject object = element.getAsJsonObject();
+            if (object.has("code")) {
+                int code = object.get("code").getAsInt();
+                if (code != ResponseCode.SUCCESS.getCode()) {
+                    String msg = object.has("msg") && !object.get("msg").isJsonNull()
+                            ? object.get("msg").getAsString()
+                            : ResponseCode.FAIL_SER.getMsg();
+                    throw new SysException(code, msg);
+                }
+            }
+            if (object.has("res")) {
+                return object.get("res");
+            }
+        }
+        return element;
     }
 
     private void pushAuditMessage(Long id, String flag, String reason) {
