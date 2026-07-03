@@ -79,12 +79,13 @@ function getPatstyleList(data: YpatInfo): string[] {
       </div>
       <div v-if="data.pics?.length" class="image-list">
         <el-image
-          v-for="pic in data.pics"
+          v-for="(pic, index) in data.pics"
           :key="pic"
           :src="pic"
           fit="cover"
           class="preview-image"
           :preview-src-list="data.pics"
+          :initial-index="index"
           preview-teleported
         />
       </div>

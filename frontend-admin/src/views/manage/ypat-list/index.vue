@@ -76,7 +76,7 @@ async function doRecom(row: YpatInfo, flag: string) {
     await ElMessageBox.confirm(`确定要${text}该约拍吗？`, '提示', { type: 'warning' })
     await recomYpat(row.id, flag)
     ElMessage.success(`${text}成功`)
-    fetchList()
+    await fetchList()
   } finally {
     const nextIds = new Set(recomLoadingIds.value)
     nextIds.delete(row.id)

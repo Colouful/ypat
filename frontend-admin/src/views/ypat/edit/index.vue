@@ -37,11 +37,16 @@ async function uploadWorks(files: File[]) {
   } finally { uploadLoading.value = false }
 }
 async function submit() {
-  await formRef.value.validate()
-  if (!form.value.pics.length) { ElMessage.error('请至少上传一张作品图片'); return }
-  form.value.patstyle = form.value.patstyleList.join(',')
+  if (loading.value || uploadLoading.value) return
+
   loading.value = true
   try {
+    await formRef.value.validate()
+    if (!form.value.pics.length) {
+      ElMessage.error('请至少上传一张作品图片')
+      return
+    }
+    form.value.patstyle = form.value.patstyleList.join(',')
     await submitYpat(form.value)
     ElMessage.success('代发约拍成功')
     router.push('/manage/ypat-list')
@@ -71,7 +76,7 @@ async function submit() {
           <el-upload :auto-upload="false" :on-change="(f: any) => uploadWorks([f.raw])" list-type="picture-card"><el-icon><Plus/></el-icon></el-upload>
         </el-form-item>
         <el-form-item>
-          <el-button type="primary" :loading="loading" @click="submit">提交</el-button>
+          <el-button type="primary" :loading="loading" :disabled="uploadLoading" @click="submit">提交</el-button>
           <el-button @click="router.back()">返回</el-button>
         </el-form-item>
       </el-form>
