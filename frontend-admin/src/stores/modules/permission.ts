@@ -12,6 +12,7 @@ import { menuConfig, type MenuItem } from '@/constants/menu'
 import ManageYpatList from '@/views/manage/ypat-list/index.vue'
 import ManageUserList from '@/views/manage/user-list/index.vue'
 import ManageProductList from '@/views/manage/product-list/index.vue'
+import ManageWorkList from '@/views/manage/work-list/index.vue'
 import ArticleList from '@/views/article/list/index.vue'
 import BannerList from '@/views/banner/list/index.vue'
 import YpatEdit from '@/views/ypat/edit/index.vue'
@@ -25,6 +26,7 @@ const viewModules: Record<string, Component> = {
   'manage/ypat-list/index': ManageYpatList,
   'manage/user-list/index': ManageUserList,
   'manage/product-list/index': ManageProductList,
+  'manage/work-list/index': ManageWorkList,
   'article/list/index': ArticleList,
   'banner/list/index': BannerList,
   'ypat/edit/index': YpatEdit,
