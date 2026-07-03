@@ -47,6 +47,10 @@
              developer or CI agent that picks a newer JDK still
              compiles with the right bytecode level. -->
         <maven.compiler.release>17</maven.compiler.release>
+        <!-- ArchUnit: pinned to a 0.23.x release that works on
+             JDK 17. 0.23.1 is the last release that supports both
+             JDK 11 and JDK 17 without module-path headaches. -->
+        <archunit.version>0.23.1</archunit.version>
     </properties>
 
     <dependencies>
@@ -60,6 +64,16 @@
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+
+        <!-- ArchUnit — package-structure discipline in PR-06.
+             Delivered as test-scope only. We do NOT yet depend on
+             spring-modulith (that lands with PR-12 on Boot 3.x). -->
+        <dependency>
+            <groupId>com.tngtech.archunit</groupId>
+            <artifactId>archunit-junit5</artifactId>
+            <version>${archunit.version}</version>
             <scope>test</scope>
         </dependency>
     </dependencies>
