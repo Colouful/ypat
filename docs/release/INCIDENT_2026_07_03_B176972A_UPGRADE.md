@@ -122,6 +122,27 @@ mysql / redis / eureka / restapi / wap / system-web 6 个 service 都加一行 `
 2. **JPA 兼容性问题**(`Caused by: java.lang.NullPointerException` at `DatabaseLookup.getDatabase`):Spring Boot 1.5.9 + MySQL Connector/J 8.0+ 已知 bug。wap/restapi/system-web 都没用 JPA,但通过 `@EnableFeignClients` 自动扫到 `system-domain` 的 `JpaConfiguration`,意外启用了 JPA 自动配置 → NPE → 启动失败。
 3. **logback file appender 隐藏了真实错误**:`/logs/system-wap.log` 是 file appender,docker logs 只能看到 stdout(banner 之后的 ERROR 看不到)。调试时必须用 jre 镜像 + 简单 logback.xml 让所有日志输出到 console。
 
+### 4.0a frontend-admin (Vue3) 部署(2026-07-03 20:58)
+
+- **之前未部署**:`frontend-admin/` 项目源码在 `/opt/ypat/frontend-admin/`,但**没在 docker-compose 里**,`/admin/` 一直走老的 system-web(Thymeleaf)
+- **本地 build**:`pnpm install --frozen-lockfile && pnpm run build` → `dist/` (1.7M,Vue3 + Element Plus)
+- **scp 到服务器**:`/var/www/ypat-admin/dist/`
+- **nginx 加新 location**:
+  ```nginx
+  location ^~ /admin-new/ {
+      alias /var/www/ypat-admin/dist/;
+      try_files $uri $uri/ /admin-new/index.html;
+  }
+  ```
+  - 用 `^~` 防止正则冲突,用 `alias` + 绝对路径
+  - 老的 `/admin/`(system-web)保留不动,新路径 `/admin-new/` 给 Vue3 SPA
+- **验证**:
+  - `https://panghu.work/admin-new/` → 200,`<title>YPAT 管理后台</title>` ✓
+  - `https://panghu.work/admin-new/assets/index-Q2mh93QI.js` → 200 (104464 bytes) ✓
+  - `https://panghu.work/admin/` → 302 (老的 system-web,保留)
+- **教训**:`alias` + `location` trailing slash 必须严格对应;最初用 `root` 被 `nginx.conf` 顶层 `root /usr/share/nginx/html` 覆盖,显示 OpenCloudOS 默认页
+
+
 **当前线上状态**:
 - system-web / restapi / eureka: ✅ 用新 jar,healthy
 - wap: ⚠️ 用 13fb747 旧 jar(stable),healthy 但 `/api/work/list` 401(因 13fb747 时代的 WebSecurityConfig 没有 `/work/list` permitAll,7712805c 才加)
