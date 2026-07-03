@@ -30,7 +30,7 @@ services:
       - "127.0.0.1:${YPAT_LOCAL_MYSQL_PORT:-3306}:3306"
     volumes:
       - ypat-staging-mysql-data:/var/lib/mysql
-    command: --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci --default-authentication-plugin=mysql_native_password
+    command: --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci --default-authentication-plugin=mysql_native_password --skip-character-set-client-handshake --init-connect='SET NAMES utf8mb4'
     healthcheck:
       test: ["CMD-SHELL", "mysqladmin ping -h localhost -uroot -p$${MYSQL_ROOT_PASSWORD}"]
       interval: 10s

@@ -1,6 +1,9 @@
 -- YPAT development MySQL init script
 -- 创建业务账号（仅开发环境使用）
 --
+-- 强制会话字符集为 utf8mb4，防止 mysql 客户端默认 latin1 导致中文 double-encoded。
+SET NAMES utf8mb4;
+--
 -- 注意事项：
 -- 1. 必须显式指定 mysql_native_password 认证插件：
 --    项目用 Spring Boot 1.5.9 + mysql-connector-java 5.1.x，不支持

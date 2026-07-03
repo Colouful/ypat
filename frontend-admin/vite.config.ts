@@ -8,7 +8,11 @@ import path from 'node:path'
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '')
 
+  // 静态资源部署路径：预发/生产走 nginx 的 /admin-new/ 子路径，dev 用根路径。
+  const base = mode === 'development' ? '/' : '/admin-new/'
+
   return {
+    base,
     plugins: [
       vue(),
       AutoImport({
@@ -34,7 +38,7 @@ export default defineConfig(({ mode }) => {
       },
     },
     server: {
-      port: 5174,
+      port: 18899,
       host: '0.0.0.0',
       proxy: {
         '/admin': {

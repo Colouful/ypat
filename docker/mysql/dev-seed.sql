@@ -1,5 +1,8 @@
 -- YPAT 本地开发种子数据（可选，独立脚本）
 --
+-- 强制会话字符集为 utf8mb4，防止 mysql 客户端默认 latin1 导致中文 double-encoded。
+SET NAMES utf8mb4;
+--
 -- ⚠️ 执行时机：必须在 restapi 首次启动、Hibernate ddl-auto=update 建好业务表之后。
 --    docker-entrypoint-initdb.d/*.sql 是 MySQL 首次启动跑，那时候业务表还没建，
 --    所以本文件 **不能** 挂进 initdb.d，只能作为独立脚本手动执行：
