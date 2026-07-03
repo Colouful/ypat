@@ -49,10 +49,10 @@
         <!-- Pin Java 21 across all plugin executions so any
              developer or CI agent that picks a newer JDK still
              compiles with the right bytecode level. -->
-        <java.version>17</java.version>
-        <maven.compiler.source>17</maven.compiler.source>
-        <maven.compiler.target>17</maven.compiler.target>
-        <maven.compiler.release>17</maven.compiler.release>
+        <java.version>21</java.version>
+        <maven.compiler.source>21</maven.compiler.source>
+        <maven.compiler.target>21</maven.compiler.target>
+        <maven.compiler.release>21</maven.compiler.release>
 
         <!-- ArchUnit: pinned to 1.x for the Spring Modulith rule
              surface. 1.4.x tracks Spring Boot 3.5. -->
