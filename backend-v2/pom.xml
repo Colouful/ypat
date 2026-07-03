@@ -82,6 +82,17 @@
             <artifactId>spring-boot-starter-web</artifactId>
         </dependency>
 
+        <!-- Spring Data Redis: powers the Redis-backed token
+             blacklist (PR-14) and any future rate-limit / cache
+             UseCase. Already used by the legacy backend via
+             spring-boot-starter-data-redis from the Boot 1.5.9
+             BOM; we re-declare it explicitly here so v2 is
+             self-describing. -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-data-redis</artifactId>
+        </dependency>
+
         <!-- Flyway: schema migration tool. PR-07a brings it in
              but keeps it disabled until PR-07b produces the real
              baseline. -->
