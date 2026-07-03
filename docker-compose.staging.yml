@@ -38,6 +38,7 @@ services:
       retries: 10
     networks:
       - ypat-staging-net
+      - ypat_ypat-net
     deploy:
       resources:
         limits:
@@ -70,6 +71,7 @@ services:
       retries: 5
     networks:
       - ypat-staging-net
+      - ypat_ypat-net
     deploy:
       resources:
         limits:
@@ -100,6 +102,7 @@ services:
       start_period: 30s
     networks:
       - ypat-staging-net
+      - ypat_ypat-net
     deploy:
       resources:
         limits:
@@ -143,6 +146,7 @@ services:
       start_period: 60s
     networks:
       - ypat-staging-net
+      - ypat_ypat-net
     deploy:
       resources:
         limits:
@@ -185,6 +189,7 @@ services:
       start_period: 60s
     networks:
       - ypat-staging-net
+      - ypat_ypat-net
     deploy:
       resources:
         limits:
@@ -227,6 +232,7 @@ services:
       start_period: 60s
     networks:
       - ypat-staging-net
+      - ypat_ypat-net
     deploy:
       resources:
         limits:
@@ -245,3 +251,9 @@ networks:
   ypat-staging-net:
     name: ypat-staging-net
     driver: bridge
+  # 兼容存量:redis/mysql/fastdfs 仍然在 ypat_ypat-net(由 docker-compose.yml 创建),
+  # 必须显式声明 external 引用,否则 system-web 启动时 java.net.UnknownHostException: redis
+  # 修复见 docs/release/STAGING_DEPLOYMENT.md §2 (2026-07-03 incident)
+  ypat_ypat-net:
+    name: ypat_ypat-net
+    external: true
