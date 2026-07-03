@@ -305,6 +305,7 @@ public class YpatInfoService {
     public Page<YpatInfo> findPageByPredicate(YpatInfoQo queryQo){
         Sort sort = new Sort(Sort.Direction.DESC, "id");
         Pageable pageable  = new PageRequest(queryQo.getPage(), queryQo.getSize(), sort);
+        final Long workId = parseWorkIdFilter(queryQo);
 
         return ypatInfoRepository.findAll(new Specification<YpatInfo>(){
             @Override
@@ -350,13 +351,19 @@ public class YpatInfoService {
                     predicatesList.add(criteriaBuilder.equal(root.get("target"), queryQo.getTarget()));
                 }
                 if(CommonUtils.isNotNull(queryQo.getPatstyle())){
-                    predicatesList.add(criteriaBuilder.like(root.get("patstyle"), "%" + queryQo.getPatstyle() + "%"));
+                    String patstyle = queryQo.getPatstyle();
+                    predicatesList.add(criteriaBuilder.or(
+                            criteriaBuilder.equal(root.get("patstyle"), patstyle),
+                            criteriaBuilder.like(root.get("patstyle"), patstyle + ",%"),
+                            criteriaBuilder.like(root.get("patstyle"), "%," + patstyle),
+                            criteriaBuilder.like(root.get("patstyle"), "%," + patstyle + ",%")
+                    ));
                 }
                 if(CommonUtils.isNotNull(queryQo.getChargeway())){
                     predicatesList.add(criteriaBuilder.equal(root.get("chargeway"), queryQo.getChargeway()));
                 }
-                if(CommonUtils.isNotNull(queryQo.getWorkId())){
-                    predicatesList.add(criteriaBuilder.equal(root.get("workId"), Long.valueOf(queryQo.getWorkId())));
+                if(CommonUtils.isNotNull(workId)){
+                    predicatesList.add(criteriaBuilder.equal(root.get("workId"), workId));
                 }
                 if(CommonUtils.isNotNull(queryQo.getProfess())){
                     predicatesList.add(criteriaBuilder.notEqual(root.get("target"), queryQo.getProfess()));
@@ -368,6 +375,17 @@ public class YpatInfoService {
                 return query.getRestriction();
             }
         }, pageable);
+    }
+
+    private Long parseWorkIdFilter(YpatInfoQo queryQo) {
+        if(CommonUtils.isNotNull(queryQo.getWorkId())){
+            try {
+                return Long.valueOf(queryQo.getWorkId());
+            } catch (NumberFormatException e) {
+                throw new SysException(ResponseCode.FAIL_PARA, "workId参数错误");
+            }
+        }
+        return null;
     }
 
 }
