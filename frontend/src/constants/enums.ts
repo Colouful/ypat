@@ -160,10 +160,10 @@ export const YpatChargeWay = {
 export type YpatChargeWayType = (typeof YpatChargeWay)[keyof typeof YpatChargeWay];
 
 export const CHARGE_WAY_LABELS: Record<string, string> = {
-  [YpatChargeWay.FREE]: '免费互拍',
-  [YpatChargeWay.CHARGE]: '收费拍摄',
+  [YpatChargeWay.FREE]: '希望互勉',
+  [YpatChargeWay.CHARGE]: '我要收费',
   [YpatChargeWay.CAN_PAY]: '可付费',
-  [YpatChargeWay.NEGOTIATE]: '费用面议',
+  [YpatChargeWay.NEGOTIATE]: '费用协商',
 };
 
 /** 约拍帖子状态 */

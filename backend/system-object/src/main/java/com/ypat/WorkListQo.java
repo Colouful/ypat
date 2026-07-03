@@ -26,6 +26,11 @@ public class WorkListQo extends PageQo implements Serializable {
     /** 当前登录用户（Service 注入，用于判断 colflag/likeFlag） */
     private String viewerUserId;
 
+    private String status;
+    private String nickname;
+    private String mobile;
+    private String mediaType;
+
     public String getCategory() { return category; }
     public void setCategory(String category) { this.category = category; }
     public String getCity() { return city; }
@@ -38,4 +43,12 @@ public class WorkListQo extends PageQo implements Serializable {
     public void setTagIds(String tagIds) { this.tagIds = tagIds; }
     public String getViewerUserId() { return viewerUserId; }
     public void setViewerUserId(String viewerUserId) { this.viewerUserId = viewerUserId; }
+    public String getStatus() { return status; }
+    public void setStatus(String status) { this.status = status; }
+    public String getNickname() { return nickname; }
+    public void setNickname(String nickname) { this.nickname = nickname; }
+    public String getMobile() { return mobile; }
+    public void setMobile(String mobile) { this.mobile = mobile; }
+    public String getMediaType() { return mediaType; }
+    public void setMediaType(String mediaType) { this.mediaType = mediaType; }
 }

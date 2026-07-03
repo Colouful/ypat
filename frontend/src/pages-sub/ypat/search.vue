@@ -83,7 +83,7 @@ async function search(refresh = false): Promise<void> {
 }
 
 function useTag(value: string): void { keyword.value = value; search(true) }
-function chargeLabel(value: string): string { return CHARGE_WAY_LABELS[value] || '费用面议' }
+function chargeLabel(value: string): string { return CHARGE_WAY_LABELS[value] || '费用协商' }
 function openDetail(id: number): void { uni.navigateTo({ url: `/pages-sub/ypat/detail?id=${id}` }) }
 function back(): void { goBackOrHome() }
 

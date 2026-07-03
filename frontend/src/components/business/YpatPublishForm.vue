@@ -146,7 +146,7 @@ const targets = [
   { value: '1', label: '我要约模特', icon: 'user' },
 ]
 const chargeWays = [
-  { value: '0', label: '希望互免' },
+  { value: '0', label: '希望互勉' },
   { value: '1', label: '我要收费' },
   { value: '2', label: '可付费' },
   { value: '3', label: '费用协商' },

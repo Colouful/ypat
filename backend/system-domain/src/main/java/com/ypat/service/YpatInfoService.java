@@ -10,6 +10,7 @@ import com.ypat.entity.Record;
 import com.ypat.enums.RecordType;
 import com.ypat.enums.UserImgType;
 import com.ypat.enums.YesNo;
+import com.ypat.enums.YpatPatstyle;
 import com.ypat.enums.YpatStatus;
 import com.ypat.repository.*;
 import com.ypat.util.*;
@@ -45,6 +46,7 @@ public class YpatInfoService {
         YpatInfo info = new YpatInfo();
         if(ypatInfo.getId()==null){
             info = CopyUtil.copy(ypatInfo, YpatInfo.class);
+            info.setWorkId(parseWorkIdValue(ypatInfo.getWorkId()));
             info.setReadtimes(0);
             info.setPattimes(0);
             info.setColtimes(0);
@@ -58,6 +60,9 @@ public class YpatInfoService {
                 throw new SysException(ResponseCode.FAIL_NOT);
             }
             CopyUtil.copyIgnoreNull(ypatInfo,info);
+            if(ypatInfo.getWorkId()!=null){
+                info.setWorkId(parseWorkIdValue(ypatInfo.getWorkId()));
+            }
             ypatInfoRepository.save(info);
         }
         //保存图片信息
@@ -121,7 +126,9 @@ public class YpatInfoService {
             throw new SysException(ResponseCode.FAIL_NOT);
         }
         info.setStatus(flag);
-        info.setRecomflag(recomflag);
+        if(recomflag!=null){
+            info.setRecomflag(recomflag);
+        }
         info.setReason(reason);
         ypatInfoRepository.save(info);
     }
@@ -305,6 +312,7 @@ public class YpatInfoService {
     public Page<YpatInfo> findPageByPredicate(YpatInfoQo queryQo){
         Sort sort = new Sort(Sort.Direction.DESC, "id");
         Pageable pageable  = new PageRequest(queryQo.getPage(), queryQo.getSize(), sort);
+        final Long workId = parseWorkIdFilter(queryQo);
 
         return ypatInfoRepository.findAll(new Specification<YpatInfo>(){
             @Override
@@ -346,6 +354,26 @@ public class YpatInfoService {
                 if(CommonUtils.isNotNull(queryQo.getStatus())){
                     predicatesList.add(criteriaBuilder.equal(root.get("status"), queryQo.getStatus()));
                 }
+                if(CommonUtils.isNotNull(queryQo.getTarget())){
+                    predicatesList.add(criteriaBuilder.equal(root.get("target"), queryQo.getTarget()));
+                }
+                if(CommonUtils.isNotNull(queryQo.getPatstyle())){
+                    Set<String> patstyles = normalizePatstyleFilters(queryQo.getPatstyle());
+                    List<Predicate> patstylePredicates = new ArrayList<Predicate>();
+                    for (String patstyle : patstyles) {
+                        patstylePredicates.add(criteriaBuilder.equal(root.get("patstyle"), patstyle));
+                        patstylePredicates.add(criteriaBuilder.like(root.get("patstyle"), patstyle + ",%"));
+                        patstylePredicates.add(criteriaBuilder.like(root.get("patstyle"), "%," + patstyle));
+                        patstylePredicates.add(criteriaBuilder.like(root.get("patstyle"), "%," + patstyle + ",%"));
+                    }
+                    predicatesList.add(criteriaBuilder.or(patstylePredicates.toArray(new Predicate[patstylePredicates.size()])));
+                }
+                if(CommonUtils.isNotNull(queryQo.getChargeway())){
+                    predicatesList.add(criteriaBuilder.equal(root.get("chargeway"), queryQo.getChargeway()));
+                }
+                if(CommonUtils.isNotNull(workId)){
+                    predicatesList.add(criteriaBuilder.equal(root.get("workId"), workId));
+                }
                 if(CommonUtils.isNotNull(queryQo.getProfess())){
                     predicatesList.add(criteriaBuilder.notEqual(root.get("target"), queryQo.getProfess()));
                 }
@@ -356,6 +384,48 @@ public class YpatInfoService {
                 return query.getRestriction();
             }
         }, pageable);
+    }
+
+    Long parseWorkIdFilter(YpatInfoQo queryQo) {
+        if(CommonUtils.isNotNull(queryQo.getWorkId())){
+            return parseWorkIdValue(queryQo.getWorkId());
+        }
+        return null;
+    }
+
+    Long parseWorkIdValue(String rawWorkId) {
+        if(CommonUtils.isNotNull(rawWorkId)){
+            try {
+                Long workId = Long.valueOf(rawWorkId);
+                if(workId <= 0){
+                    throw new SysException(ResponseCode.FAIL_PARA, "workId参数错误");
+                }
+                return workId;
+            } catch (NumberFormatException e) {
+                throw new SysException(ResponseCode.FAIL_PARA, "workId参数错误");
+            }
+        }
+        return null;
+    }
+
+    Set<String> normalizePatstyleFilters(String patstyleFilter) {
+        Set<String> patstyles = new LinkedHashSet<String>();
+        if(CommonUtils.isNotNull(patstyleFilter)){
+            for (String rawPatstyle : patstyleFilter.split(",")) {
+                String patstyle = rawPatstyle.trim();
+                if("".equals(patstyle)){
+                    continue;
+                }
+                if(!patstyle.matches("\\d+") || "".equals(YpatPatstyle.getNameByCode(patstyle))){
+                    throw new SysException(ResponseCode.FAIL_PARA, "patstyle参数错误");
+                }
+                patstyles.add(patstyle);
+            }
+        }
+        if(CollectionUtils.isEmpty(patstyles)){
+            throw new SysException(ResponseCode.FAIL_PARA, "patstyle参数错误");
+        }
+        return patstyles;
     }
 
 }

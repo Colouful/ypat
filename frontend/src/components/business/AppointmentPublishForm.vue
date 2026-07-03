@@ -172,7 +172,7 @@ const regionText = computed(() => {
 
 function onPickChargeway() {
   uni.showActionSheet({
-    itemList: ['免费互拍', '收费拍摄', '可付费', '费用面议'],
+    itemList: ['希望互勉', '我要收费', '可付费', '费用协商'],
     success: (res) => {
       const map: any = { 0: '0', 1: '1', 2: '2', 3: '3' }
       form.chargeway = map[res.tapIndex]

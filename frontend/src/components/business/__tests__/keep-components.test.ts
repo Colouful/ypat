@@ -13,7 +13,7 @@ describe('Keep components', () => {
           id: 1,
           title: '寻找气质女模拍一组复古港风样片',
           targetLabel: '约模特',
-          chargeLabel: '希望互免',
+          chargeLabel: '希望互勉',
           city: '上海·徐汇',
           name: '陈默 Mo',
           image: '/static/default-cover.png',

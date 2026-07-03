@@ -12,6 +12,7 @@ import com.ypat.third.wxmess.WxMessClient;
 import com.ypat.util.FastDFSClient;
 import com.ypat.third.baidu.ai.GsonUtils;
 import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.ypat.util.ImageMarkUtil;
 import com.ypat.config.SystemConfig;
@@ -45,6 +46,7 @@ public class AdminYpatController {
 
     private static final int DEFAULT_PAGE = 0;
     private static final int DEFAULT_SIZE = 10;
+    private static final int MAX_SIZE = 50;
 
     @Autowired
     private YpatServiceClient ypatServiceClient;
@@ -75,19 +77,17 @@ public class AdminYpatController {
             @RequestParam(value = "nickname", required = false) String nickname,
             @RequestParam(value = "mobile", required = false) String mobile,
             @RequestParam(value = "recomflag", required = false) String recomflag,
+            @RequestParam(value = "target", required = false) String target,
+            @RequestParam(value = "patstyle", required = false) String patstyle,
+            @RequestParam(value = "chargeway", required = false) String chargeway,
+            @RequestParam(value = "city", required = false) String city,
+            @RequestParam(value = "workId", required = false) String workId,
             @RequestParam(value = "page", required = false, defaultValue = "0") Integer page,
             @RequestParam(value = "size", required = false, defaultValue = "10") Integer size) {
 
-        if (page == null || page < 0) {
-            page = DEFAULT_PAGE;
-        }
-        if (size == null || size <= 0) {
-            size = DEFAULT_SIZE;
-        }
-
         YpatInfoQo qo = new YpatInfoQo();
-        qo.setPage(page);
-        qo.setSize(size);
+        qo.setPage(normalizePage(page));
+        qo.setSize(normalizeSize(size));
         if (StringUtils.isNotBlank(status)) {
             qo.setStatus(status);
         }
@@ -100,10 +100,24 @@ public class AdminYpatController {
         if (StringUtils.isNotBlank(recomflag)) {
             qo.setRecomflag(recomflag);
         }
+        if (StringUtils.isNotBlank(target)) {
+            qo.setTarget(target);
+        }
+        if (StringUtils.isNotBlank(patstyle)) {
+            qo.setPatstyle(patstyle);
+        }
+        if (StringUtils.isNotBlank(chargeway)) {
+            qo.setChargeway(chargeway);
+        }
+        if (StringUtils.isNotBlank(city)) {
+            qo.setCity(city);
+        }
+        if (StringUtils.isNotBlank(workId)) {
+            qo.setWorkId(workId);
+        }
 
         String json = ypatServiceClient.findPage(qo);
-        JsonElement pageData = JsonParser.parseString(json);
-        return ResponseApiBody.success(pageData);
+        return ResponseApiBody.success(parseResponseRes(json));
     }
 
     /**
@@ -226,6 +240,60 @@ public class AdminYpatController {
             sb.append(r.nextInt(10));
         }
         return sb.toString();
+    }
+
+    private int normalizePage(Integer page) {
+        return page == null || page < 0 ? DEFAULT_PAGE : page;
+    }
+
+    private int normalizeSize(Integer size) {
+        if (size == null || size <= 0) {
+            return DEFAULT_SIZE;
+        }
+        return Math.min(size, MAX_SIZE);
+    }
+
+    private JsonElement parseResponseRes(String json) {
+        if (StringUtils.isBlank(json)) {
+            throw new SysException(ResponseCode.FAIL_SER, "服务响应格式错误");
+        }
+        JsonElement element;
+        try {
+            element = JsonParser.parseString(json);
+        } catch (RuntimeException e) {
+            throw new SysException(ResponseCode.FAIL_SER, "服务响应格式错误");
+        }
+        if (element == null || !element.isJsonObject()) {
+            throw new SysException(ResponseCode.FAIL_SER, "服务响应格式错误");
+        }
+
+        JsonObject object = element.getAsJsonObject();
+        if (object.has("code")) {
+            JsonElement codeElement = object.get("code");
+            if (codeElement == null
+                    || codeElement.isJsonNull()
+                    || !codeElement.isJsonPrimitive()
+                    || !codeElement.getAsJsonPrimitive().isNumber()) {
+                throw new SysException(ResponseCode.FAIL_SER, "服务响应格式错误");
+            }
+            int code = codeElement.getAsInt();
+            if (code != ResponseCode.SUCCESS.getCode()) {
+                JsonElement msgElement = object.get("msg");
+                String msg = msgElement != null
+                        && !msgElement.isJsonNull()
+                        && msgElement.isJsonPrimitive()
+                        && msgElement.getAsJsonPrimitive().isString()
+                        ? msgElement.getAsString()
+                        : ResponseCode.FAIL_SER.getMsg();
+                throw new SysException(code, msg);
+            }
+            JsonElement resElement = object.get("res");
+            if (resElement == null || resElement.isJsonNull() || !resElement.isJsonObject()) {
+                throw new SysException(ResponseCode.FAIL_SER, "服务响应格式错误");
+            }
+            return resElement;
+        }
+        return object;
     }
 
     private void pushAuditMessage(Long id, String flag, String reason) {

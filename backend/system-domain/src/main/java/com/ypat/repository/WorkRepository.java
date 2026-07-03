@@ -73,6 +73,10 @@ public interface WorkRepository extends JpaRepository<Work, Long>, JpaSpecificat
     @Query("update Work w set w.status = :status, w.updatedAt = CURRENT_TIMESTAMP where w.id = :id and w.deletedFlag = 0")
     int updateStatus(@Param("id") Long id, @Param("status") String status);
 
+    @Modifying
+    @Query("update Work w set w.status = :status, w.auditReason = :auditReason, w.updatedAt = CURRENT_TIMESTAMP where w.id = :id and w.deletedFlag = 0")
+    int updateStatusAndAuditReason(@Param("id") Long id, @Param("status") String status, @Param("auditReason") String auditReason);
+
     /**
      * 公开可见数量（统计）
      */
