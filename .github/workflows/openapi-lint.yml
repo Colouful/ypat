@@ -1,0 +1,48 @@
+name: OpenAPI Contract Lint
+
+# PR-00: Lock the API surface area for the YPAT backend upgrade.
+# Runs Spectral against every spec/*.yaml. Fails the PR on errors.
+#
+# This job is intentionally minimal — no secret scan, no image scan,
+# no test run. Those belong to PR-03 (CI security gates) and the
+# per-language test jobs in ci.yml. We keep concerns separate so
+# when one fails the other isn't blamed.
+
+on:
+  pull_request:
+    branches:
+      - main
+      - main2
+      - refactor/backend-arch-upgrade
+    paths:
+      - "spec/**"
+      - ".spectral.yaml"
+      - ".spectral/**"
+      - ".github/workflows/openapi-lint.yml"
+  push:
+    branches:
+      - main
+      - main2
+      - refactor/backend-arch-upgrade
+    paths:
+      - "spec/**"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  spectral-lint:
+    name: Spectral / openapi
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Run Spectral
+        uses: stoplightio/spectral-action@latest
+        with:
+          # Lint every OpenAPI spec in spec/. Fail PR on errors,
+          # warn-only is not acceptable for baseline work.
+          file_glob: "spec/**/*.yaml"
+          spectral_ruleset: ".spectral.yaml"
+          fail_on: error

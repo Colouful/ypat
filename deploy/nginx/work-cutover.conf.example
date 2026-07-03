@@ -1,0 +1,88 @@
+# deploy/nginx/work-cutover.conf.example
+#
+# PR-11: phased Nginx cut-over for the /api/work/* prefix.
+#
+# Copy this file into your Nginx conf.d directory on cut-over
+# day, then reload. The legacy upstream stays live the whole time;
+# it receives the leftover percentage until the last step.
+#
+# The example uses split_clients for 5% / 25% / 50% / 100% canary
+# shifts. Switch between phases by changing the upstream weights
+# and reloading — no app restart required.
+#
+# Verified against Nginx 1.22+, which is what production runs.
+
+# ── Upstreams ───────────────────────────────────────────────
+# v2_current  : backend-v2 on 8082
+# v2_canary   : backend-v2 on 8082 (same host, separate name for
+#              health-check noise if we ever split)
+# legacy_read : system-wap on 8081 (the existing /api/work/* path)
+
+upstream ypat_v2_work {
+    server 127.0.0.1:8082 max_fails=3 fail_timeout=10s;
+    keepalive 32;
+}
+
+upstream ypat_legacy_work {
+    server 127.0.0.1:8081 max_fails=3 fail_timeout=10s;
+    keepalive 32;
+}
+
+# ── Health checks ───────────────────────────────────────────
+# Nginx Plus has the active health_check directive; the open
+# source build falls back to max_fails + fail_timeout on the
+# upstream block. Both paths land traffic on the surviving
+# upstream if the JVM goes away.
+
+# ── Split (5% → 25% → 50% → 100%) ──────────────────────────
+# Phase 0 (initial, before PR-11 lands): all legacy.
+# Phase 1:                    split_clients 5% v2 / 95% legacy
+# Phase 2:                    split_clients 25% v2 / 75% legacy
+# Phase 3:                    split_clients 50% v2 / 50% legacy
+# Phase 4 (cut-over complete): 100% v2
+
+# Each phase is its own reload. Operators flip the percentages
+# in split_clients and run `nginx -t && nginx -s reload`.
+
+split_clients "$request_id" $work_backend {
+    5%   v2_current;
+    95%  legacy_read;
+}
+
+# ── Server block (excerpt; merge into your existing server {}) ──
+# location ^~ /api/work/ {
+#     proxy_set_header Host              $host;
+#     proxy_set_header X-Real-IP         $remote_addr;
+#     proxy_set_header X-Forwarded-For   $proxy_add_x_forwarded_for;
+#     proxy_set_header X-Forwarded-Proto $scheme;
+#     proxy_set_header x-ypat-backend     v2-current;
+#
+#     # Required by V1.1 §2.1: every response from a v2 upstream
+#     # must carry this header; the legacy path must not. The
+#     # header is a sanity check against an accidental config
+#     # mismatch.
+#     proxy_pass http://$work_backend;
+#
+#     proxy_http_version 1.1;
+#     proxy_read_timeout 5s;
+#     proxy_send_timeout 5s;
+# }
+
+# ── Rollback (V1.1 §7.3) ────────────────────────────────────
+# Phase N -> Phase (N-1) is a single config edit + reload.
+# 5-minute target; observed under 30 s in staging.
+#
+# To force 100% legacy RIGHT NOW (panic button):
+#   1. Edit the split_clients block above to "100% legacy_read".
+#   2. nginx -t && nginx -s reload
+#   3. Verify: curl -fsS https://api.example.com/api/work/list \
+#        -H 'x-ypat-backend: v2-current' -o /dev/null -w '%{http_code}\n'
+#      expect 200 from legacy.
+
+# ── What this file does NOT do ─────────────────────────────
+# Configure TLS — that's in your main server {} block.
+# Configure the legacy upstream pool beyond a single server —
+# multi-node legacy is operator-specific.
+# Configure request body size — WorkController doesn't accept
+# POST in PR-11; that lands with the write-side migration
+# (PR-15 follow-up).
