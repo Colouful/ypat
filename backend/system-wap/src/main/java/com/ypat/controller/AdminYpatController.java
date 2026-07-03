@@ -249,7 +249,15 @@ public class AdminYpatController {
     }
 
     private JsonElement parseResponseRes(String json) {
-        JsonElement element = JsonParser.parseString(json);
+        if (StringUtils.isBlank(json)) {
+            throw new SysException(ResponseCode.FAIL_SER, "服务响应格式错误");
+        }
+        JsonElement element;
+        try {
+            element = JsonParser.parseString(json);
+        } catch (RuntimeException e) {
+            throw new SysException(ResponseCode.FAIL_SER, "服务响应格式错误");
+        }
         if (element != null && element.isJsonObject()) {
             JsonObject object = element.getAsJsonObject();
             if (object.has("code")) {

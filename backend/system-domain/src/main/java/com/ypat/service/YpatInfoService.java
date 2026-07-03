@@ -10,6 +10,7 @@ import com.ypat.entity.Record;
 import com.ypat.enums.RecordType;
 import com.ypat.enums.UserImgType;
 import com.ypat.enums.YesNo;
+import com.ypat.enums.YpatPatstyle;
 import com.ypat.enums.YpatStatus;
 import com.ypat.repository.*;
 import com.ypat.util.*;
@@ -351,16 +352,7 @@ public class YpatInfoService {
                     predicatesList.add(criteriaBuilder.equal(root.get("target"), queryQo.getTarget()));
                 }
                 if(CommonUtils.isNotNull(queryQo.getPatstyle())){
-                    Set<String> patstyles = new LinkedHashSet<String>();
-                    for (String rawPatstyle : queryQo.getPatstyle().split(",")) {
-                        String patstyle = rawPatstyle.trim();
-                        if(!"".equals(patstyle)){
-                            patstyles.add(patstyle);
-                        }
-                    }
-                    if(CollectionUtils.isEmpty(patstyles)){
-                        throw new SysException(ResponseCode.FAIL_PARA, "patstyle参数错误");
-                    }
+                    Set<String> patstyles = normalizePatstyleFilters(queryQo.getPatstyle());
                     List<Predicate> patstylePredicates = new ArrayList<Predicate>();
                     for (String patstyle : patstyles) {
                         patstylePredicates.add(criteriaBuilder.equal(root.get("patstyle"), patstyle));
@@ -388,7 +380,7 @@ public class YpatInfoService {
         }, pageable);
     }
 
-    private Long parseWorkIdFilter(YpatInfoQo queryQo) {
+    Long parseWorkIdFilter(YpatInfoQo queryQo) {
         if(CommonUtils.isNotNull(queryQo.getWorkId())){
             try {
                 Long workId = Long.valueOf(queryQo.getWorkId());
@@ -401,6 +393,26 @@ public class YpatInfoService {
             }
         }
         return null;
+    }
+
+    Set<String> normalizePatstyleFilters(String patstyleFilter) {
+        Set<String> patstyles = new LinkedHashSet<String>();
+        if(CommonUtils.isNotNull(patstyleFilter)){
+            for (String rawPatstyle : patstyleFilter.split(",")) {
+                String patstyle = rawPatstyle.trim();
+                if("".equals(patstyle)){
+                    continue;
+                }
+                if(!patstyle.matches("\\d+") || "".equals(YpatPatstyle.getNameByCode(patstyle))){
+                    throw new SysException(ResponseCode.FAIL_PARA, "patstyle参数错误");
+                }
+                patstyles.add(patstyle);
+            }
+        }
+        if(CollectionUtils.isEmpty(patstyles)){
+            throw new SysException(ResponseCode.FAIL_PARA, "patstyle参数错误");
+        }
+        return patstyles;
     }
 
 }

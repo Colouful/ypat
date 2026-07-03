@@ -1,13 +1,19 @@
 package com.ypat.controller;
 
+import com.google.gson.JsonElement;
+import com.ypat.ResponseCode;
+import com.ypat.SysException;
 import org.junit.Test;
 
 import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
@@ -59,6 +65,21 @@ public class AdminYpatControllerSourceTest {
         assertTrue(source.contains("qo.setWorkId(workId)"));
     }
 
+    @Test
+    public void parseResponseResReturnsResAndWrapsMalformedResponses() throws Exception {
+        AdminYpatController controller = new AdminYpatController();
+
+        JsonElement data = invokeParseResponseRes(controller, "{\"code\":200,\"res\":{\"ok\":true}}");
+        assertTrue(data.isJsonObject());
+        assertTrue(data.getAsJsonObject().get("ok").getAsBoolean());
+
+        assertParseResponseFail(controller, "{\"code\":500,\"msg\":{}}", ResponseCode.FAIL_SER.getMsg());
+        assertParseResponseFail(controller, "{\"code\":null,\"msg\":\"bad\"}", "服务响应格式错误");
+        assertParseResponseFail(controller, "{\"code\":\"x\",\"msg\":\"bad\"}", "服务响应格式错误");
+        assertParseResponseFail(controller, "{not-json", "服务响应格式错误");
+        assertParseResponseFail(controller, "", "服务响应格式错误");
+    }
+
     private String readSource(String modulePath, String repoPath, String message) throws IOException {
         Path path = Paths.get(modulePath);
         if (!Files.exists(path)) {
@@ -66,5 +87,25 @@ public class AdminYpatControllerSourceTest {
         }
         assertTrue(message, Files.exists(path));
         return new String(Files.readAllBytes(path), StandardCharsets.UTF_8);
+    }
+
+    private JsonElement invokeParseResponseRes(AdminYpatController controller, String json) throws Exception {
+        Method method = AdminYpatController.class.getDeclaredMethod("parseResponseRes", String.class);
+        method.setAccessible(true);
+        return (JsonElement) method.invoke(controller, json);
+    }
+
+    private void assertParseResponseFail(AdminYpatController controller, String json, String expectedMessage) throws Exception {
+        try {
+            invokeParseResponseRes(controller, json);
+        } catch (InvocationTargetException e) {
+            Throwable cause = e.getCause();
+            assertTrue(cause instanceof SysException);
+            SysException sysException = (SysException) cause;
+            assertEquals(ResponseCode.FAIL_SER.getCode(), sysException.getCode());
+            assertEquals(expectedMessage, sysException.getMsg());
+            return;
+        }
+        throw new AssertionError("Expected SysException for json=" + json);
     }
 }

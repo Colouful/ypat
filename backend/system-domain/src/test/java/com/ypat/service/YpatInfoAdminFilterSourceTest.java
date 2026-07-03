@@ -1,13 +1,21 @@
 package com.ypat.service;
 
+import com.ypat.ResponseCode;
+import com.ypat.SysException;
+import com.ypat.YpatInfoQo;
 import org.junit.Test;
 
 import java.io.IOException;
+import java.util.Arrays;
+import java.util.LinkedHashSet;
+import java.util.Set;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 public class YpatInfoAdminFilterSourceTest {
@@ -40,20 +48,51 @@ public class YpatInfoAdminFilterSourceTest {
     }
 
     @Test
+    public void workIdFilterValidationRejectsInvalidValues() {
+        YpatInfoService service = new YpatInfoService();
+        YpatInfoQo emptyQo = new YpatInfoQo();
+        assertNull(service.parseWorkIdFilter(emptyQo));
+
+        YpatInfoQo validQo = new YpatInfoQo();
+        validQo.setWorkId("12");
+        assertEquals(Long.valueOf(12L), service.parseWorkIdFilter(validQo));
+
+        assertWorkIdFailPara(service, "abc");
+        assertWorkIdFailPara(service, "0");
+        assertWorkIdFailPara(service, "-1");
+    }
+
+    @Test
     public void ypatAdminPatstyleFilterMatchesCommaSeparatedBoundaries() throws Exception {
         String source = read("src/main/java/com/ypat/service/YpatInfoService.java");
 
         assertFalse(source.contains("criteriaBuilder.like(root.get(\"patstyle\"), \"%\" + queryQo.getPatstyle() + \"%\")"));
-        assertTrue(source.contains("queryQo.getPatstyle().split(\",\")"));
+        assertTrue(source.contains("normalizePatstyleFilters(queryQo.getPatstyle())"));
+        assertTrue(source.contains("patstyleFilter.split(\",\")"));
         assertTrue(source.contains(".trim()"));
         assertTrue(source.contains("Set<String> patstyles"));
         assertTrue(source.contains("patstyles.add(patstyle)"));
+        assertTrue(source.contains("YpatPatstyle.getNameByCode(patstyle)"));
         assertTrue(source.contains("new SysException(ResponseCode.FAIL_PARA, \"patstyle参数错误\")"));
         assertTrue(source.contains("criteriaBuilder.or("));
         assertTrue(source.contains("criteriaBuilder.equal(root.get(\"patstyle\"), patstyle)"));
         assertTrue(source.contains("criteriaBuilder.like(root.get(\"patstyle\"), patstyle + \",%\")"));
         assertTrue(source.contains("criteriaBuilder.like(root.get(\"patstyle\"), \"%,\" + patstyle)"));
         assertTrue(source.contains("criteriaBuilder.like(root.get(\"patstyle\"), \"%,\" + patstyle + \",%\")"));
+    }
+
+    @Test
+    public void patstyleFilterValidationRejectsWildcardsAndNormalizesTokens() {
+        YpatInfoService service = new YpatInfoService();
+
+        assertPatstyleFailPara(service, ", ,");
+        assertPatstyleFailPara(service, "%");
+        assertPatstyleFailPara(service, "_");
+        assertPatstyleFailPara(service, "1_");
+        assertPatstyleFailPara(service, "13");
+
+        Set<String> patstyles = service.normalizePatstyleFilters("1, 2,1");
+        assertEquals(new LinkedHashSet<String>(Arrays.asList("1", "2")), patstyles);
     }
 
     @Test
@@ -78,5 +117,29 @@ public class YpatInfoAdminFilterSourceTest {
         int end = source.indexOf(endToken, start);
         assertTrue(end > start);
         return source.substring(start, end);
+    }
+
+    private void assertWorkIdFailPara(YpatInfoService service, String workId) {
+        YpatInfoQo qo = new YpatInfoQo();
+        qo.setWorkId(workId);
+        try {
+            service.parseWorkIdFilter(qo);
+        } catch (SysException e) {
+            assertEquals(ResponseCode.FAIL_PARA.getCode(), e.getCode());
+            assertEquals("workId参数错误", e.getMsg());
+            return;
+        }
+        throw new AssertionError("Expected FAIL_PARA for workId=" + workId);
+    }
+
+    private void assertPatstyleFailPara(YpatInfoService service, String patstyle) {
+        try {
+            service.normalizePatstyleFilters(patstyle);
+        } catch (SysException e) {
+            assertEquals(ResponseCode.FAIL_PARA.getCode(), e.getCode());
+            assertEquals("patstyle参数错误", e.getMsg());
+            return;
+        }
+        throw new AssertionError("Expected FAIL_PARA for patstyle=" + patstyle);
     }
 }
