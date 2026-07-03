@@ -23,7 +23,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/admin/work")
 public class AdminWorkController {
 
-    private static final int DEFAULT_PAGE = 1;
+    private static final int DEFAULT_PAGE = 0;
     private static final int DEFAULT_SIZE = 10;
     private static final int MAX_SIZE = 50;
 
@@ -41,7 +41,7 @@ public class AdminWorkController {
             @RequestParam(value = "category", required = false) String category,
             @RequestParam(value = "gender", required = false) String gender,
             @RequestParam(value = "profession", required = false) String profession,
-            @RequestParam(value = "page", required = false, defaultValue = "1") Integer page,
+            @RequestParam(value = "page", required = false, defaultValue = "0") Integer page,
             @RequestParam(value = "size", required = false, defaultValue = "10") Integer size) {
 
         WorkListQo qo = new WorkListQo();
@@ -94,7 +94,7 @@ public class AdminWorkController {
     }
 
     private int normalizePage(Integer page) {
-        return page == null || page < 1 ? DEFAULT_PAGE : page;
+        return page == null || page < 0 ? DEFAULT_PAGE : page;
     }
 
     private int normalizeSize(Integer size) {
@@ -114,6 +114,15 @@ public class AdminWorkController {
         JsonElement element = JsonParser.parseString(json);
         if (element != null && element.isJsonObject()) {
             JsonObject object = element.getAsJsonObject();
+            if (object.has("code")) {
+                int code = object.get("code").getAsInt();
+                if (code != ResponseCode.SUCCESS.getCode()) {
+                    String msg = object.has("msg") && !object.get("msg").isJsonNull()
+                            ? object.get("msg").getAsString()
+                            : ResponseCode.FAIL_SER.getMsg();
+                    throw new SysException(code, msg);
+                }
+            }
             if (object.has("res")) {
                 return object.get("res");
             }

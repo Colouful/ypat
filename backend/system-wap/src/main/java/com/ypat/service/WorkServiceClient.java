@@ -32,11 +32,11 @@ public interface WorkServiceClient {
     @PostMapping("/service/work/admin/audit")
     String adminAudit(@RequestParam("id") Long id,
                       @RequestParam("flag") String flag,
-                      @RequestParam("reason") String reason);
+                      @RequestParam(value = "reason", required = false) String reason);
 
     @PostMapping("/service/work/admin/offline")
     String adminOffline(@RequestParam("id") Long id,
-                        @RequestParam("reason") String reason);
+                        @RequestParam(value = "reason", required = false) String reason);
 
     @GetMapping("/service/work/my")
     String my(@RequestParam("userId") String userId, @RequestParam("page") Integer page, @RequestParam("size") Integer size, @RequestParam(value = "status", required = false) String status);

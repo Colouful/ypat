@@ -7,6 +7,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 public class WorkServiceAdminSourceTest {
@@ -38,6 +39,18 @@ public class WorkServiceAdminSourceTest {
     }
 
     @Test
+    public void adminWorkPageListUsesZeroBasedPageContract() throws Exception {
+        String source = read("src/main/java/com/ypat/service/WorkService.java");
+        String adminPageList = methodBody(source,
+                "public Map<String, Object> adminPageList(WorkListQo qo)",
+                "public Map<String, Object> adminDetail(Long workId)");
+
+        assertTrue(adminPageList.contains("final int page = qo.getPage() == null || qo.getPage() < 0 ? 0 : qo.getPage();"));
+        assertTrue(adminPageList.contains("new PageRequest(page, size"));
+        assertFalse(adminPageList.contains("new PageRequest(page - 1, size"));
+    }
+
+    @Test
     public void adminStatusChangesValidateWorkExistsBeforeUpdating() throws Exception {
         String source = read("src/main/java/com/ypat/service/WorkService.java");
 
@@ -53,5 +66,13 @@ public class WorkServiceAdminSourceTest {
         assertTrue(source.contains("int updateStatusAndAuditReason"));
         assertTrue(source.contains("auditReason = :auditReason"));
         assertTrue(source.contains("deletedFlag = 0"));
+    }
+
+    private String methodBody(String source, String startToken, String endToken) {
+        int start = source.indexOf(startToken);
+        assertTrue(start >= 0);
+        int end = source.indexOf(endToken, start);
+        assertTrue(end > start);
+        return source.substring(start, end);
     }
 }

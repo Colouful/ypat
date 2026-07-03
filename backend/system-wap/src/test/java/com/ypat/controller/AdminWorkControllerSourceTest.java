@@ -8,6 +8,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 public class AdminWorkControllerSourceTest {
@@ -29,6 +30,23 @@ public class AdminWorkControllerSourceTest {
         assertTrue(source.contains("workServiceClient.adminDetail(id)"));
         assertTrue(source.contains("workServiceClient.adminAudit(id, flag, reason)"));
         assertTrue(source.contains("workServiceClient.adminOffline(id, reason)"));
+    }
+
+    @Test
+    public void adminWorkControllerKeepsZeroBasedPageContractAndPropagatesInternalErrors() throws IOException {
+        String source = readSource(
+                "src/main/java/com/ypat/controller/AdminWorkController.java",
+                "backend/system-wap/src/main/java/com/ypat/controller/AdminWorkController.java",
+                "AdminWorkController.java should exist");
+
+        assertTrue(source.contains("private static final int DEFAULT_PAGE = 0;"));
+        assertTrue(source.contains("defaultValue = \"0\""));
+        assertTrue(source.contains("return page == null || page < 0 ? DEFAULT_PAGE : page;"));
+        assertFalse(source.contains("normalizePage(page) + 1"));
+        assertFalse(source.contains("page + 1"));
+        assertTrue(source.contains("object.get(\"code\")"));
+        assertTrue(source.contains("code != ResponseCode.SUCCESS.getCode()"));
+        assertTrue(source.contains("throw new SysException(code, msg)"));
     }
 
     @Test
@@ -66,10 +84,11 @@ public class AdminWorkControllerSourceTest {
         assertTrue(source.contains("@PostMapping(\"/service/work/admin/audit\")"));
         assertTrue(source.contains("String adminAudit(@RequestParam(\"id\") Long id,"));
         assertTrue(source.contains("@RequestParam(\"flag\") String flag,"));
-        assertTrue(source.contains("@RequestParam(\"reason\") String reason);"));
+        assertTrue(source.contains("@RequestParam(value = \"reason\", required = false) String reason);"));
         assertTrue(source.contains("@PostMapping(\"/service/work/admin/offline\")"));
         assertTrue(source.contains("String adminOffline(@RequestParam(\"id\") Long id,"));
-        assertTrue(source.contains("@RequestParam(\"reason\") String reason);"));
+        assertTrue(source.contains("@RequestParam(value = \"reason\", required = false) String reason);"));
+        assertTrue(countOccurrences(source, "@RequestParam(value = \"reason\", required = false) String reason") >= 2);
     }
 
     private String readSource(String modulePath, String repoPath, String message) throws IOException {
@@ -79,5 +98,15 @@ public class AdminWorkControllerSourceTest {
         }
         assertTrue(message, Files.exists(path));
         return new String(Files.readAllBytes(path), StandardCharsets.UTF_8);
+    }
+
+    private int countOccurrences(String source, String token) {
+        int count = 0;
+        int index = 0;
+        while ((index = source.indexOf(token, index)) >= 0) {
+            count++;
+            index += token.length();
+        }
+        return count;
     }
 }

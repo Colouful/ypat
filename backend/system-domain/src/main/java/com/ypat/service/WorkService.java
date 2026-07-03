@@ -397,7 +397,7 @@ public class WorkService {
 
     public Map<String, Object> adminPageList(WorkListQo qo) {
         if (qo == null) qo = new WorkListQo();
-        final int page = qo.getPage() == null || qo.getPage() < 1 ? 1 : qo.getPage();
+        final int page = qo.getPage() == null || qo.getPage() < 0 ? 0 : qo.getPage();
         final int size = qo.getSize() == null || qo.getSize() < 1 ? 10 : Math.min(qo.getSize(), 50);
         final String status = qo.getStatus();
         final String city = qo.getCity();
@@ -438,7 +438,7 @@ public class WorkService {
         };
 
         Page<Work> result = workRepository.findAll(spec,
-            new PageRequest(page - 1, size, new Sort(new Sort.Order(Sort.Direction.DESC, "publishTime"))));
+            new PageRequest(page, size, new Sort(new Sort.Order(Sort.Direction.DESC, "publishTime"))));
         List<WorkAdminListItem> items = new ArrayList<>();
         for (Work work : result.getContent()) {
             WorkAdminListItem item = toAdminListItem(work);
