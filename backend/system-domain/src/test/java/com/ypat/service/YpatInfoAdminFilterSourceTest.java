@@ -103,6 +103,7 @@ public class YpatInfoAdminFilterSourceTest {
                 "public void delete(Long id)");
 
         assertTrue(auditMethod.contains("info.setStatus(flag)"));
+        assertTrue(auditMethod.contains("if(recomflag!=null)"));
         assertTrue(auditMethod.contains("info.setRecomflag(recomflag)"));
         assertTrue(auditMethod.contains("info.setReason(reason)"));
         assertFalse(auditMethod.contains("setTarget"));

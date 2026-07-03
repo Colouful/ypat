@@ -9,7 +9,7 @@ import { getYpatTargetOptions, getYpatPatstyleOptions, getYpatChargeWayOptions, 
 const router = useRouter()
 const form = ref<YpatSubmitForm & { patstyleList: string[] }>({
   describ: '', target: '', patdate: '', chargeway: '1', province: '', city: '', area: '', patstyle: '',
-  nickname: '', gender: '', profess: '', patstyleList: [],
+  workId: '', nickname: '', gender: '', profess: '', patstyleList: [],
 })
 const avatar = ref('')
 const avatarFile = ref<File>()
@@ -68,6 +68,7 @@ async function submit() {
         <el-form-item label="约拍对象" prop="target"><el-select v-model="form.target" clearable placeholder="请选择"><el-option v-for="o in getYpatTargetOptions()" :key="o.value" :label="o.label" :value="o.value"/></el-select></el-form-item>
         <el-form-item label="约拍日期" prop="patdate"><el-date-picker v-model="form.patdate" type="date" value-format="YYYY-MM-DD"/></el-form-item>
         <el-form-item label="城市" prop="city"><el-input v-model="form.city"/></el-form-item>
+        <el-form-item label="关联作品ID"><el-input v-model="form.workId" placeholder="从作品发起约拍时填写"/></el-form-item>
         <el-form-item label="收费方式"><el-radio-group v-model="form.chargeway"><el-radio v-for="o in getYpatChargeWayOptions()" :key="o.value" :label="o.value">{{ o.label }}</el-radio></el-radio-group></el-form-item>
         <el-form-item label="风格"><el-checkbox-group v-model="form.patstyleList"><el-checkbox v-for="o in getYpatPatstyleOptions()" :key="o.value" :label="o.value">{{ o.label }}</el-checkbox></el-checkbox-group></el-form-item>
         <el-form-item label="描述" prop="describ"><el-input v-model="form.describ" type="textarea" :rows="4"/></el-form-item>

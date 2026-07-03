@@ -68,6 +68,7 @@ export interface YpatSubmitForm {
   province: string
   city: string
   area?: string
+  workId?: string
   patstyle: string
   nickname: string
   gender: string
@@ -119,6 +120,7 @@ export function submitYpat(
   appendFormValue(formData, 'province', data.province)
   appendFormValue(formData, 'city', data.city)
   appendFormValue(formData, 'area', data.area)
+  appendFormValue(formData, 'workId', data.workId)
   appendFormValue(formData, 'patstyle', data.patstyle)
   appendFormValue(formData, 'nickname', data.nickname)
   appendFormValue(formData, 'gender', data.gender)

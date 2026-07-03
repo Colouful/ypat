@@ -120,7 +120,15 @@ onMounted(fetchList)
       <el-table-column prop="recomflag" label="推荐" width="100" align="center"><template #default="{row}">{{ row.recomflag === RecomFlag.YES.value ? '已推荐' : '未推荐' }}</template></el-table-column>
       <el-table-column label="操作" width="180" align="center" fixed="right">
         <template #default="{row}">
-          <el-button type="primary" link size="small" @click="openAudit(row as unknown as YpatInfo)">审核</el-button>
+          <el-button
+            v-if="row.status === '1'"
+            type="primary"
+            link
+            size="small"
+            @click="openAudit(row as unknown as YpatInfo)"
+          >
+            审核
+          </el-button>
           <el-button type="success" link size="small" v-if="row.recomflag !== RecomFlag.YES.value" :loading="recomLoadingIds.has(row.id)" :disabled="recomLoadingIds.has(row.id)" @click="doRecom(row as unknown as YpatInfo, RecomFlag.YES.value)">推荐</el-button>
           <el-button type="info" link size="small" v-else :loading="recomLoadingIds.has(row.id)" :disabled="recomLoadingIds.has(row.id)" @click="doRecom(row as unknown as YpatInfo, RecomFlag.NO.value)">取消推荐</el-button>
         </template>

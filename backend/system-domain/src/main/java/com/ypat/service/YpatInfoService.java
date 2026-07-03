@@ -122,7 +122,9 @@ public class YpatInfoService {
             throw new SysException(ResponseCode.FAIL_NOT);
         }
         info.setStatus(flag);
-        info.setRecomflag(recomflag);
+        if(recomflag!=null){
+            info.setRecomflag(recomflag);
+        }
         info.setReason(reason);
         ypatInfoRepository.save(info);
     }

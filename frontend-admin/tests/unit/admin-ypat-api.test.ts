@@ -28,6 +28,7 @@ describe('后台约拍 API', () => {
         province: '上海',
         city: '上海',
         area: '徐汇',
+        workId: '88',
         patstyle: '1,2',
         nickname: '摄影师',
         gender: '1',
@@ -43,6 +44,7 @@ describe('后台约拍 API', () => {
     const formData = data as FormData
     expect(formData.get('describ')).toBe('约拍描述')
     expect(formData.get('target')).toBe('0')
+    expect(formData.get('workId')).toBe('88')
     expect(formData.get('patstyle')).toBe('1,2')
     expect(formData.get('file')).toBe(avatar)
     expect(formData.getAll('files')).toEqual([workImage])
