@@ -125,10 +125,10 @@ export const getYpatPatstyleOptions = () => Object.values(YpatPatstyle).map((o) 
 
 /** 收费方式 */
 export const YpatChargeWay = {
-  FREE: { value: '0', name: '免费互拍' },
-  CHARGE: { value: '1', name: '收费拍摄' },
+  FREE: { value: '0', name: '希望互勉' },
+  CHARGE: { value: '1', name: '我要收费' },
   CAN_PAY: { value: '2', name: '可付费' },
-  NEGOTIATE: { value: '3', name: '费用面议' },
+  NEGOTIATE: { value: '3', name: '费用协商' },
 } as const
 export const getYpatChargeWayOptions = () => Object.values(YpatChargeWay).map((o) => ({ label: o.name, value: o.value }))
 

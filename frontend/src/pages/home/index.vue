@@ -144,7 +144,7 @@ const quickItems = [
 
 const quickChips = [
   { label: '全部', value: 'all' },
-  { label: '希望互免', value: 'free' },
+  { label: '希望互勉', value: 'free' },
   { label: '可付费', value: 'pay' },
   { label: '约摄影师', value: 'photographer' },
   { label: '约模特', value: 'model' },
@@ -170,7 +170,7 @@ const filterGroups: KeepFilterGroup[] = [
     title: '合作方式',
     multiple: true,
     options: [
-      { label: '希望互免', value: '0' },
+      { label: '希望互勉', value: '0' },
       { label: '我要收费', value: '1' },
       { label: '可付费', value: '2' },
       { label: '费用协商', value: '3' },

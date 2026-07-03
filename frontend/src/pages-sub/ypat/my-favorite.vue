@@ -67,7 +67,7 @@ async function load(refresh = false): Promise<void> {
 
 function getChargeLabel(chargeway: string, chargeamt?: number): string {
   if (Number(chargeamt || 0) > 0) return `¥${chargeamt}`
-  return CHARGE_WAY_LABELS[chargeway] || '费用面议'
+  return CHARGE_WAY_LABELS[chargeway] || '费用协商'
 }
 
 function formatTime(value?: string): string {
