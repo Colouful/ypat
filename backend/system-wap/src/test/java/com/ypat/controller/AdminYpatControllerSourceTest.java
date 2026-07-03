@@ -29,6 +29,12 @@ public class AdminYpatControllerSourceTest {
         assertTrue(source.contains("!codeElement.isJsonPrimitive()"));
         assertTrue(source.contains("!codeElement.getAsJsonPrimitive().isNumber()"));
         assertTrue(source.contains("new SysException(ResponseCode.FAIL_SER, \"服务响应格式错误\")"));
+        assertTrue(source.contains("JsonElement msgElement = object.get(\"msg\")"));
+        assertTrue(source.contains("msgElement == null"));
+        assertTrue(source.contains("msgElement.isJsonNull()"));
+        assertTrue(source.contains("!msgElement.isJsonPrimitive()"));
+        assertTrue(source.contains("ResponseCode.FAIL_SER.getMsg()"));
+        assertFalse(source.contains("object.get(\"msg\").getAsString()"));
         assertTrue(source.contains("return ResponseApiBody.success(parseResponseRes(json))"));
         assertFalse(source.contains("JsonElement pageData = JsonParser.parseString(json)"));
         assertFalse(source.contains("ResponseApiBody.success(pageData)"));

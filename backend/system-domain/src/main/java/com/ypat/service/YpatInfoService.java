@@ -391,7 +391,11 @@ public class YpatInfoService {
     private Long parseWorkIdFilter(YpatInfoQo queryQo) {
         if(CommonUtils.isNotNull(queryQo.getWorkId())){
             try {
-                return Long.valueOf(queryQo.getWorkId());
+                Long workId = Long.valueOf(queryQo.getWorkId());
+                if(workId <= 0){
+                    throw new SysException(ResponseCode.FAIL_PARA, "workId参数错误");
+                }
+                return workId;
             } catch (NumberFormatException e) {
                 throw new SysException(ResponseCode.FAIL_PARA, "workId参数错误");
             }

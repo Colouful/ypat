@@ -34,6 +34,7 @@ public class YpatInfoAdminFilterSourceTest {
         String source = read("src/main/java/com/ypat/service/YpatInfoService.java");
 
         assertTrue(source.contains("catch (NumberFormatException"));
+        assertTrue(source.contains("workId <= 0"));
         assertTrue(source.contains("new SysException(ResponseCode.FAIL_PARA"));
         assertTrue(source.contains("workId参数错误"));
     }

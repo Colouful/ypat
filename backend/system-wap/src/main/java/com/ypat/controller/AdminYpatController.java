@@ -262,9 +262,12 @@ public class AdminYpatController {
                 }
                 int code = codeElement.getAsInt();
                 if (code != ResponseCode.SUCCESS.getCode()) {
-                    String msg = object.has("msg") && !object.get("msg").isJsonNull()
-                            ? object.get("msg").getAsString()
-                            : ResponseCode.FAIL_SER.getMsg();
+                    JsonElement msgElement = object.get("msg");
+                    String msg = msgElement == null
+                            || msgElement.isJsonNull()
+                            || !msgElement.isJsonPrimitive()
+                            ? ResponseCode.FAIL_SER.getMsg()
+                            : msgElement.getAsString();
                     throw new SysException(code, msg);
                 }
             }
