@@ -267,11 +267,66 @@ services:
         max-size: "20m"
         max-file: "5"
 
+  # ─────────────────────────────────────────────────────────────────
+  # backend-v2 : the new modular monolith (Spring Boot 3.5 +
+  # Java 21, Flyway 10, Modulith 1.4). PR-04 + PR-12 + PR-01b.
+  # Reads / writes the same MySQL and Redis. First v2 service
+  # on this network; PR-11 onwards migrates traffic from the
+  # legacy wap / restapi to here.
+  # ─────────────────────────────────────────────────────────────────
+  backend-v2:
+    build:
+      context: .
+      dockerfile: backend-v2/Dockerfile.runtime
+      args:
+        # Build arg feeds Dockerfile.runtime's COPY source.
+        # The build host runs `mvn package` first (see
+        # scripts/docker-build-backend-v2.sh) and drops the jar
+        # into the build context as app.jar.
+        JAR_SRC: backend-v2/target/backend-v2-1.0.0-SNAPSHOT.jar
+    image: ypat-backend-v2:dev
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:8092:8082"
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      YPAT_COS_REGION: ${YPAT_COS_REGION:-ap-guangzhou}
+      YPAT_COS_BUCKET: ${YPAT_COS_BUCKET:-ypat-dev-placeholder}
+      YPAT_COS_SECRET_ID: ${YPAT_COS_SECRET_ID:-dev-placeholder-id}
+      YPAT_COS_SECRET_KEY: ${YPAT_COS_SECRET_KEY:-dev-placeholder-key}
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - ypat_ypat-net
+    deploy:
+      resources:
+        limits:
+          memory: 768M
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8082/api/work/list >/dev/null 2>&1 || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 10
+      start_period: 90s
+    logging:
+      driver: json-file
+      options:
+        max-size: "20m"
+        max-file: "5"
+
 volumes:
   mysql_data:
   redis_data:
 
+# The ypat_ypat-net network is owned by the ypat-workspace
+# docker-compose project (this file is consumed by the legacy
+# frontend + backend stack). Marking it external: true tells
+# THIS project not to try to create it; backend-v2 joins it
+# and talks to mysql / redis by hostname.
 networks:
   ypat_ypat-net:
     name: ypat_ypat-net
-    driver: bridge
+    external: true
