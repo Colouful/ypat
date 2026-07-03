@@ -36,9 +36,10 @@ public class AdminYpatControllerSourceTest {
         assertTrue(source.contains("!codeElement.getAsJsonPrimitive().isNumber()"));
         assertTrue(source.contains("new SysException(ResponseCode.FAIL_SER, \"服务响应格式错误\")"));
         assertTrue(source.contains("JsonElement msgElement = object.get(\"msg\")"));
-        assertTrue(source.contains("msgElement == null"));
+        assertTrue(source.contains("msgElement != null"));
         assertTrue(source.contains("msgElement.isJsonNull()"));
-        assertTrue(source.contains("!msgElement.isJsonPrimitive()"));
+        assertTrue(source.contains("msgElement.isJsonPrimitive()"));
+        assertTrue(source.contains("msgElement.getAsJsonPrimitive().isString()"));
         assertTrue(source.contains("ResponseCode.FAIL_SER.getMsg()"));
         assertFalse(source.contains("object.get(\"msg\").getAsString()"));
         assertTrue(source.contains("return ResponseApiBody.success(parseResponseRes(json))"));
@@ -74,6 +75,8 @@ public class AdminYpatControllerSourceTest {
         assertTrue(data.getAsJsonObject().get("ok").getAsBoolean());
 
         assertParseResponseFail(controller, "{\"code\":500,\"msg\":{}}", ResponseCode.FAIL_SER.getMsg());
+        assertParseResponseFail(controller, "{\"code\":500,\"msg\":123}", ResponseCode.FAIL_SER.getMsg());
+        assertParseResponseFail(controller, "{\"code\":500,\"msg\":true}", ResponseCode.FAIL_SER.getMsg());
         assertParseResponseFail(controller, "{\"code\":null,\"msg\":\"bad\"}", "服务响应格式错误");
         assertParseResponseFail(controller, "{\"code\":\"x\",\"msg\":\"bad\"}", "服务响应格式错误");
         assertParseResponseFail(controller, "{not-json", "服务响应格式错误");
