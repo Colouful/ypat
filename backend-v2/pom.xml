@@ -1,22 +1,27 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
 
-  backend-v2 — YPAT modular monolith, Spring Boot 3.5 + Java 21 (target).
+  backend-v2 — YPAT modular monolith, Spring Boot 3.5 + Java 21 (now active).
 
-  PR-04 lays down the bare skeleton:
-    * Spring Boot 2.7.18 parent  (Java 17, javax.* — the jump-board)
-    * Java 17 source / target
-    * spring-boot-starter-web only
-    * No business code yet
-    * No springdoc-openapi (PR-?? will add it once a Controller exists)
-    * No Modulith (PR-12 enables it on the Spring Boot 3.5 jump)
+  PR-12 lifts backend-v2 from the 2.7.18 jump-board to its final
+  Spring Boot 3.5 + Java 21 form, and turns Spring Modulith on.
+  After this PR:
+    * parent = spring-boot-starter-parent 3.5.x
+    * Java release / source / target = 21
+    * jakarta.* (no more javax.* in Spring imports)
+    * spring-modulith-bom + spring-modulith-starter-test on the
+      classpath
+    * ModulePackageStructureTest (PR-06) gets a sibling
+      ModulithStructureTest that calls
+      ApplicationModules.of(...).verify()
+    * CI workflow upgraded to JDK 21
 
-  The jump-board strategy is two-step:
-    1. PR-04 + PR-05: boot 2.7.18, Java 17. Old backend/ still runs.
-    2. PR-12: parent → 3.5.x, Java → 21, jakarta.* migration, Modulith on.
-
-  Keeping this pom minimal on purpose: every new dependency is a
-  contract that has to be reviewed and (later) maintained.
+  Why now and not earlier:
+    Spring Modulith 1.x is built for Spring Boot 3.x. PR-04 had
+    to pick 2.7.18 so we could compile the legacy backend on
+    JDK 17 in parallel (PR-05). Once backend-v2 owns enough
+    surface area to make Modulith's boundary rules meaningful,
+    PR-12 does the second jump.
 -->
 <project xmlns="http://maven.apache.org/POM/4.0.0"
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
@@ -28,30 +33,48 @@
     <artifactId>backend-v2</artifactId>
     <version>1.0.0-SNAPSHOT</version>
     <packaging>jar</packaging>
-    <name>YPAT Backend v2 (jump-board skeleton)</name>
+    <name>YPAT Backend v2 (Spring Boot 3.5 + Java 21)</name>
 
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
-        <version>2.7.18</version>
+        <version>3.5.15</version>
         <relativePath/>
     </parent>
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-        <java.version>17</java.version>
-        <maven.compiler.source>17</maven.compiler.source>
-        <maven.compiler.target>17</maven.compiler.target>
-        <!-- Pin to Java 17 across all plugin executions so any
+
+        <!-- Pin Java 21 across all plugin executions so any
              developer or CI agent that picks a newer JDK still
              compiles with the right bytecode level. -->
-        <maven.compiler.release>17</maven.compiler.release>
-        <!-- ArchUnit: pinned to a 0.23.x release that works on
-             JDK 17. 0.23.1 is the last release that supports both
-             JDK 11 and JDK 17 without module-path headaches. -->
-        <archunit.version>0.23.1</archunit.version>
+        <java.version>21</java.version>
+        <maven.compiler.source>21</maven.compiler.source>
+        <maven.compiler.target>21</maven.compiler.target>
+        <maven.compiler.release>21</maven.compiler.release>
+
+        <!-- ArchUnit: pinned to 1.x for the Spring Modulith rule
+             surface. 1.4.x tracks Spring Boot 3.5. -->
+        <archunit.version>1.4.1</archunit.version>
+
+        <!-- Spring Modulith: 1.4.x is the Spring Boot 3.5 line. -->
+        <spring-modulith.version>1.4.1</spring-modulith.version>
     </properties>
+
+    <dependencyManagement>
+        <dependencies>
+            <!-- Spring Modulith BOM pulls in the right Modulith
+                 artifacts aligned with the Spring Boot version. -->
+            <dependency>
+                <groupId>org.springframework.modulith</groupId>
+                <artifactId>spring-modulith-bom</artifactId>
+                <version>${spring-modulith.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
 
     <dependencies>
         <dependency>
@@ -61,9 +84,7 @@
 
         <!-- Flyway: schema migration tool. PR-07a brings it in
              but keeps it disabled until PR-07b produces the real
-             baseline. The dep is required so application.yml can
-             reference spring.flyway.* keys without a startup
-             property-not-found warning once Flyway is enabled. -->
+             baseline. -->
         <dependency>
             <groupId>org.flywaydb</groupId>
             <artifactId>flyway-core</artifactId>
@@ -77,33 +98,38 @@
             <artifactId>flyway-mysql</artifactId>
         </dependency>
 
-        <!-- Tencent Cloud COS Java SDK v5.
-             PR-10 introduces the storage abstraction; PR-11 wires
-             it into the new work-read code. Version is pinned
-             because the SDK has had breaking changes between
-             minors historically; pick a stable release and stick
-             with it until we have a reason to move. -->
+        <!-- Tencent Cloud COS Java SDK v5. -->
         <dependency>
             <groupId>com.qcloud</groupId>
             <artifactId>cos_api</artifactId>
             <version>5.6.97</version>
         </dependency>
 
-        <!-- Test scope only. JUnit 5 ships with Spring Boot 2.7.x
-             starter test, so no explicit junit-jupiter dep needed. -->
+        <!-- Spring Modulith: brings in ApplicationModules and
+             the verify() entry point. The actual rule test lives
+             in src/test/java/com/ypat/architecture. -->
+        <dependency>
+            <groupId>org.springframework.modulith</groupId>
+            <artifactId>spring-modulith-starter-core</artifactId>
+        </dependency>
+
+        <!-- Test scope. -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-test</artifactId>
             <scope>test</scope>
         </dependency>
 
-        <!-- ArchUnit — package-structure discipline in PR-06.
-             Delivered as test-scope only. We do NOT yet depend on
-             spring-modulith (that lands with PR-12 on Boot 3.x). -->
         <dependency>
             <groupId>com.tngtech.archunit</groupId>
             <artifactId>archunit-junit5</artifactId>
             <version>${archunit.version}</version>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.springframework.modulith</groupId>
+            <artifactId>spring-modulith-starter-test</artifactId>
             <scope>test</scope>
         </dependency>
     </dependencies>
