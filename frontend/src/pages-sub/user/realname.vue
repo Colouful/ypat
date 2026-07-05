@@ -43,6 +43,7 @@
 </template>
 
 <script setup lang="ts">
+import KeepPageNav from '@/components/business/KeepPageNav.vue'
 import { computed, reactive, ref } from 'vue'
 import { onLoad, onUnload } from '@dcloudio/uni-app'
 import * as oauthApi from '@/api/modules/oauth'

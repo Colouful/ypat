@@ -20,6 +20,7 @@
 </template>
 
 <script setup lang="ts">
+import KeepPageNav from '@/components/business/KeepPageNav.vue'
 import { ref } from 'vue'
 import { onLoad } from '@dcloudio/uni-app'
 import * as contentApi from '@/api/modules/content'

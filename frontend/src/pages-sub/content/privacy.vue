@@ -91,6 +91,7 @@
 </template>
 
 <script setup lang="ts">
+import KeepPageNav from '@/components/business/KeepPageNav.vue'
 import { ref, onMounted } from 'vue'
 import * as contentApi from '@/api/modules/content'
 

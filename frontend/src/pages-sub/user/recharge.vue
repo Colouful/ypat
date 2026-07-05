@@ -6,5 +6,6 @@
 </template>
 
 <script setup lang="ts">
+import KeepPageNav from '@/components/business/KeepPageNav.vue'
 import RechargePanel from '@/components/business/RechargePanel.vue'
 </script>

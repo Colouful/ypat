@@ -39,17 +39,12 @@ function navigateToProtected(url: string): void {
     return
   }
   if (currentPath() === url) return
-  showNavigationLoading()
-  uni.navigateTo({
-    url,
-    complete: hideNavigationLoading,
-  })
+  uni.navigateTo({ url })
 }
 
 export function goRootTab(url: RootTabUrl): void {
   if (currentPath() === url) return
-  showNavigationLoading()
-  uni.reLaunch({ url, complete: hideNavigationLoading })
+  uni.reLaunch({ url })
 }
 
 export function openPublish(): void {

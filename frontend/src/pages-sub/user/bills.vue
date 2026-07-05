@@ -13,6 +13,7 @@
   </view>
 </template>
 <script setup lang="ts">
+import KeepPageNav from '@/components/business/KeepPageNav.vue'
 import { ref } from 'vue'
 import { onLoad, onPullDownRefresh, onReachBottom } from '@dcloudio/uni-app'
 import { useUserStore } from '@/stores/user'

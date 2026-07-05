@@ -26,6 +26,7 @@
 </template>
 
 <script setup lang="ts">
+import KeepPageNav from '@/components/business/KeepPageNav.vue'
 import { ref } from 'vue'
 import KeepIcon from '@/components/business/KeepIcon.vue'
 

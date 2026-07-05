@@ -3,9 +3,7 @@ import {
   goRootTab,
   openMessage,
   openPublish,
-  hideNavigationLoading,
   isRootTabUrl,
-  showNavigationLoading,
 } from '@/utils/tab-navigation'
 
 // Pages that require login before accessing
@@ -79,13 +77,11 @@ export function useNavigation() {
     }
     if (!checkLoginInterception(fullUrl)) return
 
-    showNavigationLoading()
     uni.navigateTo({
       url: fullUrl,
       fail: () => {
         if (isRootTabUrl(path)) goRootTab(path)
       },
-      complete: hideNavigationLoading,
     })
   }
 
@@ -93,8 +89,7 @@ export function useNavigation() {
     const fullUrl = buildUrl(url, params)
     if (!checkLoginInterception(fullUrl)) return
 
-    showNavigationLoading()
-    uni.redirectTo({ url: fullUrl, complete: hideNavigationLoading })
+    uni.redirectTo({ url: fullUrl })
   }
 
   function switchTab(url: string) {
@@ -102,8 +97,7 @@ export function useNavigation() {
   }
 
   function reLaunch(url: string) {
-    showNavigationLoading()
-    uni.reLaunch({ url, complete: hideNavigationLoading })
+    uni.reLaunch({ url })
   }
 
   function goBack(delta: number = 1) {

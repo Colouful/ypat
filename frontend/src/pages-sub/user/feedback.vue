@@ -26,6 +26,7 @@
 </template>
 
 <script setup lang="ts">
+import KeepPageNav from '@/components/business/KeepPageNav.vue'
 import { computed, ref } from 'vue'
 import * as feedbackApi from '@/api/modules/feedback'
 import { useUserStore } from '@/stores/user'

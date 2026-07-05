@@ -27,6 +27,7 @@
 </template>
 
 <script setup lang="ts">
+import KeepPageNav from '@/components/business/KeepPageNav.vue'
 import KeepIcon from '@/components/business/KeepIcon.vue'
 
 function goAgreement() {

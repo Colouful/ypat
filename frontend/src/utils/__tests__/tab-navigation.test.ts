@@ -44,8 +44,9 @@ describe('tab-navigation', () => {
   it('switches root tabs with reLaunch', () => {
     goRootTab('/pages/mine/index')
 
-    expect(uni.showLoading).toHaveBeenCalled()
-    expect(uni.reLaunch).toHaveBeenCalledWith(expect.objectContaining({ url: '/pages/mine/index' }))
+    expect(uni.showLoading).not.toHaveBeenCalled()
+    expect(uni.hideLoading).not.toHaveBeenCalled()
+    expect(uni.reLaunch).toHaveBeenCalledWith({ url: '/pages/mine/index' })
     expect(uni.navigateTo).not.toHaveBeenCalled()
   })
 
@@ -64,7 +65,9 @@ describe('tab-navigation', () => {
 
     openPublish()
 
-    expect(uni.navigateTo).toHaveBeenCalledWith(expect.objectContaining({ url: '/pages/publish/index' }))
+    expect(uni.showLoading).not.toHaveBeenCalled()
+    expect(uni.hideLoading).not.toHaveBeenCalled()
+    expect(uni.navigateTo).toHaveBeenCalledWith({ url: '/pages/publish/index' })
     expect(uni.reLaunch).not.toHaveBeenCalled()
   })
 
@@ -80,6 +83,8 @@ describe('tab-navigation', () => {
   it('falls back home through root tab navigation', () => {
     goBackOrHome()
 
-    expect(uni.reLaunch).toHaveBeenCalledWith(expect.objectContaining({ url: '/pages/home/index' }))
+    expect(uni.showLoading).not.toHaveBeenCalled()
+    expect(uni.hideLoading).not.toHaveBeenCalled()
+    expect(uni.reLaunch).toHaveBeenCalledWith({ url: '/pages/home/index' })
   })
 })
