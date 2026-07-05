@@ -6,7 +6,7 @@ import org.springframework.format.annotation.DateTimeFormat;
 import java.io.Serializable;
 import java.util.Date;
 
-public class MemberPlanQo implements Serializable {
+public class MemberPlanQo extends PageQo implements Serializable {
     private Long id;
     private String code;
     private String name;

@@ -5,6 +5,7 @@ import com.ypat.MemberBenefitRuleQo;
 import com.ypat.MemberOperationLogQo;
 import com.ypat.MemberOrderQo;
 import com.ypat.MemberPlanQo;
+import com.ypat.PageQo;
 import com.ypat.MemberStatusQo;
 import com.ypat.MemberUserAdminQo;
 import com.ypat.ResponseCode;
@@ -38,6 +39,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.HashMap;
@@ -298,11 +300,58 @@ public class MemberService {
     }
 
     public Map<String, Object> findAdminUsers(MemberUserAdminQo qo) {
-        return new HashMap<String, Object>();
+        Page<UserMember> page = userMemberRepository.findAll(pageable(qo, new Sort(Sort.Direction.DESC, "updatedAt")));
+        Date now = new Date();
+        List<MemberUserAdminQo> content = new ArrayList<>();
+        for (UserMember member : page.getContent()) {
+            MemberUserAdminQo item = new MemberUserAdminQo();
+            item.setUserId(member.getUserId());
+            item.setLevelCode(member.getLevel());
+            item.setExpireAt(member.getExpireAt());
+            item.setMemberStatus(member.getExpireAt() != null && member.getExpireAt().after(now) ? "ACTIVE" : "EXPIRED");
+            User user = userRepository.findById(member.getUserId());
+            if (user != null) {
+                item.setMobile(user.getMobile());
+                item.setNickname(user.getNickname());
+            }
+            content.add(item);
+        }
+        return pageBody(page, content);
     }
 
     public Map<String, Object> findOperationLogs(MemberOperationLogQo qo) {
-        return new HashMap<String, Object>();
+        Page<MemberOperationLog> page = memberOperationLogRepository.findAll(pageable(qo, new Sort(Sort.Direction.DESC, "createdAt")));
+        List<MemberOperationLogQo> content = page.getContent().stream()
+                .map(log -> CopyUtil.copy(log, MemberOperationLogQo.class))
+                .collect(Collectors.toList());
+        return pageBody(page, content);
+    }
+
+    public Map<String, Object> findAdminPlans(MemberPlanQo qo) {
+        Page<MemberPlan> page = memberPlanRepository.findAll(pageable(qo, new Sort(Sort.Direction.ASC, "sortNo")));
+        List<MemberPlanQo> content = page.getContent().stream()
+                .map(plan -> CopyUtil.copy(plan, MemberPlanQo.class))
+                .collect(Collectors.toList());
+        return pageBody(page, content);
+    }
+
+    public Map<String, Object> findAdminRules(MemberBenefitRuleQo qo) {
+        Page<MemberBenefitRule> page = memberBenefitRuleRepository.findAll(pageable(qo, new Sort(Sort.Direction.ASC, "levelCode", "scene")));
+        List<MemberBenefitRuleQo> content = page.getContent().stream()
+                .map(rule -> CopyUtil.copy(rule, MemberBenefitRuleQo.class))
+                .collect(Collectors.toList());
+        return pageBody(page, content);
+    }
+
+    public Map<String, Object> findAdminOrders(MemberOrderQo qo) {
+        Pageable pageable = pageable(qo, new Sort(Sort.Direction.DESC, "credate"));
+        Page<MemberOrder> page = qo != null && qo.getUserId() != null
+                ? memberOrderRepository.findByUserIdOrderByCredateDesc(qo.getUserId(), pageable)
+                : memberOrderRepository.findAll(pageable);
+        List<MemberOrderQo> content = page.getContent().stream()
+                .map(order -> CopyUtil.copy(order, MemberOrderQo.class))
+                .collect(Collectors.toList());
+        return pageBody(page, content);
     }
 
     public MemberPlanQo savePlan(MemberPlanQo qo) {
@@ -329,6 +378,22 @@ public class MemberService {
         if (userId == null) throw new SysException(ResponseCode.FAIL_PARA);
         if (days <= 0) throw new SysException(ResponseCode.FAIL_PARA);
         if (reason == null || reason.trim().isEmpty()) throw new SysException(ResponseCode.FAIL_PARA);
+    }
+
+    private Pageable pageable(PageQo qo, Sort sort) {
+        int page = qo == null || qo.getPage() == null || qo.getPage() < 0 ? 0 : qo.getPage();
+        int size = qo == null || qo.getSize() == null || qo.getSize() <= 0 ? 10 : qo.getSize();
+        return sort == null ? new PageRequest(page, size) : new PageRequest(page, size, sort);
+    }
+
+    private Map<String, Object> pageBody(Page<?> page, List<?> content) {
+        Map<String, Object> body = new HashMap<>();
+        body.put("content", content);
+        body.put("totalElements", page.getTotalElements());
+        body.put("totalPages", page.getTotalPages());
+        body.put("number", page.getNumber());
+        body.put("size", page.getSize());
+        return body;
     }
 
     private static Date addDays(Date base, int days) {

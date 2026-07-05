@@ -1,9 +1,13 @@
 package com.ypat.controller;
 
 import com.ypat.MemberOrderCreateResult;
+import com.ypat.MemberBenefitQuoteQo;
+import com.ypat.MemberBenefitRuleQo;
+import com.ypat.MemberOperationLogQo;
 import com.ypat.MemberOrderQo;
 import com.ypat.MemberPlanQo;
 import com.ypat.MemberStatusQo;
+import com.ypat.MemberUserAdminQo;
 import com.ypat.SysException;
 import com.ypat.config.SystemConfig;
 import com.ypat.model.SecurityUserDetails;
@@ -58,10 +62,25 @@ public class MemberControllerTest {
     }
 
     @Test
+    public void plansReturnsActivePlansWithoutAuthentication() {
+        SecurityContextHolder.clearContext();
+        List<MemberPlanQo> result = controller.plans();
+        assertEquals(1, result.size());
+    }
+
+    @Test
     public void statusForwardsUserId() {
         MemberStatusQo status = controller.status();
         assertEquals(Long.valueOf(42), client.statusUserid);
         assertNotNull(status);
+    }
+
+    @Test
+    public void quoteForwardsUserId() {
+        MemberBenefitQuoteQo quote = controller.quote("SUBMIT_YPAT");
+        assertEquals(Long.valueOf(42), client.quoteUserId);
+        assertEquals("SUBMIT_YPAT", client.quoteScene);
+        assertEquals(Integer.valueOf(3), quote.getActualPpd());
     }
 
     @Test
@@ -114,6 +133,8 @@ public class MemberControllerTest {
 
     private static class FakeMemberServiceClient implements MemberServiceClient {
         Long statusUserid;
+        Long quoteUserId;
+        String quoteScene;
         Long lastCreateUserId;
         Long lastCreatePlanId;
         Long lastListUserId;
@@ -140,6 +161,18 @@ public class MemberControllerTest {
             MemberStatusQo qo = new MemberStatusQo();
             qo.setLevel("NONE");
             qo.setActive(false);
+            return qo;
+        }
+
+        @Override
+        public MemberBenefitQuoteQo quote(Long userId, String scene) {
+            this.quoteUserId = userId;
+            this.quoteScene = scene;
+            MemberBenefitQuoteQo qo = new MemberBenefitQuoteQo();
+            qo.setScene(scene);
+            qo.setOriginalPpd(5);
+            qo.setDiscountPpd(2);
+            qo.setActualPpd(3);
             return qo;
         }
 
@@ -183,6 +216,56 @@ public class MemberControllerTest {
             page.put("number", 0);
             page.put("size", 10);
             return page;
+        }
+
+        @Override
+        public Map<String, Object> adminPlans(MemberPlanQo qo) {
+            return new HashMap<>();
+        }
+
+        @Override
+        public MemberPlanQo savePlan(MemberPlanQo qo) {
+            return qo;
+        }
+
+        @Override
+        public Map<String, Object> adminRules(MemberBenefitRuleQo qo) {
+            return new HashMap<>();
+        }
+
+        @Override
+        public MemberBenefitRuleQo saveRule(MemberBenefitRuleQo qo) {
+            return qo;
+        }
+
+        @Override
+        public Map<String, Object> adminUsers(MemberUserAdminQo qo) {
+            return new HashMap<>();
+        }
+
+        @Override
+        public Boolean adminGrant(Long userId, Integer days, Long operatorId, String reason) {
+            return true;
+        }
+
+        @Override
+        public Boolean adminExtend(Long userId, Integer days, Long operatorId, String reason) {
+            return true;
+        }
+
+        @Override
+        public Boolean adminCancel(Long userId, Long operatorId, String reason) {
+            return true;
+        }
+
+        @Override
+        public Map<String, Object> adminOrders(MemberOrderQo qo) {
+            return new HashMap<>();
+        }
+
+        @Override
+        public Map<String, Object> adminLogs(MemberOperationLogQo qo) {
+            return new HashMap<>();
         }
 
         @Override
