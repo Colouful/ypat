@@ -35,6 +35,7 @@ public class MemberBenefitRule implements Serializable {
     private String status;
     @Column(length = 256)
     private String description;
+    @Column(name = "updated_at")
     @Temporal(TemporalType.TIMESTAMP)
     private Date updatedAt;
     public Long getId() { return id; }
