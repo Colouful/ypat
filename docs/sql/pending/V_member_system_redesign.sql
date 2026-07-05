@@ -4,8 +4,8 @@
 -- 幂等说明：
 --   * CREATE TABLE IF NOT EXISTS — 重复执行不会破坏已有结构
 --   * INSERT ... ON DUPLICATE KEY UPDATE — 重复执行种子数据不抛错
---   * ADD COLUMN 使用 information_schema.COLUMNS + PREPARE 守卫，
---     仅当目标列不存在时执行 ALTER TABLE
+--   * ADD COLUMN / MODIFY COLUMN / ADD INDEX 使用 information_schema + PREPARE 守卫，
+--     支持列不存在时创建、列已存在时收敛到目标定义
 -- ===========================================================================
 
 SET NAMES utf8mb4;
@@ -109,6 +109,132 @@ PREPARE stmt FROM @ddl;
 EXECUTE stmt;
 DEALLOCATE PREPARE stmt;
 
+SET @ddl := (
+  SELECT IF(COUNT(*) = 1,
+    'ALTER TABLE `t_member_plan` MODIFY COLUMN `gift_ppd` INT DEFAULT 0 COMMENT ''开通赠送拍拍豆''',
+    'SELECT ''skip normalize t_member_plan.gift_ppd'''
+  )
+  FROM information_schema.COLUMNS
+  WHERE TABLE_SCHEMA = DATABASE()
+    AND TABLE_NAME = 't_member_plan'
+    AND COLUMN_NAME = 'gift_ppd'
+);
+PREPARE stmt FROM @ddl;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
+
+SET @ddl := (
+  SELECT IF(COUNT(*) = 1,
+    'UPDATE `t_member_plan` SET `level_code` = ''BASIC'' WHERE `level_code` IS NULL',
+    'SELECT ''skip backfill t_member_plan.level_code'''
+  )
+  FROM information_schema.COLUMNS
+  WHERE TABLE_SCHEMA = DATABASE()
+    AND TABLE_NAME = 't_member_plan'
+    AND COLUMN_NAME = 'level_code'
+);
+PREPARE stmt FROM @ddl;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
+
+SET @ddl := (
+  SELECT IF(COUNT(*) = 1,
+    'ALTER TABLE `t_member_plan` MODIFY COLUMN `level_code` VARCHAR(16) NOT NULL DEFAULT ''BASIC'' COMMENT ''绑定会员等级''',
+    'SELECT ''skip normalize t_member_plan.level_code'''
+  )
+  FROM information_schema.COLUMNS
+  WHERE TABLE_SCHEMA = DATABASE()
+    AND TABLE_NAME = 't_member_plan'
+    AND COLUMN_NAME = 'level_code'
+);
+PREPARE stmt FROM @ddl;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
+
+SET @ddl := (
+  SELECT IF(COUNT(*) = 1,
+    'UPDATE `t_member_plan` SET `recommended` = ''0'' WHERE `recommended` IS NULL',
+    'SELECT ''skip backfill t_member_plan.recommended'''
+  )
+  FROM information_schema.COLUMNS
+  WHERE TABLE_SCHEMA = DATABASE()
+    AND TABLE_NAME = 't_member_plan'
+    AND COLUMN_NAME = 'recommended'
+);
+PREPARE stmt FROM @ddl;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
+
+SET @ddl := (
+  SELECT IF(COUNT(*) = 1,
+    'ALTER TABLE `t_member_plan` MODIFY COLUMN `recommended` VARCHAR(1) NOT NULL DEFAULT ''0'' COMMENT ''0 否 1 是''',
+    'SELECT ''skip normalize t_member_plan.recommended'''
+  )
+  FROM information_schema.COLUMNS
+  WHERE TABLE_SCHEMA = DATABASE()
+    AND TABLE_NAME = 't_member_plan'
+    AND COLUMN_NAME = 'recommended'
+);
+PREPARE stmt FROM @ddl;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
+
+SET @ddl := (
+  SELECT IF(COUNT(*) = 1,
+    'ALTER TABLE `t_member_order` MODIFY COLUMN `plan_name_snapshot` VARCHAR(64) DEFAULT NULL COMMENT ''套餐名称快照''',
+    'SELECT ''skip normalize t_member_order.plan_name_snapshot'''
+  )
+  FROM information_schema.COLUMNS
+  WHERE TABLE_SCHEMA = DATABASE()
+    AND TABLE_NAME = 't_member_order'
+    AND COLUMN_NAME = 'plan_name_snapshot'
+);
+PREPARE stmt FROM @ddl;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
+
+SET @ddl := (
+  SELECT IF(COUNT(*) = 1,
+    'ALTER TABLE `t_member_order` MODIFY COLUMN `level_code_snapshot` VARCHAR(16) DEFAULT NULL COMMENT ''等级快照''',
+    'SELECT ''skip normalize t_member_order.level_code_snapshot'''
+  )
+  FROM information_schema.COLUMNS
+  WHERE TABLE_SCHEMA = DATABASE()
+    AND TABLE_NAME = 't_member_order'
+    AND COLUMN_NAME = 'level_code_snapshot'
+);
+PREPARE stmt FROM @ddl;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
+
+SET @ddl := (
+  SELECT IF(COUNT(*) = 1,
+    'ALTER TABLE `t_member_order` MODIFY COLUMN `origin_price_fen` INT DEFAULT NULL COMMENT ''划线价快照''',
+    'SELECT ''skip normalize t_member_order.origin_price_fen'''
+  )
+  FROM information_schema.COLUMNS
+  WHERE TABLE_SCHEMA = DATABASE()
+    AND TABLE_NAME = 't_member_order'
+    AND COLUMN_NAME = 'origin_price_fen'
+);
+PREPARE stmt FROM @ddl;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
+
+SET @ddl := (
+  SELECT IF(COUNT(*) = 1,
+    'ALTER TABLE `t_member_order` MODIFY COLUMN `gift_ppd` INT DEFAULT 0 COMMENT ''赠送拍拍豆快照''',
+    'SELECT ''skip normalize t_member_order.gift_ppd'''
+  )
+  FROM information_schema.COLUMNS
+  WHERE TABLE_SCHEMA = DATABASE()
+    AND TABLE_NAME = 't_member_order'
+    AND COLUMN_NAME = 'gift_ppd'
+);
+PREPARE stmt FROM @ddl;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
+
 CREATE TABLE IF NOT EXISTS `t_member_benefit_rule` (
   `id` BIGINT NOT NULL AUTO_INCREMENT,
   `level_code` VARCHAR(16) NOT NULL,
@@ -138,6 +264,48 @@ CREATE TABLE IF NOT EXISTS `t_member_operation_log` (
   KEY `idx_user_created_at` (`user_id`, `created_at`),
   KEY `idx_operator_created_at` (`operator_id`, `created_at`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='会员操作日志';
+
+SET @ddl := (
+  SELECT IF(COUNT(*) = 0,
+    'ALTER TABLE `t_member_benefit_rule` ADD UNIQUE KEY `uk_level_scene_type` (`level_code`, `scene`, `benefit_type`)',
+    'SELECT ''skip index t_member_benefit_rule.uk_level_scene_type'''
+  )
+  FROM information_schema.STATISTICS
+  WHERE TABLE_SCHEMA = DATABASE()
+    AND TABLE_NAME = 't_member_benefit_rule'
+    AND INDEX_NAME = 'uk_level_scene_type'
+);
+PREPARE stmt FROM @ddl;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
+
+SET @ddl := (
+  SELECT IF(COUNT(*) = 0,
+    'ALTER TABLE `t_member_operation_log` ADD INDEX `idx_user_created_at` (`user_id`, `created_at`)',
+    'SELECT ''skip index t_member_operation_log.idx_user_created_at'''
+  )
+  FROM information_schema.STATISTICS
+  WHERE TABLE_SCHEMA = DATABASE()
+    AND TABLE_NAME = 't_member_operation_log'
+    AND INDEX_NAME = 'idx_user_created_at'
+);
+PREPARE stmt FROM @ddl;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
+
+SET @ddl := (
+  SELECT IF(COUNT(*) = 0,
+    'ALTER TABLE `t_member_operation_log` ADD INDEX `idx_operator_created_at` (`operator_id`, `created_at`)',
+    'SELECT ''skip index t_member_operation_log.idx_operator_created_at'''
+  )
+  FROM information_schema.STATISTICS
+  WHERE TABLE_SCHEMA = DATABASE()
+    AND TABLE_NAME = 't_member_operation_log'
+    AND INDEX_NAME = 'idx_operator_created_at'
+);
+PREPARE stmt FROM @ddl;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
 
 INSERT INTO `t_member_benefit_rule`
   (`level_code`, `scene`, `benefit_type`, `discount_ppd`, `min_actual_ppd`, `effective`, `status`, `description`, `updated_at`)

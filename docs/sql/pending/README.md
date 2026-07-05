@@ -1,7 +1,7 @@
 # YPAT 会员 / 邀请模块 — 数据库 SQL 待执行清单
 
 > **关联 PR**：#9（登录/完善信息/我的页面）、#10（邀请端到端）、#11（会员端到端）
-> **关联文件**：`V_pending_member.sql`
+> **关联文件**：`V_pending_member.sql`、`V_member_system_redesign.sql`
 > **数据库**：MySQL 8.0+
 > **字符集**：`utf8mb4` / `utf8mb4_unicode_ci`
 
@@ -12,6 +12,7 @@
 | 文件 | 影响表 | 是否可重复执行 | 默认启用回填 |
 | --- | --- | --- | --- |
 | `V_pending_member.sql` | `t_member_plan` / `t_user_member` / `t_member_order` / `t_invite_relation` | ✅ 是（`IF NOT EXISTS` + `ON DUPLICATE KEY UPDATE`） | ❌ 默认全部注释 |
+| `V_member_system_redesign.sql` | `t_member_plan` / `t_member_order` / `t_member_benefit_rule` / `t_member_operation_log` | ✅ 是（受保护 DDL + `ON DUPLICATE KEY UPDATE`） | 不涉及 |
 
 ---
 
@@ -34,11 +35,12 @@
 
 ## 执行顺序
 
-1. **测试库执行 → 验证通过**
-2. **生产库执行前备份**
-3. **生产库执行 SQL**
-4. **生产库执行验证 SQL**
-5. **业务联调（小程序 / H5 调通 GET /member/plans 等接口）**
+1. **测试库执行 `V_pending_member.sql` → 验证通过**
+2. **测试库执行 `V_member_system_redesign.sql` → 验证通过**
+3. **生产库执行前备份**
+4. **生产库按同样顺序执行 SQL**
+5. **生产库执行验证 SQL**
+6. **业务联调（小程序 / H5 调通 GET /member/plans 等接口）**
 
 > ⚠️ 步骤顺序不允许跳过。测试库失败或警告未确认前不要进生产。
 
@@ -57,9 +59,11 @@
 ```bash
 # 把脚本拷到 MySQL 容器或本地
 docker cp docs/sql/pending/V_pending_member.sql <mysql-container>:/tmp/
+docker cp docs/sql/pending/V_member_system_redesign.sql <mysql-container>:/tmp/
 
 # 进入容器或本地 mysql 客户端
 docker exec -i <mysql-container> mysql -uroot -p<pwd> ypat_test -e "SOURCE /tmp/V_pending_member.sql;"
+docker exec -i <mysql-container> mysql -uroot -p<pwd> ypat_test -e "SOURCE /tmp/V_member_system_redesign.sql;"
 ```
 
 ### 执行后验证
@@ -70,14 +74,25 @@ SHOW TABLES LIKE 't_member_plan';
 SHOW TABLES LIKE 't_user_member';
 SHOW TABLES LIKE 't_member_order';
 SHOW TABLES LIKE 't_invite_relation';
+SHOW TABLES LIKE 't_member_benefit_rule';
+SHOW TABLES LIKE 't_member_operation_log';
 
 -- 索引与唯一约束
 SHOW INDEX FROM `t_member_order`     WHERE Key_name IN ('uk_out_trade_no','idx_user_status');
 SHOW INDEX FROM `t_invite_relation`  WHERE Key_name = 'uk_invitee_userid';
+SHOW INDEX FROM `t_member_benefit_rule` WHERE Key_name = 'uk_level_scene_type';
+SHOW INDEX FROM `t_member_operation_log` WHERE Key_name IN ('idx_user_created_at','idx_operator_created_at');
 
 -- 种子套餐
 SELECT code, name, duration_days, price_fen, status
 FROM `t_member_plan` ORDER BY sort_no;
+
+-- 会员重设计新增列与权益种子
+SHOW COLUMNS FROM `t_member_plan` WHERE Field IN ('gift_ppd','level_code','recommended');
+SHOW COLUMNS FROM `t_member_order` WHERE Field IN ('plan_name_snapshot','level_code_snapshot','origin_price_fen','gift_ppd');
+SELECT level_code, scene, benefit_type, discount_ppd, effective, status
+FROM `t_member_benefit_rule`
+WHERE level_code = 'BASIC' AND scene = 'SUBMIT_YPAT';
 
 -- 期望输出：
 -- +-------+----------+---------------+-----------+--------+
@@ -90,6 +105,7 @@ FROM `t_member_plan` ORDER BY sort_no;
 
 -- 二次执行幂等检查：再次 SOURCE 应无任何报错
 SOURCE /tmp/V_pending_member.sql;
+SOURCE /tmp/V_member_system_redesign.sql;
 ```
 
 ---
@@ -116,7 +132,9 @@ ls -lh ypat_prod_*.sql.gz
 ```bash
 # 推荐：分两步，先结构后种子
 docker cp docs/sql/pending/V_pending_member.sql <prod-mysql>:/tmp/
+docker cp docs/sql/pending/V_member_system_redesign.sql <prod-mysql>:/tmp/
 docker exec -i <prod-mysql> mysql -uroot -p<pwd> ypat_prod -e "SOURCE /tmp/V_pending_member.sql;"
+docker exec -i <prod-mysql> mysql -uroot -p<pwd> ypat_prod -e "SOURCE /tmp/V_member_system_redesign.sql;"
 ```
 
 ---
@@ -129,6 +147,8 @@ SHOW TABLES LIKE 't_member_plan';     -- 期望 1 行
 SHOW TABLES LIKE 't_user_member';     -- 期望 1 行
 SHOW TABLES LIKE 't_member_order';    -- 期望 1 行
 SHOW TABLES LIKE 't_invite_relation'; -- 期望 1 行
+SHOW TABLES LIKE 't_member_benefit_rule'; -- 期望 1 行
+SHOW TABLES LIKE 't_member_operation_log'; -- 期望 1 行
 
 -- 2) 唯一约束
 SHOW INDEX FROM `t_member_order`    WHERE Key_name = 'uk_out_trade_no';
@@ -137,10 +157,16 @@ SHOW INDEX FROM `t_invite_relation` WHERE Key_name = 'uk_invitee_userid';
 -- 3) 索引
 SHOW INDEX FROM `t_member_order`    WHERE Key_name = 'idx_user_status';
 SHOW INDEX FROM `t_invite_relation` WHERE Key_name = 'idx_inviter_userid';
+SHOW INDEX FROM `t_member_benefit_rule` WHERE Key_name = 'uk_level_scene_type';
+SHOW INDEX FROM `t_member_operation_log` WHERE Key_name IN ('idx_user_created_at','idx_operator_created_at');
 
 -- 4) 种子数据行数
 SELECT COUNT(*) AS plan_count FROM `t_member_plan`;
 -- 期望：3
+SELECT COUNT(*) AS submit_discount_rule_count
+FROM `t_member_benefit_rule`
+WHERE level_code = 'BASIC' AND scene = 'SUBMIT_YPAT' AND benefit_type = 'PPD_DISCOUNT';
+-- 期望：1
 
 -- 5) 应用侧 smoke test（需保证 restapi 服务已重启使 ddl-auto 跑过一次）
 curl -sS 'https://<api-host>/service/member/plans' -H 'Authorization: Bearer <token>' | jq .
@@ -167,6 +193,8 @@ DROP TABLE IF EXISTS `t_member_order`;
 DROP TABLE IF EXISTS `t_user_member`;
 DROP TABLE IF EXISTS `t_member_plan`;
 DROP TABLE IF EXISTS `t_invite_relation`;
+DROP TABLE IF EXISTS `t_member_operation_log`;
+DROP TABLE IF EXISTS `t_member_benefit_rule`;
 ```
 
 ### 回填模板

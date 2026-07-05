@@ -1,5 +1,8 @@
 package com.ypat;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
+import org.springframework.format.annotation.DateTimeFormat;
+
 import java.io.Serializable;
 import java.util.Date;
 
@@ -8,6 +11,8 @@ public class MemberUserAdminQo extends PageQo implements Serializable {
     private String mobile;
     private String nickname;
     private String levelCode;
+    @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+8")
     private Date expireAt;
     private String memberStatus;
     private Integer days;
