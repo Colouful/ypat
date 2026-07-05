@@ -1,24 +1,113 @@
 -- ===========================================================================
 -- YPAT 会员系统重设计 — 待执行 SQL (V_member_system_redesign)
 -- ===========================================================================
--- 警告：下方 ALTER TABLE ADD COLUMN 段落不是重复执行安全的。
--- 执行前请操作人员确认 t_member_plan / t_member_order 中尚不存在对应列；
--- 若已存在任一列，请先人工调整脚本或跳过对应列，避免 MySQL 重复加列失败。
+-- 幂等说明：
+--   * CREATE TABLE IF NOT EXISTS — 重复执行不会破坏已有结构
+--   * INSERT ... ON DUPLICATE KEY UPDATE — 重复执行种子数据不抛错
+--   * ADD COLUMN 使用 information_schema.COLUMNS + PREPARE 守卫，
+--     仅当目标列不存在时执行 ALTER TABLE
 -- ===========================================================================
 
 SET NAMES utf8mb4;
 SET time_zone = '+08:00';
 
-ALTER TABLE `t_member_plan`
-  ADD COLUMN `gift_ppd` INT DEFAULT 0 COMMENT '开通赠送拍拍豆',
-  ADD COLUMN `level_code` VARCHAR(16) NOT NULL DEFAULT 'BASIC' COMMENT '绑定会员等级',
-  ADD COLUMN `recommended` VARCHAR(1) NOT NULL DEFAULT '0' COMMENT '0 否 1 是';
+SET @ddl := (
+  SELECT IF(COUNT(*) = 0,
+    'ALTER TABLE `t_member_plan` ADD COLUMN `gift_ppd` INT DEFAULT 0 COMMENT ''开通赠送拍拍豆''',
+    'SELECT ''skip t_member_plan.gift_ppd'''
+  )
+  FROM information_schema.COLUMNS
+  WHERE TABLE_SCHEMA = DATABASE()
+    AND TABLE_NAME = 't_member_plan'
+    AND COLUMN_NAME = 'gift_ppd'
+);
+PREPARE stmt FROM @ddl;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
 
-ALTER TABLE `t_member_order`
-  ADD COLUMN `plan_name_snapshot` VARCHAR(64) DEFAULT NULL COMMENT '套餐名称快照',
-  ADD COLUMN `level_code_snapshot` VARCHAR(16) DEFAULT NULL COMMENT '等级快照',
-  ADD COLUMN `origin_price_fen` INT DEFAULT NULL COMMENT '划线价快照',
-  ADD COLUMN `gift_ppd` INT DEFAULT 0 COMMENT '赠送拍拍豆快照';
+SET @ddl := (
+  SELECT IF(COUNT(*) = 0,
+    'ALTER TABLE `t_member_plan` ADD COLUMN `level_code` VARCHAR(16) NOT NULL DEFAULT ''BASIC'' COMMENT ''绑定会员等级''',
+    'SELECT ''skip t_member_plan.level_code'''
+  )
+  FROM information_schema.COLUMNS
+  WHERE TABLE_SCHEMA = DATABASE()
+    AND TABLE_NAME = 't_member_plan'
+    AND COLUMN_NAME = 'level_code'
+);
+PREPARE stmt FROM @ddl;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
+
+SET @ddl := (
+  SELECT IF(COUNT(*) = 0,
+    'ALTER TABLE `t_member_plan` ADD COLUMN `recommended` VARCHAR(1) NOT NULL DEFAULT ''0'' COMMENT ''0 否 1 是''',
+    'SELECT ''skip t_member_plan.recommended'''
+  )
+  FROM information_schema.COLUMNS
+  WHERE TABLE_SCHEMA = DATABASE()
+    AND TABLE_NAME = 't_member_plan'
+    AND COLUMN_NAME = 'recommended'
+);
+PREPARE stmt FROM @ddl;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
+
+SET @ddl := (
+  SELECT IF(COUNT(*) = 0,
+    'ALTER TABLE `t_member_order` ADD COLUMN `plan_name_snapshot` VARCHAR(64) DEFAULT NULL COMMENT ''套餐名称快照''',
+    'SELECT ''skip t_member_order.plan_name_snapshot'''
+  )
+  FROM information_schema.COLUMNS
+  WHERE TABLE_SCHEMA = DATABASE()
+    AND TABLE_NAME = 't_member_order'
+    AND COLUMN_NAME = 'plan_name_snapshot'
+);
+PREPARE stmt FROM @ddl;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
+
+SET @ddl := (
+  SELECT IF(COUNT(*) = 0,
+    'ALTER TABLE `t_member_order` ADD COLUMN `level_code_snapshot` VARCHAR(16) DEFAULT NULL COMMENT ''等级快照''',
+    'SELECT ''skip t_member_order.level_code_snapshot'''
+  )
+  FROM information_schema.COLUMNS
+  WHERE TABLE_SCHEMA = DATABASE()
+    AND TABLE_NAME = 't_member_order'
+    AND COLUMN_NAME = 'level_code_snapshot'
+);
+PREPARE stmt FROM @ddl;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
+
+SET @ddl := (
+  SELECT IF(COUNT(*) = 0,
+    'ALTER TABLE `t_member_order` ADD COLUMN `origin_price_fen` INT DEFAULT NULL COMMENT ''划线价快照''',
+    'SELECT ''skip t_member_order.origin_price_fen'''
+  )
+  FROM information_schema.COLUMNS
+  WHERE TABLE_SCHEMA = DATABASE()
+    AND TABLE_NAME = 't_member_order'
+    AND COLUMN_NAME = 'origin_price_fen'
+);
+PREPARE stmt FROM @ddl;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
+
+SET @ddl := (
+  SELECT IF(COUNT(*) = 0,
+    'ALTER TABLE `t_member_order` ADD COLUMN `gift_ppd` INT DEFAULT 0 COMMENT ''赠送拍拍豆快照''',
+    'SELECT ''skip t_member_order.gift_ppd'''
+  )
+  FROM information_schema.COLUMNS
+  WHERE TABLE_SCHEMA = DATABASE()
+    AND TABLE_NAME = 't_member_order'
+    AND COLUMN_NAME = 'gift_ppd'
+);
+PREPARE stmt FROM @ddl;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
 
 CREATE TABLE IF NOT EXISTS `t_member_benefit_rule` (
   `id` BIGINT NOT NULL AUTO_INCREMENT,
