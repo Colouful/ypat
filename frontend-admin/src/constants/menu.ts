@@ -60,4 +60,15 @@ export const menuConfig: MenuGroup[] = [
       { title: '订单列表', path: '/manage/order/index', component: 'order/list/index' },
     ],
   },
+  {
+    title: '会员系统',
+    icon: 'Medal',
+    children: [
+      { title: '套餐管理', path: '/member/plan', component: 'member/plan/index' },
+      { title: '权益配置', path: '/member/rule', component: 'member/rule/index' },
+      { title: '会员用户', path: '/member/user', component: 'member/user/index' },
+      { title: '会员订单', path: '/member/order', component: 'member/order/index' },
+      { title: '操作日志', path: '/member/log', component: 'member/log/index' },
+    ],
+  },
 ]
