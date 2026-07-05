@@ -13,6 +13,9 @@ public class MemberPlanQo implements Serializable {
     private Integer durationDays;
     private Integer priceFen;
     private Integer originPriceFen;
+    private Integer giftPpd;
+    private String levelCode;
+    private String recommended;
     private String benefits;
     private String status;
     private Integer sortNo;
@@ -35,6 +38,12 @@ public class MemberPlanQo implements Serializable {
     public void setPriceFen(Integer priceFen) { this.priceFen = priceFen; }
     public Integer getOriginPriceFen() { return originPriceFen; }
     public void setOriginPriceFen(Integer originPriceFen) { this.originPriceFen = originPriceFen; }
+    public Integer getGiftPpd() { return giftPpd; }
+    public void setGiftPpd(Integer giftPpd) { this.giftPpd = giftPpd; }
+    public String getLevelCode() { return levelCode; }
+    public void setLevelCode(String levelCode) { this.levelCode = levelCode; }
+    public String getRecommended() { return recommended; }
+    public void setRecommended(String recommended) { this.recommended = recommended; }
     public String getBenefits() { return benefits; }
     public void setBenefits(String benefits) { this.benefits = benefits; }
     public String getStatus() { return status; }

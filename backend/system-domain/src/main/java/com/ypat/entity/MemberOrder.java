@@ -53,9 +53,21 @@ public class MemberOrder implements Serializable {
     @Column(name = "plan_code", nullable = false, length = 32)
     private String planCode;
 
+    @Column(name = "plan_name_snapshot", length = 64)
+    private String planNameSnapshot;
+
+    @Column(name = "level_code_snapshot", length = 16)
+    private String levelCodeSnapshot;
+
     /** 下单时锁定的套餐价格（分），由服务端从 plan_id 查出写入，前端不参与。 */
     @Column(name = "price_fen", nullable = false)
     private Integer priceFen;
+
+    @Column(name = "origin_price_fen")
+    private Integer originPriceFen;
+
+    @Column(name = "gift_ppd")
+    private Integer giftPpd;
 
     @Column(name = "duration_days", nullable = false)
     private Integer durationDays;
@@ -88,8 +100,16 @@ public class MemberOrder implements Serializable {
     public void setPlanId(Long planId) { this.planId = planId; }
     public String getPlanCode() { return planCode; }
     public void setPlanCode(String planCode) { this.planCode = planCode; }
+    public String getPlanNameSnapshot() { return planNameSnapshot; }
+    public void setPlanNameSnapshot(String planNameSnapshot) { this.planNameSnapshot = planNameSnapshot; }
+    public String getLevelCodeSnapshot() { return levelCodeSnapshot; }
+    public void setLevelCodeSnapshot(String levelCodeSnapshot) { this.levelCodeSnapshot = levelCodeSnapshot; }
     public Integer getPriceFen() { return priceFen; }
     public void setPriceFen(Integer priceFen) { this.priceFen = priceFen; }
+    public Integer getOriginPriceFen() { return originPriceFen; }
+    public void setOriginPriceFen(Integer originPriceFen) { this.originPriceFen = originPriceFen; }
+    public Integer getGiftPpd() { return giftPpd; }
+    public void setGiftPpd(Integer giftPpd) { this.giftPpd = giftPpd; }
     public Integer getDurationDays() { return durationDays; }
     public void setDurationDays(Integer durationDays) { this.durationDays = durationDays; }
     public String getStatus() { return status; }

@@ -12,7 +12,11 @@ public class MemberOrderQo extends PageQo implements Serializable {
     private Long userId;
     private Long planId;
     private String planCode;
+    private String planNameSnapshot;
+    private String levelCodeSnapshot;
     private Integer priceFen;
+    private Integer originPriceFen;
+    private Integer giftPpd;
     private Integer durationDays;
     private String status;
     private String wxTransactionId;
@@ -36,8 +40,16 @@ public class MemberOrderQo extends PageQo implements Serializable {
     public void setPlanId(Long planId) { this.planId = planId; }
     public String getPlanCode() { return planCode; }
     public void setPlanCode(String planCode) { this.planCode = planCode; }
+    public String getPlanNameSnapshot() { return planNameSnapshot; }
+    public void setPlanNameSnapshot(String planNameSnapshot) { this.planNameSnapshot = planNameSnapshot; }
+    public String getLevelCodeSnapshot() { return levelCodeSnapshot; }
+    public void setLevelCodeSnapshot(String levelCodeSnapshot) { this.levelCodeSnapshot = levelCodeSnapshot; }
     public Integer getPriceFen() { return priceFen; }
     public void setPriceFen(Integer priceFen) { this.priceFen = priceFen; }
+    public Integer getOriginPriceFen() { return originPriceFen; }
+    public void setOriginPriceFen(Integer originPriceFen) { this.originPriceFen = originPriceFen; }
+    public Integer getGiftPpd() { return giftPpd; }
+    public void setGiftPpd(Integer giftPpd) { this.giftPpd = giftPpd; }
     public Integer getDurationDays() { return durationDays; }
     public void setDurationDays(Integer durationDays) { this.durationDays = durationDays; }
     public String getStatus() { return status; }
