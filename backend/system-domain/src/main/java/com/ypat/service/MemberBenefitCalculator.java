@@ -5,6 +5,7 @@ import com.ypat.entity.MemberBenefitRule;
 import com.ypat.entity.UserMember;
 
 import java.util.Date;
+import java.util.Objects;
 
 public class MemberBenefitCalculator {
     public static final String LEVEL_BASIC = "BASIC";
@@ -19,7 +20,8 @@ public class MemberBenefitCalculator {
         q.setLevelCode(memberActive ? member.getLevel() : null);
         boolean ruleEffective = memberActive
                 && rule != null
-                && scene.equals(rule.getScene())
+                && Objects.equals(member.getLevel(), rule.getLevelCode())
+                && Objects.equals(scene, rule.getScene())
                 && BENEFIT_TYPE_PPD_DISCOUNT.equals(rule.getBenefitType())
                 && "1".equals(rule.getEffective())
                 && "1".equals(rule.getStatus());

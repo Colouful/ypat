@@ -26,8 +26,8 @@ public class MemberBenefitCalculatorTest {
     @Test
     public void discountNeverDropsBelowMinimum() {
         MemberBenefitCalculator c = new MemberBenefitCalculator();
-        MemberBenefitQuoteQo q = c.calculate("SUBMIT_YPAT", 5, activeMember(), rule(9, 0, "1", "1"));
-        assertEquals(Integer.valueOf(0), q.getActualPpd());
+        MemberBenefitQuoteQo q = c.calculate("SUBMIT_YPAT", 5, activeMember(), rule(9, 2, "1", "1"));
+        assertEquals(Integer.valueOf(2), q.getActualPpd());
     }
 
     @Test
@@ -43,6 +43,35 @@ public class MemberBenefitCalculatorTest {
     public void disabledRuleGetsNoDiscount() {
         MemberBenefitCalculator c = new MemberBenefitCalculator();
         MemberBenefitQuoteQo q = c.calculate("SUBMIT_YPAT", 5, activeMember(), rule(2, 0, "1", "0"));
+        assertEquals(Integer.valueOf(0), q.getDiscountPpd());
+        assertEquals(Integer.valueOf(5), q.getActualPpd());
+        assertFalse(q.getRuleEffective());
+    }
+
+    @Test
+    public void mismatchedRuleLevelGetsNoDiscount() {
+        MemberBenefitCalculator c = new MemberBenefitCalculator();
+        MemberBenefitRule rule = rule(2, 0, "1", "1");
+        rule.setLevelCode("VIP");
+        MemberBenefitQuoteQo q = c.calculate("SUBMIT_YPAT", 5, activeMember(), rule);
+        assertEquals(Integer.valueOf(0), q.getDiscountPpd());
+        assertEquals(Integer.valueOf(5), q.getActualPpd());
+        assertFalse(q.getRuleEffective());
+    }
+
+    @Test
+    public void nullSceneGetsNoDiscount() {
+        MemberBenefitCalculator c = new MemberBenefitCalculator();
+        MemberBenefitQuoteQo q = c.calculate(null, 5, activeMember(), rule(2, 0, "1", "1"));
+        assertEquals(Integer.valueOf(0), q.getDiscountPpd());
+        assertEquals(Integer.valueOf(5), q.getActualPpd());
+        assertFalse(q.getRuleEffective());
+    }
+
+    @Test
+    public void nullRuleGetsNoDiscount() {
+        MemberBenefitCalculator c = new MemberBenefitCalculator();
+        MemberBenefitQuoteQo q = c.calculate("SUBMIT_YPAT", 5, activeMember(), null);
         assertEquals(Integer.valueOf(0), q.getDiscountPpd());
         assertEquals(Integer.valueOf(5), q.getActualPpd());
         assertFalse(q.getRuleEffective());
