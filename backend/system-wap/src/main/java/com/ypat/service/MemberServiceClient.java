@@ -1,9 +1,13 @@
 package com.ypat.service;
 
 import com.ypat.MemberOrderCreateResult;
+import com.ypat.MemberBenefitQuoteQo;
+import com.ypat.MemberBenefitRuleQo;
+import com.ypat.MemberOperationLogQo;
 import com.ypat.MemberOrderQo;
 import com.ypat.MemberPlanQo;
 import com.ypat.MemberStatusQo;
+import com.ypat.MemberUserAdminQo;
 import org.springframework.cloud.netflix.feign.FeignClient;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -25,6 +29,10 @@ public interface MemberServiceClient {
     @GetMapping("/service/member/status")
     MemberStatusQo status(@RequestParam("userId") Long userId);
 
+    @GetMapping("/service/member/benefit/quote")
+    MemberBenefitQuoteQo quote(@RequestParam("userId") Long userId,
+                               @RequestParam("scene") String scene);
+
     @PostMapping("/service/member/order/create")
     MemberOrderQo createOrder(@RequestParam("userId") Long userId,
                               @RequestParam("planId") Long planId);
@@ -38,6 +46,44 @@ public interface MemberServiceClient {
 
     @PostMapping("/service/member/order/findPage")
     Map<String, Object> findOrders(@RequestBody MemberOrderQo qo);
+
+    @PostMapping("/service/member/admin/plans")
+    Map<String, Object> adminPlans(@RequestBody MemberPlanQo qo);
+
+    @PostMapping("/service/member/admin/plan/save")
+    MemberPlanQo savePlan(@RequestBody MemberPlanQo qo);
+
+    @PostMapping("/service/member/admin/rules")
+    Map<String, Object> adminRules(@RequestBody MemberBenefitRuleQo qo);
+
+    @PostMapping("/service/member/admin/rule/save")
+    MemberBenefitRuleQo saveRule(@RequestBody MemberBenefitRuleQo qo);
+
+    @PostMapping("/service/member/admin/users")
+    Map<String, Object> adminUsers(@RequestBody MemberUserAdminQo qo);
+
+    @PostMapping("/service/member/admin/user/grant")
+    Boolean adminGrant(@RequestParam("userId") Long userId,
+                       @RequestParam("days") Integer days,
+                       @RequestParam(value = "operatorId", required = false) Long operatorId,
+                       @RequestParam("reason") String reason);
+
+    @PostMapping("/service/member/admin/user/extend")
+    Boolean adminExtend(@RequestParam("userId") Long userId,
+                        @RequestParam("days") Integer days,
+                        @RequestParam(value = "operatorId", required = false) Long operatorId,
+                        @RequestParam("reason") String reason);
+
+    @PostMapping("/service/member/admin/user/cancel")
+    Boolean adminCancel(@RequestParam("userId") Long userId,
+                        @RequestParam(value = "operatorId", required = false) Long operatorId,
+                        @RequestParam("reason") String reason);
+
+    @PostMapping("/service/member/admin/orders")
+    Map<String, Object> adminOrders(@RequestBody MemberOrderQo qo);
+
+    @PostMapping("/service/member/admin/logs")
+    Map<String, Object> adminLogs(@RequestBody MemberOperationLogQo qo);
 
     @PostMapping("/service/member/markPaid")
     Boolean markPaid(@RequestParam("outTradeNo") String outTradeNo,

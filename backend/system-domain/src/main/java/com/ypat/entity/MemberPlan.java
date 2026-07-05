@@ -40,6 +40,15 @@ public class MemberPlan implements Serializable {
     @Column(name = "origin_price_fen")
     private Integer originPriceFen;
 
+    @Column(name = "gift_ppd")
+    private Integer giftPpd;
+
+    @Column(name = "level_code", length = 16)
+    private String levelCode;
+
+    @Column(length = 1)
+    private String recommended;
+
     /** 权益摘要，前端展示。 */
     @Column(length = 512)
     private String benefits;
@@ -70,6 +79,12 @@ public class MemberPlan implements Serializable {
     public void setPriceFen(Integer priceFen) { this.priceFen = priceFen; }
     public Integer getOriginPriceFen() { return originPriceFen; }
     public void setOriginPriceFen(Integer originPriceFen) { this.originPriceFen = originPriceFen; }
+    public Integer getGiftPpd() { return giftPpd; }
+    public void setGiftPpd(Integer giftPpd) { this.giftPpd = giftPpd; }
+    public String getLevelCode() { return levelCode; }
+    public void setLevelCode(String levelCode) { this.levelCode = levelCode; }
+    public String getRecommended() { return recommended; }
+    public void setRecommended(String recommended) { this.recommended = recommended; }
     public String getBenefits() { return benefits; }
     public void setBenefits(String benefits) { this.benefits = benefits; }
     public String getStatus() { return status; }

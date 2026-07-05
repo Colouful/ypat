@@ -1,8 +1,14 @@
 package com.ypat.controller;
 
 import com.ypat.MemberOrderCreateResult;
+import com.ypat.MemberBenefitQuoteQo;
+import com.ypat.MemberBenefitRuleQo;
+import com.ypat.MemberOperationLogQo;
 import com.ypat.MemberOrderQo;
 import com.ypat.MemberPlanQo;
+import com.ypat.MemberUserAdminQo;
+import com.ypat.ResponseCode;
+import com.ypat.SysException;
 import com.ypat.MemberStatusQo;
 import com.ypat.service.MemberService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -41,6 +47,12 @@ public class MemberController {
         return memberService.getStatus(userId);
     }
 
+    @GetMapping("/service/member/benefit/quote")
+    public MemberBenefitQuoteQo quote(@RequestParam("userId") Long userId,
+                                      @RequestParam("scene") String scene) {
+        return memberService.quoteBenefit(userId, scene);
+    }
+
     /**
      * 创建会员订单：返回 Qo（不带 Entity），Feign 调用方需要 outTradeNo / priceFen / durationDays / planId。
      * 微信统一下单在调用方（system-wap MemberController）完成，避免跨模块依赖。
@@ -74,6 +86,66 @@ public class MemberController {
             return empty;
         }
         return memberService.findUserOrders(qo.getUserId(), qo);
+    }
+
+    @PostMapping("/service/member/admin/plans")
+    public Map<String, Object> adminPlans(@RequestBody MemberPlanQo qo) {
+        return memberService.findAdminPlans(qo);
+    }
+
+    @PostMapping("/service/member/admin/plan/save")
+    public MemberPlanQo savePlan(@RequestBody MemberPlanQo qo) {
+        return memberService.savePlan(qo);
+    }
+
+    @PostMapping("/service/member/admin/rules")
+    public Map<String, Object> adminRules(@RequestBody MemberBenefitRuleQo qo) {
+        return memberService.findAdminRules(qo);
+    }
+
+    @PostMapping("/service/member/admin/rule/save")
+    public MemberBenefitRuleQo saveRule(@RequestBody MemberBenefitRuleQo qo) {
+        return memberService.saveBenefitRule(qo);
+    }
+
+    @PostMapping("/service/member/admin/users")
+    public Map<String, Object> adminUsers(@RequestBody MemberUserAdminQo qo) {
+        return memberService.findAdminUsers(qo);
+    }
+
+    @PostMapping("/service/member/admin/user/grant")
+    public Boolean adminGrant(@RequestParam("userId") Long userId,
+                              @RequestParam("days") Integer days,
+                              @RequestParam(value = "operatorId", required = false) Long operatorId,
+                              @RequestParam("reason") String reason) {
+        if (days == null) throw new SysException(ResponseCode.FAIL_PARA);
+        return memberService.adminGrant(userId, days, operatorId, reason);
+    }
+
+    @PostMapping("/service/member/admin/user/extend")
+    public Boolean adminExtend(@RequestParam("userId") Long userId,
+                               @RequestParam("days") Integer days,
+                               @RequestParam(value = "operatorId", required = false) Long operatorId,
+                               @RequestParam("reason") String reason) {
+        if (days == null) throw new SysException(ResponseCode.FAIL_PARA);
+        return memberService.adminExtend(userId, days, operatorId, reason);
+    }
+
+    @PostMapping("/service/member/admin/user/cancel")
+    public Boolean adminCancel(@RequestParam("userId") Long userId,
+                               @RequestParam(value = "operatorId", required = false) Long operatorId,
+                               @RequestParam("reason") String reason) {
+        return memberService.adminCancel(userId, operatorId, reason);
+    }
+
+    @PostMapping("/service/member/admin/orders")
+    public Map<String, Object> adminOrders(@RequestBody MemberOrderQo qo) {
+        return memberService.findAdminOrders(qo);
+    }
+
+    @PostMapping("/service/member/admin/logs")
+    public Map<String, Object> adminLogs(@RequestBody MemberOperationLogQo qo) {
+        return memberService.findOperationLogs(qo);
     }
 
     /**

@@ -350,10 +350,14 @@ export interface MemberPlan {
   durationDays: number
   priceFen: number
   originPriceFen?: number
+  giftPpd?: number
+  levelCode?: string
+  recommended?: string
   benefits?: string
   status?: string
   sortNo?: number
   credate?: string
+  updatedAt?: string
 }
 
 export interface MemberStatus {
@@ -379,13 +383,28 @@ export interface MemberOrder {
   userId: number
   planId: number
   planCode: string
+  planNameSnapshot?: string
+  levelCodeSnapshot?: string
   priceFen: number
+  originPriceFen?: number
+  giftPpd?: number
   durationDays: number
   status: string
   statusTxt?: string
   wxTransactionId?: string
   paidAt?: string
   credate?: string
+  updatedAt?: string
+}
+
+export interface MemberBenefitQuote {
+  scene: string
+  memberActive: boolean
+  levelCode?: string
+  originalPpd: number
+  discountPpd: number
+  actualPpd: number
+  ruleEffective: boolean
 }
 
 // ===== 邀请 =====

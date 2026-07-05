@@ -134,6 +134,17 @@ export function post<T = unknown>(
 }
 
 /**
+ * PUT 请求
+ */
+export function put<T = unknown>(
+  url: string,
+  data?: unknown,
+  config?: AxiosRequestConfig,
+): Promise<ApiResult<T>> {
+  return request<T>({ method: 'PUT', url, data, ...config })
+}
+
+/**
  * Blob 下载
  */
 export function download(

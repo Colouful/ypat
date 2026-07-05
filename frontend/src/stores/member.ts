@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import * as memberApi from '@/api/modules/member'
-import type { MemberStatus } from '@/api/types'
+import type { MemberBenefitQuote, MemberStatus } from '@/api/types'
 
 /**
  * 会员 store — 维护当前会员状态缓存，承载支付成功后的轮询。
@@ -14,6 +14,7 @@ import type { MemberStatus } from '@/api/types'
  */
 export const useMemberStore = defineStore('member', () => {
   const status = ref<MemberStatus | null>(null)
+  const submitYpatQuote = ref<MemberBenefitQuote | null>(null)
   const polling = ref(false)
 
   async function refreshStatus(): Promise<MemberStatus | null> {
@@ -27,6 +28,20 @@ export const useMemberStore = defineStore('member', () => {
       // 网络/鉴权失败时保留旧值
     }
     return status.value
+  }
+
+  async function refreshSubmitYpatQuote(): Promise<MemberBenefitQuote | null> {
+    try {
+      const result = await memberApi.getMemberBenefitQuote('SUBMIT_YPAT')
+      if (result.success && result.data) {
+        submitYpatQuote.value = result.data
+        return result.data
+      }
+    } catch {
+      // 报价失败不影响发布表单，调用方按原价兜底。
+    }
+    submitYpatQuote.value = null
+    return null
   }
 
   async function pollUntilPaid(outTradeNo: string, maxAttempts = 20, intervalMs = 1500): Promise<boolean> {
@@ -51,5 +66,5 @@ export const useMemberStore = defineStore('member', () => {
     }
   }
 
-  return { status, polling, refreshStatus, pollUntilPaid }
+  return { status, submitYpatQuote, polling, refreshStatus, refreshSubmitYpatQuote, pollUntilPaid }
 })

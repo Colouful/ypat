@@ -74,6 +74,7 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
                         "/tmplid/list",
                         "/param/list",
                         "/product/list",
+                        "/member/plans",
                         "/wxpay/notify",
                         "/wxpub/notify",
                         "/admin/captcha").permitAll()

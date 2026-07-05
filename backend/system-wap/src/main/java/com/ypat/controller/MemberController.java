@@ -1,6 +1,7 @@
 package com.ypat.controller;
 
 import com.ypat.MemberOrderCreateResult;
+import com.ypat.MemberBenefitQuoteQo;
 import com.ypat.MemberOrderQo;
 import com.ypat.MemberPlanQo;
 import com.ypat.MemberStatusQo;
@@ -54,6 +55,12 @@ public class MemberController {
     public MemberStatusQo status() {
         Long userId = requireUserId();
         return memberServiceClient.status(userId);
+    }
+
+    @GetMapping("/member/benefit/quote")
+    public MemberBenefitQuoteQo quote(@RequestParam String scene) {
+        Long userId = requireUserId();
+        return memberServiceClient.quote(userId, scene);
     }
 
     @PostMapping("/member/order/create")

@@ -97,6 +97,21 @@
                    @update:selectedIds="form.selectedTagIds = $event" />
     </view>
 
+    <view v-if="memberQuote" class="appointment-publish-form__card appointment-publish-form__benefit">
+      <view class="appointment-publish-form__benefit-row">
+        <text>原价：</text>
+        <text>{{ memberQuote.originalPpd }} 拍拍豆</text>
+      </view>
+      <view v-if="memberQuote.discountPpd > 0" class="appointment-publish-form__benefit-row appointment-publish-form__benefit-row--discount">
+        <text>{{ memberQuote.levelCode || 'BASIC' }} 会员优惠：</text>
+        <text>-{{ memberQuote.discountPpd }} 拍拍豆</text>
+      </view>
+      <view class="appointment-publish-form__benefit-row appointment-publish-form__benefit-row--actual">
+        <text>本次实扣：</text>
+        <text>{{ memberQuote.actualPpd }} 拍拍豆</text>
+      </view>
+    </view>
+
     <view class="appointment-publish-form__bottom-spacer" />
     <view class="appointment-publish-form__submit">
       <button class="appointment-publish-form__btn" :class="{ 'appointment-publish-form__btn--disabled': submitting }" :disabled="submitting" @tap="onSubmit">
@@ -114,6 +129,7 @@ import { YPAT_ROLE_CONFIGS, type YpatTargetType, type YpatRoleConfig, YpatCharge
 import { getWorkTags } from '@/api/modules/dict'
 import { WORK_TAGS_FALLBACK } from '@/constants/work-tags'
 import { submit as submitYpat } from '@/api/modules/ypat'
+import { useMemberStore } from '@/stores/member'
 import type { WorkTag } from '@/api/types/work'
 import type { MediaItem } from '@/api/types/media'
 
@@ -129,6 +145,7 @@ const emit = defineEmits<{
 }>()
 
 const config = ref<YpatRoleConfig | null>(YPAT_ROLE_CONFIGS[props.target] || null)
+const memberStore = useMemberStore()
 const tagOptions = ref<WorkTag[]>([])
 const submitting = ref(false)
 const mediaItems = ref<MediaItem[]>([])
@@ -154,6 +171,11 @@ watch(() => props.target, (v) => {
 
 onMounted(async () => {
   try {
+    await memberStore.refreshSubmitYpatQuote()
+  } catch {
+    // 报价失败不阻塞发布，提交接口仍会按后端实扣规则校验。
+  }
+  try {
     const res = await getWorkTags()
     const data = (res && res.data) || []
     tagOptions.value = data || []
@@ -163,6 +185,7 @@ onMounted(async () => {
 })
 
 const chargewayText = computed(() => CHARGE_WAY_LABELS[form.chargeway] || '')
+const memberQuote = computed(() => memberStore.submitYpatQuote)
 const creditText = computed(() => form.creditflag === '1' ? '要求对方存入保证金' : '不要求对方存入保证金')
 const regionText = computed(() => {
   if (form.isNationwide) return '全国'
@@ -386,6 +409,29 @@ async function onSubmit() {
     gap: 8rpx;
     color: $color-text-primary;
     font-size: 28rpx;
+  }
+  &__benefit {
+    background: rgba(35, 194, 104, 0.08);
+  }
+  &__benefit-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    color: $color-text-secondary;
+    font-size: 26rpx;
+    line-height: 1.6;
+    & + & {
+      margin-top: 8rpx;
+    }
+    &--discount {
+      color: $color-primary;
+      font-weight: 700;
+    }
+    &--actual {
+      color: $color-text-primary;
+      font-size: 30rpx;
+      font-weight: 800;
+    }
   }
   &__bottom-spacer { height: 200rpx; }
   &__submit {
