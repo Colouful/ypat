@@ -82,6 +82,25 @@ describe('API contracts', () => {
     expect(requestMocks.put).toHaveBeenCalledWith('/my/ypat/sc/add', { userid: 1, ypatid: 2 })
   })
 
+  it('ypat list APIs send backend patstyle codes instead of display labels', async () => {
+    await ypatApi.getRecommendList({ page: 0, size: 10, status: 'shtg', recomflag: '1', patstyle: 'INS' })
+    await ypatApi.getLatestList({ page: 0, size: 10, status: 'shtg', patstyle: '胶片' })
+
+    expect(requestMocks.get).toHaveBeenCalledWith('/ypat/tc/list', {
+      page: 0,
+      size: 10,
+      status: 'shtg',
+      recomflag: '1',
+      patstyle: '1',
+    })
+    expect(requestMocks.get).toHaveBeenCalledWith('/ypat/zx/list', {
+      page: 0,
+      size: 10,
+      status: 'shtg',
+      patstyle: '2',
+    })
+  })
+
   it('message list endpoints return message entities', async () => {
     const p = { userid: 7, page: 0, size: 20 }
     await ypatApi.getMyReceivedList(p)

@@ -1,4 +1,5 @@
 import { get, post, put } from '../request'
+import { PHOTO_STYLES } from '@/constants/enums'
 import type {
   ApiResult,
   MessInfo,
@@ -11,12 +12,32 @@ import type {
   UnreadCountResult,
 } from '../types'
 
+function normalizePatstyle(patstyle?: string): string | undefined {
+  if (!patstyle) return patstyle
+  return patstyle
+    .split(',')
+    .map((item) => {
+      const value = item.trim()
+      const index = PHOTO_STYLES.indexOf(value)
+      return index >= 0 ? String(index) : value
+    })
+    .filter(Boolean)
+    .join(',')
+}
+
+function normalizeListParams(params: YpatListParams): YpatListParams {
+  return {
+    ...params,
+    patstyle: normalizePatstyle(params.patstyle),
+  }
+}
+
 export function getRecommendList(params: YpatListParams): Promise<ApiResult<PageResult<YpatInfo>>> {
-  return get('/ypat/tc/list', { ...params })
+  return get('/ypat/tc/list', { ...normalizeListParams(params) })
 }
 
 export function getLatestList(params: YpatListParams): Promise<ApiResult<PageResult<YpatInfo>>> {
-  return get('/ypat/zx/list', { ...params })
+  return get('/ypat/zx/list', { ...normalizeListParams(params) })
 }
 
 export function getDetail(id: number, userid?: number): Promise<ApiResult<YpatInfo>> {
