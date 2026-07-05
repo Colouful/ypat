@@ -74,3 +74,4 @@ backend/dev/fastdfs/storage_data/
 backend-v2/app.jar
 scripts/dev-private.pem
 scripts/dev-private.key
+scripts/dev-public.pem

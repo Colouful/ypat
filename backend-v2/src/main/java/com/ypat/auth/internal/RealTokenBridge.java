@@ -148,12 +148,20 @@ public class RealTokenBridge implements TokenBridge {
     }
 
     private static RSAPublicKey rsaPublicKeyFromPem(String pem) throws Exception {
-        // Strip PEM headers/footers, base64-decode, parse X.509 SubjectPublicKeyInfo.
-        // This is the same logic Spring's JwtDecoders use.
+        // Strip PEM headers/footers AND any non-base64 character
+        // (whitespace, stray YAML special chars, embedded dashes).
+        // Then trim the body so its length is a multiple of 4 —
+        // a stray character at the end otherwise triggers
+        // "Last unit does not have enough valid bits" from
+        // Base64.getDecoder().decode().
         String body = pem
                 .replace("-----BEGIN PUBLIC KEY-----", "")
                 .replace("-----END PUBLIC KEY-----", "")
-                .replaceAll("\\s+", "");
+                .replaceAll("[^A-Za-z0-9+/=]", "");
+        int rem = body.length() % 4;
+        if (rem != 0) {
+            body = body.substring(0, body.length() - rem);
+        }
         byte[] der = java.util.Base64.getDecoder().decode(body);
         java.security.spec.X509EncodedKeySpec spec =
                 new java.security.spec.X509EncodedKeySpec(der);
