@@ -32,11 +32,12 @@ describe('tab-navigation', () => {
     })
   })
 
-  it('only treats home and mine as root tabs', () => {
+  it('treats bottom tab pages as root tabs except protected publish', () => {
     expect(isRootTabUrl('/pages/home/index')).toBe(true)
+    expect(isRootTabUrl('/pages/work/index')).toBe(true)
+    expect(isRootTabUrl('/pages/message/index')).toBe(true)
     expect(isRootTabUrl('/pages/mine/index')).toBe(true)
     expect(isRootTabUrl('/pages/publish/index')).toBe(false)
-    expect(isRootTabUrl('/pages/message/index')).toBe(false)
     expect(isRootTabUrl('/pages/discover/index')).toBe(false)
   })
 

@@ -36,7 +36,7 @@
     </view>
 
     <WorkFilterPanel v-model:visible="filterVisible" v-model="filterValue" @confirm="onFilterConfirm" @reset="onFilterReset" />
-    <KeepTabBar active="home" />
+    <KeepTabBar active="work" />
   </view>
 </template>
 
