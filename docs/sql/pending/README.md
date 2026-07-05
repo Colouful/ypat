@@ -124,7 +124,7 @@ ls -lh ypat_prod_*.sql.gz
 
 ### 业务侧准备
 
-- **暂停下单入口**（订单创建会写入 `t_member_order`，但 ddl-auto 会自动建表；如果生产已经按 ddl-auto 建过表，则本次脚本仅做核对与种子数据写入，下单可以不停）
+- **暂停下单入口**（订单创建会写入 `t_member_order`；本次脚本会对会员相关表做结构收敛与必要空值回填，执行窗口内避免新订单写入）
 - 通知业务方：会员 / 邀请能力将进入数据库就绪状态
 
 ### 执行命令
@@ -180,9 +180,11 @@ curl -sS 'https://<api-host>/service/member/plans' -H 'Authorization: Bearer <to
 ### 失败处理流程
 
 1. **执行中报错**：立刻停止后续 SQL，把错误日志发给开发
-2. **结构已建但种子失败**：先 DROP 新建表再重试；新表无业务数据，无副作用
+2. **结构已建但种子失败**：先确认 `t_member_benefit_rule` / `t_member_operation_log` 是否已有业务数据；无业务数据时可 DROP 新表后重试，有业务数据时禁止直接 DROP
 3. **业务数据写入后发现问题**：
    - `t_member_order` 在生产若有真实订单，**禁止直接 DROP**
+   - `t_member_benefit_rule` 若已有运营配置，**禁止直接 DROP**
+   - `t_member_operation_log` 若已有操作日志，**禁止直接 DROP**
    - 备份数据 → 修复脚本 → 重放 → 验证
 
 ### 回滚方式（人工执行，不写在脚本里）
@@ -212,12 +214,14 @@ DROP TABLE IF EXISTS `t_member_benefit_rule`;
 
 | 表 | 行数（生产）影响 | 说明 |
 | --- | --- | --- |
-| `t_member_plan` | 仅 INSERT 3 条种子 | 可重复执行，`ON DUPLICATE KEY UPDATE` 只刷时间戳 |
+| `t_member_plan` | 新增/收敛会员字段；必要时回填 `level_code='BASIC'`、`recommended='0'` | `V_pending_member.sql` 创建套餐种子；`V_member_system_redesign.sql` 收敛新字段 |
 | `t_user_member` | 仅创建空表 | 真实数据由业务产生 |
-| `t_member_order` | 仅创建空表 | 真实订单由用户下单产生 |
+| `t_member_order` | 新增/收敛订单快照字段 | 真实订单由用户下单产生 |
 | `t_invite_relation` | 仅创建空表 | 真实关系由注册流程产生 |
+| `t_member_benefit_rule` | 创建/收敛权益规则表；写入默认 `BASIC` 提交约拍减免种子 | 重复执行不会覆盖已有优惠配置，只刷新 `updated_at` |
+| `t_member_operation_log` | 创建/收敛会员操作日志表 | 真实日志由后台操作与支付回调产生 |
 
-**对现有数据无侵入**：本脚本只 CREATE + INSERT 种子，**不 UPDATE / DELETE**任何已存在表的数据。
+**现有数据影响**：脚本不会 `DELETE` 业务数据；会在结构收敛前对 `t_member_plan.level_code`、`t_member_plan.recommended` 以及新日志/规则表的必要非空字段做空值回填，避免 `NOT NULL` 变更失败。权益规则种子只保证默认规则存在，重复执行不会覆盖运营后续手动配置的 `discount_ppd`、`effective`、`status`。
 
 ---
 

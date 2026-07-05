@@ -265,6 +265,183 @@ CREATE TABLE IF NOT EXISTS `t_member_operation_log` (
   KEY `idx_operator_created_at` (`operator_id`, `created_at`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='会员操作日志';
 
+DROP PROCEDURE IF EXISTS `ypat_member_ensure_column`;
+DELIMITER //
+CREATE PROCEDURE `ypat_member_ensure_column`(
+  IN p_table_name VARCHAR(64),
+  IN p_column_name VARCHAR(64),
+  IN p_add_sql TEXT,
+  IN p_backfill_sql TEXT,
+  IN p_modify_sql TEXT
+)
+BEGIN
+  DECLARE column_count INT DEFAULT 0;
+
+  SELECT COUNT(*) INTO column_count
+  FROM information_schema.COLUMNS
+  WHERE TABLE_SCHEMA = DATABASE()
+    AND TABLE_NAME = p_table_name
+    AND COLUMN_NAME = p_column_name;
+
+  IF column_count = 0 THEN
+    SET @ddl := p_add_sql;
+    PREPARE stmt FROM @ddl;
+    EXECUTE stmt;
+    DEALLOCATE PREPARE stmt;
+  END IF;
+
+  IF p_backfill_sql IS NOT NULL AND p_backfill_sql <> '' THEN
+    SET @ddl := p_backfill_sql;
+    PREPARE stmt FROM @ddl;
+    EXECUTE stmt;
+    DEALLOCATE PREPARE stmt;
+  END IF;
+
+  SET @ddl := p_modify_sql;
+  PREPARE stmt FROM @ddl;
+  EXECUTE stmt;
+  DEALLOCATE PREPARE stmt;
+END//
+DELIMITER ;
+
+CALL `ypat_member_ensure_column`(
+  't_member_benefit_rule',
+  'level_code',
+  'ALTER TABLE `t_member_benefit_rule` ADD COLUMN `level_code` VARCHAR(16) NOT NULL DEFAULT ''BASIC''',
+  'UPDATE `t_member_benefit_rule` SET `level_code` = ''BASIC'' WHERE `level_code` IS NULL',
+  'ALTER TABLE `t_member_benefit_rule` MODIFY COLUMN `level_code` VARCHAR(16) NOT NULL'
+);
+
+CALL `ypat_member_ensure_column`(
+  't_member_benefit_rule',
+  'scene',
+  'ALTER TABLE `t_member_benefit_rule` ADD COLUMN `scene` VARCHAR(32) NOT NULL DEFAULT ''SUBMIT_YPAT''',
+  'UPDATE `t_member_benefit_rule` SET `scene` = ''SUBMIT_YPAT'' WHERE `scene` IS NULL',
+  'ALTER TABLE `t_member_benefit_rule` MODIFY COLUMN `scene` VARCHAR(32) NOT NULL'
+);
+
+CALL `ypat_member_ensure_column`(
+  't_member_benefit_rule',
+  'benefit_type',
+  'ALTER TABLE `t_member_benefit_rule` ADD COLUMN `benefit_type` VARCHAR(32) NOT NULL DEFAULT ''PPD_DISCOUNT''',
+  'UPDATE `t_member_benefit_rule` SET `benefit_type` = ''PPD_DISCOUNT'' WHERE `benefit_type` IS NULL',
+  'ALTER TABLE `t_member_benefit_rule` MODIFY COLUMN `benefit_type` VARCHAR(32) NOT NULL'
+);
+
+CALL `ypat_member_ensure_column`(
+  't_member_benefit_rule',
+  'discount_ppd',
+  'ALTER TABLE `t_member_benefit_rule` ADD COLUMN `discount_ppd` INT NOT NULL DEFAULT 0',
+  'UPDATE `t_member_benefit_rule` SET `discount_ppd` = 0 WHERE `discount_ppd` IS NULL',
+  'ALTER TABLE `t_member_benefit_rule` MODIFY COLUMN `discount_ppd` INT NOT NULL DEFAULT 0'
+);
+
+CALL `ypat_member_ensure_column`(
+  't_member_benefit_rule',
+  'min_actual_ppd',
+  'ALTER TABLE `t_member_benefit_rule` ADD COLUMN `min_actual_ppd` INT NOT NULL DEFAULT 0',
+  'UPDATE `t_member_benefit_rule` SET `min_actual_ppd` = 0 WHERE `min_actual_ppd` IS NULL',
+  'ALTER TABLE `t_member_benefit_rule` MODIFY COLUMN `min_actual_ppd` INT NOT NULL DEFAULT 0'
+);
+
+CALL `ypat_member_ensure_column`(
+  't_member_benefit_rule',
+  'effective',
+  'ALTER TABLE `t_member_benefit_rule` ADD COLUMN `effective` VARCHAR(1) NOT NULL DEFAULT ''0''',
+  'UPDATE `t_member_benefit_rule` SET `effective` = ''0'' WHERE `effective` IS NULL',
+  'ALTER TABLE `t_member_benefit_rule` MODIFY COLUMN `effective` VARCHAR(1) NOT NULL DEFAULT ''0'''
+);
+
+CALL `ypat_member_ensure_column`(
+  't_member_benefit_rule',
+  'status',
+  'ALTER TABLE `t_member_benefit_rule` ADD COLUMN `status` VARCHAR(1) NOT NULL DEFAULT ''1''',
+  'UPDATE `t_member_benefit_rule` SET `status` = ''1'' WHERE `status` IS NULL',
+  'ALTER TABLE `t_member_benefit_rule` MODIFY COLUMN `status` VARCHAR(1) NOT NULL DEFAULT ''1'''
+);
+
+CALL `ypat_member_ensure_column`(
+  't_member_benefit_rule',
+  'description',
+  'ALTER TABLE `t_member_benefit_rule` ADD COLUMN `description` VARCHAR(256) DEFAULT NULL',
+  '',
+  'ALTER TABLE `t_member_benefit_rule` MODIFY COLUMN `description` VARCHAR(256) DEFAULT NULL'
+);
+
+CALL `ypat_member_ensure_column`(
+  't_member_benefit_rule',
+  'updated_at',
+  'ALTER TABLE `t_member_benefit_rule` ADD COLUMN `updated_at` DATETIME DEFAULT NULL',
+  '',
+  'ALTER TABLE `t_member_benefit_rule` MODIFY COLUMN `updated_at` DATETIME DEFAULT NULL'
+);
+
+CALL `ypat_member_ensure_column`(
+  't_member_operation_log',
+  'user_id',
+  'ALTER TABLE `t_member_operation_log` ADD COLUMN `user_id` BIGINT NOT NULL DEFAULT 0',
+  'UPDATE `t_member_operation_log` SET `user_id` = 0 WHERE `user_id` IS NULL',
+  'ALTER TABLE `t_member_operation_log` MODIFY COLUMN `user_id` BIGINT NOT NULL'
+);
+
+CALL `ypat_member_ensure_column`(
+  't_member_operation_log',
+  'operator_id',
+  'ALTER TABLE `t_member_operation_log` ADD COLUMN `operator_id` BIGINT DEFAULT NULL',
+  '',
+  'ALTER TABLE `t_member_operation_log` MODIFY COLUMN `operator_id` BIGINT DEFAULT NULL'
+);
+
+CALL `ypat_member_ensure_column`(
+  't_member_operation_log',
+  'action_type',
+  'ALTER TABLE `t_member_operation_log` ADD COLUMN `action_type` VARCHAR(32) NOT NULL DEFAULT ''UNKNOWN''',
+  'UPDATE `t_member_operation_log` SET `action_type` = ''UNKNOWN'' WHERE `action_type` IS NULL',
+  'ALTER TABLE `t_member_operation_log` MODIFY COLUMN `action_type` VARCHAR(32) NOT NULL'
+);
+
+CALL `ypat_member_ensure_column`(
+  't_member_operation_log',
+  'reason',
+  'ALTER TABLE `t_member_operation_log` ADD COLUMN `reason` VARCHAR(256) DEFAULT NULL',
+  '',
+  'ALTER TABLE `t_member_operation_log` MODIFY COLUMN `reason` VARCHAR(256) DEFAULT NULL'
+);
+
+CALL `ypat_member_ensure_column`(
+  't_member_operation_log',
+  'before_value',
+  'ALTER TABLE `t_member_operation_log` ADD COLUMN `before_value` VARCHAR(1024) DEFAULT NULL',
+  '',
+  'ALTER TABLE `t_member_operation_log` MODIFY COLUMN `before_value` VARCHAR(1024) DEFAULT NULL'
+);
+
+CALL `ypat_member_ensure_column`(
+  't_member_operation_log',
+  'after_value',
+  'ALTER TABLE `t_member_operation_log` ADD COLUMN `after_value` VARCHAR(1024) DEFAULT NULL',
+  '',
+  'ALTER TABLE `t_member_operation_log` MODIFY COLUMN `after_value` VARCHAR(1024) DEFAULT NULL'
+);
+
+CALL `ypat_member_ensure_column`(
+  't_member_operation_log',
+  'source_order_no',
+  'ALTER TABLE `t_member_operation_log` ADD COLUMN `source_order_no` VARCHAR(64) DEFAULT NULL',
+  '',
+  'ALTER TABLE `t_member_operation_log` MODIFY COLUMN `source_order_no` VARCHAR(64) DEFAULT NULL'
+);
+
+CALL `ypat_member_ensure_column`(
+  't_member_operation_log',
+  'created_at',
+  'ALTER TABLE `t_member_operation_log` ADD COLUMN `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP',
+  'UPDATE `t_member_operation_log` SET `created_at` = NOW() WHERE `created_at` IS NULL',
+  'ALTER TABLE `t_member_operation_log` MODIFY COLUMN `created_at` DATETIME NOT NULL'
+);
+
+DROP PROCEDURE IF EXISTS `ypat_member_ensure_column`;
+
 SET @ddl := (
   SELECT IF(COUNT(*) = 0,
     'ALTER TABLE `t_member_benefit_rule` ADD UNIQUE KEY `uk_level_scene_type` (`level_code`, `scene`, `benefit_type`)',
