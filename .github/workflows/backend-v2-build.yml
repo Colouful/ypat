@@ -1,0 +1,61 @@
+name: backend-v2 / build
+
+# PR-04: Smoke-build the new modular monolith jump-board.
+#
+# This job exists to fail fast on JDK / Maven / pom problems.
+# It does NOT run tests (none yet) and does NOT deploy.
+# A red light here means the skeleton itself is broken — usually
+# because someone bumped the parent or added a dep that won't
+# resolve in CI's cache.
+#
+# Triggers: PR, push to protected branches, manual dispatch.
+
+on:
+  pull_request:
+    branches:
+      - main
+      - main2
+      - refactor/backend-arch-upgrade
+    paths:
+      - "backend-v2/**"
+      - ".github/workflows/backend-v2-build.yml"
+  push:
+    branches:
+      - main
+      - main2
+      - refactor/backend-arch-upgrade
+    paths:
+      - "backend-v2/**"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: backend-v2 / package (Java 17)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend-v2
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+          cache: maven
+
+      - name: Maven verify (skip tests, no jars to test yet)
+        run: mvn -B -ntp -DskipTests verify
+
+      - name: Confirm jar produced
+        run: |
+          set -euo pipefail
+          jar="target/backend-v2-1.0.0-SNAPSHOT.jar"
+          if [ ! -f "$jar" ]; then
+            echo "ERROR: expected $jar not produced"; exit 1
+          fi
+          echo "✓ $jar produced ($(wc -c < "$jar") bytes)"
