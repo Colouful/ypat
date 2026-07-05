@@ -4,6 +4,7 @@
 > **关联文件**：`V_pending_member.sql`、`V_member_system_redesign.sql`
 > **数据库**：MySQL 8.0+
 > **字符集**：`utf8mb4` / `utf8mb4_unicode_ci`
+> **上线检查**：`docs/release/member-system-redesign-checklist.md`
 
 ---
 
