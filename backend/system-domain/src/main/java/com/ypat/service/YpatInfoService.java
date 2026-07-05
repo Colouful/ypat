@@ -3,6 +3,7 @@ package com.ypat.service;
 
 import com.ypat.ResponseCode;
 import com.ypat.SysException;
+import com.ypat.MemberBenefitQuoteQo;
 import com.ypat.UserQo;
 import com.ypat.YpatInfoQo;
 import com.ypat.entity.*;
@@ -41,6 +42,8 @@ public class YpatInfoService {
     private RecordRepository recordRepository;
     @Autowired
     private UserYpatRepository userYpatRepository;
+    @Autowired
+    private MemberService memberService;
 
     public YpatInfoQo save(YpatInfoQo ypatInfo){
         YpatInfo info = new YpatInfo();
@@ -89,7 +92,10 @@ public class YpatInfoService {
         if(user==null){
             throw new SysException(ResponseCode.FAIL_NOT);
         }
-        if(user.getPpd()< Constant.PUB_NEED_PPD){
+        MemberBenefitQuoteQo quote = memberService.quoteBenefit(ypatInfo.getUserid(), "SUBMIT_YPAT");
+        int actualPpd = quote.getActualPpd() == null ? Constant.PUB_NEED_PPD : quote.getActualPpd();
+        int userPpd = user.getPpd() == null ? 0 : user.getPpd();
+        if(userPpd < actualPpd){
             throw new SysException(ResponseCode.FAIL_BALANCE);
         }
 
@@ -106,14 +112,14 @@ public class YpatInfoService {
         ypatInfoRepository.save(info);
 
         //发布次数+1, 余额扣除
-        user.setPubtimes(user.getPubtimes()+1);
-        user.setPpd(user.getPpd()-Constant.PUB_NEED_PPD);
+        user.setPubtimes((user.getPubtimes() == null ? 0 : user.getPubtimes()) + 1);
+        user.setPpd(userPpd - actualPpd);
         userRepository.save(user);
 
         //增加收支记录
         Record record = new Record();
         record.setCredate(new Date());
-        record.setPpd(-1*Constant.PUB_NEED_PPD);
+        record.setPpd(-1 * actualPpd);
         record.setUserid(user.getId());
         record.setType(RecordType.PUB.value);
         recordRepository.save(record);
