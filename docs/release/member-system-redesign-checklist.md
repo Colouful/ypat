@@ -1,7 +1,13 @@
 # 会员系统上线检查清单
 
-- [ ] 测试库执行 `V_pending_member.sql`
-- [ ] 测试库执行 `V_member_system_redesign.sql`
+SQL 发布包：`docs/sql/release/2026-07-05-member-system-redesign/`
+
+- [ ] 校验发布包 sha256 与 `MANIFEST.md` 一致
+- [ ] 测试库执行 `001_V_pending_member.sql`
+- [ ] 测试库执行 `002_V_member_system_redesign.sql`
+- [ ] 生产库执行前完成数据库备份
+- [ ] 生产库执行 `001_V_pending_member.sql`
+- [ ] 生产库执行 `002_V_member_system_redesign.sql`
 - [ ] 验证 `GET /member/plans` 未登录返回套餐列表
 - [ ] 验证 `GET /member/status` 未登录返回 401
 - [ ] 后台配置 BASIC 提交约拍优惠

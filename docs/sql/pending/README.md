@@ -5,6 +5,7 @@
 > **数据库**：MySQL 8.0+
 > **字符集**：`utf8mb4` / `utf8mb4_unicode_ci`
 > **上线检查**：`docs/release/member-system-redesign-checklist.md`
+> **正式执行包**：`docs/sql/release/2026-07-05-member-system-redesign/`
 
 ---
 
@@ -14,6 +15,17 @@
 | --- | --- | --- | --- |
 | `V_pending_member.sql` | `t_member_plan` / `t_user_member` / `t_member_order` / `t_invite_relation` | ✅ 是（`IF NOT EXISTS` + `ON DUPLICATE KEY UPDATE`） | ❌ 默认全部注释 |
 | `V_member_system_redesign.sql` | `t_member_plan` / `t_member_order` / `t_member_benefit_rule` / `t_member_operation_log` | ✅ 是（受保护 DDL + `ON DUPLICATE KEY UPDATE`） | 内置空值回填，仅用于结构收敛 |
+
+## 正式执行包
+
+上线执行时优先使用已编号和已校验的发布包副本：
+
+| 顺序 | 发布包文件 | pending 原始文件 | sha256 |
+| --- | --- | --- | --- |
+| 1 | `docs/sql/release/2026-07-05-member-system-redesign/001_V_pending_member.sql` | `docs/sql/pending/V_pending_member.sql` | `f8189729b1d4de4bc8bb0da57266bc6caac11b4228d76c6b6a9c02c3433f88dc` |
+| 2 | `docs/sql/release/2026-07-05-member-system-redesign/002_V_member_system_redesign.sql` | `docs/sql/pending/V_member_system_redesign.sql` | `0c5fc8abf98dde6ed8c00c287a96489a46ef8da44a454e4360ae4281ba497bf0` |
+
+清单文件：`docs/sql/release/2026-07-05-member-system-redesign/MANIFEST.md`
 
 ---
 
