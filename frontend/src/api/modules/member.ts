@@ -1,6 +1,7 @@
 import { get, post } from '../request'
 import type {
   ApiResult,
+  MemberBenefitQuote,
   MemberOrder,
   MemberOrderCreateResult,
   MemberPlan,
@@ -16,6 +17,11 @@ export function getMemberPlans(): Promise<ApiResult<MemberPlan[]>> {
 /** 当前用户的会员状态。 */
 export function getMemberStatus(): Promise<ApiResult<MemberStatus>> {
   return get('/member/status')
+}
+
+/** 当前用户在指定场景下的会员权益报价。 */
+export function getMemberBenefitQuote(scene: 'SUBMIT_YPAT'): Promise<ApiResult<MemberBenefitQuote>> {
+  return get('/member/benefit/quote', { scene })
 }
 
 /** 创建会员订单 + 调微信统一下单，返回支付参数。 */

@@ -45,10 +45,10 @@
 
         <view class="mine-member" @tap="goMember">
           <view class="mine-member__left">
-            <text class="mine-member__title">◆ 爱去拍 · 信用会员</text>
-            <text class="mine-member__desc">专属曝光 · 优先约拍 · 更多权益</text>
+            <text class="mine-member__title">◆ 爱去拍 · 会员</text>
+            <text class="mine-member__desc">{{ memberCardText }}</text>
           </view>
-          <view class="mine-member__cta">立即开通 ›</view>
+          <view class="mine-member__cta">{{ memberStatus?.active ? '去续费 ›' : '立即开通 ›' }}</view>
         </view>
       </template>
 
@@ -165,6 +165,7 @@ import { computed, ref } from 'vue'
 import { onPullDownRefresh, onShow } from '@dcloudio/uni-app'
 import { useUserStore } from '@/stores/user'
 import { useAppStore } from '@/stores/app'
+import { useMemberStore } from '@/stores/member'
 import * as contentApi from '@/api/modules/content'
 import * as ypatApi from '@/api/modules/ypat'
 import { GENDER_LABELS, PROFESS_LABELS } from '@/constants/enums'
@@ -178,6 +179,7 @@ type TabKey = 'overview' | 'apply' | 'works'
 
 const userStore = useUserStore()
 const appStore = useAppStore()
+const memberStore = useMemberStore()
 const params = ref<ParamInfo | null>(null)
 const receivedCount = ref(0)
 const activeTab = ref<TabKey>('overview')
@@ -192,6 +194,7 @@ const statusBarHeight = computed(() => appStore.statusBarHeight)
 const unreadCount = computed(() => userStore.unreadCount)
 const isLoggedIn = computed(() => userStore.isLoggedIn)
 const userInfo = computed(() => userStore.userInfo)
+const memberStatus = computed(() => memberStore.status)
 const avatar = computed(() => userInfo.value?.imgpath || userInfo.value?.avatarurl || '/static/default-avatar.png')
 const displayName = computed(() => userInfo.value?.nickname || maskMobile(userInfo.value?.mobile) || '未设置昵称')
 const genderLabel = computed(() => {
@@ -215,10 +218,20 @@ const creditState = computed(() => (
     : { text: '未信用担保', done: false }
 ))
 const realnameAvailable = computed(() => params.value?.realname !== '0')
+const memberCardText = computed(() => (
+  memberStatus.value?.active
+    ? `有效期至 ${formatDate(memberStatus.value.expireAt)}`
+    : '提交约拍可省拍拍豆'
+))
 
 function maskMobile(value?: string): string {
   if (!value) return ''
   return value.length >= 11 ? `${value.slice(0, 3)}****${value.slice(7)}` : value
+}
+
+function formatDate(value?: string): string {
+  if (!value) return ''
+  return value.replace('T', ' ').slice(0, 10)
 }
 
 function requireLogin(): boolean {
@@ -250,6 +263,7 @@ async function loadMineData(): Promise<void> {
   await Promise.all([
     userStore.updateUserInfo(),
     userStore.refreshUnreadCount(),
+    memberStore.refreshStatus(),
     loadReceivedCount(),
   ])
 }
