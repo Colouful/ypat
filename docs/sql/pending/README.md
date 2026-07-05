@@ -12,7 +12,7 @@
 | 文件 | 影响表 | 是否可重复执行 | 默认启用回填 |
 | --- | --- | --- | --- |
 | `V_pending_member.sql` | `t_member_plan` / `t_user_member` / `t_member_order` / `t_invite_relation` | ✅ 是（`IF NOT EXISTS` + `ON DUPLICATE KEY UPDATE`） | ❌ 默认全部注释 |
-| `V_member_system_redesign.sql` | `t_member_plan` / `t_member_order` / `t_member_benefit_rule` / `t_member_operation_log` | ✅ 是（受保护 DDL + `ON DUPLICATE KEY UPDATE`） | 不涉及 |
+| `V_member_system_redesign.sql` | `t_member_plan` / `t_member_order` / `t_member_benefit_rule` / `t_member_operation_log` | ✅ 是（受保护 DDL + `ON DUPLICATE KEY UPDATE`） | 内置空值回填，仅用于结构收敛 |
 
 ---
 
@@ -190,7 +190,7 @@ curl -sS 'https://<api-host>/service/member/plans' -H 'Authorization: Bearer <to
 ### 回滚方式（人工执行，不写在脚本里）
 
 ```sql
--- 完全回滚（仅当 4 张表都没有业务数据时使用）
+-- 完全回滚（仅当相关 6 张表都没有业务数据时使用）
 DROP TABLE IF EXISTS `t_member_order`;
 DROP TABLE IF EXISTS `t_user_member`;
 DROP TABLE IF EXISTS `t_member_plan`;

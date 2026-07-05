@@ -442,47 +442,64 @@ CALL `ypat_member_ensure_column`(
 
 DROP PROCEDURE IF EXISTS `ypat_member_ensure_column`;
 
-SET @ddl := (
-  SELECT IF(COUNT(*) = 0,
-    'ALTER TABLE `t_member_benefit_rule` ADD UNIQUE KEY `uk_level_scene_type` (`level_code`, `scene`, `benefit_type`)',
-    'SELECT ''skip index t_member_benefit_rule.uk_level_scene_type'''
-  )
-  FROM information_schema.STATISTICS
-  WHERE TABLE_SCHEMA = DATABASE()
-    AND TABLE_NAME = 't_member_benefit_rule'
-    AND INDEX_NAME = 'uk_level_scene_type'
-);
-PREPARE stmt FROM @ddl;
-EXECUTE stmt;
-DEALLOCATE PREPARE stmt;
+DROP PROCEDURE IF EXISTS `ypat_member_ensure_index`;
+DELIMITER //
+CREATE PROCEDURE `ypat_member_ensure_index`(
+  IN p_table_name VARCHAR(64),
+  IN p_index_name VARCHAR(64),
+  IN p_expected_signature VARCHAR(512),
+  IN p_add_sql TEXT
+)
+BEGIN
+  DECLARE current_signature VARCHAR(512) DEFAULT NULL;
+  DECLARE index_count INT DEFAULT 0;
 
-SET @ddl := (
-  SELECT IF(COUNT(*) = 0,
-    'ALTER TABLE `t_member_operation_log` ADD INDEX `idx_user_created_at` (`user_id`, `created_at`)',
-    'SELECT ''skip index t_member_operation_log.idx_user_created_at'''
-  )
+  SELECT COUNT(*), GROUP_CONCAT(CONCAT(SEQ_IN_INDEX, ':', COLUMN_NAME, ':', NON_UNIQUE) ORDER BY SEQ_IN_INDEX SEPARATOR ',')
+    INTO index_count, current_signature
   FROM information_schema.STATISTICS
   WHERE TABLE_SCHEMA = DATABASE()
-    AND TABLE_NAME = 't_member_operation_log'
-    AND INDEX_NAME = 'idx_user_created_at'
-);
-PREPARE stmt FROM @ddl;
-EXECUTE stmt;
-DEALLOCATE PREPARE stmt;
+    AND TABLE_NAME = p_table_name
+    AND INDEX_NAME = p_index_name;
 
-SET @ddl := (
-  SELECT IF(COUNT(*) = 0,
-    'ALTER TABLE `t_member_operation_log` ADD INDEX `idx_operator_created_at` (`operator_id`, `created_at`)',
-    'SELECT ''skip index t_member_operation_log.idx_operator_created_at'''
-  )
-  FROM information_schema.STATISTICS
-  WHERE TABLE_SCHEMA = DATABASE()
-    AND TABLE_NAME = 't_member_operation_log'
-    AND INDEX_NAME = 'idx_operator_created_at'
+  IF index_count > 0 AND current_signature <> p_expected_signature THEN
+    SET @ddl := CONCAT('ALTER TABLE `', p_table_name, '` DROP INDEX `', p_index_name, '`');
+    PREPARE stmt FROM @ddl;
+    EXECUTE stmt;
+    DEALLOCATE PREPARE stmt;
+    SET index_count := 0;
+  END IF;
+
+  IF index_count = 0 THEN
+    SET @ddl := p_add_sql;
+    PREPARE stmt FROM @ddl;
+    EXECUTE stmt;
+    DEALLOCATE PREPARE stmt;
+  END IF;
+END//
+DELIMITER ;
+
+CALL `ypat_member_ensure_index`(
+  't_member_benefit_rule',
+  'uk_level_scene_type',
+  '1:level_code:0,2:scene:0,3:benefit_type:0',
+  'ALTER TABLE `t_member_benefit_rule` ADD UNIQUE KEY `uk_level_scene_type` (`level_code`, `scene`, `benefit_type`)'
 );
-PREPARE stmt FROM @ddl;
-EXECUTE stmt;
-DEALLOCATE PREPARE stmt;
+
+CALL `ypat_member_ensure_index`(
+  't_member_operation_log',
+  'idx_user_created_at',
+  '1:user_id:1,2:created_at:1',
+  'ALTER TABLE `t_member_operation_log` ADD INDEX `idx_user_created_at` (`user_id`, `created_at`)'
+);
+
+CALL `ypat_member_ensure_index`(
+  't_member_operation_log',
+  'idx_operator_created_at',
+  '1:operator_id:1,2:created_at:1',
+  'ALTER TABLE `t_member_operation_log` ADD INDEX `idx_operator_created_at` (`operator_id`, `created_at`)'
+);
+
+DROP PROCEDURE IF EXISTS `ypat_member_ensure_index`;
 
 INSERT INTO `t_member_benefit_rule`
   (`level_code`, `scene`, `benefit_type`, `discount_ppd`, `min_actual_ppd`, `effective`, `status`, `description`, `updated_at`)
