@@ -73,6 +73,8 @@ export interface MemberUser {
   nickname?: string
   levelCode: string
   expireAt?: string
+  expireStart?: string
+  expireEnd?: string
   memberStatus: string
   days?: number
   reason?: string

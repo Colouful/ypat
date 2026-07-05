@@ -35,9 +35,11 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import javax.persistence.criteria.Predicate;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -300,27 +302,33 @@ public class MemberService {
     }
 
     public Map<String, Object> findAdminUsers(MemberUserAdminQo qo) {
-        Page<UserMember> page = userMemberRepository.findAll(pageable(qo, new Sort(Sort.Direction.DESC, "updatedAt")));
         Date now = new Date();
-        List<MemberUserAdminQo> content = new ArrayList<>();
-        for (UserMember member : page.getContent()) {
+        List<MemberUserAdminQo> filtered = new ArrayList<>();
+        for (UserMember member : userMemberRepository.findAll()) {
+            boolean active = member.getExpireAt() != null && member.getExpireAt().after(now);
+            if (qo != null && "ACTIVE".equals(qo.getMemberStatus()) && !active) continue;
+            if (qo != null && "EXPIRED".equals(qo.getMemberStatus()) && active) continue;
+            if (qo != null && qo.getExpireStart() != null && (member.getExpireAt() == null || member.getExpireAt().before(qo.getExpireStart()))) continue;
+            if (qo != null && qo.getExpireEnd() != null && (member.getExpireAt() == null || member.getExpireAt().after(qo.getExpireEnd()))) continue;
             MemberUserAdminQo item = new MemberUserAdminQo();
             item.setUserId(member.getUserId());
             item.setLevelCode(member.getLevel());
             item.setExpireAt(member.getExpireAt());
-            item.setMemberStatus(member.getExpireAt() != null && member.getExpireAt().after(now) ? "ACTIVE" : "EXPIRED");
+            item.setMemberStatus(active ? "ACTIVE" : "EXPIRED");
             User user = userRepository.findById(member.getUserId());
             if (user != null) {
+                if (qo != null && hasText(qo.getMobile()) && !contains(user.getMobile(), qo.getMobile())) continue;
+                if (qo != null && hasText(qo.getNickname()) && !contains(user.getNickname(), qo.getNickname())) continue;
                 item.setMobile(user.getMobile());
                 item.setNickname(user.getNickname());
             }
-            content.add(item);
+            filtered.add(item);
         }
-        return pageBody(page, content);
+        return pageBody(filtered, qo);
     }
 
     public Map<String, Object> findOperationLogs(MemberOperationLogQo qo) {
-        Page<MemberOperationLog> page = memberOperationLogRepository.findAll(pageable(qo, new Sort(Sort.Direction.DESC, "createdAt")));
+        Page<MemberOperationLog> page = memberOperationLogRepository.findAll(logSpec(qo), pageable(qo, new Sort(Sort.Direction.DESC, "createdAt")));
         List<MemberOperationLogQo> content = page.getContent().stream()
                 .map(log -> CopyUtil.copy(log, MemberOperationLogQo.class))
                 .collect(Collectors.toList());
@@ -328,7 +336,7 @@ public class MemberService {
     }
 
     public Map<String, Object> findAdminPlans(MemberPlanQo qo) {
-        Page<MemberPlan> page = memberPlanRepository.findAll(pageable(qo, new Sort(Sort.Direction.ASC, "sortNo")));
+        Page<MemberPlan> page = memberPlanRepository.findAll(planSpec(qo), pageable(qo, new Sort(Sort.Direction.ASC, "sortNo")));
         List<MemberPlanQo> content = page.getContent().stream()
                 .map(plan -> CopyUtil.copy(plan, MemberPlanQo.class))
                 .collect(Collectors.toList());
@@ -336,7 +344,7 @@ public class MemberService {
     }
 
     public Map<String, Object> findAdminRules(MemberBenefitRuleQo qo) {
-        Page<MemberBenefitRule> page = memberBenefitRuleRepository.findAll(pageable(qo, new Sort(Sort.Direction.ASC, "levelCode", "scene")));
+        Page<MemberBenefitRule> page = memberBenefitRuleRepository.findAll(ruleSpec(qo), pageable(qo, new Sort(Sort.Direction.ASC, "levelCode", "scene")));
         List<MemberBenefitRuleQo> content = page.getContent().stream()
                 .map(rule -> CopyUtil.copy(rule, MemberBenefitRuleQo.class))
                 .collect(Collectors.toList());
@@ -344,10 +352,7 @@ public class MemberService {
     }
 
     public Map<String, Object> findAdminOrders(MemberOrderQo qo) {
-        Pageable pageable = pageable(qo, new Sort(Sort.Direction.DESC, "credate"));
-        Page<MemberOrder> page = qo != null && qo.getUserId() != null
-                ? memberOrderRepository.findByUserIdOrderByCredateDesc(qo.getUserId(), pageable)
-                : memberOrderRepository.findAll(pageable);
+        Page<MemberOrder> page = memberOrderRepository.findAll(orderSpec(qo), pageable(qo, new Sort(Sort.Direction.DESC, "credate")));
         List<MemberOrderQo> content = page.getContent().stream()
                 .map(order -> CopyUtil.copy(order, MemberOrderQo.class))
                 .collect(Collectors.toList());
@@ -394,6 +399,67 @@ public class MemberService {
         body.put("number", page.getNumber());
         body.put("size", page.getSize());
         return body;
+    }
+
+    private Map<String, Object> pageBody(List<?> content, PageQo qo) {
+        int page = qo == null || qo.getPage() == null || qo.getPage() < 0 ? 0 : qo.getPage();
+        int size = qo == null || qo.getSize() == null || qo.getSize() <= 0 ? 10 : qo.getSize();
+        int from = Math.min(page * size, content.size());
+        int to = Math.min(from + size, content.size());
+        Map<String, Object> body = new HashMap<>();
+        body.put("content", content.subList(from, to));
+        body.put("totalElements", (long) content.size());
+        body.put("totalPages", (int) Math.ceil(content.size() / (double) size));
+        body.put("number", page);
+        body.put("size", size);
+        return body;
+    }
+
+    private Specification<MemberPlan> planSpec(final MemberPlanQo qo) {
+        return (root, query, cb) -> {
+            List<Predicate> ps = new ArrayList<>();
+            if (qo != null && hasText(qo.getName())) ps.add(cb.like(root.get("name"), "%" + qo.getName().trim() + "%"));
+            if (qo != null && hasText(qo.getStatus())) ps.add(cb.equal(root.get("status"), qo.getStatus()));
+            return cb.and(ps.toArray(new Predicate[0]));
+        };
+    }
+
+    private Specification<MemberBenefitRule> ruleSpec(final MemberBenefitRuleQo qo) {
+        return (root, query, cb) -> {
+            List<Predicate> ps = new ArrayList<>();
+            if (qo != null && hasText(qo.getLevelCode())) ps.add(cb.equal(root.get("levelCode"), qo.getLevelCode()));
+            if (qo != null && hasText(qo.getScene())) ps.add(cb.equal(root.get("scene"), qo.getScene()));
+            if (qo != null && hasText(qo.getStatus())) ps.add(cb.equal(root.get("status"), qo.getStatus()));
+            return cb.and(ps.toArray(new Predicate[0]));
+        };
+    }
+
+    private Specification<MemberOrder> orderSpec(final MemberOrderQo qo) {
+        return (root, query, cb) -> {
+            List<Predicate> ps = new ArrayList<>();
+            if (qo != null && qo.getUserId() != null) ps.add(cb.equal(root.get("userId"), qo.getUserId()));
+            if (qo != null && hasText(qo.getStatus())) ps.add(cb.equal(root.get("status"), qo.getStatus()));
+            if (qo != null && hasText(qo.getOutTradeNo())) ps.add(cb.like(root.get("outTradeNo"), "%" + qo.getOutTradeNo().trim() + "%"));
+            return cb.and(ps.toArray(new Predicate[0]));
+        };
+    }
+
+    private Specification<MemberOperationLog> logSpec(final MemberOperationLogQo qo) {
+        return (root, query, cb) -> {
+            List<Predicate> ps = new ArrayList<>();
+            if (qo != null && qo.getUserId() != null) ps.add(cb.equal(root.get("userId"), qo.getUserId()));
+            if (qo != null && qo.getOperatorId() != null) ps.add(cb.equal(root.get("operatorId"), qo.getOperatorId()));
+            if (qo != null && hasText(qo.getActionType())) ps.add(cb.equal(root.get("actionType"), qo.getActionType()));
+            return cb.and(ps.toArray(new Predicate[0]));
+        };
+    }
+
+    private boolean hasText(String value) {
+        return value != null && !value.trim().isEmpty();
+    }
+
+    private boolean contains(String source, String keyword) {
+        return source != null && keyword != null && source.toLowerCase().contains(keyword.trim().toLowerCase());
     }
 
     private static Date addDays(Date base, int days) {

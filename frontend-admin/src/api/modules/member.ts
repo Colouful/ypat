@@ -25,6 +25,8 @@ export interface MemberUserQuery extends PageQuery {
   mobile?: string
   nickname?: string
   memberStatus?: string
+  expireStart?: string
+  expireEnd?: string
 }
 
 export interface MemberOrderQuery extends PageQuery {

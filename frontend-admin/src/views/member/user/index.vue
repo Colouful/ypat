@@ -26,7 +26,16 @@ const statusOptions = [{ label: '有效', value: 'ACTIVE' }, { label: '已过期
 async function fetchList() {
   loading.value = true
   try {
-    const res = await getMemberUsers(query)
+    const params: MemberUserQuery = {
+      mobile: query.mobile,
+      nickname: query.nickname,
+      memberStatus: query.memberStatus,
+      page: query.page,
+      size: query.size,
+      expireStart: query.expireRange?.[0] ? `${query.expireRange[0]} 00:00:00` : undefined,
+      expireEnd: query.expireRange?.[1] ? `${query.expireRange[1]} 23:59:59` : undefined,
+    }
+    const res = await getMemberUsers(params)
     list.value = res.data.content || []
     total.value = res.data.totalElements || 0
   } finally {

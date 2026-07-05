@@ -15,6 +15,12 @@ public class MemberUserAdminQo extends PageQo implements Serializable {
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+8")
     private Date expireAt;
     private String memberStatus;
+    @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+8")
+    private Date expireStart;
+    @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+8")
+    private Date expireEnd;
     private Integer days;
     private String reason;
     public Long getUserId() { return userId; }
@@ -29,6 +35,10 @@ public class MemberUserAdminQo extends PageQo implements Serializable {
     public void setExpireAt(Date expireAt) { this.expireAt = expireAt; }
     public String getMemberStatus() { return memberStatus; }
     public void setMemberStatus(String memberStatus) { this.memberStatus = memberStatus; }
+    public Date getExpireStart() { return expireStart; }
+    public void setExpireStart(Date expireStart) { this.expireStart = expireStart; }
+    public Date getExpireEnd() { return expireEnd; }
+    public void setExpireEnd(Date expireEnd) { this.expireEnd = expireEnd; }
     public Integer getDays() { return days; }
     public void setDays(Integer days) { this.days = days; }
     public String getReason() { return reason; }
