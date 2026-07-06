@@ -2,8 +2,12 @@ package com.ypat.service;
 
 import com.ypat.ResponseCode;
 import com.ypat.SysException;
+import com.ypat.comm.ImageConst;
 import com.ypat.entity.WorkMedia;
 import com.ypat.repository.WorkMediaRepository;
+import com.ypat.storage.StorageBizPath;
+import com.ypat.storage.StorageService;
+import com.ypat.storage.StoredObject;
 import com.ypat.util.FastDFSClient;
 import com.ypat.util.ImageMarkUtil;
 import com.ypat.util.MimeDetector;
@@ -31,6 +35,7 @@ public class WorkMediaService {
     @Autowired private FastDFSClient fastDFSClient;
     @Autowired private ImageMarkUtil imageMarkUtil;
     @Autowired private com.ypat.config.SystemConfig systemConfig;
+    @Autowired private StorageService storageService;
     @Autowired private WorkMediaRepository workMediaRepository;
 
     public Map<String, Object> uploadImage(MultipartFile file, Long userId) {
@@ -44,12 +49,15 @@ public class WorkMediaService {
             if (!MimeDetector.isImage(mime)) {
                 throw new SysException(ResponseCode.FAIL_FILE_TYPE, "图片格式不支持（仅 JPEG/PNG/WebP）");
             }
-            String fileId = fastDFSClient.uploanFile1(
-                imageMarkUtil.waterMake(new ByteArrayInputStream(bytes)), "jpg");
-            if (fileId == null) {
+            StoredObject storedObject = storageService.upload(
+                imageMarkUtil.waterMake(new ByteArrayInputStream(bytes)),
+                ImageConst.IMAGE_TYPE,
+                "image/jpeg",
+                StorageBizPath.WORK);
+            if (storedObject == null || storedObject.getUrl() == null) {
                 throw new SysException(ResponseCode.FAIL_UPLOAD);
             }
-            String url = joinPublicFileUrl(systemConfig.getFdfs_path(), fileId);
+            String url = storedObject.getUrl();
 
             WorkMedia media = new WorkMedia();
             media.setUserId(userId);
@@ -80,11 +88,11 @@ public class WorkMediaService {
             if (!MimeDetector.isVideo(mime)) {
                 throw new SysException(ResponseCode.FAIL_FILE_TYPE, "视频格式不支持（仅 MP4/MOV）");
             }
-            String fileId = fastDFSClient.uploanFile1(new ByteArrayInputStream(bytes), "mp4");
-            if (fileId == null) {
+            StoredObject storedObject = storageService.upload(new ByteArrayInputStream(bytes), file.getOriginalFilename(), mime, StorageBizPath.WORK);
+            if (storedObject == null || storedObject.getUrl() == null) {
                 throw new SysException(ResponseCode.FAIL_UPLOAD);
             }
-            String url = joinPublicFileUrl(systemConfig.getFdfs_path(), fileId);
+            String url = storedObject.getUrl();
 
             WorkMedia media = new WorkMedia();
             media.setUserId(userId);
