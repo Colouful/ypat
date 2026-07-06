@@ -62,6 +62,19 @@ public class CosObjectKeyFactoryTest {
         ));
     }
 
+    @Test
+    public void stripsQueryStringAndFragmentFromObjectKey() {
+        CosObjectKeyFactory factory = new CosObjectKeyFactory("pre");
+
+        assertEquals(
+                "pre/work/2026/07/06/a.jpg",
+                factory.extractObjectKey(
+                        "https://cdn.example.test/files",
+                        "https://cdn.example.test/files/pre/work/2026/07/06/a.jpg?sign=abc#preview"
+                )
+        );
+    }
+
     private Date dateAtNoon(int year, int month, int dayOfMonth) {
         Calendar calendar = Calendar.getInstance();
         calendar.clear();

@@ -25,8 +25,17 @@ public class CosObjectKeyFactory {
         if (base == null || url == null) return null;
         String text = url.trim();
         if (!text.startsWith(base + "/")) return null;
-        String key = text.substring(base.length() + 1);
+        String key = stripQueryAndFragment(text.substring(base.length() + 1));
         return key.startsWith(envPrefix + "/") ? key : null;
+    }
+
+    private String stripQueryAndFragment(String key) {
+        int query = key.indexOf('?');
+        int fragment = key.indexOf('#');
+        int end = key.length();
+        if (query >= 0) end = Math.min(end, query);
+        if (fragment >= 0) end = Math.min(end, fragment);
+        return key.substring(0, end);
     }
 
     private String extension(String originalFilename) {
