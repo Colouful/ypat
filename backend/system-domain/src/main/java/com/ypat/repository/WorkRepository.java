@@ -85,4 +85,8 @@ public interface WorkRepository extends JpaRepository<Work, Long>, JpaSpecificat
     @Modifying
     @Query("update Work w set w.status = :status, w.auditReason = :reason, w.updatedAt = CURRENT_TIMESTAMP where w.dataFlag = 'internal_test' and w.deletedFlag = 0 and (:batchNo is null or w.internalBatchNo = :batchNo)")
     int updateInternalTestWorkStatus(@Param("batchNo") String batchNo, @Param("status") String status, @Param("reason") String reason);
+
+    @Modifying
+    @Query("update Work w set w.status = :status, w.auditReason = :reason, w.updatedAt = CURRENT_TIMESTAMP where w.dataFlag = 'internal_test' and w.deletedFlag = 0 and w.userid in :userIds and (:batchNo is null or w.internalBatchNo = :batchNo)")
+    int updateInternalTestWorkStatusByUserIds(@Param("userIds") java.util.List<Long> userIds, @Param("batchNo") String batchNo, @Param("status") String status, @Param("reason") String reason);
 }

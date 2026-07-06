@@ -32,4 +32,8 @@ public interface UserRepository extends JpaRepository<User, Long>, JpaSpecificat
     @Modifying
     @Query("update User u set u.status = :status where u.dataFlag = 'internal_test' and (:batchNo is null or u.internalBatchNo = :batchNo)")
     int updateInternalTestUsersStatus(@Param("batchNo") String batchNo, @Param("status") String status);
+
+    @Modifying
+    @Query("update User u set u.status = :status where u.dataFlag = 'internal_test' and u.id in :userIds and (:batchNo is null or u.internalBatchNo = :batchNo)")
+    int updateInternalTestUsersStatusByIds(@Param("userIds") List<Long> userIds, @Param("batchNo") String batchNo, @Param("status") String status);
 }

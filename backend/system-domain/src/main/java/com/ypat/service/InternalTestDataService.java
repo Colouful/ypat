@@ -172,10 +172,23 @@ public class InternalTestDataService {
     }
 
     public InternalTestBatchQo cleanup(InternalTestGenerateQo qo) {
-        String batchNo = qo == null ? null : qo.getBatchNo();
-        int users = userRepository.updateInternalTestUsersStatus(batchNo, UserStatus.shbtg.value);
-        int ypats = ypatInfoRepository.updateInternalTestYpatStatus(batchNo, YpatStatus.shbtg.value, CLEANUP_REASON);
-        int works = workRepository.updateInternalTestWorkStatus(batchNo, WorkStatus.xj.value, CLEANUP_REASON);
+        String batchNo = qo == null || CommonUtils.isNull(qo.getBatchNo()) ? null : qo.getBatchNo();
+        if (qo == null || (batchNo == null && CollectionUtils.isEmpty(qo.getUserIds()))) {
+            throw new SysException(ResponseCode.FAIL_PARA, "清理条件不能为空");
+        }
+
+        int users;
+        int ypats;
+        int works;
+        if (!CollectionUtils.isEmpty(qo.getUserIds())) {
+            users = userRepository.updateInternalTestUsersStatusByIds(qo.getUserIds(), batchNo, UserStatus.shbtg.value);
+            ypats = ypatInfoRepository.updateInternalTestYpatStatusByUserIds(qo.getUserIds(), batchNo, YpatStatus.shbtg.value, CLEANUP_REASON);
+            works = workRepository.updateInternalTestWorkStatusByUserIds(qo.getUserIds(), batchNo, WorkStatus.xj.value, CLEANUP_REASON);
+        } else {
+            users = userRepository.updateInternalTestUsersStatus(batchNo, UserStatus.shbtg.value);
+            ypats = ypatInfoRepository.updateInternalTestYpatStatus(batchNo, YpatStatus.shbtg.value, CLEANUP_REASON);
+            works = workRepository.updateInternalTestWorkStatus(batchNo, WorkStatus.xj.value, CLEANUP_REASON);
+        }
         return buildBatch(batchNo, users, ypats, works);
     }
 

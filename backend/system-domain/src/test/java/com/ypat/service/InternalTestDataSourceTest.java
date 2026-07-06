@@ -121,6 +121,31 @@ public class InternalTestDataSourceTest {
         assertTrue(workRepo.contains("dataFlag = 'internal_test'"));
     }
 
+    @Test
+    public void cleanupRequiresExplicitConditionAndSupportsUserIds() throws Exception {
+        String dataService = read("backend/system-domain/src/main/java/com/ypat/service/InternalTestDataService.java");
+        String userRepo = read("backend/system-domain/src/main/java/com/ypat/repository/UserRepository.java");
+        String ypatRepo = read("backend/system-domain/src/main/java/com/ypat/repository/YpatInfoRepository.java");
+        String workRepo = read("backend/system-domain/src/main/java/com/ypat/repository/WorkRepository.java");
+
+        assertTrue(dataService.contains("清理条件不能为空"));
+        assertTrue(dataService.contains("updateInternalTestUsersStatusByIds"));
+        assertTrue(dataService.contains("updateInternalTestYpatStatusByUserIds"));
+        assertTrue(dataService.contains("updateInternalTestWorkStatusByUserIds"));
+        assertTrue(userRepo.contains("updateInternalTestUsersStatusByIds"));
+        assertTrue(userRepo.contains("u.id in :userIds"));
+        assertTrue(userRepo.contains("u.dataFlag = 'internal_test'"));
+        assertTrue(userRepo.contains("(:batchNo is null or u.internalBatchNo = :batchNo)"));
+        assertTrue(ypatRepo.contains("updateInternalTestYpatStatusByUserIds"));
+        assertTrue(ypatRepo.contains("y.user.id in :userIds"));
+        assertTrue(ypatRepo.contains("y.dataFlag = 'internal_test'"));
+        assertTrue(ypatRepo.contains("(:batchNo is null or y.internalBatchNo = :batchNo)"));
+        assertTrue(workRepo.contains("updateInternalTestWorkStatusByUserIds"));
+        assertTrue(workRepo.contains("w.userid in :userIds"));
+        assertTrue(workRepo.contains("w.dataFlag = 'internal_test'"));
+        assertTrue(workRepo.contains("(:batchNo is null or w.internalBatchNo = :batchNo)"));
+    }
+
     private void assertEntityMarkers(String path) throws Exception {
         String source = read(path);
 
