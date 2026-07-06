@@ -164,7 +164,7 @@ public class AdminInternalTestController {
         }
 
         JsonElement resElement = object.get("res");
-        if (resElement == null || resElement.isJsonNull()) {
+        if (resElement == null || resElement.isJsonNull() || !resElement.isJsonObject()) {
             throw new SysException(ResponseCode.FAIL_SER, BAD_RESPONSE_MSG);
         }
         return resElement;

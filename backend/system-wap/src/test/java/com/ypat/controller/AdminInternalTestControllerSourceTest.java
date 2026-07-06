@@ -1,13 +1,19 @@
 package com.ypat.controller;
 
+import com.google.gson.JsonElement;
+import com.ypat.ResponseCode;
+import com.ypat.SysException;
 import org.junit.Test;
 
 import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
@@ -43,6 +49,9 @@ public class AdminInternalTestControllerSourceTest {
 
     @Test
     public void feignAndRestapiExposeMatchingInternalServiceRoutes() throws Exception {
+        String wap = readSource(
+                "src/main/java/com/ypat/controller/AdminInternalTestController.java",
+                "backend/system-wap/src/main/java/com/ypat/controller/AdminInternalTestController.java");
         String client = readSource(
                 "src/main/java/com/ypat/service/InternalTestServiceClient.java",
                 "backend/system-wap/src/main/java/com/ypat/service/InternalTestServiceClient.java");
@@ -62,11 +71,98 @@ public class AdminInternalTestControllerSourceTest {
         assertTrue(restapi.contains("@RequestMapping(\"/service/internal-test\")"));
         assertTrue(restapi.contains("InternalTestResourceService"));
         assertTrue(restapi.contains("InternalTestDataService"));
+        assertThreeLayerGetRoute(wap, client, restapi, "resources");
+        assertThreeLayerGetRoute(wap, client, restapi, "users");
+        assertThreeLayerGetRoute(wap, client, restapi, "batches");
+        assertStatusRouteUsesIdAndStatus(client);
+        assertStatusRouteUsesIdAndStatus(restapi);
+    }
+
+    @Test
+    public void parseResponseResReturnsExpectedDataAndPropagatesBusinessErrors() throws Exception {
+        AdminInternalTestController controller = new AdminInternalTestController();
+
+        JsonElement data = invokeParseResponseRes(controller, "{\"code\":200,\"res\":{\"ok\":true}}");
+        assertTrue(data.isJsonObject());
+        assertTrue(data.getAsJsonObject().get("ok").getAsBoolean());
+
+        JsonElement rawPage = invokeParseResponseRes(controller, "{\"content\":[],\"totalElements\":0}");
+        assertTrue(rawPage.isJsonObject());
+        assertTrue(rawPage.getAsJsonObject().has("content"));
+
+        assertParseResponseFail(controller, "{\"code\":1002,\"msg\":\"参数错误\"}", 1002, "参数错误");
+    }
+
+    @Test
+    public void parseResponseResRejectsMalformedResponses() throws Exception {
+        AdminInternalTestController controller = new AdminInternalTestController();
+
+        assertParseResponseFail(controller, "{\"code\":500,\"msg\":{}}", ResponseCode.FAIL_SER.getMsg());
+        assertParseResponseFail(controller, "{\"code\":500,\"msg\":[]}", ResponseCode.FAIL_SER.getMsg());
+        assertParseResponseFail(controller, "{\"code\":500,\"msg\":null}", ResponseCode.FAIL_SER.getMsg());
+        assertParseResponseFail(controller, "{\"code\":500,\"msg\":123}", ResponseCode.FAIL_SER.getMsg());
+        assertParseResponseFail(controller, "{\"code\":500,\"msg\":true}", ResponseCode.FAIL_SER.getMsg());
+        assertParseResponseFail(controller, "{\"code\":null,\"msg\":\"bad\"}", "服务响应格式错误");
+        assertParseResponseFail(controller, "{\"code\":\"x\",\"msg\":\"bad\"}", "服务响应格式错误");
+        assertParseResponseFail(controller, "{\"code\":200}", "服务响应格式错误");
+        assertParseResponseFail(controller, "{\"code\":200,\"msg\":\"ok\"}", "服务响应格式错误");
+        assertParseResponseFail(controller, "{\"code\":200,\"res\":null}", "服务响应格式错误");
+        assertParseResponseFail(controller, "{\"code\":200,\"res\":[]}", "服务响应格式错误");
+        assertParseResponseFail(controller, "{\"code\":200,\"res\":123}", "服务响应格式错误");
+        assertParseResponseFail(controller, "{\"code\":200,\"res\":true}", "服务响应格式错误");
+        assertParseResponseFail(controller, "{\"code\":200,\"res\":\"x\"}", "服务响应格式错误");
+        assertParseResponseFail(controller, "[]", "服务响应格式错误");
+        assertParseResponseFail(controller, "123", "服务响应格式错误");
+        assertParseResponseFail(controller, "null", "服务响应格式错误");
+        assertParseResponseFail(controller, "{not-json", "服务响应格式错误");
+        assertParseResponseFail(controller, "", "服务响应格式错误");
     }
 
     @Test
     public void oldSystemWebIsNotTouchedByInternalTestFeature() throws Exception {
-        String status = readSource("../../.gitignore", ".gitignore");
-        assertFalse(status.contains("backend/system-web/src/main/java/com/ypat/controller/AdminInternalTestController"));
+        assertFalse(sourceExists(
+                "../system-web/src/main/java/com/ypat/controller/AdminInternalTestController.java",
+                "backend/system-web/src/main/java/com/ypat/controller/AdminInternalTestController.java"));
+    }
+
+    private boolean sourceExists(String modulePath, String repoPath) {
+        return Files.exists(Paths.get(modulePath)) || Files.exists(Paths.get(repoPath));
+    }
+
+    private void assertThreeLayerGetRoute(String wap, String client, String restapi, String route) {
+        assertTrue(wap.contains("@GetMapping(\"/" + route + "\")"));
+        assertTrue(client.contains("@GetMapping(\"/service/internal-test/" + route + "\")"));
+        assertTrue(restapi.contains("@GetMapping(\"/" + route + "\")"));
+    }
+
+    private void assertStatusRouteUsesIdAndStatus(String source) {
+        assertTrue(source.contains("@PostMapping(\"/service/internal-test/resources/status\")")
+                || source.contains("@PostMapping(\"/resources/status\")"));
+        assertTrue(source.contains("@RequestParam(\"id\") Long id"));
+        assertTrue(source.contains("@RequestParam(\"status\") String status"));
+    }
+
+    private JsonElement invokeParseResponseRes(AdminInternalTestController controller, String json) throws Exception {
+        Method method = AdminInternalTestController.class.getDeclaredMethod("parseResponseRes", String.class);
+        method.setAccessible(true);
+        return (JsonElement) method.invoke(controller, json);
+    }
+
+    private void assertParseResponseFail(AdminInternalTestController controller, String json, String expectedMessage) throws Exception {
+        assertParseResponseFail(controller, json, ResponseCode.FAIL_SER.getCode(), expectedMessage);
+    }
+
+    private void assertParseResponseFail(AdminInternalTestController controller, String json, int expectedCode, String expectedMessage) throws Exception {
+        try {
+            invokeParseResponseRes(controller, json);
+        } catch (InvocationTargetException e) {
+            Throwable cause = e.getCause();
+            assertTrue(cause instanceof SysException);
+            SysException sysException = (SysException) cause;
+            assertEquals(expectedCode, sysException.getCode());
+            assertEquals(expectedMessage, sysException.getMsg());
+            return;
+        }
+        throw new AssertionError("Expected SysException for json=" + json);
     }
 }
