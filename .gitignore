@@ -34,6 +34,7 @@ frontend-admin/.vite/
 # AI tool metadata（不应入库）
 .codebuddy/
 .claude/
+.worktrees/
 
 # OS
 .DS_Store
