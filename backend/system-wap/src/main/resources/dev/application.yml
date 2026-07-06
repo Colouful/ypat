@@ -56,7 +56,8 @@ eureka:
 
 system:
   third:
-    fdfs_path: ${YPAT_FDFS_PUBLIC_BASE_URL:http://localhost:8888}
+    # 与预发保持一致：URL 前缀固定为 https://panghu.work/files，本地返回的文件地址可在浏览器/小程序直接打开
+    fdfs_path: ${YPAT_FDFS_PUBLIC_BASE_URL:https://panghu.work/files}
 
 
 ##FeignClient超时设置

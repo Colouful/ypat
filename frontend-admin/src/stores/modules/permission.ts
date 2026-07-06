@@ -21,6 +21,11 @@ import QueryYpatList from '@/views/query/ypat-list/index.vue'
 import QueryMessList from '@/views/query/mess-list/index.vue'
 import PubeventList from '@/views/pubevent/list/index.vue'
 import OrderList from '@/views/order/list/index.vue'
+import MemberPlan from '@/views/member/plan/index.vue'
+import MemberRule from '@/views/member/rule/index.vue'
+import MemberUser from '@/views/member/user/index.vue'
+import MemberOrder from '@/views/member/order/index.vue'
+import MemberLog from '@/views/member/log/index.vue'
 
 const viewModules: Record<string, Component> = {
   'manage/ypat-list/index': ManageYpatList,
@@ -35,6 +40,11 @@ const viewModules: Record<string, Component> = {
   'query/mess-list/index': QueryMessList,
   'pubevent/list/index': PubeventList,
   'order/list/index': OrderList,
+  'member/plan/index': MemberPlan,
+  'member/rule/index': MemberRule,
+  'member/user/index': MemberUser,
+  'member/order/index': MemberOrder,
+  'member/log/index': MemberLog,
 }
 
 export const usePermissionStore = defineStore('permission', () => {
