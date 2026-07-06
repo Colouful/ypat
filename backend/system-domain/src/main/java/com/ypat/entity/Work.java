@@ -53,6 +53,10 @@ public class Work implements Serializable {
     private Integer deletedFlag;
     private String city;
     private String area;
+    @Column(name = "data_flag")
+    private String dataFlag;
+    @Column(name = "internal_batch_no")
+    private String internalBatchNo;
 
     // user 用只读的 @ManyToOne 关联到 userid 列，让 JPA Criteria 能 root.join("user", ...)
     // insertable=false/updatable=false：仅只读关联，写入通过 userid Long 字段完成，避免双写冲突
@@ -105,6 +109,10 @@ public class Work implements Serializable {
     public void setCity(String city) { this.city = city; }
     public String getArea() { return area; }
     public void setArea(String area) { this.area = area; }
+    public String getDataFlag() { return dataFlag; }
+    public void setDataFlag(String dataFlag) { this.dataFlag = dataFlag; }
+    public String getInternalBatchNo() { return internalBatchNo; }
+    public void setInternalBatchNo(String internalBatchNo) { this.internalBatchNo = internalBatchNo; }
     public User getUser() { return user; }
     public void setUser(User user) { this.user = user; }
     public List<WorkMedia> getMedias() { return medias; }

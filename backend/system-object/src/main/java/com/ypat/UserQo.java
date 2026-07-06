@@ -61,6 +61,8 @@ public class UserQo extends PageQo implements java.io.Serializable{
     private String professTxt;
     private String channel;
     private String channelTxt;
+    private String dataFlag;
+    private String internalBatchNo;
 
     public String getChannelTxt() {
         return UserOrigType.getNameByCode(this.channel);
@@ -76,6 +78,22 @@ public class UserQo extends PageQo implements java.io.Serializable{
 
     public void setChannel(String channel) {
         this.channel = channel;
+    }
+
+    public String getDataFlag() {
+        return dataFlag;
+    }
+
+    public void setDataFlag(String dataFlag) {
+        this.dataFlag = dataFlag;
+    }
+
+    public String getInternalBatchNo() {
+        return internalBatchNo;
+    }
+
+    public void setInternalBatchNo(String internalBatchNo) {
+        this.internalBatchNo = internalBatchNo;
     }
 
     public String getProfessTxt() {

@@ -30,6 +30,8 @@ public class WorkListQo extends PageQo implements Serializable {
     private String nickname;
     private String mobile;
     private String mediaType;
+    private String dataFlag;
+    private String internalBatchNo;
 
     public String getCategory() { return category; }
     public void setCategory(String category) { this.category = category; }
@@ -51,4 +53,8 @@ public class WorkListQo extends PageQo implements Serializable {
     public void setMobile(String mobile) { this.mobile = mobile; }
     public String getMediaType() { return mediaType; }
     public void setMediaType(String mediaType) { this.mediaType = mediaType; }
+    public String getDataFlag() { return dataFlag; }
+    public void setDataFlag(String dataFlag) { this.dataFlag = dataFlag; }
+    public String getInternalBatchNo() { return internalBatchNo; }
+    public void setInternalBatchNo(String internalBatchNo) { this.internalBatchNo = internalBatchNo; }
 }
