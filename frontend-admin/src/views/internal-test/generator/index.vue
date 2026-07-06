@@ -70,6 +70,7 @@ const batchLoading = ref(false)
 const submitting = ref(false)
 const cleaningBatchNo = ref('')
 const batchQuery = reactive({ batchNo: '', page: 0, size: 20 })
+let resourceRequestSeq = 0
 
 const isCreateMode = computed(() => form.mode === InternalTestGenerateMode.CREATE_AND_GENERATE.value)
 const needsYpat = computed(() => form.contentType === 'ypat' || form.contentType === 'both')
@@ -80,10 +81,23 @@ function selectedIds(resources: InternalTestResource[]): number[] {
 }
 
 function parseUserIds(): number[] {
-  return form.userIdsText
-    .split(',')
-    .map((item) => Number(item.trim()))
-    .filter((item) => Number.isInteger(item) && item > 0)
+  return parseUserIdInput().ids
+}
+
+function parseUserIdInput(): { ids: number[]; invalidTokens: string[] } {
+  const ids: number[] = []
+  const invalidTokens: string[] = []
+  for (const raw of form.userIdsText.split(',')) {
+    const token = raw.trim()
+    if (!token) continue
+    const value = Number(token)
+    if (Number.isInteger(value) && value > 0) {
+      ids.push(value)
+    } else {
+      invalidTokens.push(token)
+    }
+  }
+  return { ids, invalidTokens }
 }
 
 function normalizeTemplateType(value: string): string {
@@ -92,25 +106,45 @@ function normalizeTemplateType(value: string): string {
   return value
 }
 
-async function loadResources(): Promise<void> {
+type ResourceLoadScope = 'all' | 'style' | 'work'
+
+async function loadResources(scope: ResourceLoadScope = 'all'): Promise<void> {
+  const seq = ++resourceRequestSeq
   resourceLoading.value = true
   try {
-    const [avatarRes, ypatRes, workRes] = await Promise.all([
-      getInternalResources({
-        mediaType: InternalTestMediaType.IMAGE.value,
-        usageType: InternalTestUsageType.AVATAR.value,
-        status: InternalTestResourceStatus.ENABLED.value,
-        page: 0,
-        size: 50,
-      }),
-      getInternalResources({
-        mediaType: InternalTestMediaType.IMAGE.value,
-        usageType: InternalTestUsageType.YPAT.value,
-        styleCode: form.styleCode,
-        status: InternalTestResourceStatus.ENABLED.value,
-        page: 0,
-        size: 50,
-      }),
+    const requests: Array<Promise<void>> = []
+    if (scope === 'all') {
+      requests.push(
+        getInternalResources({
+          mediaType: InternalTestMediaType.IMAGE.value,
+          usageType: InternalTestUsageType.AVATAR.value,
+          status: InternalTestResourceStatus.ENABLED.value,
+          page: 0,
+          size: 50,
+        }).then((res) => {
+          if (seq !== resourceRequestSeq) return
+          avatarResources.value = res.data.content || []
+          selectedAvatarResources.value = []
+        }),
+      )
+    }
+    if (scope === 'all' || scope === 'style') {
+      requests.push(
+        getInternalResources({
+          mediaType: InternalTestMediaType.IMAGE.value,
+          usageType: InternalTestUsageType.YPAT.value,
+          styleCode: form.styleCode,
+          status: InternalTestResourceStatus.ENABLED.value,
+          page: 0,
+          size: 50,
+        }).then((res) => {
+          if (seq !== resourceRequestSeq) return
+          ypatResources.value = res.data.content || []
+          selectedYpatResources.value = []
+        }),
+      )
+    }
+    requests.push(
       getInternalResources({
         mediaType: activeWorkMediaType.value,
         usageType: InternalTestUsageType.WORK.value,
@@ -118,16 +152,17 @@ async function loadResources(): Promise<void> {
         status: InternalTestResourceStatus.ENABLED.value,
         page: 0,
         size: 50,
+      }).then((res) => {
+        if (seq !== resourceRequestSeq) return
+        workResources.value = res.data.content || []
+        selectedWorkResources.value = []
       }),
-    ])
-    avatarResources.value = avatarRes.data.content || []
-    ypatResources.value = ypatRes.data.content || []
-    workResources.value = workRes.data.content || []
-    selectedAvatarResources.value = []
-    selectedYpatResources.value = []
-    selectedWorkResources.value = []
+    )
+    await Promise.all(requests)
   } finally {
-    resourceLoading.value = false
+    if (seq === resourceRequestSeq) {
+      resourceLoading.value = false
+    }
   }
 }
 
@@ -145,8 +180,14 @@ function validateBeforeSubmit(): string | null {
   if (isCreateMode.value && (!form.userCount || form.userCount < 1 || form.userCount > 50)) {
     return '新建用户数量必须在 1 到 50 之间'
   }
-  if (!isCreateMode.value && parseUserIds().length === 0) {
-    return '请输入至少一个已有内测用户 ID'
+  if (!isCreateMode.value) {
+    const parsed = parseUserIdInput()
+    if (parsed.invalidTokens.length > 0) {
+      return `用户 ID 格式错误：${parsed.invalidTokens.join('、')}`
+    }
+    if (parsed.ids.length === 0) {
+      return '请输入至少一个已有内测用户 ID'
+    }
   }
   if (!form.city) return '请填写城市'
   if (!form.profess) return '请选择职业'
@@ -205,13 +246,13 @@ async function submitGenerate(): Promise<void> {
 
 async function cleanupBatch(batchNo: string): Promise<void> {
   if (!batchNo) return
-  cleaningBatchNo.value = batchNo
   try {
     await ElMessageBox.confirm(`确认软清理批次 ${batchNo} 吗？本操作仅影响内测数据。`, '清理确认', {
       type: 'warning',
       confirmButtonText: '确认清理',
       cancelButtonText: '取消',
     })
+    cleaningBatchNo.value = batchNo
     await cleanupInternalData({ batchNo })
     ElMessage.success('清理已提交')
     loadBatches()
@@ -225,13 +266,17 @@ function resourceTitle(row: InternalTestResource): string {
 }
 
 function styleChanged(): void {
-  loadResources()
+  ypatResources.value = []
+  workResources.value = []
+  selectedYpatResources.value = []
+  selectedWorkResources.value = []
+  loadResources('style')
 }
 
 function workMediaChanged(): void {
   workResources.value = []
   selectedWorkResources.value = []
-  loadResources()
+  loadResources('work')
 }
 
 onMounted(() => {
@@ -335,7 +380,7 @@ onMounted(() => {
         </el-form-item>
         <el-form-item>
           <el-button type="primary" :loading="submitting" @click="submitGenerate">生成内测数据</el-button>
-          <el-button :loading="resourceLoading" @click="loadResources">刷新资源</el-button>
+          <el-button :loading="resourceLoading" @click="() => loadResources()">刷新资源</el-button>
         </el-form-item>
       </el-form>
     </section>
@@ -482,6 +527,7 @@ onMounted(() => {
   align-items: center;
   justify-content: space-between;
   gap: $spacing-base;
+  flex-wrap: wrap;
 }
 
 .panel-title {
@@ -494,5 +540,6 @@ onMounted(() => {
   display: flex;
   gap: $spacing-sm;
   width: 320px;
+  max-width: 100%;
 }
 </style>
