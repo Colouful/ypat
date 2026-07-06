@@ -6,6 +6,7 @@ import com.ypat.model.SecurityUserDetails;
 import com.ypat.service.UserServiceClient;
 import com.ypat.storage.StorageBizPath;
 import com.ypat.storage.StorageService;
+import com.ypat.storage.StorageUrlPolicy;
 import com.ypat.storage.StoredObject;
 import org.junit.After;
 import org.junit.Before;
@@ -22,12 +23,15 @@ import static org.junit.Assert.assertEquals;
 public class UserControllerAvatarUpdateTest {
     private UserController controller;
     private FakeUserServiceClient userServiceClient;
+    private FakeStorageUrlPolicy storageUrlPolicy;
 
     @Before
     public void setUp() {
         controller = new UserController();
         userServiceClient = new FakeUserServiceClient();
+        storageUrlPolicy = new FakeStorageUrlPolicy();
         ReflectionTestUtils.setField(controller, "systemServiceClient", userServiceClient);
+        ReflectionTestUtils.setField(controller, "storageUrlPolicy", storageUrlPolicy);
         setAuthenticatedUser("2");
     }
 
@@ -52,12 +56,19 @@ public class UserControllerAvatarUpdateTest {
         FakeStorageService storageService = new FakeStorageService();
         ReflectionTestUtils.setField(controller, "storageService", storageService);
 
-        controller.upd(new UserQo(), "data:image/png;base64,YXZhdGFy");
+        controller.upd(new UserQo(), "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+/p9sAAAAASUVORK5CYII=");
 
         assertEquals(StorageBizPath.AVATAR, storageService.bizPath);
-        assertEquals("jpg", storageService.originalFilename);
-        assertEquals("image/jpeg", storageService.contentType);
+        assertEquals("png", storageService.originalFilename);
+        assertEquals("image/png", storageService.contentType);
         assertEquals("https://cdn.example.test/dev/avatar/a.jpg", userServiceClient.updatedUser.getImgpath());
+    }
+
+    @Test(expected = com.ypat.SysException.class)
+    public void updRejectsExternalAvatarUrls() throws IOException {
+        storageUrlPolicy.allow = false;
+
+        controller.upd(new UserQo(), "https://example.com/avatar.jpg");
     }
 
     private void setAuthenticatedUser(String userId) {
@@ -144,6 +155,16 @@ public class UserControllerAvatarUpdateTest {
 
         @Override
         public void deleteByUrl(String url) {
+        }
+    }
+
+    private static class FakeStorageUrlPolicy extends StorageUrlPolicy {
+        boolean allow = true;
+
+        @Override
+        public String requireSupported(String url) {
+            if (allow) return url.trim();
+            throw new com.ypat.SysException(com.ypat.ResponseCode.FAIL_PARA);
         }
     }
 }

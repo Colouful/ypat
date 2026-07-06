@@ -7,8 +7,10 @@ import com.ypat.comm.Const;
 import com.ypat.comm.ImageConst;
 import com.ypat.enums.MessType;
 import com.ypat.service.OauthServiceClient;
+import com.ypat.storage.Base64ImagePayload;
 import com.ypat.storage.StorageBizPath;
 import com.ypat.storage.StorageService;
+import com.ypat.storage.StorageUrlPolicy;
 import com.ypat.storage.StoredObject;
 import com.ypat.third.baidu.ai.GsonUtils;
 import com.ypat.third.baidu.ai.Idcard;
@@ -43,6 +45,8 @@ public class OauthController {
     private OauthServiceClient oauthServiceClient;
     @Autowired
     private StorageService storageService;
+    @Autowired
+    private StorageUrlPolicy storageUrlPolicy;
     @Autowired
     private Idcard idcard;
     @Autowired
@@ -83,12 +87,13 @@ public class OauthController {
             for (int i = 0; i < pics.size(); i++) {
                 String fileBase64 = pics.get(i);
                 if (isHttpUrl(fileBase64)) {
-                    picsList.add(fileBase64.trim());
+                    picsList.add(storageUrlPolicy.requireSupported(fileBase64));
                 } else {
                     String[] picsArr = fileBase64.split(",", 2);
                     String imageBody = picsArr.length == 2 ? picsArr[1] : fileBase64;
                     byte[] bytes = Base64.decodeBase64(imageBody);
-                    StoredObject storedObject = storageService.upload(new ByteArrayInputStream(bytes), ImageConst.IMAGE_TYPE, "image/jpeg", StorageBizPath.REALNAME);
+                    Base64ImagePayload image = Base64ImagePayload.fromBytes(bytes);
+                    StoredObject storedObject = storageService.upload(image.inputStream(), image.getFilename(), image.getContentType(), StorageBizPath.REALNAME);
                     if (storedObject == null || storedObject.getUrl() == null) {
                         throw new SysException(ResponseCode.FAIL_UPLOAD);
                     }

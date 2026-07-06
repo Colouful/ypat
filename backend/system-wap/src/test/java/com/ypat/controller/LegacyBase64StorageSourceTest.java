@@ -17,6 +17,9 @@ public class LegacyBase64StorageSourceTest {
         String source = read("backend/system-wap/src/main/java/com/ypat/controller/YpatInfoController.java");
 
         assertTrue(source.contains("private StorageService storageService"));
+        assertTrue(source.contains("private StorageUrlPolicy storageUrlPolicy"));
+        assertTrue(source.contains("storageUrlPolicy.requireSupported(fileBase64)"));
+        assertTrue(source.contains("Base64ImagePayload.fromBytes(bytes)"));
         assertTrue(source.contains("imageMarkUtil.waterMake(inputStream)"));
         assertTrue(source.contains("storageService.upload(waterStream, ImageConst.IMAGE_TYPE, \"image/jpeg\", StorageBizPath.YPAT)"));
         assertTrue(source.contains("storedObject.getUrl()"));
@@ -28,7 +31,10 @@ public class LegacyBase64StorageSourceTest {
         String source = read("backend/system-wap/src/main/java/com/ypat/controller/OauthController.java");
 
         assertTrue(source.contains("private StorageService storageService"));
-        assertTrue(source.contains("storageService.upload(new ByteArrayInputStream(bytes), ImageConst.IMAGE_TYPE, \"image/jpeg\", StorageBizPath.REALNAME)"));
+        assertTrue(source.contains("private StorageUrlPolicy storageUrlPolicy"));
+        assertTrue(source.contains("storageUrlPolicy.requireSupported(fileBase64)"));
+        assertTrue(source.contains("Base64ImagePayload.fromBytes(bytes)"));
+        assertTrue(source.contains("storageService.upload(image.inputStream(), image.getFilename(), image.getContentType(), StorageBizPath.REALNAME)"));
         assertTrue(source.contains("storedObject.getUrl()"));
         assertTrue(source.contains("storageService.upload(uploadfile.getInputStream(), uploadfile.getOriginalFilename(), uploadfile.getContentType(), StorageBizPath.REALNAME)"));
         assertFalse(source.contains("fastDFSClient.uploanFile1(new ByteArrayInputStream(bytes)"));

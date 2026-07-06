@@ -43,4 +43,12 @@ public class CosStoragePropertiesTest {
 
         properties.validate();
     }
+
+    @Test(expected = IllegalStateException.class)
+    public void rejectsUnknownProviderValues() {
+        CosStorageProperties properties = new CosStorageProperties();
+        properties.setProvider("COSX");
+
+        properties.validate();
+    }
 }

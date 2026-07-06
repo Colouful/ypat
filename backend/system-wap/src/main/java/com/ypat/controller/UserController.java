@@ -3,10 +3,11 @@ package com.ypat.controller;
 import com.ypat.ResponseCode;
 import com.ypat.SysException;
 import com.ypat.UserQo;
-import com.ypat.comm.ImageConst;
+import com.ypat.storage.Base64ImagePayload;
 import com.ypat.service.UserServiceClient;
 import com.ypat.storage.StorageBizPath;
 import com.ypat.storage.StorageService;
+import com.ypat.storage.StorageUrlPolicy;
 import com.ypat.storage.StoredObject;
 import com.ypat.util.UserUtil;
 import org.apache.tomcat.util.codec.binary.Base64;
@@ -21,7 +22,6 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
 import javax.validation.Valid;
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
 
 @RestController
@@ -32,6 +32,8 @@ public class UserController {
     private UserServiceClient systemServiceClient;
     @Autowired
     private StorageService storageService;
+    @Autowired
+    private StorageUrlPolicy storageUrlPolicy;
 
     @GetMapping("/user/get")
     public String get(Long id) {
@@ -71,13 +73,14 @@ public class UserController {
             final String[] picsArr = pics.split(",", 2);
             if (picsArr[0].indexOf("data:image") >= 0 && picsArr.length == 2) {
                 byte[] bytes = Base64.decodeBase64(picsArr[1]);
-                StoredObject storedObject = storageService.upload(new ByteArrayInputStream(bytes), ImageConst.IMAGE_TYPE, "image/jpeg", StorageBizPath.AVATAR);
+                Base64ImagePayload image = Base64ImagePayload.fromBytes(bytes);
+                StoredObject storedObject = storageService.upload(image.inputStream(), image.getFilename(), image.getContentType(), StorageBizPath.AVATAR);
                 if (storedObject == null || storedObject.getUrl() == null) {
                     throw new SysException(ResponseCode.FAIL_MARK);
                 }
                 userQo.setImgpath(storedObject.getUrl());
             } else {
-                userQo.setImgpath(pics.trim());
+                userQo.setImgpath(storageUrlPolicy.requireSupported(pics));
             }
         }
         return systemServiceClient.upd(userQo);

@@ -7,9 +7,11 @@ import com.ypat.comm.Const;
 import com.ypat.comm.ImageConst;
 import com.ypat.enums.MessType;
 import com.ypat.enums.YpatStatus;
+import com.ypat.storage.Base64ImagePayload;
 import com.ypat.service.YpatServiceClient;
 import com.ypat.storage.StorageBizPath;
 import com.ypat.storage.StorageService;
+import com.ypat.storage.StorageUrlPolicy;
 import com.ypat.storage.StoredObject;
 import com.ypat.third.wxmess.WxMessClient;
 import com.ypat.util.*;
@@ -38,6 +40,8 @@ public class YpatInfoController {
     private YpatServiceClient ypatServiceClient;
     @Autowired
     private StorageService storageService;
+    @Autowired
+    private StorageUrlPolicy storageUrlPolicy;
     @Autowired
     private WxMessClient wxMessClient;
     @Autowired
@@ -90,10 +94,11 @@ public class YpatInfoController {
             for (int i = 0; i < pics.size(); i++) {
                 String fileBase64 = pics.get(i);
                 if (isHttpUrl(fileBase64)) {
-                    picsList.add(fileBase64.trim());
+                    picsList.add(storageUrlPolicy.requireSupported(fileBase64));
                 } else {
                     byte[] bytes = Base64.decodeBase64(stripBase64Prefix(fileBase64));
-                    InputStream inputStream = new ByteArrayInputStream(bytes);
+                    Base64ImagePayload image = Base64ImagePayload.fromBytes(bytes);
+                    InputStream inputStream = image.inputStream();
                     InputStream waterStream = imageMarkUtil.waterMake(inputStream);
                     StoredObject storedObject = storageService.upload(waterStream, ImageConst.IMAGE_TYPE, "image/jpeg", StorageBizPath.YPAT);
                     if (storedObject == null || storedObject.getUrl() == null) {

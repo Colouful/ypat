@@ -23,6 +23,10 @@ public class CosStorageProperties {
     }
 
     public void validate() {
+        String provider = normalizedProvider();
+        if (!"cos".equals(provider) && !"fastdfs".equals(provider)) {
+            throw new IllegalStateException("Unsupported storage provider: " + provider);
+        }
         if (!isCosEnabled()) return;
         require("YPAT_COS_SECRET_ID", secretId);
         require("YPAT_COS_SECRET_KEY", secretKey);
