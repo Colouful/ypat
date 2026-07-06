@@ -94,6 +94,8 @@ async function fetchList(): Promise<void> {
 
 function handleTabChange(): void {
   query.page = 0
+  list.value = []
+  total.value = 0
   fetchList()
 }
 
@@ -159,7 +161,7 @@ async function saveResource(): Promise<void> {
   try {
     const payload: InternalTestResource = {
       ...form,
-      mediaType: activeMediaType.value,
+      mediaType: form.mediaType || activeMediaType.value,
       status: form.status || InternalTestResourceStatus.ENABLED.value,
       sortNo: form.sortNo ?? 0,
     }
@@ -285,7 +287,7 @@ onMounted(fetchList)
       <el-table-column label="预览" width="110" align="center">
         <template #default="{ row }">
           <el-image
-            v-if="activeMediaType === InternalTestMediaType.IMAGE.value && row.url"
+            v-if="row.mediaType === InternalTestMediaType.IMAGE.value && row.url"
             :src="row.url"
             fit="cover"
             class="resource-preview"
@@ -362,7 +364,7 @@ onMounted(fetchList)
     <el-dialog v-model="dialogVisible" :title="dialogTitle" width="720px" destroy-on-close>
       <el-form ref="formRef" :model="form" :rules="rules" label-width="100px">
         <el-form-item label="媒体类型">
-          <el-input :model-value="mediaText(activeMediaType)" disabled />
+          <el-input :model-value="mediaText(form.mediaType)" disabled />
         </el-form-item>
         <el-form-item label="用途" prop="usageType">
           <el-select v-model="form.usageType" placeholder="请选择用途" style="width: 100%">
