@@ -42,6 +42,7 @@ export const useUserStore = defineStore('user', () => {
   const userInfo = ref<UserInfo | null>(null)
   const token = ref('')
   const unreadCount = ref(0)
+  let unreadCountRefreshing: Promise<number> | null = null
   const isLoggedIn = computed(() => Boolean(token.value && userInfo.value?.id))
 
   function resetMemoryState(): void {
@@ -202,17 +203,23 @@ export const useUserStore = defineStore('user', () => {
 
   async function refreshUnreadCount(): Promise<number> {
     if (!isLoggedIn.value || !userInfo.value?.id) return 0
-    try {
-      const params = { type: '0', userid: userInfo.value.id }
-      const [received, sent] = await Promise.all([
-        get<number>('/my/ypat/rec/unread/count', params),
-        get<number>('/my/ypat/send/unread/count', params),
-      ])
-      unreadCount.value = Number(received.data || 0) + Number(sent.data || 0)
-    } catch {
-      unreadCount.value = 0
-    }
-    return unreadCount.value
+    if (unreadCountRefreshing) return unreadCountRefreshing
+    unreadCountRefreshing = (async () => {
+      try {
+        const params = { type: '0', userid: userInfo.value!.id }
+        const [received, sent] = await Promise.all([
+          get<number>('/my/ypat/rec/unread/count', params),
+          get<number>('/my/ypat/send/unread/count', params),
+        ])
+        unreadCount.value = Number(received.data || 0) + Number(sent.data || 0)
+      } catch {
+        unreadCount.value = 0
+      } finally {
+        unreadCountRefreshing = null
+      }
+      return unreadCount.value
+    })()
+    return unreadCountRefreshing
   }
 
   return {

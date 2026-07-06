@@ -84,4 +84,15 @@ describe('mp-weixin component styles', () => {
     expect(source).toContain('class="field-clear"')
     expect(source).toContain('clearRegion')
   })
+
+  it('uploads profile avatar as a file before submitting user update', () => {
+    const file = fileURLToPath(new URL('../../../pages-sub/user/edit-info.vue', import.meta.url))
+    const source = readFileSync(file, 'utf8')
+
+    expect(source).toContain("import { uploadImage } from '@/api/modules/media'")
+    expect(source).not.toContain("import { filePathToDataUrl } from '@/utils/file-base64'")
+    expect(source).not.toContain('avatarData')
+    expect(source).toMatch(/const avatarUrl = avatarFilePath\.value\s*\?\s*\(await uploadImage\(avatarFilePath\.value\)\)\.url\s*:\s*''/s)
+    expect(source).toMatch(/pics: avatarUrl \|\| undefined/)
+  })
 })

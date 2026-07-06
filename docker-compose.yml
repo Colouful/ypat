@@ -112,7 +112,7 @@ services:
       SPRING_REDIS_PASSWORD: "${YPAT_LOCAL_REDIS_PASSWORD}"
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: "http://eureka:8761/eureka/"
       EUREKA_INSTANCE_PREFER_IP_ADDRESS: "true"
-      YPAT_FDFS_PUBLIC_BASE_URL: "${YPAT_FDFS_PUBLIC_BASE_URL:-http://localhost:8888}"
+      YPAT_FDFS_PUBLIC_BASE_URL: "${YPAT_FDFS_PUBLIC_BASE_URL:-https://fastdfs.panghu.work/}"
     depends_on:
       mysql:
         condition: service_healthy
@@ -154,7 +154,7 @@ services:
       SPRING_REDIS_PASSWORD: "${YPAT_LOCAL_REDIS_PASSWORD}"
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: "http://eureka:8761/eureka/"
       EUREKA_INSTANCE_PREFER_IP_ADDRESS: "true"
-      YPAT_FDFS_PUBLIC_BASE_URL: "${YPAT_FDFS_PUBLIC_BASE_URL:-http://localhost:8888}"
+      YPAT_FDFS_PUBLIC_BASE_URL: "${YPAT_FDFS_PUBLIC_BASE_URL:-https://fastdfs.panghu.work/}"
       YPAT_WX_APP_ID: "${YPAT_WX_APP_ID:-wx37ee5a90fc7ecb21}"
       YPAT_WX_APP_SECRET: "${YPAT_WX_APP_SECRET:-}"
     depends_on:
@@ -198,7 +198,7 @@ services:
       SPRING_REDIS_PASSWORD: "${YPAT_LOCAL_REDIS_PASSWORD}"
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: "http://eureka:8761/eureka/"
       EUREKA_INSTANCE_PREFER_IP_ADDRESS: "true"
-      YPAT_FDFS_PUBLIC_BASE_URL: "${YPAT_FDFS_PUBLIC_BASE_URL:-http://localhost:8888}"
+      YPAT_FDFS_PUBLIC_BASE_URL: "${YPAT_FDFS_PUBLIC_BASE_URL:-https://fastdfs.panghu.work/}"
     depends_on:
       redis:
         condition: service_healthy

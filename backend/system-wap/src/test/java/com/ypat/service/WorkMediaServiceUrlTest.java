@@ -17,6 +17,10 @@ public class WorkMediaServiceUrlTest {
                 "https://panghu.work/files/group1/M00/00/00/a.jpg",
                 WorkMediaService.joinPublicFileUrl("https://panghu.work/files/", "/group1/M00/00/00/a.jpg")
         );
+        assertEquals(
+                "https://fastdfs.panghu.work/group1/M00/00/00/a.jpg",
+                WorkMediaService.joinPublicFileUrl("https://fastdfs.panghu.work/", "group1/M00/00/00/a.jpg")
+        );
     }
 
     @Test

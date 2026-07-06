@@ -76,7 +76,7 @@ import { computed, reactive, ref } from 'vue'
 import { onLoad } from '@dcloudio/uni-app'
 import { useUserStore } from '@/stores/user'
 import * as userApi from '@/api/modules/user'
-import { filePathToDataUrl } from '@/utils/file-base64'
+import { uploadImage } from '@/api/modules/media'
 import { GENDER_LABELS, PROFESS_LABELS } from '@/constants/enums'
 import KeepIcon from '@/components/business/KeepIcon.vue'
 import type { UpdateUserParams } from '@/api/types'
@@ -84,7 +84,7 @@ import type { UpdateUserParams } from '@/api/types'
 const userStore = useUserStore()
 const saving = ref(false)
 const avatarPreview = ref('')
-const avatarData = ref('')
+const avatarFilePath = ref('')
 
 const genderKeys = Object.keys(GENDER_LABELS)
 const genderOptions = Object.values(GENDER_LABELS)
@@ -133,12 +133,7 @@ function chooseAvatar(): void {
       const path = tempFilePaths[0]
       if (!path) return
       avatarPreview.value = path
-      try {
-        avatarData.value = await filePathToDataUrl(path)
-      } catch (error) {
-        avatarData.value = ''
-        uni.showToast({ title: error instanceof Error ? error.message : '头像读取失败', icon: 'none' })
-      }
+      avatarFilePath.value = path
     },
   })
 }
@@ -181,6 +176,7 @@ async function save(): Promise<void> {
 
   saving.value = true
   try {
+    const avatarUrl = avatarFilePath.value ? (await uploadImage(avatarFilePath.value)).url : ''
     const params: UpdateUserParams = {
       id,
       nickname: form.nickname.trim(),
@@ -191,7 +187,7 @@ async function save(): Promise<void> {
       city: form.city || undefined,
       area: form.area || undefined,
       wx: form.wx.trim() || undefined,
-      pics: avatarData.value || undefined,
+      pics: avatarUrl || undefined,
     }
     await userApi.updateUser(params)
     await userStore.updateUserInfo({
@@ -203,7 +199,7 @@ async function save(): Promise<void> {
       city: params.city,
       area: params.area,
       wx: params.wx,
-      imgpath: avatarData.value ? avatarPreview.value : userStore.userInfo?.imgpath,
+      imgpath: avatarUrl || userStore.userInfo?.imgpath,
     })
     uni.showToast({ title: '保存成功', icon: 'success' })
     setTimeout(() => uni.navigateBack(), 1000)

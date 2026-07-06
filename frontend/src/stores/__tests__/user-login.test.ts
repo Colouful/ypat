@@ -163,4 +163,30 @@ describe('user store login (GAP-AUTH-01)', () => {
     expect(payload).toMatchObject({ inviteCode: 'IV2A', inviteSource: 'qr' })
     expect(payload).not.toHaveProperty('recmobile')
   })
+
+  it('deduplicates concurrent unread count refreshes from app and page onShow', async () => {
+    const store = useUserStore()
+    store.token = 'token'
+    store.userInfo = { id: 2 }
+    requestMocks.get.mockImplementation((url: string) =>
+      Promise.resolve({
+        success: true,
+        data: url.includes('/rec/') ? 1 : 2,
+        code: '200',
+        message: '',
+      }),
+    )
+
+    await Promise.all([
+      store.refreshUnreadCount(),
+      store.refreshUnreadCount(),
+    ])
+
+    expect(requestMocks.get).toHaveBeenCalledTimes(2)
+    expect(requestMocks.get.mock.calls.map(([url]) => url)).toEqual([
+      '/my/ypat/rec/unread/count',
+      '/my/ypat/send/unread/count',
+    ])
+    expect(store.unreadCount).toBe(3)
+  })
 })
