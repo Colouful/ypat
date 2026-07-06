@@ -4,8 +4,9 @@ import com.ypat.ResponseApiBody;
 import com.ypat.ResponseCode;
 import com.ypat.SysException;
 import com.ypat.comm.ImageConst;
-import com.ypat.config.SystemConfig;
-import com.ypat.util.FastDFSClient;
+import com.ypat.storage.StorageBizPath;
+import com.ypat.storage.StorageService;
+import com.ypat.storage.StoredObject;
 import com.ypat.util.ImageMarkUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -37,13 +38,10 @@ public class AdminUploadController {
     private static final Logger logger = LoggerFactory.getLogger(AdminUploadController.class);
 
     @Autowired
-    private FastDFSClient fastDFSClient;
+    private StorageService storageService;
 
     @Autowired
     private ImageMarkUtil imageMarkUtil;
-
-    @Autowired
-    private SystemConfig systemConfig;
 
     private static final long MAX_IMAGE_SIZE = 10 * 1024 * 1024;
     private static final Set<String> ALLOWED_IMAGE_EXTENSIONS = new HashSet<>(Arrays.asList("jpg", "jpeg", "png", "gif", "webp"));
@@ -83,11 +81,11 @@ public class AdminUploadController {
                 continue;
             }
             validateImageFile(file);
-            String fileId = fastDFSClient.uploanFile1(file.getInputStream(), file.getOriginalFilename());
-            if (fileId == null) {
+            StoredObject storedObject = storageService.upload(file.getInputStream(), file.getOriginalFilename(), file.getContentType(), StorageBizPath.ADMIN);
+            if (storedObject == null || storedObject.getUrl() == null) {
                 throw new SysException(ResponseCode.FAIL_MARK.getCode(), "文件上传失败");
             }
-            urls.add(systemConfig.getFdfs_path() + fileId);
+            urls.add(storedObject.getUrl());
         }
 
         Map<String, Object> res = new HashMap<>(2);
@@ -114,13 +112,15 @@ public class AdminUploadController {
                 continue;
             }
             validateImageFile(file);
-            String fileId = fastDFSClient.uploanFile1(
+            StoredObject storedObject = storageService.upload(
                     imageMarkUtil.waterMake(file.getInputStream()),
-                    ImageConst.IMAGE_TYPE);
-            if (fileId == null) {
+                    ImageConst.IMAGE_TYPE,
+                    "image/jpeg",
+                    StorageBizPath.YPAT);
+            if (storedObject == null || storedObject.getUrl() == null) {
                 throw new SysException(ResponseCode.FAIL_MARK.getCode(), "作品图片上传失败");
             }
-            urls.add(systemConfig.getFdfs_path() + fileId);
+            urls.add(storedObject.getUrl());
         }
 
         Map<String, Object> res = new HashMap<>(2);
