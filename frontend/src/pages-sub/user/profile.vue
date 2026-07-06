@@ -36,7 +36,7 @@
         <text class="section-title">发布的约拍</text>
         <view v-if="items.length" class="grid">
           <view v-for="item in items" :key="item.id" class="work" @tap="openDetail(item.id)">
-            <image :src="item.pics?.[0] || '/static/default-cover.png'" mode="aspectFill" />
+            <image :src="normalizeImageUrl(item.pics?.[0]) || '/static/default-cover.png'" mode="aspectFill" />
             <text>{{ item.targetTxt || item.describ }}</text>
           </view>
         </view>

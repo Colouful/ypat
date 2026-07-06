@@ -40,4 +40,15 @@ describe('normalizeImageUrl', () => {
       'https://fastdfs.panghu.work/group1/M00/00/00/a.jpg',
     )
   })
+
+  it('rewrites legacy panghu files URLs to the configured image base URL', async () => {
+    vi.stubEnv('VITE_APP_ENV', 'development')
+    vi.stubEnv('VITE_IMAGE_BASE_URL', 'https://fastdfs.panghu.work/')
+
+    const { normalizeImageUrl } = await loadAdapters()
+
+    expect(normalizeImageUrl('https://panghu.work/files/group1/M00/00/00/a.jpg')).toBe(
+      'https://fastdfs.panghu.work/group1/M00/00/00/a.jpg',
+    )
+  })
 })

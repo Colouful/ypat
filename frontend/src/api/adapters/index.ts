@@ -8,7 +8,7 @@ import type { PageResult } from '../types'
 export function normalizeImageUrl(path: string | null | undefined): string {
   if (!path) return ''
   const value = path.trim()
-  const legacyFastDfsMatch = /^https?:\/\/(?:localhost|127\.0\.0\.1):8888\/?(group\d+\/.*)$/i.exec(value)
+  const legacyFastDfsMatch = /^(?:https?:\/\/(?:localhost|127\.0\.0\.1):8888\/?|https?:\/\/(?:www\.)?panghu\.work\/files\/+)(group\d+\/.*)$/i.exec(value)
   if (legacyFastDfsMatch) {
     return `${envConfig.imageBaseUrl}/${legacyFastDfsMatch[1].replace(/^\/+/, '')}`
   }

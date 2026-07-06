@@ -95,4 +95,12 @@ describe('mp-weixin component styles', () => {
     expect(source).toMatch(/const avatarUrl = avatarFilePath\.value\s*\?\s*\(await uploadImage\(avatarFilePath\.value\)\)\.url\s*:\s*''/s)
     expect(source).toMatch(/pics: avatarUrl \|\| undefined/)
   })
+
+  it('normalizes published work cover images on profile page', () => {
+    const file = fileURLToPath(new URL('../../../pages-sub/user/profile.vue', import.meta.url))
+    const source = readFileSync(file, 'utf8')
+
+    expect(source).toContain("import { normalizeImageUrl } from '@/api/adapters'")
+    expect(source).toContain("normalizeImageUrl(item.pics?.[0]) || '/static/default-cover.png'")
+  })
 })
