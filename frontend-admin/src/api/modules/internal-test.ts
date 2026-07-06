@@ -52,6 +52,18 @@ export interface InternalTestGeneratePayload {
   batchNo?: string
 }
 
+export interface InternalTestUserQuery extends PageQuery {
+  batchNo?: string
+  city?: string
+  area?: string
+  profess?: string
+  gender?: string
+}
+
+export interface InternalTestBatchQuery extends PageQuery {
+  batchNo?: string
+}
+
 export interface InternalTestBatch {
   batchNo: string
   userCount: number
@@ -93,7 +105,7 @@ export function updateInternalResourceStatus(id: number, status: string): Promis
 }
 
 export function getInternalUsers(
-  params: InternalTestGeneratePayload,
+  params: InternalTestUserQuery,
 ): Promise<ApiResult<PageResult<InternalTestUser>>> {
   return get<PageResult<InternalTestUser>>('/admin/internal-test/users', params as Record<string, unknown>)
 }
@@ -107,7 +119,7 @@ export function generateInternalData(data: InternalTestGeneratePayload): Promise
 }
 
 export function getInternalBatches(
-  params?: Pick<InternalTestGeneratePayload, 'batchNo'>,
+  params?: InternalTestBatchQuery,
 ): Promise<ApiResult<PageResult<InternalTestBatch>>> {
   return get<PageResult<InternalTestBatch>>('/admin/internal-test/batches', params as Record<string, unknown>)
 }

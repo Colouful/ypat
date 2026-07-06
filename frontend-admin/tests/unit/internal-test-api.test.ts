@@ -42,8 +42,10 @@ describe('内测数据 API', () => {
       params: { id: 2, status: 'disabled' },
     })
 
-    await api.getInternalUsers({ batchNo: 'IT202607060001', city: '上海' })
+    await api.getInternalUsers({ page: 0, size: 10, batchNo: 'IT202607060001', city: '上海' })
     expect(getMock).toHaveBeenCalledWith('/admin/internal-test/users', {
+      page: 0,
+      size: 10,
       batchNo: 'IT202607060001',
       city: '上海',
     })
@@ -61,8 +63,10 @@ describe('内测数据 API', () => {
       publishStatus: '1',
     })
 
-    await api.getInternalBatches({ batchNo: 'IT202607060001' })
+    await api.getInternalBatches({ page: 0, size: 10, batchNo: 'IT202607060001' })
     expect(getMock).toHaveBeenCalledWith('/admin/internal-test/batches', {
+      page: 0,
+      size: 10,
       batchNo: 'IT202607060001',
     })
 
