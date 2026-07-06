@@ -17,7 +17,7 @@ public class CosStoragePropertiesTest {
     }
 
     @Test
-    public void cosProviderRequiresAllConnectionFields() {
+    public void acceptsCompleteCosConfiguration() {
         CosStorageProperties properties = new CosStorageProperties();
         properties.setProvider("cos");
         properties.setSecretId("sid");
