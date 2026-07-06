@@ -71,9 +71,21 @@ public class InternalTestDataSourceTest {
 
     @Test
     public void publicListDtosExposeDataFlagFilter() throws Exception {
-        assertTrue(read("../system-object/src/main/java/com/ypat/UserQo.java").contains("dataFlag"));
-        assertTrue(read("../system-object/src/main/java/com/ypat/YpatInfoQo.java").contains("dataFlag"));
-        assertTrue(read("../system-object/src/main/java/com/ypat/WorkListQo.java").contains("dataFlag"));
+        assertDtoMarkers("../system-object/src/main/java/com/ypat/UserQo.java");
+        assertDtoMarkers("../system-object/src/main/java/com/ypat/YpatInfoQo.java");
+        assertDtoMarkers("../system-object/src/main/java/com/ypat/WorkListQo.java");
+    }
+
+    @Test
+    public void internalTestEnumsExposeContractValues() throws Exception {
+        assertEnumValues("../system-object/src/main/java/com/ypat/enums/InternalTestDataFlag.java",
+                "real", "internal_test");
+        assertEnumValues("../system-object/src/main/java/com/ypat/enums/InternalTestResourceMediaType.java",
+                "image", "video");
+        assertEnumValues("../system-object/src/main/java/com/ypat/enums/InternalTestResourceUsageType.java",
+                "avatar", "ypat", "work");
+        assertEnumValues("../system-object/src/main/java/com/ypat/enums/InternalTestResourceStatus.java",
+                "enabled", "disabled");
     }
 
     private void assertEntityMarkers(String path) throws Exception {
@@ -81,5 +93,20 @@ public class InternalTestDataSourceTest {
 
         assertTrue(source.contains("private String dataFlag;"));
         assertTrue(source.contains("private String internalBatchNo;"));
+    }
+
+    private void assertDtoMarkers(String path) throws Exception {
+        String source = read(path);
+
+        assertTrue(source.contains("dataFlag"));
+        assertTrue(source.contains("internalBatchNo"));
+    }
+
+    private void assertEnumValues(String path, String... values) throws Exception {
+        String source = read(path);
+
+        for (String value : values) {
+            assertTrue(source.contains("\"" + value + "\""));
+        }
     }
 }
