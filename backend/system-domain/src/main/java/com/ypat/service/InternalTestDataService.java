@@ -173,23 +173,89 @@ public class InternalTestDataService {
 
     public InternalTestBatchQo cleanup(InternalTestGenerateQo qo) {
         String batchNo = qo == null || CommonUtils.isNull(qo.getBatchNo()) ? null : qo.getBatchNo();
-        if (qo == null || (batchNo == null && CollectionUtils.isEmpty(qo.getUserIds()))) {
+        if (!hasCleanupCondition(qo, batchNo)) {
             throw new SysException(ResponseCode.FAIL_PARA, "清理条件不能为空");
         }
 
         int users;
         int ypats;
         int works;
-        if (!CollectionUtils.isEmpty(qo.getUserIds())) {
-            users = userRepository.updateInternalTestUsersStatusByIds(qo.getUserIds(), batchNo, UserStatus.shbtg.value);
-            ypats = ypatInfoRepository.updateInternalTestYpatStatusByUserIds(qo.getUserIds(), batchNo, YpatStatus.shbtg.value, CLEANUP_REASON);
-            works = workRepository.updateInternalTestWorkStatusByUserIds(qo.getUserIds(), batchNo, WorkStatus.xj.value, CLEANUP_REASON);
+        int ignoredRealCount = 0;
+        if (hasCleanupUserFilter(qo)) {
+            CleanupUserScope scope = resolveCleanupUserScope(qo, batchNo);
+            ignoredRealCount = scope.ignoredRealCount;
+            if (CollectionUtils.isEmpty(scope.internalUserIds)) {
+                users = 0;
+                ypats = 0;
+                works = 0;
+            } else {
+                users = userRepository.updateInternalTestUsersStatusByIds(scope.internalUserIds, batchNo, UserStatus.shbtg.value);
+                ypats = ypatInfoRepository.updateInternalTestYpatStatusByUserIds(scope.internalUserIds, batchNo, YpatStatus.shbtg.value, CLEANUP_REASON);
+                works = workRepository.updateInternalTestWorkStatusByUserIds(scope.internalUserIds, batchNo, WorkStatus.xj.value, CLEANUP_REASON);
+            }
         } else {
             users = userRepository.updateInternalTestUsersStatus(batchNo, UserStatus.shbtg.value);
             ypats = ypatInfoRepository.updateInternalTestYpatStatus(batchNo, YpatStatus.shbtg.value, CLEANUP_REASON);
             works = workRepository.updateInternalTestWorkStatus(batchNo, WorkStatus.xj.value, CLEANUP_REASON);
         }
-        return buildBatch(batchNo, users, ypats, works);
+        InternalTestBatchQo batch = buildBatch(batchNo, users, ypats, works);
+        batch.setIgnoredRealCount(ignoredRealCount);
+        return batch;
+    }
+
+    private boolean hasCleanupCondition(InternalTestGenerateQo qo, String batchNo) {
+        return qo != null && (batchNo != null || hasCleanupUserFilter(qo));
+    }
+
+    private boolean hasCleanupUserFilter(InternalTestGenerateQo qo) {
+        return qo != null && (!CollectionUtils.isEmpty(qo.getUserIds())
+                || CommonUtils.isNotNull(qo.getCity())
+                || CommonUtils.isNotNull(qo.getArea())
+                || CommonUtils.isNotNull(qo.getProfess())
+                || CommonUtils.isNotNull(qo.getGender()));
+    }
+
+    private CleanupUserScope resolveCleanupUserScope(InternalTestGenerateQo qo, String batchNo) {
+        List<User> matchedUsers = userRepository.findAll(cleanupUserSpec(qo, batchNo));
+        List<Long> internalUserIds = new ArrayList<Long>();
+        int ignoredRealCount = 0;
+        for (User user : matchedUsers) {
+            if (InternalTestDataFlag.internalTest.value.equals(user.getDataFlag())) {
+                internalUserIds.add(user.getId());
+            } else {
+                ignoredRealCount++;
+            }
+        }
+        return new CleanupUserScope(internalUserIds, ignoredRealCount);
+    }
+
+    private Specification<User> cleanupUserSpec(final InternalTestGenerateQo qo, final String batchNo) {
+        return new Specification<User>() {
+            @Override
+            public Predicate toPredicate(Root<User> root, CriteriaQuery<?> query, CriteriaBuilder cb) {
+                List<Predicate> predicates = new ArrayList<Predicate>();
+                if (!CollectionUtils.isEmpty(qo.getUserIds())) {
+                    predicates.add(root.get("id").in(qo.getUserIds()));
+                }
+                if (CommonUtils.isNotNull(batchNo)) {
+                    predicates.add(cb.equal(root.get("internalBatchNo"), batchNo));
+                }
+                if (CommonUtils.isNotNull(qo.getCity())) {
+                    predicates.add(cb.equal(root.get("city"), qo.getCity()));
+                }
+                if (CommonUtils.isNotNull(qo.getArea())) {
+                    predicates.add(cb.equal(root.get("area"), qo.getArea()));
+                }
+                if (CommonUtils.isNotNull(qo.getProfess())) {
+                    predicates.add(cb.equal(root.get("profess"), qo.getProfess()));
+                }
+                if (CommonUtils.isNotNull(qo.getGender())) {
+                    predicates.add(cb.equal(root.get("gender"), qo.getGender()));
+                }
+                query.where(predicates.toArray(new Predicate[predicates.size()]));
+                return query.getRestriction();
+            }
+        };
     }
 
     private CreateUsersResult createInternalUsers(InternalTestGenerateQo qo, String batchNo) {
@@ -504,6 +570,7 @@ public class InternalTestDataService {
         batch.setUserCount(userCount);
         batch.setYpatCount(ypatCount);
         batch.setWorkCount(workCount);
+        batch.setIgnoredRealCount(0);
         batch.setStatus("success");
         batch.setCreatedAt(new Date());
         return batch;
@@ -527,6 +594,16 @@ public class InternalTestDataService {
         private CreateUsersResult(String batchNo, List<User> users) {
             this.batchNo = batchNo;
             this.users = users;
+        }
+    }
+
+    private static class CleanupUserScope {
+        private List<Long> internalUserIds;
+        private int ignoredRealCount;
+
+        private CleanupUserScope(List<Long> internalUserIds, int ignoredRealCount) {
+            this.internalUserIds = internalUserIds;
+            this.ignoredRealCount = ignoredRealCount;
         }
     }
 }

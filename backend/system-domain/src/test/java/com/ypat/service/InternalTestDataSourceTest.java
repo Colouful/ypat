@@ -75,6 +75,7 @@ public class InternalTestDataSourceTest {
         assertTrue(batchQo.contains("userCount"));
         assertTrue(batchQo.contains("ypatCount"));
         assertTrue(batchQo.contains("workCount"));
+        assertTrue(batchQo.contains("ignoredRealCount"));
     }
 
     @Test
@@ -129,6 +130,12 @@ public class InternalTestDataSourceTest {
         String workRepo = read("backend/system-domain/src/main/java/com/ypat/repository/WorkRepository.java");
 
         assertTrue(dataService.contains("清理条件不能为空"));
+        assertTrue(dataService.contains("cleanupUserSpec"));
+        assertTrue(dataService.contains("getCity()"));
+        assertTrue(dataService.contains("getArea()"));
+        assertTrue(dataService.contains("getProfess()"));
+        assertTrue(dataService.contains("getGender()"));
+        assertTrue(dataService.contains("setIgnoredRealCount"));
         assertTrue(dataService.contains("updateInternalTestUsersStatusByIds"));
         assertTrue(dataService.contains("updateInternalTestYpatStatusByUserIds"));
         assertTrue(dataService.contains("updateInternalTestWorkStatusByUserIds"));
