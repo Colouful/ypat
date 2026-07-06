@@ -139,10 +139,6 @@ public class AdminInternalTestController {
         }
 
         JsonObject object = element.getAsJsonObject();
-        if (!object.has("code")) {
-            return object;
-        }
-
         JsonElement codeElement = object.get("code");
         if (codeElement == null
                 || codeElement.isJsonNull()

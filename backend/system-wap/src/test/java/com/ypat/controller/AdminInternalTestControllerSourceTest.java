@@ -107,10 +107,6 @@ public class AdminInternalTestControllerSourceTest {
         assertTrue(data.isJsonObject());
         assertTrue(data.getAsJsonObject().get("ok").getAsBoolean());
 
-        JsonElement rawPage = invokeParseResponseRes(controller, "{\"content\":[],\"totalElements\":0}");
-        assertTrue(rawPage.isJsonObject());
-        assertTrue(rawPage.getAsJsonObject().has("content"));
-
         assertParseResponseFail(controller, "{\"code\":1002,\"msg\":\"参数错误\"}", 1002, "参数错误");
     }
 
@@ -118,6 +114,8 @@ public class AdminInternalTestControllerSourceTest {
     public void parseResponseResRejectsMalformedResponses() throws Exception {
         AdminInternalTestController controller = new AdminInternalTestController();
 
+        assertParseResponseFail(controller, "{\"content\":[],\"totalElements\":0}", "服务响应格式错误");
+        assertParseResponseFail(controller, "{\"res\":{\"ok\":true}}", "服务响应格式错误");
         assertParseResponseFail(controller, "{\"code\":500,\"msg\":{}}", ResponseCode.FAIL_SER.getMsg());
         assertParseResponseFail(controller, "{\"code\":500,\"msg\":[]}", ResponseCode.FAIL_SER.getMsg());
         assertParseResponseFail(controller, "{\"code\":500,\"msg\":null}", ResponseCode.FAIL_SER.getMsg());
@@ -138,6 +136,14 @@ public class AdminInternalTestControllerSourceTest {
         assertParseResponseFail(controller, "null", "服务响应格式错误");
         assertParseResponseFail(controller, "{not-json", "服务响应格式错误");
         assertParseResponseFail(controller, "", "服务响应格式错误");
+    }
+
+    @Test
+    public void normalizePageAndSizeClampToSupportedRange() throws Exception {
+        AdminInternalTestController controller = new AdminInternalTestController();
+
+        assertEquals(0, invokeNormalizePage(controller, -1));
+        assertEquals(50, invokeNormalizeSize(controller, 99));
     }
 
     @Test
@@ -178,6 +184,18 @@ public class AdminInternalTestControllerSourceTest {
         Method method = AdminInternalTestController.class.getDeclaredMethod("parseResponseRes", String.class);
         method.setAccessible(true);
         return (JsonElement) method.invoke(controller, json);
+    }
+
+    private int invokeNormalizePage(AdminInternalTestController controller, Integer page) throws Exception {
+        Method method = AdminInternalTestController.class.getDeclaredMethod("normalizePage", Integer.class);
+        method.setAccessible(true);
+        return (Integer) method.invoke(controller, page);
+    }
+
+    private int invokeNormalizeSize(AdminInternalTestController controller, Integer size) throws Exception {
+        Method method = AdminInternalTestController.class.getDeclaredMethod("normalizeSize", Integer.class);
+        method.setAccessible(true);
+        return (Integer) method.invoke(controller, size);
     }
 
     private void assertParseResponseFail(AdminInternalTestController controller, String json, String expectedMessage) throws Exception {
