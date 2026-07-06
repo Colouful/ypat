@@ -35,6 +35,9 @@ public class WorkMedia implements Serializable {
     @Column(name = "created_at")
     @Temporal(TemporalType.TIMESTAMP)
     private Date createdAt;
+    @Column(name = "deleted_at")
+    @Temporal(TemporalType.TIMESTAMP)
+    private Date deletedAt;
 
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
@@ -62,4 +65,6 @@ public class WorkMedia implements Serializable {
     public void setUploadStatus(String uploadStatus) { this.uploadStatus = uploadStatus; }
     public Date getCreatedAt() { return createdAt; }
     public void setCreatedAt(Date createdAt) { this.createdAt = createdAt; }
+    public Date getDeletedAt() { return deletedAt; }
+    public void setDeletedAt(Date deletedAt) { this.deletedAt = deletedAt; }
 }

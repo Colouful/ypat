@@ -118,7 +118,7 @@ public class WorkService {
         }
 
         // 校验媒体归属 + 累计大小
-        List<WorkMedia> medias = workMediaRepository.findByIdInAndUserId(mediaIds, userId);
+        List<WorkMedia> medias = workMediaRepository.findByIdInAndUserIdAndDeletedAtIsNull(mediaIds, userId);
         if (medias.size() != mediaIds.size()) {
             throw new SysException(ResponseCode.FAIL_VAL, "媒体不属于当前用户");
         }
@@ -216,7 +216,7 @@ public class WorkService {
         res.put("publishTime", work.getPublishTime());
 
         // 媒体
-        List<WorkMedia> medias = workMediaRepository.findByWorkIdOrderBySortNoAsc(workId);
+        List<WorkMedia> medias = workMediaRepository.findByWorkIdAndDeletedAtIsNullOrderBySortNoAsc(workId);
         List<Map<String, Object>> mediaList = new ArrayList<>();
         for (WorkMedia m : medias) {
             Map<String, Object> mm = new HashMap<>();
@@ -369,7 +369,7 @@ public class WorkService {
             item.setFavoriteCount(w.getFavoriteCount());
             item.setPublishTime(w.getPublishTime());
             // 媒体首图
-            List<WorkMedia> ms = workMediaRepository.findByWorkIdOrderBySortNoAsc(w.getId());
+            List<WorkMedia> ms = workMediaRepository.findByWorkIdAndDeletedAtIsNullOrderBySortNoAsc(w.getId());
             if (!ms.isEmpty()) item.setCoverUrl(ms.get(0).getUrl());
             // 发布者
             User u = userRepository.findById(w.getUserid());
@@ -474,7 +474,7 @@ public class WorkService {
         detail.put("publishTime", work.getPublishTime());
         detail.put("city", work.getCity());
         detail.put("area", work.getArea());
-        detail.put("medias", workMediaRepository.findByWorkIdOrderBySortNoAsc(workId));
+        detail.put("medias", workMediaRepository.findByWorkIdAndDeletedAtIsNullOrderBySortNoAsc(workId));
         detail.put("tags", loadWorkTagNames(workId, Collections.emptyList()));
         User user = userRepository.findById(work.getUserid());
         if (user != null) {
@@ -540,7 +540,7 @@ public class WorkService {
             item.setLikeCount(w.getLikeCount());
             item.setFavoriteCount(w.getFavoriteCount());
             item.setPublishTime(w.getPublishTime());
-            List<WorkMedia> ms = workMediaRepository.findByWorkIdOrderBySortNoAsc(w.getId());
+            List<WorkMedia> ms = workMediaRepository.findByWorkIdAndDeletedAtIsNullOrderBySortNoAsc(w.getId());
             if (!ms.isEmpty()) item.setCoverUrl(ms.get(0).getUrl());
             items.add(item);
         }
@@ -710,7 +710,7 @@ public class WorkService {
         item.setLikeCount(work.getLikeCount());
         item.setFavoriteCount(work.getFavoriteCount());
         item.setPublishTime(work.getPublishTime());
-        List<WorkMedia> medias = workMediaRepository.findByWorkIdOrderBySortNoAsc(work.getId());
+        List<WorkMedia> medias = workMediaRepository.findByWorkIdAndDeletedAtIsNullOrderBySortNoAsc(work.getId());
         if (!medias.isEmpty()) item.setCoverUrl(medias.get(0).getUrl());
         User user = userRepository.findById(work.getUserid());
         if (user != null) {

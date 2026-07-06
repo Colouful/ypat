@@ -8,7 +8,6 @@ import com.ypat.repository.WorkMediaRepository;
 import com.ypat.storage.StorageBizPath;
 import com.ypat.storage.StorageService;
 import com.ypat.storage.StoredObject;
-import com.ypat.util.FastDFSClient;
 import com.ypat.util.ImageMarkUtil;
 import com.ypat.util.MimeDetector;
 import org.slf4j.Logger;
@@ -32,9 +31,7 @@ public class WorkMediaService {
 
     private static final Logger logger = LoggerFactory.getLogger(WorkMediaService.class);
 
-    @Autowired private FastDFSClient fastDFSClient;
     @Autowired private ImageMarkUtil imageMarkUtil;
-    @Autowired private com.ypat.config.SystemConfig systemConfig;
     @Autowired private StorageService storageService;
     @Autowired private WorkMediaRepository workMediaRepository;
 
@@ -116,7 +113,7 @@ public class WorkMediaService {
         if (mediaId == null || userId == null) {
             throw new SysException(ResponseCode.FAIL_AUTH);
         }
-        WorkMedia media = workMediaRepository.findOne(mediaId);
+        WorkMedia media = workMediaRepository.findByIdAndDeletedAtIsNull(mediaId);
         if (media == null) {
             throw new SysException(ResponseCode.FAIL_NOT);
         }
@@ -126,51 +123,7 @@ public class WorkMediaService {
         if (media.getWorkId() != null) {
             throw new SysException(ResponseCode.FAIL_VAL, "媒体已绑定作品，不能删除");
         }
-        workMediaRepository.delete(media);
-        try {
-            String url = media.getUrl();
-            String fileId = extractFastDfsFileId(systemConfig.getFdfs_path(), url);
-            if (fileId != null) {
-                int slash = fileId.indexOf('/');
-                if (slash > 0) {
-                    String group = fileId.substring(0, slash);
-                    String path = fileId.substring(slash + 1);
-                    fastDFSClient.deleteFile(group, path);
-                }
-            }
-        } catch (RuntimeException e) {
-            logger.warn("FastDFS 删除失败 mediaId={} err={}", mediaId, e.toString());
-        }
-    }
-
-    static String joinPublicFileUrl(String publicBaseUrl, String fileId) {
-        String base = trimSlashes(publicBaseUrl, false);
-        String path = trimSlashes(fileId, true);
-        if (base == null || path == null) {
-            throw new SysException(ResponseCode.FAIL_UPLOAD, "文件访问地址未配置");
-        }
-        return base + "/" + path;
-    }
-
-    static String extractFastDfsFileId(String publicBaseUrl, String url) {
-        String base = trimSlashes(publicBaseUrl, false);
-        if (base == null || url == null || url.trim().isEmpty()) return null;
-        String text = url.trim();
-        if (!text.startsWith(base)) return null;
-        String fileId = trimSlashes(text.substring(base.length()), true);
-        return fileId != null && fileId.startsWith("group") && fileId.indexOf('/') > 0 ? fileId : null;
-    }
-
-    private static String trimSlashes(String value, boolean leading) {
-        if (value == null) return null;
-        String text = value.trim();
-        if (text.isEmpty()) return null;
-        if (leading) {
-            while (text.startsWith("/")) text = text.substring(1);
-        } else {
-            while (text.endsWith("/")) text = text.substring(0, text.length() - 1);
-        }
-        return text.isEmpty() ? null : text;
+        workMediaRepository.softDeleteById(mediaId, new java.util.Date());
     }
 
     private void validateImage(MultipartFile file) {
