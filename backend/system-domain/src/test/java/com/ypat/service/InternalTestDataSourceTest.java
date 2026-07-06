@@ -8,6 +8,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 public class InternalTestDataSourceTest {
@@ -130,7 +131,7 @@ public class InternalTestDataSourceTest {
         String workRepo = read("backend/system-domain/src/main/java/com/ypat/repository/WorkRepository.java");
 
         assertTrue(dataService.contains("清理条件不能为空"));
-        assertTrue(dataService.contains("cleanupUserSpec"));
+        assertTrue(dataService.contains("findInternalTestUserIdsForCleanup"));
         assertTrue(dataService.contains("getCity()"));
         assertTrue(dataService.contains("getArea()"));
         assertTrue(dataService.contains("getProfess()"));
@@ -151,6 +152,32 @@ public class InternalTestDataSourceTest {
         assertTrue(workRepo.contains("w.userid in :userIds"));
         assertTrue(workRepo.contains("w.dataFlag = 'internal_test'"));
         assertTrue(workRepo.contains("(:batchNo is null or w.internalBatchNo = :batchNo)"));
+    }
+
+    @Test
+    public void cleanupAndBatchListAvoidUnboundedScans() throws Exception {
+        String dataService = read("backend/system-domain/src/main/java/com/ypat/service/InternalTestDataService.java");
+        String userRepo = read("backend/system-domain/src/main/java/com/ypat/repository/UserRepository.java");
+        String ypatRepo = read("backend/system-domain/src/main/java/com/ypat/repository/YpatInfoRepository.java");
+        String workRepo = read("backend/system-domain/src/main/java/com/ypat/repository/WorkRepository.java");
+
+        assertFalse(dataService.contains("userRepository.findAll(cleanupUserSpec"));
+        assertFalse(dataService.contains("List<User> matchedUsers"));
+        assertTrue(dataService.contains("CHUNK_SIZE"));
+        assertTrue(dataService.contains("countRealUsersForCleanup"));
+        assertTrue(dataService.contains("findInternalTestUserIdsForCleanup"));
+        assertTrue(dataService.contains("aggregateInternalTestBatches"));
+        assertFalse(dataService.contains("List<User> users = userRepository.findAll(userSpec(qo.getBatchNo()))"));
+        assertFalse(dataService.contains("List<YpatInfo> ypats = ypatInfoRepository.findAll(ypatSpec(qo.getBatchNo()))"));
+        assertFalse(dataService.contains("List<Work> works = workRepository.findAll(workSpec(qo.getBatchNo()))"));
+        assertTrue(userRepo.contains("countRealUsersForCleanup"));
+        assertTrue(userRepo.contains("findInternalTestUserIdsForCleanup"));
+        assertTrue(userRepo.contains("aggregateInternalTestBatches"));
+        assertTrue(userRepo.contains("u.dataFlag = 'internal_test'"));
+        assertTrue(ypatRepo.contains("aggregateInternalTestBatches"));
+        assertTrue(ypatRepo.contains("y.dataFlag = 'internal_test'"));
+        assertTrue(workRepo.contains("aggregateInternalTestBatches"));
+        assertTrue(workRepo.contains("w.dataFlag = 'internal_test'"));
     }
 
     private void assertEntityMarkers(String path) throws Exception {

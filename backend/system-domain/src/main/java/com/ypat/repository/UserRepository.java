@@ -36,4 +36,19 @@ public interface UserRepository extends JpaRepository<User, Long>, JpaSpecificat
     @Modifying
     @Query("update User u set u.status = :status where u.dataFlag = 'internal_test' and u.id in :userIds and (:batchNo is null or u.internalBatchNo = :batchNo)")
     int updateInternalTestUsersStatusByIds(@Param("userIds") List<Long> userIds, @Param("batchNo") String batchNo, @Param("status") String status);
+
+    @Query("select count(u) from User u where (u.dataFlag is null or u.dataFlag <> 'internal_test') and (:batchNo is null or u.internalBatchNo = :batchNo) and (:city is null or u.city = :city) and (:area is null or u.area = :area) and (:profess is null or u.profess = :profess) and (:gender is null or u.gender = :gender)")
+    Long countRealUsersForCleanup(@Param("batchNo") String batchNo, @Param("city") String city, @Param("area") String area, @Param("profess") String profess, @Param("gender") String gender);
+
+    @Query("select count(u) from User u where (u.dataFlag is null or u.dataFlag <> 'internal_test') and u.id in :userIds and (:batchNo is null or u.internalBatchNo = :batchNo) and (:city is null or u.city = :city) and (:area is null or u.area = :area) and (:profess is null or u.profess = :profess) and (:gender is null or u.gender = :gender)")
+    Long countRealUsersForCleanupByIds(@Param("userIds") List<Long> userIds, @Param("batchNo") String batchNo, @Param("city") String city, @Param("area") String area, @Param("profess") String profess, @Param("gender") String gender);
+
+    @Query("select u.id from User u where u.dataFlag = 'internal_test' and (:batchNo is null or u.internalBatchNo = :batchNo) and (:city is null or u.city = :city) and (:area is null or u.area = :area) and (:profess is null or u.profess = :profess) and (:gender is null or u.gender = :gender)")
+    List<Long> findInternalTestUserIdsForCleanup(@Param("batchNo") String batchNo, @Param("city") String city, @Param("area") String area, @Param("profess") String profess, @Param("gender") String gender, Pageable pageable);
+
+    @Query("select u.id from User u where u.dataFlag = 'internal_test' and u.id in :userIds and (:batchNo is null or u.internalBatchNo = :batchNo) and (:city is null or u.city = :city) and (:area is null or u.area = :area) and (:profess is null or u.profess = :profess) and (:gender is null or u.gender = :gender)")
+    List<Long> findInternalTestUserIdsForCleanupByIds(@Param("userIds") List<Long> userIds, @Param("batchNo") String batchNo, @Param("city") String city, @Param("area") String area, @Param("profess") String profess, @Param("gender") String gender);
+
+    @Query("select u.internalBatchNo, count(u), min(u.regisdate) from User u where u.dataFlag = 'internal_test' and u.internalBatchNo is not null and (:batchNo is null or u.internalBatchNo = :batchNo) group by u.internalBatchNo")
+    List<Object[]> aggregateInternalTestBatches(@Param("batchNo") String batchNo);
 }

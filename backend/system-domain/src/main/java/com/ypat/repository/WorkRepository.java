@@ -11,6 +11,8 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
+
 @Repository
 public interface WorkRepository extends JpaRepository<Work, Long>, JpaSpecificationExecutor<Work> {
 
@@ -89,4 +91,7 @@ public interface WorkRepository extends JpaRepository<Work, Long>, JpaSpecificat
     @Modifying
     @Query("update Work w set w.status = :status, w.auditReason = :reason, w.updatedAt = CURRENT_TIMESTAMP where w.dataFlag = 'internal_test' and w.deletedFlag = 0 and w.userid in :userIds and (:batchNo is null or w.internalBatchNo = :batchNo)")
     int updateInternalTestWorkStatusByUserIds(@Param("userIds") java.util.List<Long> userIds, @Param("batchNo") String batchNo, @Param("status") String status, @Param("reason") String reason);
+
+    @Query("select w.internalBatchNo, count(w), min(w.createdAt) from Work w where w.dataFlag = 'internal_test' and w.internalBatchNo is not null and w.deletedFlag = 0 and (:batchNo is null or w.internalBatchNo = :batchNo) group by w.internalBatchNo")
+    List<Object[]> aggregateInternalTestBatches(@Param("batchNo") String batchNo);
 }
