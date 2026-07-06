@@ -19,6 +19,11 @@ import java.util.Properties;
 public class FastDFSClient{
 
     private static Logger logger = Logger.getLogger(FastDFSClient.class);
+	private static final String ROOT_CONFIG = "fdfs_client.properties";
+	private static final String CONF_CONFIG = "conf/fdfs_client.properties";
+	private static final String STORAGE_SERVER_KEY = "fastdfs.storage_server";
+	private static final String STORAGE_PATH_INDEX_KEY = "fastdfs.storage_path_index";
+	private static Properties clientProperties = new Properties();
 	//自行定义
 	private TrackerClient trackerClient = null;
 	private TrackerServer trackerServer = null;
@@ -27,10 +32,8 @@ public class FastDFSClient{
 
 	static{
 		try {
-			Properties properties = new Properties();
-			InputStream inputStream = FastDFSClient.class.getClassLoader().getResourceAsStream("conf/fdfs_client.properties");
-			properties.load(inputStream);
-			ClientGlobal.initByProperties(properties);
+			clientProperties = loadClientProperties();
+			ClientGlobal.initByProperties(clientProperties);
 		} catch (Exception e) {
 			logger.warn("文件服务器连接异常："+e.getMessage());
 		}
@@ -42,7 +45,15 @@ public class FastDFSClient{
 	public void createConnection() throws Exception {
 		trackerClient = new TrackerClient(ClientGlobal.g_tracker_group);
 		trackerServer = trackerClient.getConnection();
-		storageServer = null;
+		StorageServerConfig serverConfig = parseStorageServerConfig(clientProperties);
+		if (serverConfig == null) {
+			storageServer = null;
+		} else {
+			storageServer = new StorageServer(
+					serverConfig.getHost(),
+					serverConfig.getPort(),
+					(byte) serverConfig.getStorePathIndex());
+		}
 		storageClient = new StorageClient1(trackerServer, storageServer);
 	}
 
@@ -159,10 +170,61 @@ public class FastDFSClient{
 	}
 
 	public static void main(String[] args)throws Exception {
-		Properties properties = new Properties();
-		InputStream inputStream = FastDFSClient.class.getClassLoader().getResourceAsStream("conf/fdfs_client.properties");
-		properties.load(inputStream);
-		ClientGlobal.initByProperties(properties);
+		ClientGlobal.initByProperties(loadClientProperties());
+	}
+
+	static Properties loadClientProperties() throws IOException {
+		InputStream inputStream = FastDFSClient.class.getClassLoader().getResourceAsStream(ROOT_CONFIG);
+		if (inputStream == null) {
+			inputStream = FastDFSClient.class.getClassLoader().getResourceAsStream(CONF_CONFIG);
+		}
+		if (inputStream == null) {
+			throw new FileNotFoundException(CONF_CONFIG);
+		}
+		try {
+			Properties properties = new Properties();
+			properties.load(inputStream);
+			return properties;
+		} finally {
+			inputStream.close();
+		}
+	}
+
+	static StorageServerConfig parseStorageServerConfig(Properties properties) {
+		if (properties == null) return null;
+		String server = properties.getProperty(STORAGE_SERVER_KEY);
+		if (server == null || server.trim().isEmpty()) return null;
+		String[] parts = server.trim().split(":");
+		if (parts.length != 2 || parts[0].trim().isEmpty()) {
+			throw new IllegalArgumentException(STORAGE_SERVER_KEY + " must be host:port");
+		}
+		int port = Integer.parseInt(parts[1].trim());
+		int pathIndex = Integer.parseInt(properties.getProperty(STORAGE_PATH_INDEX_KEY, "0").trim());
+		return new StorageServerConfig(parts[0].trim(), port, pathIndex);
+	}
+
+	static class StorageServerConfig {
+		private final String host;
+		private final int port;
+		private final int storePathIndex;
+
+		StorageServerConfig(String host, int port, int storePathIndex) {
+			this.host = host;
+			this.port = port;
+			this.storePathIndex = storePathIndex;
+		}
+
+		String getHost() {
+			return host;
+		}
+
+		int getPort() {
+			return port;
+		}
+
+		int getStorePathIndex() {
+			return storePathIndex;
+		}
 	}
 
 }
