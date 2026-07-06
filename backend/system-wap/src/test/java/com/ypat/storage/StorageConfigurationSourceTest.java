@@ -36,9 +36,43 @@ public class StorageConfigurationSourceTest {
         assertTrue(source.contains("system.third.storage.env_prefix = ${YPAT_COS_ENV_PREFIX:dev}"));
     }
 
+    @Test
+    public void wapComposeServicesPassCosEnvironmentVariables() throws Exception {
+        assertWapComposeExposesCosEnvironment("docker-compose.yml", "dev");
+        assertWapComposeExposesCosEnvironment("docker-compose.staging.yml", "pre");
+        assertWapComposeExposesCosEnvironment("docker-compose.production.yml", "pro");
+    }
+
+    private void assertWapComposeExposesCosEnvironment(String file, String envPrefix) throws Exception {
+        String source = read(file);
+
+        assertTrue(source.contains("YPAT_STORAGE_PROVIDER: \"${YPAT_STORAGE_PROVIDER:-fastdfs}\""));
+        assertTrue(source.contains("YPAT_COS_SECRET_ID: \"${YPAT_COS_SECRET_ID:-}\""));
+        assertTrue(source.contains("YPAT_COS_SECRET_KEY: \"${YPAT_COS_SECRET_KEY:-}\""));
+        assertTrue(source.contains("YPAT_COS_REGION: \"${YPAT_COS_REGION:-ap-guangzhou}\""));
+        assertTrue(source.contains("YPAT_COS_BUCKET: \"${YPAT_COS_BUCKET:-}\""));
+        assertTrue(source.contains("YPAT_COS_PUBLIC_BASE_URL: \"${YPAT_COS_PUBLIC_BASE_URL:-}\""));
+        assertTrue(source.contains("YPAT_COS_ENV_PREFIX: \"${YPAT_COS_ENV_PREFIX:-" + envPrefix + "}\""));
+    }
+
     private String read(String file) throws Exception {
-        Path path = Paths.get(file);
-        if (!Files.exists(path)) path = Paths.get(file.replace("backend/system-wap/", ""));
+        boolean rootFile = !file.contains("/");
+        Path path = firstExistingPath(
+                rootFile ? Paths.get("../../" + file) : Paths.get(file),
+                rootFile ? Paths.get("../" + file) : Paths.get(file),
+                Paths.get(file),
+                Paths.get(file.replace("backend/system-wap/", "")),
+                Paths.get("../" + file)
+        );
         return new String(Files.readAllBytes(path), StandardCharsets.UTF_8);
+    }
+
+    private Path firstExistingPath(Path... candidates) {
+        for (Path candidate : candidates) {
+            if (Files.exists(candidate)) {
+                return candidate;
+            }
+        }
+        return candidates[0];
     }
 }
