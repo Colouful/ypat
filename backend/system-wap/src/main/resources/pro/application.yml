@@ -24,6 +24,9 @@ eureka:
 system:
   third:
     fdfs_path: ${YPAT_FDFS_PUBLIC_BASE_URL:?YPAT_FDFS_PUBLIC_BASE_URL is required}
+    storage:
+      provider: ${YPAT_STORAGE_PROVIDER:fastdfs}
+      env_prefix: ${YPAT_COS_ENV_PREFIX:pro}
 
 
 ##FeignClient超时设置
