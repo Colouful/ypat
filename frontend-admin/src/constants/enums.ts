@@ -163,3 +163,44 @@ export const UserProfess = {
   OTHER: { value: '5', name: '其他' },
 }
 export const getProfessOptions = () => Object.values(UserProfess).map((o) => ({ label: o.name, value: o.value }))
+
+/** 内测数据标识 */
+export const InternalTestDataFlag = {
+  REAL: { value: 'real', name: '真实数据' },
+  INTERNAL_TEST: { value: 'internal_test', name: '内测数据' },
+} as const
+export const getInternalTestDataFlagOptions = () =>
+  Object.values(InternalTestDataFlag).map((o) => ({ label: o.name, value: o.value }))
+
+/** 内测资源媒体类型 */
+export const InternalTestMediaType = {
+  IMAGE: { value: 'image', name: '图片' },
+  VIDEO: { value: 'video', name: '视频' },
+} as const
+export const getInternalTestMediaTypeOptions = () =>
+  Object.values(InternalTestMediaType).map((o) => ({ label: o.name, value: o.value }))
+
+/** 内测资源用途 */
+export const InternalTestUsageType = {
+  AVATAR: { value: 'avatar', name: '头像' },
+  YPAT: { value: 'ypat', name: '约拍' },
+  WORK: { value: 'work', name: '作品' },
+} as const
+export const getInternalTestUsageTypeOptions = () =>
+  Object.values(InternalTestUsageType).map((o) => ({ label: o.name, value: o.value }))
+
+/** 内测资源状态 */
+export const InternalTestResourceStatus = {
+  ENABLED: { value: 'enabled', name: '启用', type: 'success' as const },
+  DISABLED: { value: 'disabled', name: '停用', type: 'info' as const },
+} as const
+export const getInternalTestResourceStatusOptions = () =>
+  Object.values(InternalTestResourceStatus).map((o) => ({ label: o.name, value: o.value }))
+
+/** 内测数据生成模式 */
+export const InternalTestGenerateMode = {
+  CREATE_AND_GENERATE: { value: 'create_and_generate', name: '新建用户并生成' },
+  APPEND_TO_USERS: { value: 'append_to_users', name: '给已有内测用户追加' },
+} as const
+export const getInternalTestGenerateModeOptions = () =>
+  Object.values(InternalTestGenerateMode).map((o) => ({ label: o.name, value: o.value }))

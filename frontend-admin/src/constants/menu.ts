@@ -71,4 +71,12 @@ export const menuConfig: MenuGroup[] = [
       { title: '操作日志', path: '/member/log', component: 'member/log/index' },
     ],
   },
+  {
+    title: '内测数据',
+    icon: 'DataAnalysis',
+    children: [
+      { title: '内测资源管理', path: '/internal-test/resource', component: 'internal-test/resource/index' },
+      { title: '内测数据生成', path: '/internal-test/generator', component: 'internal-test/generator/index' },
+    ],
+  },
 ]
