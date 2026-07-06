@@ -56,8 +56,13 @@ public class StorageConfigurationSourceTest {
         assertTrue(wapService.contains("YPAT_COS_BUCKET: \"${YPAT_COS_BUCKET:-}\""));
         assertTrue(wapService.contains("YPAT_COS_PUBLIC_BASE_URL: \"${YPAT_COS_PUBLIC_BASE_URL:-}\""));
         assertTrue(wapService.contains("YPAT_COS_ENV_PREFIX: \"${YPAT_COS_ENV_PREFIX:-" + envPrefix + "}\""));
+        assertFalse(restapiService.contains("YPAT_STORAGE_PROVIDER"));
         assertFalse(restapiService.contains("YPAT_COS_SECRET_ID"));
         assertFalse(restapiService.contains("YPAT_COS_SECRET_KEY"));
+        assertFalse(restapiService.contains("YPAT_COS_REGION"));
+        assertFalse(restapiService.contains("YPAT_COS_BUCKET"));
+        assertFalse(restapiService.contains("YPAT_COS_PUBLIC_BASE_URL"));
+        assertFalse(restapiService.contains("YPAT_COS_ENV_PREFIX"));
     }
 
     private String read(String file) throws Exception {
