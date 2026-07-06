@@ -10,6 +10,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.URLDecoder;
 
 public class FastDfsStorageService implements StorageService {
     private static final Logger logger = LoggerFactory.getLogger(FastDfsStorageService.class);
@@ -71,6 +72,7 @@ public class FastDfsStorageService implements StorageService {
         String text = url.trim();
         if (!text.startsWith(base + "/")) return null;
         String fileId = trimSlashes(stripQueryAndFragment(text.substring(base.length())), true);
+        if (!isSafeObjectPath(fileId)) return null;
         return fileId != null && fileId.startsWith("group") && fileId.indexOf('/') > 0 ? fileId : null;
     }
 
@@ -93,5 +95,27 @@ public class FastDfsStorageService implements StorageService {
             while (text.endsWith("/")) text = text.substring(0, text.length() - 1);
         }
         return text.isEmpty() ? null : text;
+    }
+
+    private static boolean isSafeObjectPath(String fileId) {
+        if (fileId == null || fileId.isEmpty() || fileId.indexOf('\\') >= 0) return false;
+        String[] segments = fileId.split("/", -1);
+        for (String segment : segments) {
+            if (segment.isEmpty()) return false;
+            String decoded;
+            try {
+                decoded = URLDecoder.decode(segment, "UTF-8");
+            } catch (Exception e) {
+                return false;
+            }
+            if (decoded.isEmpty()
+                    || ".".equals(decoded)
+                    || "..".equals(decoded)
+                    || decoded.indexOf('/') >= 0
+                    || decoded.indexOf('\\') >= 0) {
+                return false;
+            }
+        }
+        return true;
     }
 }

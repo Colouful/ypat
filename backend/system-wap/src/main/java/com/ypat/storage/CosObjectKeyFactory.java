@@ -1,6 +1,7 @@
 package com.ypat.storage;
 
 import java.text.SimpleDateFormat;
+import java.net.URLDecoder;
 import java.util.Date;
 import java.util.Locale;
 
@@ -26,6 +27,7 @@ public class CosObjectKeyFactory {
         String text = url.trim();
         if (!text.startsWith(base + "/")) return null;
         String key = stripQueryAndFragment(text.substring(base.length() + 1));
+        if (!isSafeObjectPath(key)) return null;
         return key.startsWith(envPrefix + "/") ? key : null;
     }
 
@@ -62,5 +64,27 @@ public class CosObjectKeyFactory {
         String text = value.trim();
         while (text.endsWith("/")) text = text.substring(0, text.length() - 1);
         return text.isEmpty() ? null : text;
+    }
+
+    private boolean isSafeObjectPath(String key) {
+        if (key == null || key.isEmpty() || key.indexOf('\\') >= 0) return false;
+        String[] segments = key.split("/", -1);
+        for (String segment : segments) {
+            if (segment.isEmpty()) return false;
+            String decoded;
+            try {
+                decoded = URLDecoder.decode(segment, "UTF-8");
+            } catch (Exception e) {
+                return false;
+            }
+            if (decoded.isEmpty()
+                    || ".".equals(decoded)
+                    || "..".equals(decoded)
+                    || decoded.indexOf('/') >= 0
+                    || decoded.indexOf('\\') >= 0) {
+                return false;
+            }
+        }
+        return true;
     }
 }

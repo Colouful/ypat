@@ -35,6 +35,15 @@ public class StorageUrlPolicyTest {
         assertFalse(policy.supports("https://example.com/avatar.jpg"));
     }
 
+    @Test
+    public void rejectsConfiguredFastDfsTraversalUrls() {
+        StorageUrlPolicy policy = policyWith(new FakeStorageService(false), "https://fastdfs.panghu.work/");
+
+        assertFalse(policy.supports("https://fastdfs.panghu.work/group1/../../avatar.jpg"));
+        assertFalse(policy.supports("https://fastdfs.panghu.work/group1/%2e%2e/avatar.jpg"));
+        assertFalse(policy.supports("https://fastdfs.panghu.work/group1//avatar.jpg"));
+    }
+
     @Test(expected = SysException.class)
     public void requireSupportedRejectsExternalUrls() {
         StorageUrlPolicy policy = policyWith(new FakeStorageService(false), "https://fastdfs.panghu.work/");

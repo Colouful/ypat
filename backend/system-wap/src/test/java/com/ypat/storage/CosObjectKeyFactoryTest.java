@@ -75,6 +75,28 @@ public class CosObjectKeyFactoryTest {
         );
     }
 
+    @Test
+    public void rejectsTraversalAndEncodedTraversalSegments() {
+        CosObjectKeyFactory factory = new CosObjectKeyFactory("pre");
+
+        assertNull(factory.extractObjectKey(
+                "https://cdn.example.test/files",
+                "https://cdn.example.test/files/pre/../outside.jpg"
+        ));
+        assertNull(factory.extractObjectKey(
+                "https://cdn.example.test/files",
+                "https://cdn.example.test/files/pre/%2e%2e/outside.jpg"
+        ));
+        assertNull(factory.extractObjectKey(
+                "https://cdn.example.test/files",
+                "https://cdn.example.test/files/pre/work//outside.jpg"
+        ));
+        assertNull(factory.extractObjectKey(
+                "https://cdn.example.test/files",
+                "https://cdn.example.test/files/pre/work/%2f/outside.jpg"
+        ));
+    }
+
     private Date dateAtNoon(int year, int month, int dayOfMonth) {
         Calendar calendar = Calendar.getInstance();
         calendar.clear();

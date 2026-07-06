@@ -49,4 +49,24 @@ public class WorkMediaServiceUrlTest {
                 "https://panghu.work/files-backup/group1/M00/00/00/a.jpg"
         ));
     }
+
+    @Test
+    public void rejectsFastDfsTraversalAndEncodedTraversalSegments() {
+        assertNull(FastDfsStorageService.extractFastDfsFileId(
+                "https://panghu.work/files",
+                "https://panghu.work/files/group1/../../outside.jpg"
+        ));
+        assertNull(FastDfsStorageService.extractFastDfsFileId(
+                "https://panghu.work/files",
+                "https://panghu.work/files/group1/%2e%2e/outside.jpg"
+        ));
+        assertNull(FastDfsStorageService.extractFastDfsFileId(
+                "https://panghu.work/files",
+                "https://panghu.work/files/group1//outside.jpg"
+        ));
+        assertNull(FastDfsStorageService.extractFastDfsFileId(
+                "https://panghu.work/files",
+                "https://panghu.work/files/group1/%2f/outside.jpg"
+        ));
+    }
 }
