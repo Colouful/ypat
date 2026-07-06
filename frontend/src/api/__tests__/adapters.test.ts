@@ -26,4 +26,18 @@ describe('normalizeImageUrl', () => {
 
     expect(normalizeImageUrl('https://cdn.example.test/a.jpg')).toBe('https://cdn.example.test/a.jpg')
   })
+
+  it('rewrites legacy local FastDFS URLs to the configured image base URL', async () => {
+    vi.stubEnv('VITE_APP_ENV', 'development')
+    vi.stubEnv('VITE_IMAGE_BASE_URL', 'https://fastdfs.panghu.work/')
+
+    const { normalizeImageUrl } = await loadAdapters()
+
+    expect(normalizeImageUrl('http://localhost:8888group1/M00/00/00/a.jpg')).toBe(
+      'https://fastdfs.panghu.work/group1/M00/00/00/a.jpg',
+    )
+    expect(normalizeImageUrl('http://localhost:8888/group1/M00/00/00/a.jpg')).toBe(
+      'https://fastdfs.panghu.work/group1/M00/00/00/a.jpg',
+    )
+  })
 })

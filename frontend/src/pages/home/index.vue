@@ -95,6 +95,7 @@ import { onPullDownRefresh, onReachBottom, onShow } from '@dcloudio/uni-app'
 import { useUserStore } from '@/stores/user'
 import { useAppStore } from '@/stores/app'
 import * as ypatApi from '@/api/modules/ypat'
+import { normalizeImageUrl } from '@/api/adapters'
 import { CHARGE_WAY_LABELS, PHOTO_STYLES, TARGET_LABELS } from '@/constants/enums'
 import KeepFilterSheet, { type KeepFilterGroup } from '@/components/business/KeepFilterSheet.vue'
 import KeepIcon from '@/components/business/KeepIcon.vue'
@@ -191,8 +192,8 @@ const cardItems = computed<KeepYpatCardItem[]>(() => list.value.map((item) => ({
   chargeLabel: item.chargewayTxt || CHARGE_WAY_LABELS[item.chargeway] || '费用协商',
   city: [item.city, item.area].filter(Boolean).join('·') || '同城',
   name: item.userQo?.nickname || '匿名用户',
-  image: item.pics?.[0] || '/static/default-cover.png',
-  avatar: item.userQo?.imgpath || item.userQo?.avatarurl || '/static/default-avatar.png',
+  image: normalizeImageUrl(item.pics?.[0]) || '/static/default-cover.png',
+  avatar: normalizeImageUrl(item.userQo?.imgpath || item.userQo?.avatarurl) || '/static/default-avatar.png',
   time: item.timeStr || item.pubdate || '刚刚',
   applyCount: item.pattimes || item.readtimes || 0,
   realname: item.realnameflag === '1' || item.userQo?.realnameflag === '1',

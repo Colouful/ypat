@@ -7,11 +7,16 @@ import type { PageResult } from '../types'
  */
 export function normalizeImageUrl(path: string | null | undefined): string {
   if (!path) return ''
-  if (path.startsWith('http://') || path.startsWith('https://')) {
-    return path
+  const value = path.trim()
+  const legacyFastDfsMatch = /^https?:\/\/(?:localhost|127\.0\.0\.1):8888\/?(group\d+\/.*)$/i.exec(value)
+  if (legacyFastDfsMatch) {
+    return `${envConfig.imageBaseUrl}/${legacyFastDfsMatch[1].replace(/^\/+/, '')}`
+  }
+  if (value.startsWith('http://') || value.startsWith('https://')) {
+    return value
   }
   // 去除开头多余的斜杠
-  const cleanPath = path.replace(/^\/+/, '')
+  const cleanPath = value.replace(/^\/+/, '')
   return `${envConfig.imageBaseUrl}/${cleanPath}`
 }
 

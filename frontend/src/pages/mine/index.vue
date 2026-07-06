@@ -187,6 +187,7 @@ import { useAppStore } from '@/stores/app'
 import { useMemberStore } from '@/stores/member'
 import * as contentApi from '@/api/modules/content'
 import * as ypatApi from '@/api/modules/ypat'
+import { normalizeImageUrl } from '@/api/adapters'
 import { GENDER_LABELS, PROFESS_LABELS } from '@/constants/enums'
 import KeepIcon from '@/components/business/KeepIcon.vue'
 import KeepState from '@/components/business/KeepState.vue'
@@ -212,7 +213,7 @@ const statusBarHeight = computed(() => appStore.statusBarHeight)
 const isLoggedIn = computed(() => userStore.isLoggedIn)
 const userInfo = computed(() => userStore.userInfo)
 const memberStatus = computed(() => memberStore.status)
-const avatar = computed(() => userInfo.value?.imgpath || userInfo.value?.avatarurl || '/static/default-avatar.png')
+const avatar = computed(() => normalizeImageUrl(userInfo.value?.imgpath || userInfo.value?.avatarurl) || '/static/default-avatar.png')
 const displayName = computed(() => userInfo.value?.nickname || maskMobile(userInfo.value?.mobile) || '未设置昵称')
 const genderLabel = computed(() => {
   const gender = userInfo.value?.gender

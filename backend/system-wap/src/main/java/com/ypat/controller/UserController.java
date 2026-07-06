@@ -79,6 +79,8 @@ public class UserController {
                 }
                 logger.info("fileId==="+fileId);
                 userQo.setImgpath(systemConfig.getFdfs_path()+fileId);
+            } else {
+                userQo.setImgpath(pics.trim());
             }
         }
         return systemServiceClient.upd(userQo);

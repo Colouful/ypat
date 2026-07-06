@@ -77,6 +77,7 @@ import { onLoad } from '@dcloudio/uni-app'
 import { useUserStore } from '@/stores/user'
 import * as userApi from '@/api/modules/user'
 import { uploadImage } from '@/api/modules/media'
+import { normalizeImageUrl } from '@/api/adapters'
 import { GENDER_LABELS, PROFESS_LABELS } from '@/constants/enums'
 import KeepIcon from '@/components/business/KeepIcon.vue'
 import type { UpdateUserParams } from '@/api/types'
@@ -121,7 +122,7 @@ function initForm(): void {
   form.city = info.city || ''
   form.area = info.area || ''
   form.wx = info.wx || ''
-  avatarPreview.value = info.imgpath || info.avatarurl || ''
+  avatarPreview.value = normalizeImageUrl(info.imgpath || info.avatarurl)
 }
 
 function chooseAvatar(): void {

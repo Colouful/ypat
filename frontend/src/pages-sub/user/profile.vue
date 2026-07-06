@@ -15,7 +15,7 @@
     <view v-else-if="profile" class="content" :style="{ paddingTop: `${navBarHeight}px` }">
       <view class="hero" />
       <view class="user-card">
-        <image class="avatar" :src="profile.imgpath || profile.avatarurl || '/static/default-avatar.png'" mode="aspectFill" />
+        <image class="avatar" :src="avatarSrc" mode="aspectFill" />
         <view class="name-row">
           <text class="name">{{ profile.nickname || '未设置昵称' }}</text>
           <text v-if="profile.realnameflag === '1'" class="badge">已认证</text>
@@ -54,6 +54,7 @@ import { useAppStore } from '@/stores/app'
 import { useUserStore } from '@/stores/user'
 import * as userApi from '@/api/modules/user'
 import * as ypatApi from '@/api/modules/ypat'
+import { normalizeImageUrl } from '@/api/adapters'
 import type { UserInfo, YpatInfo } from '@/api/types'
 import KeepIcon from '@/components/business/KeepIcon.vue'
 
@@ -71,6 +72,7 @@ const page = ref(0)
 const hasMore = ref(false)
 const size = 10
 const isOwnProfile = computed(() => Boolean(userStore.userInfo?.id && userStore.userInfo.id === userId.value))
+const avatarSrc = computed(() => normalizeImageUrl(profile.value?.imgpath || profile.value?.avatarurl) || '/static/default-avatar.png')
 
 async function loadProfile(): Promise<void> {
   loading.value = true

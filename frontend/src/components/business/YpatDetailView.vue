@@ -53,7 +53,7 @@
         </view>
 
         <view class="author-card" @tap="goProfile">
-          <image class="author-card__avatar" :src="detail.userQo?.imgpath || '/static/default-avatar.png'" mode="aspectFill" />
+          <image class="author-card__avatar" :src="authorAvatar" mode="aspectFill" />
           <view class="author-card__info">
             <text class="author-card__name">{{ detail.userQo?.nickname || '匿名用户' }}</text>
             <text class="author-card__desc">{{ authorDesc }}</text>
@@ -87,6 +87,7 @@ import { computed, ref, watch } from 'vue'
 import { useUserStore } from '@/stores/user'
 import * as ypatApi from '@/api/modules/ypat'
 import { put } from '@/api/request'
+import { normalizeImageUrl } from '@/api/adapters'
 import { TARGET_LABELS } from '@/constants/enums'
 import KeepIcon from './KeepIcon.vue'
 import KeepState from './KeepState.vue'
@@ -103,8 +104,9 @@ const loading = ref(false)
 const actionLoading = ref(false)
 const errorMessage = ref('')
 const favorited = ref(false)
-const images = computed(() => detail.value?.pics?.filter(Boolean) || ['/static/default-cover.png'])
+const images = computed(() => detail.value?.pics?.map(normalizeImageUrl).filter(Boolean) || ['/static/default-cover.png'])
 const portfolioImages = computed(() => images.value.slice(0, 6).concat(Array(Math.max(0, 6 - images.value.length)).fill('/static/default-cover.png')))
+const authorAvatar = computed(() => normalizeImageUrl(detail.value?.userQo?.imgpath || detail.value?.userQo?.avatarurl) || '/static/default-avatar.png')
 const detailTitle = computed(() => detail.value?.describ?.split('\n')[0] || detail.value?.targetTxt || '约拍详情')
 const cityText = computed(() => [detail.value?.city, detail.value?.area].filter(Boolean).join('·') || '同城')
 const styleTags = computed(() => (detail.value?.patstyleTxt || detail.value?.patstyle || '').split(/[,，\s]+/).filter(Boolean).slice(0, 6))
