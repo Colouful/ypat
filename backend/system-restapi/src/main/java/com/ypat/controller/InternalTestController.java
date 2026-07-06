@@ -13,6 +13,9 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.HashMap;
+import java.util.Map;
+
 /**
  * 内测数据工厂内部服务 Controller。
  */
@@ -45,7 +48,9 @@ public class InternalTestController {
     public ResponseApiBody updateResourceStatus(@RequestParam("id") Long id,
                                                 @RequestParam("status") String status) {
         resourceService.updateStatus(id, status);
-        return ResponseApiBody.success("更新成功");
+        Map<String, Object> result = new HashMap<String, Object>();
+        result.put("success", true);
+        return ResponseApiBody.success(result);
     }
 
     @GetMapping("/users")

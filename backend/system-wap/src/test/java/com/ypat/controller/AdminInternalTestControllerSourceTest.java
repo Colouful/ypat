@@ -79,6 +79,18 @@ public class AdminInternalTestControllerSourceTest {
     }
 
     @Test
+    public void restapiStatusRouteReturnsObjectPayloadForWapParserContract() throws Exception {
+        String restapi = readSource(
+                "../system-restapi/src/main/java/com/ypat/controller/InternalTestController.java",
+                "backend/system-restapi/src/main/java/com/ypat/controller/InternalTestController.java");
+
+        assertFalse(restapi.contains("ResponseApiBody.success(\"更新成功\")"));
+        assertTrue(restapi.contains("Map<String, Object>"));
+        assertTrue(restapi.contains("result.put(\"success\", true)"));
+        assertTrue(restapi.contains("return ResponseApiBody.success(result)"));
+    }
+
+    @Test
     public void parseResponseResReturnsExpectedDataAndPropagatesBusinessErrors() throws Exception {
         AdminInternalTestController controller = new AdminInternalTestController();
 
@@ -111,6 +123,7 @@ public class AdminInternalTestControllerSourceTest {
         assertParseResponseFail(controller, "{\"code\":200,\"res\":123}", "服务响应格式错误");
         assertParseResponseFail(controller, "{\"code\":200,\"res\":true}", "服务响应格式错误");
         assertParseResponseFail(controller, "{\"code\":200,\"res\":\"x\"}", "服务响应格式错误");
+        assertParseResponseFail(controller, "{\"code\":200,\"res\":\"更新成功\"}", "服务响应格式错误");
         assertParseResponseFail(controller, "[]", "服务响应格式错误");
         assertParseResponseFail(controller, "123", "服务响应格式错误");
         assertParseResponseFail(controller, "null", "服务响应格式错误");
@@ -119,7 +132,7 @@ public class AdminInternalTestControllerSourceTest {
     }
 
     @Test
-    public void oldSystemWebIsNotTouchedByInternalTestFeature() throws Exception {
+    public void legacyAdminInternalTestControllerIsNotIntroduced() throws Exception {
         assertFalse(sourceExists(
                 "../system-web/src/main/java/com/ypat/controller/AdminInternalTestController.java",
                 "backend/system-web/src/main/java/com/ypat/controller/AdminInternalTestController.java"));
