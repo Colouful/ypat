@@ -20,6 +20,8 @@ public class FastDfsStorageServiceSourceTest {
         assertTrue(source.contains("fastDFSClient.uploanFile1"));
         assertTrue(source.contains("new StoredObject(fileId, url)"));
         assertTrue(source.contains("Storage upload failed"));
+        assertTrue(source.contains("FastDFS delete failed"));
+        assertTrue(source.contains("catch (RuntimeException e)"));
         assertFalse(source.contains("SecretKey"));
     }
 

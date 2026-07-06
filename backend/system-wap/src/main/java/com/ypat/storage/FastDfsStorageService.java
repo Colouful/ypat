@@ -4,12 +4,15 @@ import com.ypat.ResponseCode;
 import com.ypat.SysException;
 import com.ypat.config.SystemConfig;
 import com.ypat.util.FastDFSClient;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import java.io.IOException;
 import java.io.InputStream;
 
 public class FastDfsStorageService implements StorageService {
+    private static final Logger logger = LoggerFactory.getLogger(FastDfsStorageService.class);
 
     @Autowired
     private FastDFSClient fastDFSClient;
@@ -43,7 +46,14 @@ public class FastDfsStorageService implements StorageService {
         if (fileId == null) return;
         int slash = fileId.indexOf('/');
         if (slash <= 0) return;
-        fastDFSClient.deleteFile(fileId.substring(0, slash), fileId.substring(slash + 1));
+        try {
+            int result = fastDFSClient.deleteFile(fileId.substring(0, slash), fileId.substring(slash + 1));
+            if (result != 0) {
+                logger.warn("FastDFS delete failed fileId={} result={}", fileId, result);
+            }
+        } catch (RuntimeException e) {
+            logger.warn("FastDFS delete failed fileId={} err={}", fileId, e.toString());
+        }
     }
 
     public static String joinPublicFileUrl(String publicBaseUrl, String fileId) {

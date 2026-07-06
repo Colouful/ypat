@@ -33,6 +33,13 @@ public class WorkMediaServiceUrlTest {
                         "https://panghu.work/files/group1/M00/00/00/a.jpg"
                 )
         );
+        assertEquals(
+                "group1/M00/00/00/a.jpg",
+                FastDfsStorageService.extractFastDfsFileId(
+                        "https://panghu.work/files/",
+                        "https://panghu.work/files/group1/M00/00/00/a.jpg?token=abc#preview"
+                )
+        );
         assertNull(FastDfsStorageService.extractFastDfsFileId(
                 "https://panghu.work/files",
                 "https://cdn.example.test/group1/M00/00/00/a.jpg"
