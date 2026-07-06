@@ -22,7 +22,7 @@ const FORBIDDEN_PRODUCTION_HOSTS = [
 ]
 
 const DEFAULT_DEVELOPMENT_API_BASE_URL = 'http://localhost:8080/api'
-const DEFAULT_DEVELOPMENT_IMAGE_BASE_URL = 'http://localhost:8080/files'
+const DEFAULT_DEVELOPMENT_IMAGE_BASE_URL = 'https://fastdfs.panghu.work'
 
 /**
  * 解析 https URL 的 host 与 port。

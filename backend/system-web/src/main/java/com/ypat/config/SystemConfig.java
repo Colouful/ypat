@@ -9,7 +9,7 @@ public class SystemConfig {
     private String bd_api;
     private String bd_ak;
     private String bd_sk;
-    public static final String fdfs_path = "http://127.0.0.1:8888/";
+    public static final String fdfs_path = "https://fastdfs.panghu.work/";
 
     public String getBd_api() {
         return bd_api;

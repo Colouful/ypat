@@ -45,7 +45,7 @@ describe('envConfig', () => {
       const result = await loadEnvConfig()
       expect(result.env).toBe('development')
       expect(result.apiBaseUrl).toBe('http://localhost:8080/api')
-      expect(result.imageBaseUrl).toBe('http://localhost:8080/files')
+      expect(result.imageBaseUrl).toBe('https://fastdfs.panghu.work')
     })
   })
 
