@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { readdirSync, readFileSync, statSync } from 'node:fs'
 
 const uploadMock = vi.hoisted(() => vi.fn())
 
@@ -62,4 +63,25 @@ describe('media upload API', () => {
       showLoading: false,
     })
   })
+
+  it('does not expose COS secrets or upload directly to COS from frontend sources', () => {
+    const srcRoot = `${process.cwd()}/src`
+    const source = readSourceTree(srcRoot)
+
+    expect(source).not.toMatch(/YPAT_COS|TENCENT_COS|COS_SECRET|SECRET_ID|SECRET_KEY/)
+    expect(source).toContain('/work/upload/image')
+    expect(source).toContain('/work/upload/video')
+  })
 })
+
+function readSourceTree(dir: string): string {
+  return readdirSync(dir)
+    .filter((name) => !name.startsWith('.') && name !== '__tests__')
+    .map((name) => {
+      const path = `${dir}/${name}`
+      if (statSync(path).isDirectory()) return readSourceTree(path)
+      if (!/\.(ts|vue|json)$/.test(name)) return ''
+      return readFileSync(path, 'utf8')
+    })
+    .join('\n')
+}
