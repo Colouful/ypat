@@ -7,6 +7,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 public class StorageConfigurationSourceTest {
@@ -45,14 +46,18 @@ public class StorageConfigurationSourceTest {
 
     private void assertWapComposeExposesCosEnvironment(String file, String envPrefix) throws Exception {
         String source = read(file);
+        String wapService = serviceBlock(source, "wap");
+        String restapiService = serviceBlock(source, "restapi");
 
-        assertTrue(source.contains("YPAT_STORAGE_PROVIDER: \"${YPAT_STORAGE_PROVIDER:-fastdfs}\""));
-        assertTrue(source.contains("YPAT_COS_SECRET_ID: \"${YPAT_COS_SECRET_ID:-}\""));
-        assertTrue(source.contains("YPAT_COS_SECRET_KEY: \"${YPAT_COS_SECRET_KEY:-}\""));
-        assertTrue(source.contains("YPAT_COS_REGION: \"${YPAT_COS_REGION:-ap-guangzhou}\""));
-        assertTrue(source.contains("YPAT_COS_BUCKET: \"${YPAT_COS_BUCKET:-}\""));
-        assertTrue(source.contains("YPAT_COS_PUBLIC_BASE_URL: \"${YPAT_COS_PUBLIC_BASE_URL:-}\""));
-        assertTrue(source.contains("YPAT_COS_ENV_PREFIX: \"${YPAT_COS_ENV_PREFIX:-" + envPrefix + "}\""));
+        assertTrue(wapService.contains("YPAT_STORAGE_PROVIDER: \"${YPAT_STORAGE_PROVIDER:-fastdfs}\""));
+        assertTrue(wapService.contains("YPAT_COS_SECRET_ID: \"${YPAT_COS_SECRET_ID:-}\""));
+        assertTrue(wapService.contains("YPAT_COS_SECRET_KEY: \"${YPAT_COS_SECRET_KEY:-}\""));
+        assertTrue(wapService.contains("YPAT_COS_REGION: \"${YPAT_COS_REGION:-ap-guangzhou}\""));
+        assertTrue(wapService.contains("YPAT_COS_BUCKET: \"${YPAT_COS_BUCKET:-}\""));
+        assertTrue(wapService.contains("YPAT_COS_PUBLIC_BASE_URL: \"${YPAT_COS_PUBLIC_BASE_URL:-}\""));
+        assertTrue(wapService.contains("YPAT_COS_ENV_PREFIX: \"${YPAT_COS_ENV_PREFIX:-" + envPrefix + "}\""));
+        assertFalse(restapiService.contains("YPAT_COS_SECRET_ID"));
+        assertFalse(restapiService.contains("YPAT_COS_SECRET_KEY"));
     }
 
     private String read(String file) throws Exception {
@@ -74,5 +79,19 @@ public class StorageConfigurationSourceTest {
             }
         }
         return candidates[0];
+    }
+
+    private String serviceBlock(String source, String serviceName) {
+        String marker = "\n  " + serviceName + ":\n";
+        int start = source.indexOf(marker);
+        assertTrue("missing service " + serviceName, start >= 0);
+        int next = source.length();
+        for (String line : source.substring(start + marker.length()).split("\n")) {
+            if (line.startsWith("  ") && !line.startsWith("    ") && line.endsWith(":")) {
+                next = source.indexOf("\n" + line, start + marker.length());
+                break;
+            }
+        }
+        return source.substring(start, next);
     }
 }
