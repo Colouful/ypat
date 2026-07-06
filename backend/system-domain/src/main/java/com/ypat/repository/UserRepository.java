@@ -7,6 +7,7 @@ import org.springframework.data.jpa.domain.Specification;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
@@ -27,4 +28,8 @@ public interface UserRepository extends JpaRepository<User, Long>, JpaSpecificat
     @Query(value = "select u.* from t_user u ,t_ypat_info y where y.userid=u.id and y.city like:city and u.profess =:profess " +
             " union select u.* from t_user u where u.city like:city and u.profess =:profess ", nativeQuery = true)
     List<User> findByCityAndProfess(@Param("city") String city, @Param("profess") String profess);
+
+    @Modifying
+    @Query("update User u set u.status = :status where u.dataFlag = 'internal_test' and (:batchNo is null or u.internalBatchNo = :batchNo)")
+    int updateInternalTestUsersStatus(@Param("batchNo") String batchNo, @Param("status") String status);
 }

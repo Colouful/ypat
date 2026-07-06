@@ -5,13 +5,21 @@ import org.junit.Test;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 
 import static org.junit.Assert.assertTrue;
 
 public class InternalTestDataSourceTest {
     private static String read(String path) throws IOException {
-        return new String(Files.readAllBytes(Paths.get(path)), StandardCharsets.UTF_8);
+        Path p = Paths.get(path);
+        if (!Files.exists(p)) {
+            p = Paths.get("..").resolve(path).normalize();
+        }
+        if (!Files.exists(p)) {
+            p = Paths.get("../..").resolve(path).normalize();
+        }
+        return new String(Files.readAllBytes(p), StandardCharsets.UTF_8);
     }
 
     @Test
@@ -86,6 +94,31 @@ public class InternalTestDataSourceTest {
                 "avatar", "ypat", "work");
         assertEnumValues("../system-object/src/main/java/com/ypat/enums/InternalTestResourceStatus.java",
                 "enabled", "disabled");
+    }
+
+    @Test
+    public void domainServicesProtectRealDataAndGenerateMarkedRecords() throws Exception {
+        String dataService = read("backend/system-domain/src/main/java/com/ypat/service/InternalTestDataService.java");
+        String resourceService = read("backend/system-domain/src/main/java/com/ypat/service/InternalTestResourceService.java");
+        String userRepo = read("backend/system-domain/src/main/java/com/ypat/repository/UserRepository.java");
+        String ypatRepo = read("backend/system-domain/src/main/java/com/ypat/repository/YpatInfoRepository.java");
+        String workRepo = read("backend/system-domain/src/main/java/com/ypat/repository/WorkRepository.java");
+
+        assertTrue(resourceService.contains("public Map<String, Object> page(InternalTestResourceQo qo)"));
+        assertTrue(resourceService.contains("public InternalTestResourceQo save(InternalTestResourceQo qo)"));
+        assertTrue(resourceService.contains("public void updateStatus(Long id, String status)"));
+        assertTrue(dataService.contains("public InternalTestBatchQo createUsers(InternalTestGenerateQo qo)"));
+        assertTrue(dataService.contains("public InternalTestBatchQo generate(InternalTestGenerateQo qo)"));
+        assertTrue(dataService.contains("public InternalTestBatchQo cleanup(InternalTestGenerateQo qo)"));
+        assertTrue(dataService.contains("InternalTestDataFlag.internalTest.value"));
+        assertTrue(dataService.contains("ensureResources"));
+        assertTrue(dataService.contains("buildBatchNo"));
+        assertTrue(userRepo.contains("updateInternalTestUsersStatus"));
+        assertTrue(ypatRepo.contains("updateInternalTestYpatStatus"));
+        assertTrue(workRepo.contains("updateInternalTestWorkStatus"));
+        assertTrue(userRepo.contains("dataFlag = 'internal_test'"));
+        assertTrue(ypatRepo.contains("dataFlag = 'internal_test'"));
+        assertTrue(workRepo.contains("dataFlag = 'internal_test'"));
     }
 
     private void assertEntityMarkers(String path) throws Exception {

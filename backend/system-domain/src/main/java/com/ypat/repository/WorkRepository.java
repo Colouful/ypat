@@ -81,4 +81,8 @@ public interface WorkRepository extends JpaRepository<Work, Long>, JpaSpecificat
      * 公开可见数量（统计）
      */
     long countByStatusAndDeletedFlag(String status, Integer deletedFlag);
+
+    @Modifying
+    @Query("update Work w set w.status = :status, w.auditReason = :reason, w.updatedAt = CURRENT_TIMESTAMP where w.dataFlag = 'internal_test' and w.deletedFlag = 0 and (:batchNo is null or w.internalBatchNo = :batchNo)")
+    int updateInternalTestWorkStatus(@Param("batchNo") String batchNo, @Param("status") String status, @Param("reason") String reason);
 }
