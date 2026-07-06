@@ -74,6 +74,15 @@ public class AdminInternalTestControllerSourceTest {
         assertThreeLayerGetRoute(wap, client, restapi, "resources");
         assertThreeLayerGetRoute(wap, client, restapi, "users");
         assertThreeLayerGetRoute(wap, client, restapi, "batches");
+        assertThreeLayerPostRoute(wap, client, restapi, "resources");
+        assertThreeLayerPostRoute(wap, client, restapi, "resources/update");
+        assertThreeLayerPostRoute(wap, client, restapi, "users/create");
+        assertThreeLayerPostRoute(wap, client, restapi, "generate");
+        assertThreeLayerPostRoute(wap, client, restapi, "cleanup");
+        assertRequestBodyRoute(client, "InternalTestResourceQo qo");
+        assertRequestBodyRoute(restapi, "InternalTestResourceQo qo");
+        assertRequestBodyRoute(client, "InternalTestGenerateQo qo");
+        assertRequestBodyRoute(restapi, "InternalTestGenerateQo qo");
         assertStatusRouteUsesIdAndStatus(client);
         assertStatusRouteUsesIdAndStatus(restapi);
     }
@@ -146,6 +155,16 @@ public class AdminInternalTestControllerSourceTest {
         assertTrue(wap.contains("@GetMapping(\"/" + route + "\")"));
         assertTrue(client.contains("@GetMapping(\"/service/internal-test/" + route + "\")"));
         assertTrue(restapi.contains("@GetMapping(\"/" + route + "\")"));
+    }
+
+    private void assertThreeLayerPostRoute(String wap, String client, String restapi, String route) {
+        assertTrue(wap.contains("@PostMapping(\"/" + route + "\")"));
+        assertTrue(client.contains("@PostMapping(\"/service/internal-test/" + route + "\")"));
+        assertTrue(restapi.contains("@PostMapping(\"/" + route + "\")"));
+    }
+
+    private void assertRequestBodyRoute(String source, String argument) {
+        assertTrue(source.contains("@RequestBody " + argument));
     }
 
     private void assertStatusRouteUsesIdAndStatus(String source) {
