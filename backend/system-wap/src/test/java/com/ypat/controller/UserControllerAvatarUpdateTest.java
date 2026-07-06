@@ -4,6 +4,9 @@ import com.ypat.MessInfoQo;
 import com.ypat.UserQo;
 import com.ypat.model.SecurityUserDetails;
 import com.ypat.service.UserServiceClient;
+import com.ypat.storage.StorageBizPath;
+import com.ypat.storage.StorageService;
+import com.ypat.storage.StoredObject;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -11,6 +14,7 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.test.util.ReflectionTestUtils;
 
+import java.io.InputStream;
 import java.io.IOException;
 
 import static org.junit.Assert.assertEquals;
@@ -41,6 +45,19 @@ public class UserControllerAvatarUpdateTest {
                 "https://fastdfs.panghu.work/group1/M00/00/00/avatar.jpg",
                 userServiceClient.updatedUser.getImgpath()
         );
+    }
+
+    @Test
+    public void updUploadsBase64AvatarThroughStorageService() throws IOException {
+        FakeStorageService storageService = new FakeStorageService();
+        ReflectionTestUtils.setField(controller, "storageService", storageService);
+
+        controller.upd(new UserQo(), "data:image/png;base64,YXZhdGFy");
+
+        assertEquals(StorageBizPath.AVATAR, storageService.bizPath);
+        assertEquals("jpg", storageService.originalFilename);
+        assertEquals("image/jpeg", storageService.contentType);
+        assertEquals("https://cdn.example.test/dev/avatar/a.jpg", userServiceClient.updatedUser.getImgpath());
     }
 
     private void setAuthenticatedUser(String userId) {
@@ -99,6 +116,34 @@ public class UserControllerAvatarUpdateTest {
         @Override
         public String findByCityAndProfess(Long userid, String city) {
             return null;
+        }
+    }
+
+    private static class FakeStorageService implements StorageService {
+        String originalFilename;
+        String contentType;
+        StorageBizPath bizPath;
+
+        @Override
+        public StoredObject upload(InputStream inputStream, String originalFilename, String contentType, StorageBizPath bizPath) {
+            this.originalFilename = originalFilename;
+            this.contentType = contentType;
+            this.bizPath = bizPath;
+            return new StoredObject("dev/avatar/a.jpg", "https://cdn.example.test/dev/avatar/a.jpg");
+        }
+
+        @Override
+        public boolean supportsUrl(String url) {
+            return false;
+        }
+
+        @Override
+        public String extractObjectKey(String url) {
+            return null;
+        }
+
+        @Override
+        public void deleteByUrl(String url) {
         }
     }
 }

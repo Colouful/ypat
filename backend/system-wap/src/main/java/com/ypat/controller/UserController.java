@@ -4,9 +4,10 @@ import com.ypat.ResponseCode;
 import com.ypat.SysException;
 import com.ypat.UserQo;
 import com.ypat.comm.ImageConst;
-import com.ypat.config.SystemConfig;
 import com.ypat.service.UserServiceClient;
-import com.ypat.util.FastDFSClient;
+import com.ypat.storage.StorageBizPath;
+import com.ypat.storage.StorageService;
+import com.ypat.storage.StoredObject;
 import com.ypat.util.UserUtil;
 import org.apache.tomcat.util.codec.binary.Base64;
 import org.hibernate.validator.constraints.NotEmpty;
@@ -30,9 +31,7 @@ public class UserController {
     @Autowired
     private UserServiceClient systemServiceClient;
     @Autowired
-    private FastDFSClient fastDFSClient;
-    @Autowired
-    private SystemConfig systemConfig;
+    private StorageService storageService;
 
     @GetMapping("/user/get")
     public String get(Long id) {
@@ -53,11 +52,11 @@ public class UserController {
         Long id = Long.parseLong(UserUtil.getUserId());
         userQo.setId(id);
         if (pics != null) {
-            String fileId = fastDFSClient.uploanFile1(pics.getInputStream(), pics.getOriginalFilename());
-            if (fileId == null) {
+            StoredObject storedObject = storageService.upload(pics.getInputStream(), pics.getOriginalFilename(), pics.getContentType(), StorageBizPath.AVATAR);
+            if (storedObject == null || storedObject.getUrl() == null) {
                 throw new SysException(ResponseCode.FAIL_MARK);
             }
-            userQo.setImgpath(fileId);
+            userQo.setImgpath(storedObject.getUrl());
         }
         return systemServiceClient.upd(userQo);
     }
@@ -72,13 +71,11 @@ public class UserController {
             final String[] picsArr = pics.split(",", 2);
             if (picsArr[0].indexOf("data:image") >= 0 && picsArr.length == 2) {
                 byte[] bytes = Base64.decodeBase64(picsArr[1]);
-                String fileId = fastDFSClient.uploanFile1(new ByteArrayInputStream(bytes), ImageConst.IMAGE_TYPE);
-                if (fileId == null) {
-                    // FastDFS 上传失败：抛业务异常，让前端看到具体原因（不掩盖为"参数错误"）
+                StoredObject storedObject = storageService.upload(new ByteArrayInputStream(bytes), ImageConst.IMAGE_TYPE, "image/jpeg", StorageBizPath.AVATAR);
+                if (storedObject == null || storedObject.getUrl() == null) {
                     throw new SysException(ResponseCode.FAIL_MARK);
                 }
-                logger.info("fileId==="+fileId);
-                userQo.setImgpath(systemConfig.getFdfs_path()+fileId);
+                userQo.setImgpath(storedObject.getUrl());
             } else {
                 userQo.setImgpath(pics.trim());
             }

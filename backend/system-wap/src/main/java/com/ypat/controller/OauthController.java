@@ -5,15 +5,16 @@ import com.ypat.ResponseCode;
 import com.ypat.SysException;
 import com.ypat.comm.Const;
 import com.ypat.comm.ImageConst;
-import com.ypat.config.SystemConfig;
 import com.ypat.enums.MessType;
 import com.ypat.service.OauthServiceClient;
+import com.ypat.storage.StorageBizPath;
+import com.ypat.storage.StorageService;
+import com.ypat.storage.StoredObject;
 import com.ypat.third.baidu.ai.GsonUtils;
 import com.ypat.third.baidu.ai.Idcard;
 import com.ypat.third.baidu.ai.IdcardResponse;
 import com.ypat.third.baidu.ai.Idmatch;
 import com.ypat.third.wxmess.WxMessClient;
-import com.ypat.util.FastDFSClient;
 import com.ypat.util.UserUtil;
 import org.apache.commons.codec.binary.Base64;
 import org.hibernate.validator.constraints.NotEmpty;
@@ -27,6 +28,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import javax.validation.Valid;
 import java.io.ByteArrayInputStream;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -40,13 +42,11 @@ public class OauthController {
     @Autowired
     private OauthServiceClient oauthServiceClient;
     @Autowired
-    private FastDFSClient fastDFSClient;
+    private StorageService storageService;
     @Autowired
     private Idcard idcard;
     @Autowired
     private Idmatch idmatch;
-    @Autowired
-    private SystemConfig systemConfig;
     @Autowired
     private WxMessClient wxMessClient;
 
@@ -75,19 +75,25 @@ public class OauthController {
     }
 
     @PostMapping("/oauth/add")
-    public String add(@Valid OauthQo oauthQo) {
+    public String add(@Valid OauthQo oauthQo) throws IOException {
         logger.info("实名认证申请输入："+oauthQo);
         List<String> picsList = new ArrayList<>();
         List<String> pics = oauthQo.getPics();
         if (pics != null && pics.size() > 0) {
             for (int i = 0; i < pics.size(); i++) {
                 String fileBase64 = pics.get(i);
-                // 保存文件
-                String[] picsArr = fileBase64.split(",", 2);
-                String imageBody = picsArr.length == 2 ? picsArr[1] : fileBase64;
-                byte[] bytes = Base64.decodeBase64(imageBody);
-                String fileId = fastDFSClient.uploanFile1(new ByteArrayInputStream(bytes), ImageConst.IMAGE_TYPE);
-                picsList.add(systemConfig.getFdfs_path()+fileId);
+                if (isHttpUrl(fileBase64)) {
+                    picsList.add(fileBase64.trim());
+                } else {
+                    String[] picsArr = fileBase64.split(",", 2);
+                    String imageBody = picsArr.length == 2 ? picsArr[1] : fileBase64;
+                    byte[] bytes = Base64.decodeBase64(imageBody);
+                    StoredObject storedObject = storageService.upload(new ByteArrayInputStream(bytes), ImageConst.IMAGE_TYPE, "image/jpeg", StorageBizPath.REALNAME);
+                    if (storedObject == null || storedObject.getUrl() == null) {
+                        throw new SysException(ResponseCode.FAIL_UPLOAD);
+                    }
+                    picsList.add(storedObject.getUrl());
+                }
             }
         } else {
             throw new RuntimeException("未上传证件照");
@@ -128,9 +134,11 @@ public class OauthController {
             }
             for (int i = 0; i < pics.length; i++) {
                 MultipartFile uploadfile = pics[i];
-                // 保存文件
-                String fileId = fastDFSClient.uploanFile1(uploadfile.getInputStream(), uploadfile.getOriginalFilename());
-                picsList.add(fileId);
+                StoredObject storedObject = storageService.upload(uploadfile.getInputStream(), uploadfile.getOriginalFilename(), uploadfile.getContentType(), StorageBizPath.REALNAME);
+                if (storedObject == null || storedObject.getUrl() == null) {
+                    throw new SysException(ResponseCode.FAIL_UPLOAD);
+                }
+                picsList.add(storedObject.getUrl());
             }
             OauthQo qo = new OauthQo();
             qo.setPics(picsList);
@@ -168,6 +176,12 @@ public class OauthController {
     @PostMapping("/oauth/audit")
     public String userAudit(Long id, String flag) {
         throw new SysException(ResponseCode.FAIL_VAL);
+    }
+
+    private boolean isHttpUrl(String value) {
+        if (value == null) return false;
+        String text = value.trim().toLowerCase();
+        return text.startsWith("http://") || text.startsWith("https://");
     }
 
 }

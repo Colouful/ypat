@@ -5,10 +5,12 @@ import com.ypat.ResponseCode;
 import com.ypat.SysException;
 import com.ypat.comm.Const;
 import com.ypat.comm.ImageConst;
-import com.ypat.config.SystemConfig;
 import com.ypat.enums.MessType;
 import com.ypat.enums.YpatStatus;
 import com.ypat.service.YpatServiceClient;
+import com.ypat.storage.StorageBizPath;
+import com.ypat.storage.StorageService;
+import com.ypat.storage.StoredObject;
 import com.ypat.third.wxmess.WxMessClient;
 import com.ypat.util.*;
 import org.apache.tomcat.util.codec.binary.Base64;
@@ -35,9 +37,7 @@ public class YpatInfoController {
     @Autowired
     private YpatServiceClient ypatServiceClient;
     @Autowired
-    private FastDFSClient fastDFSClient;
-    @Autowired
-    private SystemConfig systemConfig;
+    private StorageService storageService;
     @Autowired
     private WxMessClient wxMessClient;
     @Autowired
@@ -66,9 +66,11 @@ public class YpatInfoController {
         if (pics != null && pics.length > 0) {
             for (int i = 0; i < pics.length; i++) {
                 MultipartFile uploadfile = pics[i];
-                // 保存文件
-                String fileId = fastDFSClient.uploanFile1(uploadfile.getInputStream(), uploadfile.getOriginalFilename());
-                picsList.add(systemConfig.getFdfs_path()+fileId);
+                StoredObject storedObject = storageService.upload(uploadfile.getInputStream(), uploadfile.getOriginalFilename(), uploadfile.getContentType(), StorageBizPath.YPAT);
+                if (storedObject == null || storedObject.getUrl() == null) {
+                    throw new SysException(ResponseCode.FAIL_UPLOAD);
+                }
+                picsList.add(storedObject.getUrl());
             }
         }
         ypatInfoQo.setUserid(Long.parseLong(UserUtil.getUserId()));
@@ -77,7 +79,7 @@ public class YpatInfoController {
     }
 
     @PostMapping("/ypat/submit")
-    public String submit(@Valid YpatInfoQo ypatInfoQo) {
+    public String submit(@Valid YpatInfoQo ypatInfoQo) throws IOException {
         logger.info("约拍申请输入："+ypatInfoQo);
         if(ypatInfoQo.getPatdate()==null){
             throw new RuntimeException("patdate不能为空");
@@ -87,13 +89,17 @@ public class YpatInfoController {
         if (pics != null && pics.size() > 0) {
             for (int i = 0; i < pics.size(); i++) {
                 String fileBase64 = pics.get(i);
-                // 保存文件
-                if(fileBase64.indexOf("data:image") < 0) {
-                    byte[] bytes = Base64.decodeBase64(fileBase64);
+                if (isHttpUrl(fileBase64)) {
+                    picsList.add(fileBase64.trim());
+                } else {
+                    byte[] bytes = Base64.decodeBase64(stripBase64Prefix(fileBase64));
                     InputStream inputStream = new ByteArrayInputStream(bytes);
                     InputStream waterStream = imageMarkUtil.waterMake(inputStream);
-                    String fileId = fastDFSClient.uploanFile1(waterStream, ImageConst.IMAGE_TYPE);
-                    picsList.add(systemConfig.getFdfs_path()+fileId);
+                    StoredObject storedObject = storageService.upload(waterStream, ImageConst.IMAGE_TYPE, "image/jpeg", StorageBizPath.YPAT);
+                    if (storedObject == null || storedObject.getUrl() == null) {
+                        throw new SysException(ResponseCode.FAIL_UPLOAD);
+                    }
+                    picsList.add(storedObject.getUrl());
                 }
             }
         } else {
@@ -137,5 +143,17 @@ public class YpatInfoController {
     @ResponseBody
     public String upRecom(Long id, String recomflag) {
         throw new SysException(ResponseCode.FAIL_VAL);
+    }
+
+    private boolean isHttpUrl(String value) {
+        if (value == null) return false;
+        String text = value.trim().toLowerCase();
+        return text.startsWith("http://") || text.startsWith("https://");
+    }
+
+    private String stripBase64Prefix(String value) {
+        if (value == null) return "";
+        int comma = value.indexOf(',');
+        return comma >= 0 ? value.substring(comma + 1) : value;
     }
 }

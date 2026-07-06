@@ -70,6 +70,21 @@ public class AdminYpatControllerSourceTest {
     }
 
     @Test
+    public void adminYpatSubmitUsesStorageServiceForAvatarAndWatermarkedWorks() throws IOException {
+        String source = readSource(
+                "src/main/java/com/ypat/controller/AdminYpatController.java",
+                "backend/system-wap/src/main/java/com/ypat/controller/AdminYpatController.java",
+                "AdminYpatController.java should exist");
+
+        assertTrue(source.contains("private StorageService storageService"));
+        assertTrue(source.contains("storageService.upload(file.getInputStream(), ImageConst.IMAGE_TYPE, file.getContentType(), StorageBizPath.AVATAR)"));
+        assertTrue(source.contains("imageMarkUtil.waterMake(inputStream)"));
+        assertTrue(source.contains("storageService.upload(waterStream, ImageConst.IMAGE_TYPE, \"image/jpeg\", StorageBizPath.YPAT)"));
+        assertFalse(source.contains("fastDFSClient.uploanFile1"));
+        assertFalse(source.contains("systemConfig.getFdfs_path() + fileId"));
+    }
+
+    @Test
     public void parseResponseResReturnsResAndWrapsMalformedResponses() throws Exception {
         AdminYpatController controller = new AdminYpatController();
 

@@ -8,14 +8,15 @@ import com.ypat.YpatInfoQo;
 import com.ypat.comm.ImageConst;
 import com.ypat.service.UserServiceClient;
 import com.ypat.service.YpatServiceClient;
+import com.ypat.storage.StorageBizPath;
+import com.ypat.storage.StorageService;
+import com.ypat.storage.StoredObject;
 import com.ypat.third.wxmess.WxMessClient;
-import com.ypat.util.FastDFSClient;
 import com.ypat.third.baidu.ai.GsonUtils;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.ypat.util.ImageMarkUtil;
-import com.ypat.config.SystemConfig;
 
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.time.DateFormatUtils;
@@ -55,13 +56,10 @@ public class AdminYpatController {
     private UserServiceClient userServiceClient;
 
     @Autowired
-    private FastDFSClient fastDFSClient;
+    private StorageService storageService;
 
     @Autowired
     private ImageMarkUtil imageMarkUtil;
-
-    @Autowired
-    private SystemConfig systemConfig;
 
     @Autowired(required = false)
     private WxMessClient wxMessClient;
@@ -201,8 +199,11 @@ public class AdminYpatController {
         // 1. 创建临时用户（头像）
         UserQo userQo = new UserQo();
         if (file != null && !file.isEmpty()) {
-            String fileId = fastDFSClient.uploanFile1(file.getInputStream(), ImageConst.IMAGE_TYPE);
-            userQo.setImgpath(systemConfig.getFdfs_path() + fileId);
+            StoredObject storedObject = storageService.upload(file.getInputStream(), ImageConst.IMAGE_TYPE, file.getContentType(), StorageBizPath.AVATAR);
+            if (storedObject == null || storedObject.getUrl() == null) {
+                throw new SysException(ResponseCode.FAIL_UPLOAD);
+            }
+            userQo.setImgpath(storedObject.getUrl());
         }
         userQo.setNickname(ypatInfoQo.getNickname());
         userQo.setGender(ypatInfoQo.getGender());
@@ -218,8 +219,11 @@ public class AdminYpatController {
             for (MultipartFile multipartFile : files) {
                 InputStream inputStream = multipartFile.getInputStream();
                 InputStream waterStream = imageMarkUtil.waterMake(inputStream);
-                String fileId = fastDFSClient.uploanFile1(waterStream, ImageConst.IMAGE_TYPE);
-                picsList.add(systemConfig.getFdfs_path() + fileId);
+                StoredObject storedObject = storageService.upload(waterStream, ImageConst.IMAGE_TYPE, "image/jpeg", StorageBizPath.YPAT);
+                if (storedObject == null || storedObject.getUrl() == null) {
+                    throw new SysException(ResponseCode.FAIL_UPLOAD);
+                }
+                picsList.add(storedObject.getUrl());
             }
         }
         if (picsList.isEmpty()) {
