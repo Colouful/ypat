@@ -1,0 +1,104 @@
+<h2>会员闭环一期设计：后端接口与支付流</h2>
+<p class="subtitle">目标：接口鉴权清晰，支付与账务事务一致，提交约拍扣豆由后端统一计算。</p>
+
+<div class="section">
+  <h3>接口分组</h3>
+  <div class="cards">
+    <div class="card">
+      <div class="card-body">
+        <h3>公开接口</h3>
+        <p>GET /member/plans：套餐列表。允许未登录访问，用于会员页展示。</p>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-body">
+        <h3>登录接口</h3>
+        <p>/member/status、/member/order/create、/member/orders、/member/benefit/quote 均需要 Token。</p>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-body">
+        <h3>后台接口</h3>
+        <p>/admin/member/plans、/admin/member/rules、/admin/member/users、/admin/member/logs 需要管理员 Token。</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h3>支付开通流</h3>
+  <div class="mockup">
+    <div class="mockup-header">微信支付成功后的后端事务</div>
+    <div class="mockup-body">
+      <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:10px;text-align:center">
+        <div class="placeholder">创建待支付订单</div>
+        <div class="placeholder">微信统一下单</div>
+        <div class="placeholder">微信回调验签</div>
+        <div class="placeholder">订单置为已支付</div>
+        <div class="placeholder">开通会员 + 发豆 + 日志</div>
+      </div>
+      <p style="margin-top:14px;color:#667085;font-size:14px">
+        回调必须幂等：只允许 status=待支付 的订单变为已支付。重复回调返回成功但不重复发放会员和拍拍豆。
+      </p>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h3>提交约拍扣豆流</h3>
+  <div class="mockup">
+    <div class="mockup-header">同一套 BenefitCalculator 供预估与真实提交使用</div>
+    <div class="mockup-body">
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;text-align:center">
+        <div class="placeholder">读取原价<br>系统参数 5</div>
+        <div class="placeholder">读取用户会员<br>BASIC 是否有效</div>
+        <div class="placeholder">读取权益规则<br>优惠 2</div>
+        <div class="placeholder">返回/扣减<br>实扣 3</div>
+      </div>
+      <p style="margin-top:14px;color:#667085;font-size:14px">
+        预估接口只展示，不扣款；提交接口重新计算并扣款，防止前端篡改优惠金额。
+      </p>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h3>异常与边界</h3>
+  <div class="pros-cons">
+    <div class="pros">
+      <h4>必须处理</h4>
+      <ul>
+        <li>套餐下架后不能创建新订单</li>
+        <li>订单创建后锁定价格和赠送豆</li>
+        <li>支付成功但回调延迟时前端展示确认中</li>
+        <li>会员过期时不再享受优惠</li>
+        <li>后台取消会员后下次预估/提交立即失效</li>
+      </ul>
+    </div>
+    <div class="cons">
+      <h4>一期不做</h4>
+      <ul>
+        <li>自动退款</li>
+        <li>自动续费</li>
+        <li>多等级售卖</li>
+        <li>后台手改订单状态</li>
+        <li>后台手改拍拍豆余额</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h3>当前 401 修复原则</h3>
+  <div class="mockup">
+    <div class="mockup-header">/member/plans 鉴权契约</div>
+    <div class="mockup-body">
+      <div class="placeholder">
+        后端安全白名单加入 GET /member/plans；前端保持 withToken=false。
+      </div>
+      <div class="placeholder">
+        /member/status 等用户相关接口继续要求 Token，未登录返回 401 并引导登录。
+      </div>
+    </div>
+  </div>
+</div>

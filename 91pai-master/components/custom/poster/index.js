@@ -2,6 +2,7 @@ import _app from "./app.js";
 import { getSharePoster } from "./QS-SharePoster.js";
 import { authorize } from "@/common/utils";
 import { getShreUserPosterBackground } from "./QS-SharePoster";
+import config from "@/config";
 export default {
   name: "poster",
   props: {
@@ -27,6 +28,11 @@ export default {
     };
   },
   mounted() {},
+  computed: {
+    qrCodeUrl() {
+      return `${config.apiUrl}/qr/code?page=pages/home/desc/index&scene=${this.content.id}-${this.mobile}`;
+    },
+  },
   methods: {
     nextImg() {
       if (this.content.pics.length > 1) {
@@ -127,7 +133,7 @@ export default {
                 },
                 {
                   type: "image",
-                  url: `https://www.91qupaier.com/qr/code?page=pages/home/desc/index&scene=${this.content.id}-${this.mobile}`,
+                  url: this.qrCodeUrl,
                   alpha: 1,
                   dx: bgObj.width - newbgObj.width * 0.18,
                   dy: bgObj.height - bottomHeight + newbgObj.width * 0.02,

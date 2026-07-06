@@ -46,7 +46,7 @@ public class LoginController {
             String errMsg = String.valueOf(wxResultMap.get("errmsg"));
             return new ResponseApiBody(ResponseCode.FAIL_WX.getCode(), "微信登录失败：" + errMsg, null);
         }
-        return ResponseApiBody.success(wxResultMap);
+        return ResponseApiBody.success(wxResult);
     }
 
     @PostMapping("/user/sms/code")

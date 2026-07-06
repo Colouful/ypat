@@ -30,14 +30,11 @@
     <view v-if="config && config.showTime" class="appointment-publish-form__field">
       <text class="appointment-publish-form__label">时间</text>
       <view class="appointment-publish-form__inline">
-        <picker mode="datetime" :value="form.startTime" @change="(e: any) => form.startTime = e.detail.value" class="appointment-publish-form__picker">
-          <text class="appointment-publish-form__picker-text">{{ form.startTime || '你期望的时间' }}</text>
+        <picker mode="date" :value="form.patdate" :start="minPatdate" @change="changePatdate" class="appointment-publish-form__picker">
+          <view class="appointment-publish-form__picker-field" :class="{ 'appointment-publish-form__picker-field--placeholder': !form.patdate }">
+            {{ form.patdate || '请选择时间' }}
+          </view>
         </picker>
-        <text class="appointment-publish-form__sep">至</text>
-        <picker mode="datetime" :value="form.endTime" @change="(e: any) => form.endTime = e.detail.value" class="appointment-publish-form__picker">
-          <text class="appointment-publish-form__picker-text">{{ form.endTime || '' }}</text>
-        </picker>
-        <text class="appointment-publish-form__hint">（选填）</text>
       </view>
     </view>
 
@@ -67,15 +64,20 @@
     </view>
 
     <!-- 面向地区 -->
-    <view class="appointment-publish-form__field appointment-publish-form__field--link" @tap="onPickRegion">
+    <view class="appointment-publish-form__field appointment-publish-form__field--link">
       <text class="appointment-publish-form__label appointment-publish-form__label--required">面向地区</text>
       <view class="appointment-publish-form__inline">
-        <text class="appointment-publish-form__value">{{ regionText || '请选择面向地区' }}</text>
-        <text v-if="config && config.allowNationwide" class="appointment-publish-form__nationwide">
+        <picker v-if="!form.isNationwide" mode="region" :value="regionValue" @change="changeRegion" class="appointment-publish-form__region-picker">
+          <view class="appointment-publish-form__picker-field" :class="{ 'appointment-publish-form__picker-field--placeholder': !regionText }">
+            {{ regionText || '请选择面向地区' }}
+          </view>
+        </picker>
+        <text v-else class="appointment-publish-form__value">全国</text>
+        <view v-if="config && config.allowNationwide" class="appointment-publish-form__nationwide" @tap.stop>
           <text>全国</text>
-          <switch :checked="form.isNationwide" @change="(e: any) => { form.isNationwide = e.detail.value; if (e.detail.value) form.region = null }" color="#23C268" />
-        </text>
-        <text class="appointment-publish-form__arrow">›</text>
+          <switch :checked="form.isNationwide" @change="changeNationwide" color="#23C268" />
+        </view>
+        <text v-if="!form.isNationwide" class="appointment-publish-form__arrow">›</text>
       </view>
     </view>
 
@@ -127,7 +129,7 @@ import MediaUploader from './MediaUploader.vue'
 import TagSelector from './TagSelector.vue'
 import { YPAT_ROLE_CONFIGS, type YpatTargetType, type YpatRoleConfig, YpatChargeWay, CHARGE_WAY_LABELS } from '@/constants/enums'
 import { getWorkTags } from '@/api/modules/dict'
-import { WORK_TAGS_FALLBACK } from '@/constants/work-tags'
+import { resolveWorkTagOptions, WORK_TAG_LIMIT } from '@/constants/work-tags'
 import { submit as submitYpat } from '@/api/modules/ypat'
 import { useMemberStore } from '@/stores/member'
 import type { WorkTag } from '@/api/types/work'
@@ -149,13 +151,13 @@ const memberStore = useMemberStore()
 const tagOptions = ref<WorkTag[]>([])
 const submitting = ref(false)
 const mediaItems = ref<MediaItem[]>([])
+const minPatdate = formatLocalDate()
 
 const form = reactive({
   describ: '',
   chargeway: YpatChargeWay.FREE as typeof YpatChargeWay[keyof typeof YpatChargeWay],
   chargeamt: '',
-  startTime: '',
-  endTime: '',
+  patdate: '',
   patarea: '',
   patslice: '',
   region: null as { province: string; city: string; area: string } | null,
@@ -178,20 +180,30 @@ onMounted(async () => {
   try {
     const res = await getWorkTags()
     const data = (res && res.data) || []
-    tagOptions.value = data || []
+    tagOptions.value = resolveWorkTagOptions(data)
   } catch (e) {
-    tagOptions.value = WORK_TAGS_FALLBACK.map((name, idx) => ({ id: idx, code: `fb_${idx}`, name }))
+    tagOptions.value = resolveWorkTagOptions([])
   }
 })
 
 const chargewayText = computed(() => CHARGE_WAY_LABELS[form.chargeway] || '')
 const memberQuote = computed(() => memberStore.submitYpatQuote)
 const creditText = computed(() => form.creditflag === '1' ? '要求对方存入保证金' : '不要求对方存入保证金')
+const regionValue = computed(() => (form.region ? [form.region.province, form.region.city, form.region.area] : []))
 const regionText = computed(() => {
   if (form.isNationwide) return '全国'
   if (!form.region) return ''
   return [form.region.province, form.region.city, form.region.area].filter(Boolean).join(' / ')
 })
+
+function formatLocalDate(offsetDays = 0): string {
+  const date = new Date()
+  date.setDate(date.getDate() + offsetDays)
+  const year = date.getFullYear()
+  const month = String(date.getMonth() + 1).padStart(2, '0')
+  const day = String(date.getDate()).padStart(2, '0')
+  return `${year}-${month}-${day}`
+}
 
 function onPickChargeway() {
   uni.showActionSheet({
@@ -203,21 +215,19 @@ function onPickChargeway() {
   })
 }
 
-function onPickRegion() {
-  if (form.isNationwide) return
-  uni.showActionSheet({
-    itemList: ['北京市 / 北京市 / 东城区', '上海市 / 上海市 / 黄浦区', '广州市 / 广东省 / 天河区', '深圳市 / 广东省 / 南山区', '杭州市 / 浙江省 / 西湖区'],
-    success: (res) => {
-      const map: any = {
-        0: { province: '北京市', city: '北京市', area: '东城区' },
-        1: { province: '上海市', city: '上海市', area: '黄浦区' },
-        2: { province: '广东省', city: '广州市', area: '天河区' },
-        3: { province: '广东省', city: '深圳市', area: '南山区' },
-        4: { province: '浙江省', city: '杭州市', area: '西湖区' },
-      }
-      form.region = map[res.tapIndex]
-    },
-  })
+function changePatdate(event: { detail: { value: string } }): void {
+  form.patdate = event.detail.value || ''
+}
+
+function changeRegion(event: { detail: { value: string[] } }): void {
+  const [province = '', city = '', area = ''] = event.detail.value
+  form.region = { province, city, area }
+  form.isNationwide = false
+}
+
+function changeNationwide(event: any): void {
+  form.isNationwide = event.detail.value
+  if (form.isNationwide) form.region = null
 }
 
 function onPickCredit() {
@@ -237,6 +247,14 @@ async function onSubmit() {
   }
   if (mediaItems.value.length === 0) {
     uni.showToast({ title: '请上传媒体', icon: 'none' })
+    return
+  }
+  if (form.selectedTagIds.length === 0) {
+    uni.showToast({ title: '请选择主题标签', icon: 'none' })
+    return
+  }
+  if (form.selectedTagIds.length > WORK_TAG_LIMIT) {
+    uni.showToast({ title: `标签最多选择 ${WORK_TAG_LIMIT} 个`, icon: 'none' })
     return
   }
   if (!form.region && !form.isNationwide) {
@@ -268,7 +286,7 @@ async function onSubmit() {
       patstyle: form.selectedTagIds.join(','),
       creditflag: '0',
       realnameflag: '0',
-      patdate: form.startTime || new Date().toISOString().slice(0, 10),
+      patdate: form.patdate || formatLocalDate(),
       pics,
     }
     if (form.region) {
@@ -358,10 +376,11 @@ async function onSubmit() {
   }
   &__inline {
     flex: 1;
+    min-width: 0;
     display: flex;
     align-items: center;
     gap: 12rpx;
-    flex-wrap: wrap;
+    justify-content: flex-end;
   }
   &__textarea {
     width: 100%;
@@ -378,9 +397,13 @@ async function onSubmit() {
   }
   &__value {
     flex: 1;
+    min-width: 0;
     text-align: right;
     font-size: 28rpx;
     color: $color-text-primary;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
   &__arrow {
     color: $color-text-helper;
@@ -396,17 +419,31 @@ async function onSubmit() {
   }
   &__picker {
     flex: 1;
+    min-width: 0;
     height: 56rpx;
     line-height: 56rpx;
   }
-  &__picker-text {
+  &__region-picker {
+    flex: 1;
+    min-width: 0;
+  }
+  &__picker-field {
+    width: 100%;
     font-size: 28rpx;
     color: $color-text-primary;
+    text-align: right;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    &--placeholder {
+      color: $color-text-helper;
+    }
   }
   &__nationwide {
     display: flex;
     align-items: center;
     gap: 8rpx;
+    flex-shrink: 0;
     color: $color-text-primary;
     font-size: 28rpx;
   }

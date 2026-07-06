@@ -22,7 +22,7 @@
                     <view class="name">{{`${content.userQo.nickname}/${content.city}`}}</view>
                     <view class="title">{{`${content.targetTxt} · ${content.chargewayTxt}`}}</view>
                   </view>
-                  <image :src="`https://www.91qupaier.com/qr/code?page=pages/home/desc/index&scene=${content.id}-${mobile}`" mode="aspectFit" class="qr-img" />
+                  <image :src="qrCodeUrl" mode="aspectFit" class="qr-img" />
                 </view>
                 <view class="logo-img-box">
                   <image src="/static/images/poster/logo-img.png" mode="widthFix" class="logo-img" />

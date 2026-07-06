@@ -114,7 +114,7 @@ export default {
       return {
         title: `好友{${this.userInfo.nickname}}邀你一起来爱去拍，拍出最美的你`,
         /* #ifdef MP-BAIDU */
-        imageUrl: "https://www.91qupaier.com/static/images/aiqupai.png",
+        imageUrl: "/static/images/poster/shareimg.png",
         /* #endif */
         /* #ifdef MP-WEIXIN */
         imageUrl: "/static/images/mine/invite_bg.png",

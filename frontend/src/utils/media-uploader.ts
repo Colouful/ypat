@@ -41,6 +41,12 @@ export function chooseVideo(): Promise<UniApp.ChooseVideoSuccess> {
   })
 }
 
+export function normalizeUploadProgress(progress: number): number {
+  if (!Number.isFinite(progress)) return 0
+  const percent = progress > 0 && progress < 1 ? progress * 100 : progress
+  return Math.max(0, Math.min(100, Math.round(percent)))
+}
+
 /**
  * 上传图片（带重试）
  */

@@ -65,7 +65,7 @@ import MediaUploader from './MediaUploader.vue'
 import TagSelector from './TagSelector.vue'
 import { getWorkTags } from '@/api/modules/dict'
 import { submit as submitWork } from '@/api/modules/work'
-import { WORK_TAGS_FALLBACK, WORK_TAG_LIMIT } from '@/constants/work-tags'
+import { resolveWorkTagOptions, WORK_TAG_LIMIT } from '@/constants/work-tags'
 import type { WorkTag } from '@/api/types/work'
 import type { MediaItem } from '@/api/types/media'
 
@@ -89,9 +89,9 @@ onMounted(async () => {
   try {
     const res = await getWorkTags()
     const data = (res && res.data) || []
-    tagOptions.value = data || []
+    tagOptions.value = resolveWorkTagOptions(data)
   } catch (e) {
-    tagOptions.value = WORK_TAGS_FALLBACK.map((name, idx) => ({ id: idx, code: `fb_${idx}`, name }))
+    tagOptions.value = resolveWorkTagOptions([])
   }
 })
 

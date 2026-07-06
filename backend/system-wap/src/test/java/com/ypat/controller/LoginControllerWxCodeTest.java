@@ -32,8 +32,7 @@ public class LoginControllerWxCodeTest {
         ResponseApiBody response = controller.code("valid-code");
 
         assertEquals(ResponseCode.SUCCESS.getCode(), response.getCode());
-        assertEquals("openid-1", ((java.util.Map) response.getRes()).get("openid"));
-        assertEquals("session-1", ((java.util.Map) response.getRes()).get("session_key"));
+        assertEquals(wxResponse, response.getRes());
     }
 
     private static class FakeWXPayClient extends WXPayClient {

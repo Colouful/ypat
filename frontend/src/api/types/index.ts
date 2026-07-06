@@ -245,7 +245,7 @@ export interface ProductListParams extends PageParams {
 
 export interface CreateOrderParams {
   type: string
-  productid: number
+  productid?: number
   total_fee: number
 }
 

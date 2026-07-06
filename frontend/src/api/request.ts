@@ -41,6 +41,7 @@ interface UploadConfig {
   showLoading?: boolean
   showError?: boolean
   withToken?: boolean
+  onProgress?: (event: { progress: number; totalBytesSent: number; totalBytesExpectedToSend: number }) => void
 }
 
 type RequestBody = string | ArrayBuffer | Record<string, unknown> | undefined
@@ -368,6 +369,7 @@ export function upload<T = unknown>(config: UploadConfig): Promise<ApiResult<T>>
     showLoading = true,
     showError = true,
     withToken = true,
+    onProgress,
   } = config
 
   const headers: Record<string, string> = { ...header }
@@ -378,7 +380,7 @@ export function upload<T = unknown>(config: UploadConfig): Promise<ApiResult<T>>
   if (showLoading) uni.showLoading({ title: '上传中...', mask: true })
 
   return new Promise<ApiResult<T>>((resolve, reject) => {
-    uni.uploadFile({
+    const task = uni.uploadFile({
       url: url.startsWith('http') ? url : `${envConfig.apiBaseUrl}${url}`,
       filePath,
       name,
@@ -400,6 +402,9 @@ export function upload<T = unknown>(config: UploadConfig): Promise<ApiResult<T>>
       },
       complete: () => { if (showLoading) uni.hideLoading() },
     })
+    if (onProgress && task && typeof task.onProgressUpdate === 'function') {
+      task.onProgressUpdate(onProgress)
+    }
   })
 }
 

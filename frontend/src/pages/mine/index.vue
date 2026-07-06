@@ -5,10 +5,10 @@
         <view class="mine-top__icon" @tap="goCenter">
           <KeepIcon name="menu" :size="42" />
         </view>
-        <view class="mine-top__mail" @tap="goMessage">
+        <!-- <view class="mine-top__mail" @tap="goMessage">
           <KeepIcon name="mail" :size="42" />
           <text v-if="unreadCount > 0" class="mine-top__badge">{{ unreadCount > 9 ? '9+' : unreadCount }}</text>
-        </view>
+        </view> -->
       </view>
 
       <template v-if="isLoggedIn">
@@ -23,25 +23,26 @@
               <text v-if="genderLabel" class="mine-head__gender">{{ genderLabel }}</text>
             </view>
             <view class="mine-head__stats">
-              <text>发布 <text class="mine-head__stat-num">{{ userInfo?.pubtimes || 0 }}</text></text>
+              <!-- <text>发布 <text class="mine-head__stat-num">{{ userInfo?.pubtimes || 0 }}</text></text>
               <text>收藏 <text class="mine-head__stat-num">{{ userInfo?.coltimes || 0 }}</text></text>
-              <text>约拍 <text class="mine-head__stat-num">{{ receivedCount || userInfo?.rectimes || 0 }}</text></text>
+              <text>约拍 <text class="mine-head__stat-num">{{ receivedCount || userInfo?.rectimes || 0 }}</text></text> -->
+              <view class="pill pill--identity" @tap.stop="goEditInfo">
+                <text>{{ professLabel || '未设置身份' }}</text>
+              </view>
+              <view class="pill" :class="{ 'pill--ok': realnameState.done }" @tap.stop="goRealname">
+                <text>{{ realnameState.done ? '已实名 ✓' : realnameState.text }}</text>
+              </view>
+              <view class="pill" :class="{ 'pill--ok': creditState.done }" @tap.stop="handleCredit">
+                <text>{{ creditState.text }}</text>
+              </view>
             </view>
           </view>
           <KeepIcon name="chevron-right" :size="36" color="#B3B8BE" />
         </view>
 
-        <view class="mine-pills">
-          <view class="pill" @tap="goEditInfo">
-            <text>{{ professLabel || '未设置身份' }}</text>
-          </view>
-          <view v-if="realnameAvailable" class="pill" :class="{ 'pill--ok': realnameState.done }" @tap="goRealname">
-            <text>{{ realnameState.done ? '已实名 ✓' : realnameState.text }}</text>
-          </view>
-          <view v-if="realnameAvailable" class="pill" :class="{ 'pill--ok': creditState.done }" @tap="handleCredit">
-            <text>{{ creditState.text }}</text>
-          </view>
-        </view>
+        <!-- <view class="mine-pills">
+          标签已移动至 mine-head__stats
+        </view> -->
 
         <view class="mine-member" @tap="goMember">
           <view class="mine-member__left">
@@ -85,7 +86,25 @@
           <view class="qgrid__icon">
             <KeepIcon name="wallet" :size="40" />
           </view>
-          <text class="qgrid__label">我的钱包</text>
+          <text class="qgrid__label">我的拍豆</text>
+        </view>
+        <view class="qgrid__item" @tap="goHomepage">
+          <view class="qgrid__icon">
+            <KeepIcon name="user" :size="40" />
+          </view>
+          <text class="qgrid__label">我的主页</text>
+        </view>
+        <view class="qgrid__item" @tap="goInvite">
+          <view class="qgrid__icon">
+            <KeepIcon name="users" :size="40" />
+          </view>
+          <text class="qgrid__label">好友邀请</text>
+        </view>
+        <view class="qgrid__item" @tap="goCredit">
+          <view class="qgrid__icon">
+            <KeepIcon name="shield" :size="40" />
+          </view>
+          <text class="qgrid__label">信用担保</text>
         </view>
       </view>
 
@@ -172,7 +191,6 @@ import { GENDER_LABELS, PROFESS_LABELS } from '@/constants/enums'
 import KeepIcon from '@/components/business/KeepIcon.vue'
 import KeepState from '@/components/business/KeepState.vue'
 import KeepTabBar from '@/components/business/KeepTabBar.vue'
-import { openMessage } from '@/utils/tab-navigation'
 import type { ParamInfo } from '@/api/types/area-types'
 
 type TabKey = 'overview' | 'apply' | 'works'
@@ -191,7 +209,6 @@ const tabs: { key: TabKey; label: string }[] = [
 ]
 
 const statusBarHeight = computed(() => appStore.statusBarHeight)
-const unreadCount = computed(() => userStore.unreadCount)
 const isLoggedIn = computed(() => userStore.isLoggedIn)
 const userInfo = computed(() => userStore.userInfo)
 const memberStatus = computed(() => memberStore.status)
@@ -217,7 +234,6 @@ const creditState = computed(() => (
     ? { text: '信用担保 ✓', done: true }
     : { text: '未信用担保', done: false }
 ))
-const realnameAvailable = computed(() => params.value?.realname !== '0')
 const memberCardText = computed(() => (
   memberStatus.value?.active
     ? `有效期至 ${formatDate(memberStatus.value.expireAt)}`
@@ -246,7 +262,7 @@ function handleCredit(): void {
     uni.showToast({ title: '已信用担保', icon: 'none' })
     return
   }
-  uni.showToast({ title: '信用担保功能待迁移', icon: 'none' })
+  goCredit()
 }
 
 async function loadPlatformParams(): Promise<void> {
@@ -283,7 +299,6 @@ async function loadReceivedCount(): Promise<void> {
 }
 
 function goLogin(): void { uni.navigateTo({ url: '/pages/login/index' }) }
-function goMessage(): void { openMessage() }
 function goCenter(): void {
   if (!requireLogin()) return
   uni.navigateTo({ url: '/pages-sub/user/center' })
@@ -291,10 +306,17 @@ function goCenter(): void {
 function goEditInfo(): void { if (requireLogin()) uni.navigateTo({ url: '/pages-sub/user/edit-info' }) }
 function goRealname(): void { if (requireLogin()) uni.navigateTo({ url: '/pages-sub/user/realname' }) }
 function goMember(): void { if (requireLogin()) uni.navigateTo({ url: '/pages-sub/user/member/index' }) }
+function goHomepage(): void {
+  if (!requireLogin()) return
+  const id = userInfo.value?.id
+  uni.navigateTo({ url: id ? `/pages-sub/user/profile?id=${id}` : '/pages-sub/user/profile' })
+}
 function goPublish(): void { if (requireLogin()) uni.navigateTo({ url: '/pages-sub/ypat/my-publish' }) }
 function goApply(): void { if (requireLogin()) uni.navigateTo({ url: '/pages-sub/ypat/my-apply' }) }
 function goFavorite(): void { if (requireLogin()) uni.navigateTo({ url: '/pages-sub/ypat/my-favorite' }) }
 function goWallet(): void { if (requireLogin()) uni.navigateTo({ url: '/pages-sub/user/wallet' }) }
+function goInvite(): void { if (requireLogin()) uni.navigateTo({ url: '/pages-sub/user/invite' }) }
+function goCredit(): void { if (requireLogin()) uni.navigateTo({ url: '/pages-sub/user/credit' }) }
 
 onShow(() => {
   void loadMineData()
@@ -408,7 +430,9 @@ onPullDownRefresh(async () => {
 
 .mine-head__stats {
   display: flex;
-  gap: 28rpx;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 14rpx;
   margin-top: 14rpx;
   color: $color-text-secondary;
   font-size: 26rpx;
@@ -437,6 +461,14 @@ onPullDownRefresh(async () => {
   box-shadow: $shadow-keep-card;
   font-size: 24rpx;
   font-weight: 800;
+}
+
+.pill--identity {
+  padding: 6rpx 18rpx;
+  color: $color-primary-dark;
+  background: $color-primary-light;
+  box-shadow: none;
+  font-size: 22rpx;
 }
 
 .pill--ok {
@@ -493,19 +525,21 @@ onPullDownRefresh(async () => {
 }
 
 .mine-qgrid {
-  display: flex;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  row-gap: 28rpx;
   margin-top: 28rpx;
-  padding: 32rpx 0;
+  padding: 32rpx 0 30rpx;
   border-radius: $radius-keep-card;
   background: #fff;
   box-shadow: $shadow-keep-card;
 }
 
 .qgrid__item {
-  flex: 1;
   @include flex-column;
   align-items: center;
   gap: 12rpx;
+  min-width: 0;
   color: $color-text-primary;
 }
 

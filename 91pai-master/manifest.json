@@ -69,7 +69,7 @@
             "disableHostCheck" : true,
             "proxy" : {
                 "/dpc" : {
-                    "target" : "https://www.91qupaier.com",
+                    "target" : "http://127.0.0.1:8081",
                     "changeOrigin" : true,
                     "secure" : false,
                     "pathRewrite" : {
@@ -94,7 +94,7 @@
                 }
             }
         },
-        "domain" : "https://www.m.91qupaier.com",
+        "domain" : "http://127.0.0.1:8000",
         "router" : {
             "mode" : "history"
         },

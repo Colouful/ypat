@@ -12,7 +12,7 @@ export function normalizeImageUrl(path: string | null | undefined): string {
   }
   // 去除开头多余的斜杠
   const cleanPath = path.replace(/^\/+/, '')
-  return `${envConfig.imageBaseUrl}${cleanPath}`
+  return `${envConfig.imageBaseUrl}/${cleanPath}`
 }
 
 /**

@@ -1,6 +1,7 @@
 export interface EnvConfig {
   apiBaseUrl: string
   imageBaseUrl: string
+  imageUploadApiBaseUrl: string
   env: 'development' | 'staging' | 'production'
 }
 
@@ -102,16 +103,19 @@ function getEnvConfig(): EnvConfig {
     import.meta.env.VITE_IMAGE_BASE_URL
       || (rawApiBaseUrl ? apiBaseUrl : DEFAULT_DEVELOPMENT_IMAGE_BASE_URL),
   )
+  const imageUploadApiBaseUrl = normalizeBaseUrl(import.meta.env.VITE_IMAGE_UPLOAD_API_BASE_URL || apiBaseUrl)
 
   if (env === 'staging') {
     assertSecureRemoteUrl('staging', '图片地址', imageBaseUrl)
+    assertSecureRemoteUrl('staging', '图片上传地址', imageUploadApiBaseUrl)
   }
 
   if (env === 'production') {
     assertSecureRemoteUrl('production', '图片地址', imageBaseUrl)
+    assertSecureRemoteUrl('production', '图片上传地址', imageUploadApiBaseUrl)
   }
 
-  return { apiBaseUrl, imageBaseUrl, env }
+  return { apiBaseUrl, imageBaseUrl, imageUploadApiBaseUrl, env }
 }
 
 export const envConfig = getEnvConfig()

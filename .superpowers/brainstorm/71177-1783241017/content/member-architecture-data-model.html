@@ -1,0 +1,102 @@
+<h2>会员闭环一期设计：架构与数据模型</h2>
+<p class="subtitle">方案 B：规则化会员闭环。套餐卖价格和时长，等级决定权益，权益按业务场景配置。</p>
+
+<div class="section">
+  <h3>系统关系</h3>
+  <div class="mockup">
+    <div class="mockup-header">数据流：用户开通会员与提交约拍优惠</div>
+    <div class="mockup-body">
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;align-items:stretch">
+        <div class="placeholder" style="min-height:120px">
+          小程序前端<br>
+          会员页 / 我的页 / 发布约拍
+        </div>
+        <div class="placeholder" style="min-height:120px">
+          system-wap<br>
+          登录鉴权 / 支付下单 / 提交约拍
+        </div>
+        <div class="placeholder" style="min-height:120px">
+          system-domain<br>
+          会员服务 / 权益规则 / 扣豆计算
+        </div>
+        <div class="placeholder" style="min-height:120px">
+          管理后台<br>
+          套餐 / 权益 / 用户会员 / 日志
+        </div>
+        <div class="placeholder" style="min-height:120px">
+          微信支付<br>
+          统一下单 / 支付回调
+        </div>
+        <div class="placeholder" style="min-height:120px">
+          拍拍豆账务<br>
+          用户余额 / 收支记录
+        </div>
+      </div>
+      <p style="margin-top:14px;color:#667085;font-size:14px">
+        支付成功后只走一个后端事务：订单置为已支付 → 开通/续期会员 → 发放赠送拍拍豆 → 写收支记录 → 写操作日志。
+        提交约拍时由后端读取 BASIC 权益规则，计算原价、优惠和实扣。
+      </p>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h3>核心表</h3>
+  <div class="cards">
+    <div class="card">
+      <div class="card-body">
+        <h3>member_plan</h3>
+        <p>套餐：名称、时长、售价、划线价、赠送拍拍豆、绑定等级、上下架、排序。</p>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-body">
+        <h3>member_level</h3>
+        <p>等级：一期内置 BASIC，保留展示名、状态和说明，未来可扩展 PRO。</p>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-body">
+        <h3>member_benefit_rule</h3>
+        <p>权益规则：等级 + 场景 + 优惠类型 + 优惠数量。提交约拍先接入。</p>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-body">
+        <h3>user_member</h3>
+        <p>用户会员状态：当前等级、到期时间、来源订单、是否有效。</p>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-body">
+        <h3>member_order</h3>
+        <p>会员订单：锁定套餐快照、支付状态、微信流水、赠送豆数量。</p>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-body">
+        <h3>member_operation_log</h3>
+        <p>操作日志：后台赠送、延长、取消、支付开通均记录操作者、原因和前后值。</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h3>提交约拍扣豆规则</h3>
+  <div class="mockup">
+    <div class="mockup-header">示例：原价 5 个，BASIC 优惠 2 个，实扣 3 个</div>
+    <div class="mockup-body">
+      <div style="display:flex;gap:12px;align-items:center;justify-content:space-between">
+        <div class="placeholder" style="flex:1">原价<br><strong>5</strong></div>
+        <div style="font-size:22px;color:#98A2B3">−</div>
+        <div class="placeholder" style="flex:1">会员优惠<br><strong>2</strong></div>
+        <div style="font-size:22px;color:#98A2B3">=</div>
+        <div class="placeholder" style="flex:1">实扣<br><strong>3</strong></div>
+      </div>
+      <p style="margin-top:14px;color:#667085;font-size:14px">
+        计算在后端完成，前端只展示结果。实扣最低值建议配置为 0，避免会员权益大于原价时报错。
+      </p>
+    </div>
+  </div>
+</div>

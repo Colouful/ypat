@@ -14,7 +14,7 @@ import KeepPageNav from '@/components/business/KeepPageNav.vue'
 import WorkFilterPanel from '@/components/business/WorkFilterPanel.vue'
 
 const visible = ref(false)
-const filterValue = ref({ region: '', gender: '', profession: '' })
+const filterValue = ref({ region: '', regionLabel: '', gender: '', profession: '' })
 
 onMounted(() => {
   visible.value = true
@@ -24,7 +24,7 @@ function onConfirm() {
   uni.navigateBack()
 }
 function onReset() {
-  filterValue.value = { region: '', gender: '', profession: '' }
+  filterValue.value = { region: '', regionLabel: '', gender: '', profession: '' }
 }
 </script>
 

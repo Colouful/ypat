@@ -1,13 +1,15 @@
 <template>
   <view v-if="visible" class="work-filter" @tap="onMaskTap">
     <view class="work-filter__panel" @tap.stop>
-      <view class="work-filter__row">
-        <text class="work-filter__row-label">选择地区</text>
-        <view class="work-filter__row-value">
-          <text>{{ regionLabel || '全部' }}</text>
-          <text class="work-filter__row-arrow">›</text>
+      <picker mode="region" :value="regionPickerValue" @change="changeRegion">
+        <view class="work-filter__row">
+          <text class="work-filter__row-label">选择地区</text>
+          <view class="work-filter__row-value">
+            <text>{{ regionLabel || '全部' }}</text>
+            <text class="work-filter__row-arrow">›</text>
+          </view>
         </view>
-      </view>
+      </picker>
 
       <view class="work-filter__section">
         <text class="work-filter__section-title">发布人性别</text>
@@ -44,6 +46,7 @@ import { reactive, watch, computed } from 'vue'
 
 interface FilterValue {
   region: string
+  regionLabel: string
   gender: string
   profession: string
 }
@@ -90,16 +93,24 @@ const professionOpts = [
 ]
 
 const regionLabel = computed(() => {
-  if (!local.region) return ''
-  if (local.region === 'current') return '当前地区'
-  return local.region
+  return local.regionLabel || local.region
 })
+const regionPickerValue = computed(() => {
+  if (!local.regionLabel) return []
+  return local.regionLabel.split(' / ')
+})
+
+function changeRegion(event: { detail: { value: string[] } }) {
+  const [province = '', city = '', area = ''] = event.detail.value || []
+  local.region = city
+  local.regionLabel = [province, city, area].filter(Boolean).join(' / ')
+}
 
 function onMaskTap() {
   emit('update:visible', false)
 }
 function onReset() {
-  const empty: FilterValue = { region: '', gender: '', profession: '' }
+  const empty: FilterValue = { region: '', regionLabel: '', gender: '', profession: '' }
   Object.assign(local, empty)
   emit('update:modelValue', empty)
   emit('reset')

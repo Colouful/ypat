@@ -18,6 +18,7 @@ interface UploadConfig {
   showLoading?: boolean
   showError?: boolean
   withToken?: boolean
+  onProgress?: (event: { progress: number; totalBytesSent: number; totalBytesExpectedToSend: number }) => void
 }
 
 /**

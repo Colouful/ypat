@@ -15,7 +15,7 @@
         <KeepState
           type="login"
           title="登录后管理我的信息"
-          description="登录后可查看消息、会员、收支和设置。"
+          description="登录后可管理资料、设置和反馈。"
           button-text="去登录"
           @action="goLogin"
         />
@@ -58,7 +58,6 @@ import { useUserStore } from '@/stores/user'
 import KeepIcon from '@/components/business/KeepIcon.vue'
 import KeepPageNav from '@/components/business/KeepPageNav.vue'
 import KeepState from '@/components/business/KeepState.vue'
-import { openMessage } from '@/utils/tab-navigation'
 import { isAdminOpenid } from '@/constants/admin'
 
 interface ServiceItem {
@@ -82,40 +81,18 @@ const userStore = useUserStore()
 
 const isLoggedIn = computed(() => userStore.isLoggedIn)
 const userInfo = computed(() => userStore.userInfo)
-const unreadCount = computed(() => userStore.unreadCount)
 const avatar = computed(() => userInfo.value?.imgpath || userInfo.value?.avatarurl || '/static/default-avatar.png')
 const displayName = computed(() => userInfo.value?.nickname || maskMobile(userInfo.value?.mobile) || '未设置昵称')
 const maskedMobile = computed(() => maskMobile(userInfo.value?.mobile))
 const isAdmin = computed(() => isAdminOpenid(userInfo.value?.openid))
-const messageBadge = computed(() => (unreadCount.value > 0 ? String(unreadCount.value) : ''))
 
 const groups = computed<ServiceGroup[]>(() => [
   {
-    title: '消息与关系',
-    items: [
-      { title: '我的消息', icon: 'mail', url: '/pages/message/index', badge: messageBadge.value, auth: true },
-      { title: '我的主页', icon: 'user', action: goHomepage, auth: true },
-      { title: '好友邀请', icon: 'users', desc: '邀请好友，享拍拍豆奖励', url: '/pages-sub/user/invite', auth: true },
-    ],
-  },
-  {
-    title: '账户',
-    items: [
-      { title: '会员中心', icon: 'star', desc: '开通会员享专属权益', url: '/pages-sub/user/member/index', auth: true },
-      { title: '收支记录', icon: 'chart', url: '/pages-sub/user/records', auth: true },
-    ],
-  },
-  {
-    title: '帮助与反馈',
+    title: '系统',
     items: [
       { title: '帮助中心', icon: 'help-circle', url: '/pages-sub/user/helpcenter' },
       { title: '意见反馈', icon: 'edit', url: '/pages-sub/user/feedback', auth: true },
       { title: '关于我们', icon: 'camera', url: '/pages-sub/user/about' },
-    ],
-  },
-  {
-    title: '系统',
-    items: [
       { title: '设置', icon: 'menu', url: '/pages-sub/user/settings', auth: true },
     ],
   },
@@ -153,20 +130,11 @@ function handleService(item: ServiceItem): void {
     return
   }
   if (item.url) {
-    if (item.url === '/pages/message/index') {
-      openMessage()
-      return
-    }
     uni.navigateTo({ url: item.url })
   }
 }
 
 function goLogin(): void { uni.navigateTo({ url: '/pages/login/index' }) }
-
-function goHomepage(): void {
-  const id = userInfo.value?.id
-  uni.navigateTo({ url: id ? `/pages-sub/user/profile?id=${id}` : '/pages-sub/user/profile' })
-}
 
 function handleLogout(): void {
   uni.showModal({

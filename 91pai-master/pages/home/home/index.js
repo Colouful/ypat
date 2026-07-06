@@ -245,7 +245,7 @@ export default {
     return {
       title: `爱去拍，约摄影师✖️约模特 随时随地 想约就约`,
       /* #ifdef MP-BAIDU */
-      imageUrl: "https://www.91qupaier.com/static/images/aiqupai.png",
+      imageUrl: "/static/images/poster/shareimg.png",
       /* #endif */
       /* #ifdef MP-WEIXIN */
       imageUrl: "/static/images/mine/invite_bg.png",

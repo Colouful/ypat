@@ -1,0 +1,101 @@
+<h2>会员闭环一期设计：管理后台</h2>
+<p class="subtitle">目标：运营可配置套餐和权益，客服可处理会员状态，财务/运营可查订单与日志；高风险资金字段不允许手工改。</p>
+
+<div class="section">
+  <h3>后台菜单结构</h3>
+  <div class="mockup">
+    <div class="mockup-header">建议新增：会员系统</div>
+    <div class="mockup-body">
+      <div style="display:grid;grid-template-columns:180px 1fr;gap:16px">
+        <div class="mock-sidebar">
+          审核系统<br>
+          查询系统<br>
+          订单系统<br>
+          <strong>会员系统</strong>
+        </div>
+        <div class="mock-content">
+          <div class="placeholder">套餐管理：新增 / 编辑 / 上下架 / 排序</div>
+          <div class="placeholder">权益配置：BASIC + 场景 + 优惠数量</div>
+          <div class="placeholder">会员用户：查询用户会员状态，赠送 / 延长 / 取消</div>
+          <div class="placeholder">会员订单：支付订单只读查询</div>
+          <div class="placeholder">操作日志：支付开通和后台人工操作全量留痕</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h3>页面职责</h3>
+  <div class="cards">
+    <div class="card">
+      <div class="card-body">
+        <h3>套餐管理</h3>
+        <p>配置名称、周期、价格、划线价、赠送拍拍豆、绑定 BASIC、上下架、排序。编辑只影响新订单。</p>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-body">
+        <h3>权益配置</h3>
+        <p>一期只启用提交约拍。字段：场景、优惠拍拍豆数量、最低实扣、启用状态、说明。</p>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-body">
+        <h3>会员用户</h3>
+        <p>按手机号、昵称、会员状态、到期时间筛选。可赠送、延长、取消会员，必须填写原因。</p>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-body">
+        <h3>会员订单</h3>
+        <p>只读查询支付订单、套餐快照、金额、赠送豆、微信流水、支付时间。后台不改支付状态。</p>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-body">
+        <h3>操作日志</h3>
+        <p>记录操作者、操作类型、原因、变更前后值、关联订单。支持按用户和时间筛选。</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h3>人工调整边界</h3>
+  <div class="pros-cons">
+    <div class="pros">
+      <h4>允许</h4>
+      <ul>
+        <li>赠送 BASIC 会员 N 天</li>
+        <li>延长已有会员 N 天</li>
+        <li>取消会员资格</li>
+        <li>查看订单和日志</li>
+      </ul>
+    </div>
+    <div class="cons">
+      <h4>不允许</h4>
+      <ul>
+        <li>手动修改支付订单状态</li>
+        <li>手动修改微信流水</li>
+        <li>直接改用户拍拍豆余额</li>
+        <li>删除操作日志</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h3>权限建议</h3>
+  <div class="mockup">
+    <div class="mockup-header">一期沿用现有管理员体系，但操作粒度要留字段</div>
+    <div class="mockup-body">
+      <div class="placeholder">普通管理员：查看套餐、订单、用户会员、日志</div>
+      <div class="placeholder">运营管理员：编辑套餐、编辑权益规则、上下架套餐</div>
+      <div class="placeholder">超级管理员：赠送 / 延长 / 取消会员</div>
+      <p style="margin-top:14px;color:#667085;font-size:14px">
+        如果当前后台暂时没有细粒度角色，一期可以先全部挂在管理员下，但后端日志仍保存 operatorId 和 actionType，后续补权限不需要迁移数据。
+      </p>
+    </div>
+  </div>
+</div>

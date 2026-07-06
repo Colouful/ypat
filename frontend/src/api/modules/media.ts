@@ -1,105 +1,65 @@
 /**
  * 媒体上传 API
- * 走 multipart/form-data，不走 Base64
+ * 走统一 request-adapter，确保 baseURL、Token 和错误处理与普通接口一致。
  */
+import { del, upload } from '../request-adapter'
+import { envConfig } from '@/config/env'
 import type { MediaUploadResult, UploadProgressEvent } from '../types/media'
 
+interface MediaUploadConfig {
+  url: string
+  filePath: string
+  name: string
+  showLoading: boolean
+  onProgress?: (e: UploadProgressEvent) => void
+}
+
+function unwrapUploadResult(result: { data?: MediaUploadResult | null; message?: string }): MediaUploadResult {
+  if (!result.data) throw new Error(result.message || '上传失败')
+  return result.data
+}
+
+function createUploadConfig(
+  url: string,
+  filePath: string,
+  onProgress?: (e: UploadProgressEvent) => void,
+): MediaUploadConfig {
+  const config: MediaUploadConfig = {
+    url,
+    filePath,
+    name: 'file',
+    showLoading: false,
+  }
+  if (onProgress) config.onProgress = onProgress
+  return config
+}
+
 /**
- * 通过 uni.uploadFile 上传图片
- * @param filePath 本地路径
- * @param onProgress 进度回调
+ * 通过 multipart/form-data 上传图片
  */
 export function uploadImage(
   filePath: string,
   onProgress?: (e: UploadProgressEvent) => void,
 ): Promise<MediaUploadResult> {
-  return new Promise((resolve, reject) => {
-    const token = uni.getStorageSync('ypat_token')
-    uni.uploadFile({
-      url: buildUrl('/work/upload/image'),
-      filePath,
-      name: 'file',
-      header: token ? { Token: token } : {},
-      success: (res) => {
-        try {
-          const data = JSON.parse(res.data)
-          if (data && data.code === 200) {
-            resolve((data.res || data.data) as MediaUploadResult)
-          } else {
-            reject(new Error((data && (data.msg || data.message)) || '上传失败'))
-          }
-        } catch (e) {
-          reject(e)
-        }
-      },
-      fail: (err) => reject(err),
-    } as UniApp.UploadFileOption)
-  })
+  return upload<MediaUploadResult>(
+    createUploadConfig(`${envConfig.imageUploadApiBaseUrl}/work/upload/image`, filePath, onProgress),
+  ).then(unwrapUploadResult)
 }
 
 /**
- * 上传视频
+ * 通过 multipart/form-data 上传视频
  */
 export function uploadVideo(
   filePath: string,
   onProgress?: (e: UploadProgressEvent) => void,
 ): Promise<MediaUploadResult> {
-  return new Promise((resolve, reject) => {
-    const token = uni.getStorageSync('ypat_token')
-    uni.uploadFile({
-      url: buildUrl('/work/upload/video'),
-      filePath,
-      name: 'file',
-      header: token ? { Token: token } : {},
-      success: (res) => {
-        try {
-          const data = JSON.parse(res.data)
-          if (data && data.code === 200) {
-            resolve((data.res || data.data) as MediaUploadResult)
-          } else {
-            reject(new Error((data && (data.msg || data.message)) || '上传失败'))
-          }
-        } catch (e) {
-          reject(e)
-        }
-      },
-      fail: (err) => reject(err),
-    } as UniApp.UploadFileOption)
-  })
+  return upload<MediaUploadResult>(createUploadConfig('/work/upload/video', filePath, onProgress)).then(unwrapUploadResult)
 }
 
 /**
  * 删除媒体（仅未绑定的孤儿）
  */
-export function deleteMedia(mediaId: number): Promise<{ msg: string }> {
-  return new Promise((resolve, reject) => {
-    uni.request({
-      url: buildUrl('/work/upload/media'),
-      method: 'DELETE',
-      data: { id: mediaId },
-      header: { 'content-type': 'application/x-www-form-urlencoded' },
-      success: (res) => {
-        try {
-          const data = typeof res.data === 'string' ? JSON.parse(res.data) : res.data
-          if (data && data.code === 200) {
-            resolve(data)
-          } else {
-            reject(new Error((data && (data.msg || data.message)) || '删除失败'))
-          }
-        } catch (e) {
-          reject(e)
-        }
-      },
-      fail: (err) => reject(err),
-    })
-  })
-}
-
-function buildUrl(path: string): string {
-  // 与 request-adapter 保持一致
-  const devFlag = (globalThis as any).__DEV__
-  const base = devFlag
-    ? 'http://localhost:8081'
-    : ''
-  return base + path
+export async function deleteMedia(mediaId: number): Promise<{ msg: string }> {
+  const result = await del<{ msg: string }>('/work/upload/media', { id: mediaId })
+  return result.data || { msg: result.message || '删除成功' }
 }

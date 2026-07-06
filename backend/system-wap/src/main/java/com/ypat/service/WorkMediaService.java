@@ -49,7 +49,7 @@ public class WorkMediaService {
             if (fileId == null) {
                 throw new SysException(ResponseCode.FAIL_UPLOAD);
             }
-            String url = systemConfig.getFdfs_path() + fileId;
+            String url = joinPublicFileUrl(systemConfig.getFdfs_path(), fileId);
 
             WorkMedia media = new WorkMedia();
             media.setUserId(userId);
@@ -84,7 +84,7 @@ public class WorkMediaService {
             if (fileId == null) {
                 throw new SysException(ResponseCode.FAIL_UPLOAD);
             }
-            String url = systemConfig.getFdfs_path() + fileId;
+            String url = joinPublicFileUrl(systemConfig.getFdfs_path(), fileId);
 
             WorkMedia media = new WorkMedia();
             media.setUserId(userId);
@@ -121,8 +121,8 @@ public class WorkMediaService {
         workMediaRepository.delete(media);
         try {
             String url = media.getUrl();
-            if (url != null && url.startsWith(systemConfig.getFdfs_path())) {
-                String fileId = url.substring(systemConfig.getFdfs_path().length());
+            String fileId = extractFastDfsFileId(systemConfig.getFdfs_path(), url);
+            if (fileId != null) {
                 int slash = fileId.indexOf('/');
                 if (slash > 0) {
                     String group = fileId.substring(0, slash);
@@ -133,6 +133,36 @@ public class WorkMediaService {
         } catch (RuntimeException e) {
             logger.warn("FastDFS 删除失败 mediaId={} err={}", mediaId, e.toString());
         }
+    }
+
+    static String joinPublicFileUrl(String publicBaseUrl, String fileId) {
+        String base = trimSlashes(publicBaseUrl, false);
+        String path = trimSlashes(fileId, true);
+        if (base == null || path == null) {
+            throw new SysException(ResponseCode.FAIL_UPLOAD, "文件访问地址未配置");
+        }
+        return base + "/" + path;
+    }
+
+    static String extractFastDfsFileId(String publicBaseUrl, String url) {
+        String base = trimSlashes(publicBaseUrl, false);
+        if (base == null || url == null || url.trim().isEmpty()) return null;
+        String text = url.trim();
+        if (!text.startsWith(base)) return null;
+        String fileId = trimSlashes(text.substring(base.length()), true);
+        return fileId != null && fileId.startsWith("group") && fileId.indexOf('/') > 0 ? fileId : null;
+    }
+
+    private static String trimSlashes(String value, boolean leading) {
+        if (value == null) return null;
+        String text = value.trim();
+        if (text.isEmpty()) return null;
+        if (leading) {
+            while (text.startsWith("/")) text = text.substring(1);
+        } else {
+            while (text.endsWith("/")) text = text.substring(0, text.length() - 1);
+        }
+        return text.isEmpty() ? null : text;
     }
 
     private void validateImage(MultipartFile file) {

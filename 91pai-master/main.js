@@ -30,7 +30,7 @@ const tui = {
       keywords: "麻豆、找模特、摄影约拍、找摄影师、爱去拍、摄影约拍、约拍、去哪约拍、摄影师",
       description:
         "爱去拍是一家专业做摄影师，模特约拍服务平台，找摄影师，找模特，约拍麻豆，随时随地，相约就约。",
-      image: ["https://www.91qupaier.com/static/images/aiqupai.png"],
+      image: ["/static/images/poster/shareimg.png"],
     });
     // #endif
   },

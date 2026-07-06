@@ -1,20 +1,22 @@
 <template>
   <view class="work-tab">
     <KeepPageNav title="作品" />
-    <scroll-view class="work-tab__categories" scroll-x>
-      <view class="work-tab__categories-row">
-        <view v-for="cat in categories" :key="cat.value"
-              :class="['work-tab__cat', { 'work-tab__cat--active': activeCategory === cat.value }]"
-              @tap="onCategoryChange(cat.value)">
-          <text :class="{ 'work-tab__cat-text--active': activeCategory === cat.value }">{{ cat.label }}</text>
+    <view class="work-tab__filter-bar">
+      <scroll-view class="work-tab__categories" scroll-x>
+        <view class="work-tab__categories-row">
+          <view v-for="cat in categories" :key="cat.value"
+                :class="['work-tab__cat', { 'work-tab__cat--active': activeCategory === cat.value }]"
+                @tap="onCategoryChange(cat.value)">
+            <text :class="{ 'work-tab__cat-text--active': activeCategory === cat.value }">{{ cat.label }}</text>
+          </view>
         </view>
-        <view class="work-tab__cat work-tab__cat--filter" @tap="filterVisible = true">
-          <KeepIcon name="sliders" :size="20" :color="filterCount > 0 ? '#23C268' : '#83888F'" />
-          <text :class="{ 'work-tab__cat-text--active': filterCount > 0 }">筛选</text>
-          <text v-if="filterCount > 0" class="work-tab__filter-badge">{{ filterCount }}</text>
-        </view>
+      </scroll-view>
+      <view class="work-tab__filter-btn" @tap="filterVisible = true">
+        <KeepIcon name="sliders" :size="20" :color="filterCount > 0 ? '#23C268' : '#83888F'" />
+        <text :class="{ 'work-tab__cat-text--active': filterCount > 0 }">筛选</text>
+        <text v-if="filterCount > 0" class="work-tab__filter-badge">{{ filterCount }}</text>
       </view>
-    </scroll-view>
+    </view>
 
     <view class="work-tab__list">
       <view class="work-tab__columns">
@@ -64,7 +66,7 @@ const categories = [
 ]
 const activeCategory = ref('')
 const filterVisible = ref(false)
-const filterValue = ref({ region: '', gender: '', profession: '' })
+const filterValue = ref({ region: '', regionLabel: '', gender: '', profession: '' })
 
 // 大数组用 shallowRef 避免深响应（不递归代理），
 // 提升瀑布流卡片渲染性能
@@ -98,9 +100,7 @@ async function load(reset = false) {
     if (activeCategory.value) params.category = activeCategory.value
     if (filterValue.value.gender) params.gender = filterValue.value.gender
     if (filterValue.value.profession) params.profession = filterValue.value.profession
-    if (filterValue.value.region === 'current' && userStore.userInfo?.city) {
-      params.city = userStore.userInfo.city
-    }
+    if (filterValue.value.region) params.city = filterValue.value.region
     const res = await getList(params)
     // wap 转发 restapi 时会双层包 res（{code,msg,res:{code,msg,res:{items,...}}}），
     // 前端 mapBackendResponse 只解一层，这里再解一层兜底；同时保证 items 永远是数组
@@ -137,7 +137,7 @@ function onCategoryChange(cat: string) {
 }
 function onFilterConfirm() { load(true) }
 function onFilterReset() {
-  filterValue.value = { region: '', gender: '', profession: '' }
+  filterValue.value = { region: '', regionLabel: '', gender: '', profession: '' }
   load(true)
 }
 function goDetail(item: WorkListItem) {
@@ -152,20 +152,28 @@ onMounted(() => load(true))
   min-height: 100vh;
   background: #FFFFFF;
   padding-bottom: calc(148rpx + env(safe-area-inset-bottom));
-  &__categories {
+  &__filter-bar {
     width: 100%;
-    white-space: nowrap;
     background: #FFFFFF;
     box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.04);
     position: sticky;
     top: 0;
     z-index: 10;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12rpx;
+    padding: 16rpx 24rpx;
+    box-sizing: border-box;
+  }
+  &__categories {
+    flex: 1;
+    min-width: 0;
+    white-space: nowrap;
   }
   &__categories-row {
     display: flex;
     align-items: center;
-    min-width: 100%;
-    padding: 16rpx 24rpx;
     gap: 12rpx;
   }
   &__cat {
@@ -185,13 +193,21 @@ onMounted(() => load(true))
       color: $color-primary-dark;
       font-weight: 600;
     }
-    &--filter {
-      margin-left: auto;
-      display: flex;
-      align-items: center;
-      gap: 6rpx;
-      background: $color-bg-chip;
-      position: relative;
+  }
+  &__filter-btn {
+    flex: none;
+    display: flex;
+    align-items: center;
+    gap: 6rpx;
+    padding: 12rpx 24rpx;
+    border-radius: 999rpx;
+    background: $color-bg-chip;
+    font-size: 28rpx;
+    color: $color-text-secondary;
+    line-height: 1;
+    position: relative;
+    &:active {
+      transform: scale(0.94);
     }
   }
   &__cat-text--active {

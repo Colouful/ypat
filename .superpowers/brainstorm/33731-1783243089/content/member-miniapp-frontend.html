@@ -1,0 +1,94 @@
+<h2>会员闭环一期设计：小程序前端</h2>
+<p class="subtitle">目标：用户看得懂会员价值，支付后状态可信，提交约拍时清楚看到会员优惠。</p>
+
+<div class="section">
+  <h3>页面入口</h3>
+  <div class="split">
+    <div class="mockup">
+      <div class="mockup-header">我的页会员卡片</div>
+      <div class="mockup-body">
+        <div class="placeholder" style="min-height:88px">
+          爱去拍 · BASIC 会员<br>
+          未开通：提交约拍可省拍拍豆<br>
+          已开通：有效期至 YYYY-MM-DD
+        </div>
+        <button class="mock-button">立即开通 / 去续费</button>
+      </div>
+    </div>
+    <div class="mockup">
+      <div class="mockup-header">发布约拍费用提示</div>
+      <div class="mockup-body">
+        <div class="placeholder">原价：5 拍拍豆</div>
+        <div class="placeholder">会员优惠：-2 拍拍豆</div>
+        <div class="placeholder"><strong>本次实扣：3 拍拍豆</strong></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h3>会员中心结构</h3>
+  <div class="mockup">
+    <div class="mockup-header">会员中心首屏</div>
+    <div class="mockup-body">
+      <div style="display:grid;grid-template-columns:1fr;gap:12px">
+        <div class="placeholder" style="min-height:88px">
+          顶部状态：未开通 / 已开通 / 已过期<br>
+          展示头像、昵称、会员有效期
+        </div>
+        <div class="placeholder">
+          套餐横向卡片：月卡 / 季卡 / 年卡<br>
+          售价、划线价、赠送拍拍豆、推荐标签
+        </div>
+        <div class="placeholder">
+          权益说明：提交约拍减免、会员标识、赠送拍拍豆
+        </div>
+        <div class="placeholder">
+          底部固定按钮：立即开通选中套餐 / 续费选中套餐
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h3>用户流程</h3>
+  <div class="mockup">
+    <div class="mockup-header">开通与使用</div>
+    <div class="mockup-body">
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;text-align:center">
+        <div class="placeholder">选择套餐</div>
+        <div class="placeholder">微信支付</div>
+        <div class="placeholder">后端确认支付</div>
+        <div class="placeholder">刷新会员状态</div>
+      </div>
+      <p style="margin-top:14px;color:#667085;font-size:14px">
+        前端不能只凭 requestPayment success 判定开通成功。必须轮询订单状态，后端确认 paid 后再展示“开通成功”。
+      </p>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h3>前端状态</h3>
+  <div class="cards">
+    <div class="card">
+      <div class="card-body">
+        <h3>memberStore</h3>
+        <p>缓存会员状态、当前权益、支付后轮询状态。登录变化时刷新。</p>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-body">
+        <h3>套餐选择</h3>
+        <p>默认选中后台推荐套餐；如无推荐，选时长最长或排序第一。</p>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-body">
+        <h3>提交约拍</h3>
+        <p>发布页调用后端预估接口显示原价、优惠、实扣；最终提交以后端扣减结果为准。</p>
+      </div>
+    </div>
+  </div>
+</div>

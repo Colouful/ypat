@@ -58,7 +58,7 @@ import {
   chooseImages, chooseVideo,
   uploadImageWithRetry, uploadVideoWithRetry,
   MAX_IMAGE_COUNT, MAX_VIDEO_COUNT, MAX_IMAGE_TOTAL_SIZE, MAX_VIDEO_SIZE,
-  checkImageTotalSize,
+  checkImageTotalSize, normalizeUploadProgress,
 } from '@/utils/media-uploader'
 
 const props = withDefaults(defineProps<{
@@ -164,10 +164,10 @@ async function uploadOne(item: MediaItem, isVideo: boolean, idx?: number) {
   updateItem(updated)
   const result = isVideo
     ? await uploadVideoWithRetry(updated, (e) => {
-        updateItem({ ...updated, progress: Math.round((e.progress || 0) * 100) })
+        updateItem({ ...updated, progress: normalizeUploadProgress(e.progress || 0) })
       })
     : await uploadImageWithRetry(updated, (e) => {
-        updateItem({ ...updated, progress: Math.round((e.progress || 0) * 100) })
+        updateItem({ ...updated, progress: normalizeUploadProgress(e.progress || 0) })
       })
   updateItem(result)
 }
