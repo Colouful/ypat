@@ -11,6 +11,7 @@ public class CosStoragePropertiesTest {
     @Test
     public void providerDefaultsToFastdfsWhenBlank() {
         CosStorageProperties properties = new CosStorageProperties();
+        properties.setProvider("   ");
         assertEquals("fastdfs", properties.normalizedProvider());
         assertFalse(properties.isCosEnabled());
     }
