@@ -63,6 +63,10 @@ public class YpatInfo implements java.io.Serializable{
     private String reason;
     private Integer isNationwide;
     private Long workId;
+    @Column(name = "data_flag")
+    private String dataFlag;
+    @Column(name = "internal_batch_no")
+    private String internalBatchNo;
 
     public Long getId() {
         return id;
@@ -278,5 +282,21 @@ public class YpatInfo implements java.io.Serializable{
 
     public void setWorkId(Long workId) {
         this.workId = workId;
+    }
+
+    public String getDataFlag() {
+        return dataFlag;
+    }
+
+    public void setDataFlag(String dataFlag) {
+        this.dataFlag = dataFlag;
+    }
+
+    public String getInternalBatchNo() {
+        return internalBatchNo;
+    }
+
+    public void setInternalBatchNo(String internalBatchNo) {
+        this.internalBatchNo = internalBatchNo;
     }
 }

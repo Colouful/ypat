@@ -1,9 +1,17 @@
 import { describe, expect, it } from 'vitest'
 import {
+  InternalTestGenerateMode,
+  InternalTestMediaType,
+  InternalTestResourceStatus,
+  InternalTestUsageType,
   YpatChargeWay,
   YpatPatstyle,
   YpatTarget,
   WorkStatus,
+  getInternalTestGenerateModeOptions,
+  getInternalTestMediaTypeOptions,
+  getInternalTestResourceStatusOptions,
+  getInternalTestUsageTypeOptions,
   getWorkStatusOptions,
   getYpatChargeWayOptions,
   getYpatPatstyleOptions,
@@ -50,5 +58,27 @@ describe('后台发布枚举', () => {
     expect(getWorkStatusOptions().map((o) => o.value)).toEqual(['1', '2', '3', '4'])
     expect(getWorkStatusOptions().map((o) => o.label)).toEqual(['待审核', '审核通过', '审核未通过', '已下架'])
     expect(WorkStatus.OFFLINE.value).toBe('4')
+  })
+
+  it('内测数据枚举应与后端约定对齐', () => {
+    expect(InternalTestMediaType.IMAGE.value).toBe('image')
+    expect(InternalTestMediaType.VIDEO.value).toBe('video')
+    expect(getInternalTestMediaTypeOptions().map((o) => o.label)).toEqual(['图片', '视频'])
+
+    expect(InternalTestUsageType.AVATAR.value).toBe('avatar')
+    expect(InternalTestUsageType.YPAT.value).toBe('ypat')
+    expect(InternalTestUsageType.WORK.value).toBe('work')
+    expect(getInternalTestUsageTypeOptions().map((o) => o.label)).toEqual(['头像', '约拍', '作品'])
+
+    expect(InternalTestResourceStatus.ENABLED.value).toBe('enabled')
+    expect(InternalTestResourceStatus.DISABLED.value).toBe('disabled')
+    expect(getInternalTestResourceStatusOptions().map((o) => o.label)).toEqual(['启用', '停用'])
+
+    expect(InternalTestGenerateMode.CREATE_AND_GENERATE.value).toBe('create_and_generate')
+    expect(InternalTestGenerateMode.APPEND_TO_USERS.value).toBe('append_to_users')
+    expect(getInternalTestGenerateModeOptions().map((o) => o.label)).toEqual([
+      '新建用户并生成',
+      '给已有内测用户追加',
+    ])
   })
 })

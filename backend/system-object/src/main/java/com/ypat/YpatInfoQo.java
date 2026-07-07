@@ -74,6 +74,8 @@ public class YpatInfoQo extends PageQo implements java.io.Serializable {
     private String mobile;
     private String nickname;
     private String imgpath;
+    private String dataFlag;
+    private String internalBatchNo;
 
     public String getImgpath() {
         return imgpath;
@@ -81,6 +83,22 @@ public class YpatInfoQo extends PageQo implements java.io.Serializable {
 
     public void setImgpath(String imgpath) {
         this.imgpath = imgpath;
+    }
+
+    public String getDataFlag() {
+        return dataFlag;
+    }
+
+    public void setDataFlag(String dataFlag) {
+        this.dataFlag = dataFlag;
+    }
+
+    public String getInternalBatchNo() {
+        return internalBatchNo;
+    }
+
+    public void setInternalBatchNo(String internalBatchNo) {
+        this.internalBatchNo = internalBatchNo;
     }
 
     public String getMobile() {

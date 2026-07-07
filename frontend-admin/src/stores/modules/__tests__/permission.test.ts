@@ -19,4 +19,17 @@ describe('permission dynamic routes', () => {
       expect(route?.meta?.placeholder, `${path} should not use PagePlaceholder`).toBeUndefined()
     }
   })
+
+  it('maps internal test menu entries to real pages instead of placeholders', () => {
+    const store = usePermissionStore()
+    const routes = store.generateRoutes()
+    const internalTestPaths = ['internal-test/resource', 'internal-test/generator']
+
+    for (const path of internalTestPaths) {
+      const route = routes.find((item) => item.path === path)
+
+      expect(route, `${path} route should exist`).toBeTruthy()
+      expect(route?.meta?.placeholder, `${path} should not use PagePlaceholder`).toBeUndefined()
+    }
+  })
 })

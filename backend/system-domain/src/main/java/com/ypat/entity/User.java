@@ -63,6 +63,10 @@ public class User implements java.io.Serializable{
     @Temporal(TemporalType.TIMESTAMP)
     private Date birthday;
     private String channel;
+    @Column(name = "data_flag")
+    private String dataFlag;
+    @Column(name = "internal_batch_no")
+    private String internalBatchNo;
 
     public User() {
     }
@@ -297,5 +301,21 @@ public class User implements java.io.Serializable{
 
     public void setChannel(String channel) {
         this.channel = channel;
+    }
+
+    public String getDataFlag() {
+        return dataFlag;
+    }
+
+    public void setDataFlag(String dataFlag) {
+        this.dataFlag = dataFlag;
+    }
+
+    public String getInternalBatchNo() {
+        return internalBatchNo;
+    }
+
+    public void setInternalBatchNo(String internalBatchNo) {
+        this.internalBatchNo = internalBatchNo;
     }
 }
