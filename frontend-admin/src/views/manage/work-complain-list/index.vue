@@ -10,6 +10,7 @@ import {
 } from '@/api/modules/work-complain'
 
 type HandleStatus = '1' | '2'
+type DialogMode = 'detail' | 'handle'
 
 const statusOptions = [
   { label: '待处理', value: '0' },
@@ -40,10 +41,15 @@ const dialogVisible = ref(false)
 const dialogLoading = ref(false)
 const submitLoading = ref(false)
 const currentComplaint = ref<WorkComplainInfo | null>(null)
+const dialogMode = ref<DialogMode>('detail')
 const handleForm = reactive({
   status: '1' as HandleStatus,
   reason: '',
   offlineWork: true,
+})
+const dialogTitle = computed(() => {
+  if (dialogMode.value === 'detail') return '投诉详情'
+  return handleForm.status === '1' ? '处理投诉' : '驳回投诉'
 })
 
 function normalizeStatus(status?: number | string): string {
@@ -153,7 +159,17 @@ function handleStatusChange(value: HandleStatus): void {
 }
 
 async function openHandleDialog(row: WorkComplainInfo, status: HandleStatus): Promise<void> {
+  dialogMode.value = 'handle'
   resetHandleForm(status)
+  await openComplaintDialog(row)
+}
+
+async function openDetailDialog(row: WorkComplainInfo): Promise<void> {
+  dialogMode.value = 'detail'
+  await openComplaintDialog(row)
+}
+
+async function openComplaintDialog(row: WorkComplainInfo): Promise<void> {
   currentComplaint.value = row
   dialogVisible.value = true
   dialogLoading.value = true
@@ -259,9 +275,17 @@ onMounted(() => {
       </el-table-column>
       <el-table-column label="操作" width="150" align="center" fixed="right">
         <template #default="{ row }">
+          <el-button
+            type="primary"
+            link
+            size="small"
+            @click="openDetailDialog(row as WorkComplainInfo)"
+          >
+            详情
+          </el-button>
           <template v-if="isPending(row as WorkComplainInfo)">
             <el-button
-              type="primary"
+              type="success"
               link
               size="small"
               @click="openHandleDialog(row as WorkComplainInfo, '1')"
@@ -277,7 +301,6 @@ onMounted(() => {
               驳回
             </el-button>
           </template>
-          <span v-else>-</span>
         </template>
       </el-table-column>
     </el-table>
@@ -297,7 +320,7 @@ onMounted(() => {
 
     <el-dialog
       v-model="dialogVisible"
-      :title="handleForm.status === '1' ? '处理投诉' : '驳回投诉'"
+      :title="dialogTitle"
       width="640px"
       destroy-on-close
     >
@@ -347,7 +370,7 @@ onMounted(() => {
           </div>
         </div>
 
-        <el-form label-width="88px" class="handle-form">
+        <el-form v-if="dialogMode === 'handle'" label-width="88px" class="handle-form">
           <el-form-item label="处理结果">
             <el-select
               v-model="handleForm.status"
@@ -390,8 +413,15 @@ onMounted(() => {
       </div>
 
       <template #footer>
-        <el-button @click="dialogVisible = false">取消</el-button>
-        <el-button type="primary" :loading="submitLoading" @click="submitHandle">
+        <el-button @click="dialogVisible = false">
+          {{ dialogMode === 'detail' ? '关闭' : '取消' }}
+        </el-button>
+        <el-button
+          v-if="dialogMode === 'handle'"
+          type="primary"
+          :loading="submitLoading"
+          @click="submitHandle"
+        >
           确认提交
         </el-button>
       </template>
