@@ -22,6 +22,7 @@ export default {
   },
   methods: {
     checkAndShow() {
+      if (this.visible) return
       const displayDate = today()
       const lastShowDate = uni.getStorageSync(STORAGE_KEY)
       if (lastShowDate === displayDate) return

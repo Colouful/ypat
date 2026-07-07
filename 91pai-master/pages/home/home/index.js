@@ -145,14 +145,20 @@ export default {
     //  页面公用方法
     this.tui.commonFunc();
     //  页面公用方法 end
-    this.$refs.splashOverlay && this.$refs.splashOverlay.checkAndShow();
+    this.showSplashIfReady();
     if (uni.getStorageSync(localStorageObj.token)) {
       this.my_ypat_unread_count();
       this.user_get();
     }
   },
+  onReady() {
+    this.showSplashIfReady();
+  },
   mounted() {},
   methods: {
+    showSplashIfReady() {
+      this.$refs.splashOverlay && this.$refs.splashOverlay.checkAndShow();
+    },
     async loadBannerList() {
       const res = await banner_list({ page: 0, size: 5 }).catch(() => null);
       if (res && res.code === 200 && res.res && res.res.content) {
