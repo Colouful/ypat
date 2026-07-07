@@ -14,8 +14,10 @@ import {
   InternalTestResourceStatus,
   getInternalTestResourceStatusOptions,
   getInternalTestUsageTypeOptions,
+  getProfessDisplayName,
   getProfessOptions,
-  getYpatPatstyleOptions,
+  getWorkTagStyleOptions,
+  resolveWorkTagStyleName,
 } from '@/constants/enums'
 
 type ResourceForm = Omit<InternalTestResource, 'id'> & { id?: number }
@@ -206,11 +208,11 @@ function statusInfo(value?: string) {
 }
 
 function styleText(value?: string): string {
-  return getOptionLabel(getYpatPatstyleOptions(), value)
+  return resolveWorkTagStyleName(value)
 }
 
 function professText(value?: string): string {
-  return getOptionLabel(getProfessOptions(), value)
+  return getProfessDisplayName(value)
 }
 
 onMounted(fetchList)
@@ -242,7 +244,7 @@ onMounted(fetchList)
         <el-form-item label="风格">
           <el-select v-model="query.styleCode" clearable placeholder="全部" style="width: 140px">
             <el-option
-              v-for="option in getYpatPatstyleOptions()"
+              v-for="option in getWorkTagStyleOptions()"
               :key="option.value"
               :label="option.label"
               :value="option.value"
@@ -388,7 +390,7 @@ onMounted(fetchList)
         <el-form-item label="风格">
           <el-select v-model="form.styleCode" clearable placeholder="请选择风格" style="width: 100%">
             <el-option
-              v-for="option in getYpatPatstyleOptions()"
+              v-for="option in getWorkTagStyleOptions()"
               :key="option.value"
               :label="option.label"
               :value="option.value"

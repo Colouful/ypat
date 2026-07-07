@@ -123,6 +123,50 @@ export const YpatPatstyle = {
 } as const
 export const getYpatPatstyleOptions = () => Object.values(YpatPatstyle).map((o) => ({ label: o.name, value: o.value }))
 
+/** 作品主题标签风格（对应后端 WorkDictController 默认标签） */
+export const WorkTagStyle = [
+  { code: 'qinglv', name: '情侣' },
+  { code: 'shangwu', name: '商务' },
+  { code: 'minguo', name: '民国' },
+  { code: 'hanfu', name: '汉服' },
+  { code: 'yunzhao', name: '孕照' },
+  { code: 'ertong', name: '儿童摄影' },
+  { code: 'anhei', name: '暗黑' },
+  { code: 'qingxu', name: '情绪' },
+  { code: 'yejing', name: '夜景' },
+  { code: 'xiaoyuan', name: '校园' },
+  { code: 'zhuangrong', name: '妆容' },
+  { code: 'gufeng', name: '古风' },
+  { code: 'taobao', name: '淘宝' },
+  { code: 'shishang', name: '时尚' },
+  { code: 'hefu', name: '和服' },
+  { code: 'qipao', name: '旗袍' },
+  { code: 'hanxi', name: '韩系' },
+  { code: 'oumei', name: '欧美' },
+  { code: 'senxi', name: '森系' },
+  { code: 'shaonv', name: '少女' },
+  { code: 'baolilai', name: '宝丽来' },
+  { code: 'qingxin', name: '清新' },
+  { code: 'hunli', name: '婚礼' },
+  { code: 'cosplay', name: 'cosplay' },
+  { code: 'jiaopian', name: '胶片' },
+  { code: 'heibai', name: '黑白' },
+  { code: 'jishi', name: '纪实' },
+  { code: 'rixi', name: '日系' },
+  { code: 'fugu', name: '复古' },
+] as const
+export const WORK_TAG_STYLE_CODES = WorkTagStyle.map((item) => item.code)
+export const getWorkTagStyleOptions = () => WorkTagStyle.map((o) => ({ label: o.name, value: o.code }))
+export function resolveWorkTagStyleName(value?: string): string {
+  if (!value) return '-'
+
+  const workTag = WorkTagStyle.find((item) => item.code === value || item.name === value)
+  if (workTag) return workTag.name
+
+  const legacyStyle = Object.values(YpatPatstyle).find((item) => item.value === value || item.name === value)
+  return legacyStyle?.name || value
+}
+
 /** 收费方式 */
 export const YpatChargeWay = {
   FREE: { value: '0', name: '希望互勉' },
@@ -156,13 +200,26 @@ export const getGenderOptions = () => Object.values(Gender).map((o) => ({ label:
 
 /** 职业 */
 export const UserProfess = {
+  BUSINESS: { value: '6', name: '商家' },
+  PHOTOGRAPHER: { value: '0', name: '摄影师' },
+  MAKEUP: { value: '2', name: '化妆师' },
+  VIDEOGRAPHER: { value: '9', name: '摄像师' },
+  RETOUCHER: { value: '3', name: '修图师' },
   MODEL: { value: '1', name: '模特' },
-  PHOTOGRAPHER: { value: '2', name: '摄影师' },
-  MAKEUP: { value: '3', name: '化妆师' },
-  STUDIO: { value: '4', name: '影楼' },
-  OTHER: { value: '5', name: '其他' },
-}
+} as const
 export const getProfessOptions = () => Object.values(UserProfess).map((o) => ({ label: o.name, value: o.value }))
+const LegacyProfessDisplayName: Record<string, string> = {
+  '4': '个人',
+  '5': '演员',
+  '7': '其他',
+  '8': '素人模特',
+}
+export function getProfessDisplayName(value?: string): string {
+  if (!value) return '-'
+
+  const profess = Object.values(UserProfess).find((item) => item.value === value || item.name === value)
+  return profess?.name || LegacyProfessDisplayName[value] || value
+}
 
 /** 内测数据标识 */
 export const InternalTestDataFlag = {

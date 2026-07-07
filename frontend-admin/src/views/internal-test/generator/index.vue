@@ -19,7 +19,7 @@ import {
   getGenderOptions,
   getInternalTestGenerateModeOptions,
   getProfessOptions,
-  getYpatPatstyleOptions,
+  getWorkTagStyleOptions,
 } from '@/constants/enums'
 
 const contentTypeOptions = [
@@ -341,7 +341,7 @@ onMounted(() => {
         <el-form-item label="风格">
           <el-select v-model="form.styleCode" placeholder="请选择风格" style="width: 240px" @change="styleChanged">
             <el-option
-              v-for="option in getYpatPatstyleOptions()"
+              v-for="option in getWorkTagStyleOptions()"
               :key="option.value"
               :label="option.label"
               :value="option.value"
