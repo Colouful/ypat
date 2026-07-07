@@ -318,7 +318,7 @@ export default {
         this.userInfo.status !== "1"
       ) {
         this.visiable = true;
-        this.pathName = "/pages/mine/realname/index";
+        this.pathName = "/pages/mine/realname/intro/index";
         this.button = [
           {
             text: "取消",

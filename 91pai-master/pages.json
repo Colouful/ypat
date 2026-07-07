@@ -211,6 +211,16 @@
       }
     },
     {
+      "path": "pages/mine/realname/intro/index",
+      "style": {
+        "navigationBarBackgroundColor": "#fff",
+        "navigationBarTextStyle": "black",
+        "backgroundColorTop": "#fff",
+        "backgroundColorBottom": "#fff",
+        "navigationBarTitleText": "实名认证"
+      }
+    },
+    {
       "path": "pages/mine/ppd/index",
       "style": {
         "navigationBarBackgroundColor": "#2d3030",
