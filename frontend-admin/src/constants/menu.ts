@@ -38,6 +38,7 @@ export const menuConfig: MenuGroup[] = [
       { title: '实名列表', path: '/manage/user/index', component: 'manage/user-list/index' },
       { title: '产品列表', path: '/manage/product/index', component: 'manage/product-list/index' },
       { title: '作品管理', path: '/manage/work/index', component: 'manage/work-list/index' },
+      { title: '投诉治理', path: '/manage/work-complain/index', component: 'manage/work-complain-list/index' },
       { title: '文章列表', path: '/article/index', component: 'article/list/index' },
       { title: '横幅列表', path: '/banner/index', component: 'banner/list/index' },
       { title: '后台代发约拍', path: '/ypat/edit', component: 'ypat/edit/index' },
