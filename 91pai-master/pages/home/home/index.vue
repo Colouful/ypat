@@ -26,7 +26,7 @@
     </view>
 
     <view class="content-box">
-      <splash-overlay></splash-overlay>
+      <splash-overlay ref="splashOverlay"></splash-overlay>
       <home-banner :list="bannerList"></home-banner>
       <view class="tip-box">
         <view

@@ -145,6 +145,7 @@ export default {
     //  页面公用方法
     this.tui.commonFunc();
     //  页面公用方法 end
+    this.$refs.splashOverlay && this.$refs.splashOverlay.checkAndShow();
     if (uni.getStorageSync(localStorageObj.token)) {
       this.my_ypat_unread_count();
       this.user_get();

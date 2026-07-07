@@ -13,19 +13,23 @@ export default {
     return {
       visible: false,
       seconds: 3,
+      displayDate: '',
       timer: null,
     }
-  },
-  mounted() {
-    const lastShowDate = uni.getStorageSync(STORAGE_KEY)
-    if (lastShowDate === today()) return
-    this.visible = true
-    this.start()
   },
   beforeDestroy() {
     this.clear()
   },
   methods: {
+    checkAndShow() {
+      const displayDate = today()
+      const lastShowDate = uni.getStorageSync(STORAGE_KEY)
+      if (lastShowDate === displayDate) return
+      this.displayDate = displayDate
+      this.seconds = 3
+      this.visible = true
+      this.start()
+    },
     start() {
       this.clear()
       this.timer = setInterval(() => {
@@ -42,7 +46,9 @@ export default {
       }
     },
     close() {
-      uni.setStorageSync(STORAGE_KEY, today())
+      if (this.displayDate) {
+        uni.setStorageSync(STORAGE_KEY, this.displayDate)
+      }
       this.visible = false
       this.clear()
     },
