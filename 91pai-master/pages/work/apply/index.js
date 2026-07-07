@@ -1,5 +1,5 @@
 import { getUserInfo } from "@/common/utils";
-import { work_quick_apply } from "@/common/vmeitime-http";
+import { work_get, work_quick_apply } from "@/common/vmeitime-http";
 
 const SAFE_TIPS_KEY = "work_apply_safe_tips_until";
 
@@ -7,21 +7,51 @@ export default {
   data() {
     return {
       workId: "",
+      content: {},
       reason: "",
       wx: "",
       userInfo: {},
     };
   },
+  computed: {
+    author() {
+      return this.content.user || this.content.userQo || {};
+    },
+    authorAvatar() {
+      return this.author.imgpath || this.author.avatar || "/static/images/mine/mine_def_touxiang_3x.png";
+    },
+    authorName() {
+      return this.author.nickname || this.author.name || "爱去拍用户";
+    },
+    authorMeta() {
+      const profess = this.author.professTxt || this.author.professName || this.author.profess || "创作者";
+      const city = this.author.city || this.content.city || "";
+      return city ? `${profess} | ${city}` : profess;
+    },
+  },
   onLoad(options) {
     this.workId = options.workId || "";
+    this.loadDetail();
     this.showSafeTips();
   },
   async onShow() {
     this.tui.commonFunc();
     this.userInfo = await getUserInfo().catch(() => ({}));
-    this.wx = this.userInfo.wx || "";
+    this.wx = this.wx || this.userInfo.wx || "";
   },
   methods: {
+    async loadDetail() {
+      if (!this.workId) return;
+      const res = await work_get({ id: this.workId }).catch(() => null);
+      if (res && res.code === 200) {
+        this.content = res.res || {};
+      } else if (res && res.msg) {
+        this.tui.toast(res.msg);
+      }
+    },
+    goUserInfo() {
+      uni.navigateTo({ url: "/pages/mine/userInfo/index" });
+    },
     showSafeTips() {
       const until = Number(uni.getStorageSync(SAFE_TIPS_KEY) || 0);
       if (until > Date.now()) return;
@@ -45,7 +75,15 @@ export default {
         return;
       }
       if (!this.userInfo.mobile && !this.wx) {
-        this.tui.toast("请完善联系方式");
+        uni.showModal({
+          title: "请完善联系方式",
+          content: "请填写微信号，或前往个人信息页完善手机号后再提交约拍申请。",
+          confirmText: "去完善",
+          confirmColor: "#ff5361",
+          success: (res) => {
+            if (res.confirm) this.goUserInfo();
+          },
+        });
         return;
       }
       const res = await work_quick_apply({

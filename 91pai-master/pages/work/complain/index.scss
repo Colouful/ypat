@@ -20,6 +20,42 @@ page {
   margin-bottom: 24rpx;
 }
 
+.target-section {
+  margin-top: 0;
+}
+
+.target-card {
+  display: flex;
+  align-items: center;
+}
+
+.target-avatar {
+  width: 92rpx;
+  height: 92rpx;
+  border-radius: 50%;
+  background: #f0f0f0;
+}
+
+.target-main {
+  flex: 1;
+  min-width: 0;
+  margin-left: 22rpx;
+}
+
+.target-name {
+  color: #333;
+  font-size: 32rpx;
+  font-weight: 700;
+  line-height: 44rpx;
+}
+
+.target-meta {
+  margin-top: 8rpx;
+  color: #999;
+  font-size: 26rpx;
+  line-height: 36rpx;
+}
+
 .reason-grid {
   display: flex;
   flex-wrap: wrap;
@@ -105,11 +141,14 @@ page {
 }
 
 .black-btn {
-  margin: 28rpx;
-  color: #333;
-  font-size: 30rpx;
+  width: 132rpx;
+  height: 58rpx;
+  line-height: 58rpx;
+  border-radius: 32rpx;
+  color: #ff5361;
+  font-size: 26rpx;
   text-align: center;
-  text-decoration: underline;
+  background: #fff1f2;
 }
 
 .footer {
