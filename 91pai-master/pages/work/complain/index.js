@@ -80,10 +80,14 @@ export default {
         this.tui.toast("请填写投诉内容或上传证据截图");
         return;
       }
+      const complainContent = (this.complainContent || "").trim();
+      const submitReason = complainContent
+        ? `投诉原因：${this.reason}\n投诉内容：${complainContent}`
+        : `投诉原因：${this.reason}\n用户已上传证据截图`;
       const res = await work_complain({
         workId: this.workId,
-        reason: this.reason,
-        content: this.complainContent,
+        reason: submitReason,
+        content: complainContent,
         pics: this.images,
       }).catch(() => null);
       if (res && res.code === 200) {

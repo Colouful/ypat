@@ -113,7 +113,10 @@ public class WorkComplainService {
         }
 
         String targetStatus = normalizeHandleStatus(qo.getStatus());
-        workComplainRepository.updateStatus(qo.getId(), targetStatus);
+        int updated = workComplainRepository.updatePendingStatus(qo.getId(), targetStatus);
+        if (updated <= 0) {
+            throw new SysException(ResponseCode.FAIL_EXIST.getCode(), "投诉已处理");
+        }
 
         if (Boolean.TRUE.equals(qo.getOfflineWork())) {
             Work work = workRepository.findOne(complain.getWorkId());
@@ -123,8 +126,6 @@ public class WorkComplainService {
             String offlineReason = StringUtils.isBlank(qo.getReason()) ? "投诉处理下架" : qo.getReason();
             if (WorkStatus.shtg.value.equals(work.getStatus())) {
                 workService.adminOffline(work.getId(), offlineReason);
-            } else if (!WorkStatus.xj.value.equals(work.getStatus())) {
-                workRepository.updateStatusAndAuditReason(work.getId(), WorkStatus.xj.value, offlineReason);
             }
         }
     }

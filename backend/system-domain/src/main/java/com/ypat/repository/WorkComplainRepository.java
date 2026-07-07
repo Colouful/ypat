@@ -14,6 +14,6 @@ public interface WorkComplainRepository extends JpaRepository<WorkComplain, Long
     long countByWorkIdAndUserIdAndCreatedAtAfter(Long workId, Long userId, java.util.Date after);
 
     @Modifying
-    @Query("update WorkComplain c set c.status = :status where c.id = :id")
-    int updateStatus(@Param("id") Long id, @Param("status") String status);
+    @Query("update WorkComplain c set c.status = :status where c.id = :id and c.status = '0'")
+    int updatePendingStatus(@Param("id") Long id, @Param("status") String status);
 }

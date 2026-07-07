@@ -111,8 +111,12 @@ public class AdminWorkComplainControllerSourceTest {
         assertTrue(source.contains("public void adminHandle(WorkComplainQo qo)"));
         assertTrue(source.contains("qo.getOfflineWork()"));
         assertTrue(source.contains("workService.adminOffline("));
+        assertTrue(source.contains("int updated = workComplainRepository.updatePendingStatus(qo.getId(), targetStatus);"));
+        assertTrue(source.contains("if (updated <= 0)"));
+        assertTrue(source.contains("投诉已处理"));
         assertTrue(source.contains("handled"));
         assertTrue(source.contains("rejected"));
+        assertFalse(source.contains("workRepository.updateStatusAndAuditReason("));
     }
 
     @Test
@@ -123,7 +127,22 @@ public class AdminWorkComplainControllerSourceTest {
                 "WorkComplainRepository.java should exist");
 
         assertTrue(source.contains("JpaSpecificationExecutor<WorkComplain>"));
-        assertTrue(source.contains("updateStatus("));
+        assertTrue(source.contains("updatePendingStatus("));
+        assertTrue(source.contains("c.status = '0'"));
+    }
+
+    @Test
+    public void miniProgramComplaintPageCombinesReasonAndContentBeforeSubmit() throws IOException {
+        String source = readSource(
+                "../../91pai-master/pages/work/complain/index.js",
+                "91pai-master/pages/work/complain/index.js",
+                "91pai complain page should exist");
+
+        assertTrue(source.contains("const submitReason ="));
+        assertTrue(source.contains("投诉原因：${this.reason}"));
+        assertTrue(source.contains("投诉内容：${complainContent}"));
+        assertTrue(source.contains("用户已上传证据截图"));
+        assertTrue(source.contains("reason: submitReason"));
     }
 
     @Test
