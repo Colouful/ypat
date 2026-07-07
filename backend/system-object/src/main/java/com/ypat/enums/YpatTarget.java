@@ -2,7 +2,7 @@ package com.ypat.enums;
 public enum YpatTarget {
     xwgm("0","约摄影师"),
     wysf("1","约模特"),
-    spsj("2","约摄像师"),
+    xsxj("2","约摄像师"),
     sjfw("3","约商家"),
     hzsj("4","约化妆师"),
     xtsj("5","约修图师");

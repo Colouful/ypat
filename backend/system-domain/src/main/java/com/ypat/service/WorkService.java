@@ -676,13 +676,14 @@ public class WorkService {
      * 身份 → 约拍 target 映射
      * 0摄影师→0约摄影师
      * 1模特→1约模特
-     * 2妆造→4约化妆师
+     * 2化妆师→4约化妆师
      * 3修图→5约修图师
      * 4个人→1约模特（兼容）
      * 5演员→1约模特
      * 6商家→3约商家
      * 7其他→1约模特（兜底）
      * 8素人模特→1约模特
+     * 9摄像师→2约摄像师
      */
     private String mapProfessionToTarget(String profess) {
         if (profess == null) return YpatTarget.wysf.value;
@@ -692,6 +693,7 @@ public class WorkService {
             case "2": return YpatTarget.hzsj.value;
             case "3": return YpatTarget.xtsj.value;
             case "6": return YpatTarget.sjfw.value;
+            case "9": return YpatTarget.xsxj.value;
             default: return YpatTarget.wysf.value;
         }
     }

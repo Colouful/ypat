@@ -1,27 +1,33 @@
 package com.ypat.enums;
 
+import java.util.Arrays;
+import java.util.List;
+
 /**
  *
  * @author dingyinxin
  * @Descent 用户类型
  */
 public enum UserProfess {
-    sys("0","摄影师"),
-    mt("1","模特"),
-    zzs("2","妆造师"),
-    xts("3","修图师"),
-    gr("4","个人"),
-    yy("5","演员"),
-    sj("6","商家"),
-    qt("7","其他"),
-    sr("8","素人模特");
+    sys("0","摄影师", true),
+    mt("1","模特", true),
+    zzs("2","化妆师", true),
+    xts("3","修图师", true),
+    gr("4","个人", false),
+    yy("5","演员", false),
+    sj("6","商家", true),
+    qt("7","其他", false),
+    sr("8","素人模特", false),
+    sxj("9","摄像师", true);
 
     public String value;
     public String name;
+    public boolean publicOption;
 
-    UserProfess(String value, String name) {
+    UserProfess(String value, String name, boolean publicOption) {
         this.value = value;
         this.name = name;
+        this.publicOption = publicOption;
     }
 
     public static String getNameByCode(String code){
@@ -31,6 +37,10 @@ public enum UserProfess {
             }
         }
         return "";
+    }
+
+    public static List<String> getPublicValues(){
+        return Arrays.asList(sj.value, sys.value, zzs.value, sxj.value, xts.value, mt.value);
     }
 
     /**

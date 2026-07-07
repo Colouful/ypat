@@ -16,7 +16,7 @@ public class UserQo extends PageQo implements java.io.Serializable{
     private Long id;
     private String gender;
     private String nickname;
-    @Size(max = 1, message = "profess最大一位")
+    @Size(max = 2, message = "profess最大两位")
     private String profess;
     private String mobile;
     private String wx;

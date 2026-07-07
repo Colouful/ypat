@@ -64,6 +64,13 @@ public class WorkServiceAdminSourceTest {
     }
 
     @Test
+    public void mapProfessionToTargetSupportsVideographer() throws Exception {
+        String source = read("src/main/java/com/ypat/service/WorkService.java");
+
+        assertTrue(source.contains("case \"9\": return YpatTarget.xsxj.value;"));
+    }
+
+    @Test
     public void repositorySupportsAuditReasonStatusUpdate() throws Exception {
         String source = read("src/main/java/com/ypat/repository/WorkRepository.java");
 
