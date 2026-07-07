@@ -11,6 +11,8 @@ import java.io.Serializable;
 public class WorkComplainQo implements Serializable {
     private static final long serialVersionUID = 1L;
 
+    private Long id;
+
     @NotEmpty(message = "workId不能为空")
     private String workId;
 
@@ -24,6 +26,15 @@ public class WorkComplainQo implements Serializable {
     /** Service 层从 Token 注入 */
     private String userId;
 
+    /** 管理端处理状态 */
+    private String status;
+
+    /** 管理端是否关联下架作品 */
+    private Boolean offlineWork;
+
+    public Long getId() { return id; }
+    public void setId(Long id) { this.id = id; }
+
     public String getWorkId() { return workId; }
     public void setWorkId(String workId) { this.workId = workId; }
     public String getReason() { return reason; }
@@ -32,4 +43,8 @@ public class WorkComplainQo implements Serializable {
     public void setContact(String contact) { this.contact = contact; }
     public String getUserId() { return userId; }
     public void setUserId(String userId) { this.userId = userId; }
+    public String getStatus() { return status; }
+    public void setStatus(String status) { this.status = status; }
+    public Boolean getOfflineWork() { return offlineWork; }
+    public void setOfflineWork(Boolean offlineWork) { this.offlineWork = offlineWork; }
 }
