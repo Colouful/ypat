@@ -43,15 +43,17 @@ page {
 }
 
 .benefit-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  row-gap: 72rpx;
-  column-gap: 24rpx;
-  padding: 86rpx 44rpx 40rpx;
+  display: flex;
+  flex-wrap: wrap;
+  padding: 86rpx 28rpx 40rpx;
 }
 
 .benefit-item {
+  width: 50%;
   text-align: center;
+  margin-bottom: 72rpx;
+  padding: 0 12rpx;
+  box-sizing: border-box;
 }
 
 .benefit-icon {
@@ -85,7 +87,7 @@ page {
   left: 0;
   right: 0;
   bottom: 0;
-  padding: 24rpx 60rpx 54rpx;
+  padding: 24rpx 60rpx calc(54rpx + env(safe-area-inset-bottom));
   background: #fff;
 }
 

@@ -16,7 +16,6 @@
       </view>
     </view>
 
-    <view class="bottom-safe"></view>
     <view class="footer">
       <button class="start-btn" @tap="start">开始实名</button>
     </view>
