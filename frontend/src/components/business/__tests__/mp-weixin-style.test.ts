@@ -103,4 +103,20 @@ describe('mp-weixin component styles', () => {
     expect(source).toContain("import { normalizeImageUrl } from '@/api/adapters'")
     expect(source).toContain("normalizeImageUrl(item.pics?.[0]) || '/static/default-cover.png'")
   })
+
+  it('keeps media uploader multi-image updates from creating sparse arrays', () => {
+    const file = fileURLToPath(new URL('../MediaUploader.vue', import.meta.url))
+    const source = readFileSync(file, 'utf8')
+
+    expect(source).not.toContain('props.modelValue.length + i')
+    expect(source).not.toMatch(/v-for="\([^"]+\) in modelValue"/)
+    expect(source).toContain('replaceMediaItem')
+  })
+
+  it('keeps work publish fixed submit bar above scrolling form content', () => {
+    const file = fileURLToPath(new URL('../WorkPublishForm.vue', import.meta.url))
+    const source = readFileSync(file, 'utf8')
+
+    expect(source).toMatch(/&__submit\s*\{[\s\S]*position:\s*fixed;[\s\S]*z-index:\s*\d+;/)
+  })
 })

@@ -233,6 +233,7 @@ async function onSubmit() {
   &__bottom-spacer { height: 200rpx; }
   &__submit {
     position: fixed;
+    z-index: 300;
     left: 0;
     right: 0;
     bottom: 0;

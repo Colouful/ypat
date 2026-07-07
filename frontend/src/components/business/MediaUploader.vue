@@ -14,7 +14,7 @@
 
     <!-- 已选图片网格 -->
     <view v-else-if="hasImage" class="media-uploader__grid">
-      <view v-for="(item, idx) in modelValue" :key="idx" class="media-uploader__item">
+      <view v-for="(item, idx) in mediaItems" :key="item.localPath" class="media-uploader__item">
         <image class="media-uploader__image" :src="item.localPath" mode="aspectFill" />
         <view v-if="item.uploadStatus === 'uploading'" class="media-uploader__mask">
           <text class="media-uploader__progress">{{ item.progress }}%</text>
@@ -29,18 +29,18 @@
           <text class="media-uploader__remove-x">×</text>
         </view>
       </view>
-      <view v-if="modelValue.length < maxImageCount" class="media-uploader__add" @tap="onChooseImage">
+      <view v-if="mediaItems.length < maxImageCount" class="media-uploader__add" @tap="onChooseImage">
         <text class="media-uploader__add-plus">+</text>
       </view>
     </view>
 
     <!-- 已选视频 -->
-    <view v-else-if="hasVideo" class="media-uploader__video">
-      <video class="media-uploader__video-player" :src="modelValue[0].localPath" :poster="modelValue[0].thumb" controls />
-      <view v-if="modelValue[0].uploadStatus === 'uploading'" class="media-uploader__mask">
-        <text class="media-uploader__progress">{{ modelValue[0].progress }}%</text>
+    <view v-else-if="videoItem" class="media-uploader__video">
+      <video class="media-uploader__video-player" :src="videoItem.localPath" :poster="videoItem.thumb" controls />
+      <view v-if="videoItem.uploadStatus === 'uploading'" class="media-uploader__mask">
+        <text class="media-uploader__progress">{{ videoItem.progress }}%</text>
       </view>
-      <view v-else-if="modelValue[0].uploadStatus === 'failed'" class="media-uploader__mask media-uploader__mask--failed" @tap="retryUploadVideo">
+      <view v-else-if="videoItem.uploadStatus === 'failed'" class="media-uploader__mask media-uploader__mask--failed" @tap="retryUploadVideo">
         <text class="media-uploader__retry">重试</text>
       </view>
       <view class="media-uploader__remove" @tap="removeVideo">
@@ -73,10 +73,31 @@ const emit = defineEmits<{
   (e: 'change', v: MediaItem[]): void
 }>()
 
-const hasAny = computed(() => props.modelValue.length > 0)
-const hasImage = computed(() => props.modelValue.length > 0 && props.modelValue[0].type === 'IMAGE')
-const hasVideo = computed(() => props.modelValue.length > 0 && props.modelValue[0].type === 'VIDEO')
+const mediaItems = computed(() => props.modelValue.filter(isMediaItem))
+const hasAny = computed(() => mediaItems.value.length > 0)
+const hasImage = computed(() => mediaItems.value.length > 0 && mediaItems.value[0].type === 'IMAGE')
+const hasVideo = computed(() => mediaItems.value.length > 0 && mediaItems.value[0].type === 'VIDEO')
+const videoItem = computed(() => hasVideo.value ? mediaItems.value[0] : null)
 const maxImageCount = MAX_IMAGE_COUNT
+
+function isMediaItem(item: MediaItem | null | undefined): item is MediaItem {
+  return Boolean(item?.localPath && item?.type)
+}
+
+function emitMediaItems(items: MediaItem[]): MediaItem[] {
+  const next = items.filter(isMediaItem)
+  emit('update:modelValue', next)
+  emit('change', next)
+  return next
+}
+
+function replaceMediaItem(item: MediaItem, next: MediaItem, baseItems = mediaItems.value): MediaItem[] {
+  const arr = baseItems.filter(isMediaItem)
+  const target = arr.findIndex((x) => x.localPath === item.localPath)
+  if (target >= 0) arr[target] = next
+  else arr.push(next)
+  return emitMediaItems(arr)
+}
 
 async function onChooseImage() {
   // 已有视频 → 禁止选图
@@ -84,30 +105,32 @@ async function onChooseImage() {
     uni.showToast({ title: '已选择视频，请先删除视频', icon: 'none' })
     return
   }
-  const remain = MAX_IMAGE_COUNT - props.modelValue.length
+  const remain = MAX_IMAGE_COUNT - mediaItems.value.length
   if (remain <= 0) {
     uni.showToast({ title: `最多只能上传 ${MAX_IMAGE_COUNT} 张图片`, icon: 'none' })
     return
   }
   try {
     const files = await chooseImages({ count: remain })
-    const candidates: MediaItem[] = files.map((f: any) => ({
-      localPath: (f.path || f.tempFilePath) as string,
-      type: 'IMAGE' as const,
-      size: typeof f.size === 'number' ? f.size : 0,
-      uploadStatus: 'pending' as const,
-      progress: 0,
-    }))
-    const merged = [...props.modelValue, ...candidates]
+    const candidates: MediaItem[] = files
+      .map((f: any) => ({
+        localPath: (f.path || f.tempFilePath) as string,
+        type: 'IMAGE' as const,
+        size: typeof f.size === 'number' ? f.size : 0,
+        uploadStatus: 'pending' as const,
+        progress: 0,
+      }))
+      .filter(isMediaItem)
+    if (!candidates.length) return
+    const merged = [...mediaItems.value, ...candidates]
     const check = checkImageTotalSize(merged)
     if (!check.ok) {
       uni.showToast({ title: check.message || '图片总大小不能超过 100MB', icon: 'none' })
       return
     }
-    emit('update:modelValue', merged)
-    emit('change', merged)
-    for (let i = 0; i < candidates.length; i++) {
-      await uploadOne(candidates[i], false, props.modelValue.length + i)
+    let snapshot = emitMediaItems(merged)
+    for (const candidate of candidates) {
+      snapshot = await uploadOne(candidate, false, snapshot)
     }
   } catch (e) {
     // 用户取消
@@ -139,26 +162,22 @@ async function onChooseVideo() {
       thumb: res.tempFilePath,
       duration: res.duration,
     }
-    emit('update:modelValue', [item])
-    emit('change', [item])
+    emitMediaItems([item])
     await uploadOne(item, true)
   } catch (e) {
     uni.showToast({ title: '选择视频失败', icon: 'none' })
   }
 }
 
-async function uploadOne(item: MediaItem, isVideo: boolean, idx?: number) {
+async function uploadOne(item: MediaItem, isVideo: boolean, baseItems?: MediaItem[]): Promise<MediaItem[]> {
+  let snapshot = baseItems?.filter(isMediaItem)
   const updateItem = (next: MediaItem) => {
     if (isVideo) {
-      emit('update:modelValue', [next])
-      emit('change', [next])
+      snapshot = emitMediaItems([next])
     } else {
-      const arr = [...props.modelValue]
-      const target = idx !== undefined ? idx : arr.findIndex((x) => x.localPath === item.localPath)
-      if (target >= 0) arr[target] = next
-      emit('update:modelValue', arr)
-      emit('change', arr)
+      snapshot = replaceMediaItem(item, next, snapshot || mediaItems.value)
     }
+    return snapshot
   }
   const updated = { ...item, uploadStatus: 'uploading' as const, progress: 0 }
   updateItem(updated)
@@ -169,31 +188,29 @@ async function uploadOne(item: MediaItem, isVideo: boolean, idx?: number) {
     : await uploadImageWithRetry(updated, (e) => {
         updateItem({ ...updated, progress: normalizeUploadProgress(e.progress || 0) })
       })
-  updateItem(result)
+  return updateItem(result)
 }
 
 async function retryUpload(idx: number) {
-  const item = props.modelValue[idx]
+  const item = mediaItems.value[idx]
   if (!item) return
-  await uploadOne(item, false, idx)
+  await uploadOne(item, false)
 }
 
 async function retryUploadVideo() {
-  if (props.modelValue[0]) {
-    await uploadOne(props.modelValue[0], true)
+  if (videoItem.value) {
+    await uploadOne(videoItem.value, true)
   }
 }
 
 function removeImage(idx: number) {
-  const arr = [...props.modelValue]
+  const arr = [...mediaItems.value]
   arr.splice(idx, 1)
-  emit('update:modelValue', arr)
-  emit('change', arr)
+  emitMediaItems(arr)
 }
 
 function removeVideo() {
-  emit('update:modelValue', [])
-  emit('change', [])
+  emitMediaItems([])
 }
 </script>
 

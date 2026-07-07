@@ -15,7 +15,6 @@
 import { ref, watch } from 'vue'
 import KeepPageNav from '@/components/business/KeepPageNav.vue'
 import { getWorkTags } from '@/api/modules/dict'
-import { WORK_TAGS_FALLBACK } from '@/constants/work-tags'
 import type { WorkTag } from '@/api/types/work'
 
 const props = withDefaults(defineProps<{
@@ -41,7 +40,7 @@ onMounted(async () => {
     const data = (res && res.data) || []
     tags.value = data || []
   } catch {
-    tags.value = WORK_TAGS_FALLBACK.map((name, idx) => ({ id: idx, code: `fb_${idx}`, name }))
+    tags.value = []
   }
 })
 

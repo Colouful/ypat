@@ -1,12 +1,11 @@
 import { describe, expect, it } from 'vitest'
-import { resolveWorkTagOptions, WORK_TAGS_FALLBACK } from '../work-tags'
+import { resolveWorkTagOptions } from '../work-tags'
 
 describe('resolveWorkTagOptions', () => {
-  it('uses screenshot fallback labels when backend returns an empty list', () => {
+  it('does not create fake tag ids when backend returns an empty list', () => {
     const tags = resolveWorkTagOptions([])
 
-    expect(tags.map((tag) => tag.name)).toEqual(WORK_TAGS_FALLBACK)
-    expect(tags[0]).toEqual({ id: 1, code: 'fallback_1', name: '情侣' })
+    expect(tags).toEqual([])
   })
 
   it('keeps non-empty backend tags', () => {

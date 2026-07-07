@@ -43,6 +43,7 @@ public class SysResultHandler implements ResponseBodyAdvice<Object> {
     @Override
     public Object beforeBodyWrite(Object body, MethodParameter returnType, MediaType selectedContentType, Class selectedConverterType, ServerHttpRequest request, ServerHttpResponse response) {
         if(body instanceof ResponseApiBody) {
+            response.getHeaders().setContentType(MediaType.APPLICATION_JSON_UTF8);
             return body;
         } else if (body instanceof String) {
             String jsonStr = (String) body;
