@@ -24,6 +24,26 @@ public class WorkDictControllerSourceTest {
     }
 
     @Test
+    public void defaultWorkTagsContainTwentyNineStableCodes() throws Exception {
+        String source = read("backend/system-restapi/src/main/java/com/ypat/controller/WorkDictController.java");
+        String[] codes = new String[] {
+                "qinglv", "shangwu", "minguo", "hanfu", "yunzhao",
+                "ertong", "anhei", "qingxu", "yejing", "xiaoyuan",
+                "zhuangrong", "gufeng", "taobao", "shishang", "hefu",
+                "qipao", "hanxi", "oumei", "senxi", "shaonv",
+                "baolilai", "qingxin", "hunli", "cosplay", "jiaopian",
+                "heibai", "jishi", "rixi", "fugu"
+        };
+        int lastIndex = -1;
+        for (String code : codes) {
+            int index = source.indexOf("new DefaultWorkTag(\"" + code + "\"");
+            assertTrue("missing code " + code, index >= 0);
+            assertTrue("code order changed for " + code, index > lastIndex);
+            lastIndex = index;
+        }
+    }
+
+    @Test
     public void wapResponseAdviceSetsUtf8ForUnifiedApiBodies() throws Exception {
         String source = read("backend/system-wap/src/main/java/com/ypat/handler/SysResultHandler.java");
 
