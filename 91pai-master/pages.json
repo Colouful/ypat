@@ -221,6 +221,17 @@
       }
     },
     {
+      "path": "pages/work/detail/index",
+      "style": {
+        "navigationBarBackgroundColor": "#fff",
+        "navigationBarTextStyle": "black",
+        "backgroundColorTop": "#fff",
+        "backgroundColorBottom": "#F7F7F7",
+        "navigationBarTitleText": "作品详情",
+        "onReachBottomDistance": 50
+      }
+    },
+    {
       "path": "pages/mine/ppd/index",
       "style": {
         "navigationBarBackgroundColor": "#2d3030",
