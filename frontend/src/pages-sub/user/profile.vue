@@ -97,7 +97,7 @@
 
 <script setup lang="ts">
 import { computed, ref } from 'vue'
-import { onLoad } from '@dcloudio/uni-app'
+import { onLoad, onShow } from '@dcloudio/uni-app'
 import { useAppStore } from '@/stores/app'
 import { useUserStore } from '@/stores/user'
 import * as userApi from '@/api/modules/user'
@@ -125,6 +125,7 @@ const heroImageSrc = computed(() => normalizeImageUrl(items.value[0]?.pics?.[0])
 
 async function loadProfile(): Promise<void> {
   loading.value = true
+  errorMessage.value = ''
   try {
     profile.value = (await userApi.getUserInfo(userId.value)).data
     await loadWorks(true)
@@ -178,6 +179,10 @@ onLoad((query) => {
     errorMessage.value = '用户不存在'
     return
   }
+})
+
+onShow(() => {
+  if (!userId.value) return
   loadProfile()
 })
 </script>
