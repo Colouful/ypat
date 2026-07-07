@@ -1,0 +1,105 @@
+page {
+  background: #f7f7f7;
+}
+
+.apply-page {
+  min-height: 100vh;
+  padding-bottom: calc(150rpx + env(safe-area-inset-bottom));
+}
+
+.safe-bar {
+  padding: 24rpx 32rpx;
+  color: #ff5361;
+  font-size: 28rpx;
+  line-height: 42rpx;
+  background: #fff1f2;
+}
+
+.card {
+  margin: 18rpx 24rpx 0;
+  padding: 28rpx;
+  border-radius: 8rpx;
+  background: #fff;
+}
+
+.card-title {
+  color: #333;
+  font-size: 32rpx;
+  font-weight: 700;
+  margin-bottom: 22rpx;
+}
+
+.reason-input {
+  width: 100%;
+  height: 260rpx;
+  padding: 26rpx;
+  box-sizing: border-box;
+  border-radius: 8rpx;
+  color: #333;
+  font-size: 30rpx;
+  background: #f5f6f8;
+}
+
+.contact-row {
+  display: flex;
+  align-items: center;
+  min-height: 58rpx;
+  color: #444;
+  font-size: 30rpx;
+  line-height: 44rpx;
+}
+
+.wx-input {
+  flex: 1;
+  min-width: 0;
+  color: #333;
+  font-size: 30rpx;
+}
+
+.tips {
+  padding: 28rpx 42rpx;
+  color: #999;
+  font-size: 26rpx;
+  line-height: 42rpx;
+}
+
+.footer {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  min-height: 132rpx;
+  padding: 22rpx 34rpx calc(36rpx + env(safe-area-inset-bottom));
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  background: #fff;
+}
+
+.cost {
+  width: 220rpx;
+}
+
+.cost-num {
+  color: #ff5361;
+  font-size: 38rpx;
+  font-weight: 800;
+  line-height: 48rpx;
+}
+
+.cost-left {
+  color: #999;
+  font-size: 24rpx;
+}
+
+.submit-btn {
+  flex: 1;
+  height: 86rpx;
+  line-height: 86rpx;
+  border-radius: 48rpx;
+  color: #fff;
+  text-align: center;
+  font-size: 34rpx;
+  font-weight: 700;
+  background: linear-gradient(90deg, #ff6b78, #ff3f4f);
+}
