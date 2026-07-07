@@ -26,6 +26,8 @@
     </view>
 
     <view class="content-box">
+      <splash-overlay></splash-overlay>
+      <home-banner :list="bannerList"></home-banner>
       <view class="tip-box">
         <view
           v-if="msgCount&&msgCount>0"
