@@ -53,7 +53,7 @@ public class WorkComplainService {
         if (userId.equals(work.getUserid())) {
             throw new SysException(ResponseCode.FAIL_VAL, "不能投诉自己的作品");
         }
-        workService.complain(work, userId, qo.getReason(), qo.getContact());
+        workService.complain(work, userId, qo.getReason(), qo.getContact(), qo.getPics());
     }
 
     public Map<String, Object> adminList(Integer page, Integer size, String status, Long workId, Long userId) {
@@ -112,8 +112,9 @@ public class WorkComplainService {
             throw new SysException(ResponseCode.FAIL_NOT);
         }
 
+        String handleReason = StringUtils.defaultIfBlank(qo.getHandleReason(), qo.getReason());
         String targetStatus = normalizeHandleStatus(qo.getStatus());
-        int updated = workComplainRepository.updatePendingStatus(qo.getId(), targetStatus);
+        int updated = workComplainRepository.updatePendingStatusAndReason(qo.getId(), targetStatus, handleReason);
         if (updated <= 0) {
             throw new SysException(ResponseCode.FAIL_EXIST.getCode(), "投诉已处理");
         }
@@ -123,7 +124,7 @@ public class WorkComplainService {
             if (work == null || work.getDeletedFlag() != null && work.getDeletedFlag() == 1) {
                 throw new SysException(ResponseCode.FAIL_WORK_NOT_FOUND);
             }
-            String offlineReason = StringUtils.isBlank(qo.getReason()) ? "投诉处理下架" : qo.getReason();
+            String offlineReason = StringUtils.isBlank(handleReason) ? "投诉处理下架" : handleReason;
             if (WorkStatus.shtg.value.equals(work.getStatus())) {
                 workService.adminOffline(work.getId(), offlineReason);
             }
@@ -137,8 +138,10 @@ public class WorkComplainService {
         item.put("userId", complain.getUserId());
         item.put("reason", complain.getReason());
         item.put("contact", complain.getContact());
+        item.put("pics", complain.getPics());
         item.put("status", complain.getStatus());
         item.put("statusText", statusText(complain.getStatus()));
+        item.put("handleReason", complain.getHandleReason());
         item.put("createdAt", complain.getCreatedAt());
 
         Work work = workRepository.findOne(complain.getWorkId());

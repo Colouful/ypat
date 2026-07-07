@@ -49,6 +49,6 @@ export function handleWorkComplain(
   offlineWork = false,
 ): Promise<ApiResult<unknown>> {
   return post('/admin/work/complain/handle', undefined, {
-    params: { id, status, reason, offlineWork },
+    params: { id, status, reason, handleReason: reason, offlineWork },
   })
 }

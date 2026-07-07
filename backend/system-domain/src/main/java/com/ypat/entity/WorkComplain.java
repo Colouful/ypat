@@ -22,7 +22,10 @@ public class WorkComplain implements Serializable {
     private Long userId;
     private String reason;
     private String contact;
+    private String pics;
     private String status;
+    @Column(name = "handle_reason")
+    private String handleReason;
     @Column(name = "created_at")
     @Temporal(TemporalType.TIMESTAMP)
     private Date createdAt;
@@ -37,8 +40,12 @@ public class WorkComplain implements Serializable {
     public void setReason(String reason) { this.reason = reason; }
     public String getContact() { return contact; }
     public void setContact(String contact) { this.contact = contact; }
+    public String getPics() { return pics; }
+    public void setPics(String pics) { this.pics = pics; }
     public String getStatus() { return status; }
     public void setStatus(String status) { this.status = status; }
+    public String getHandleReason() { return handleReason; }
+    public void setHandleReason(String handleReason) { this.handleReason = handleReason; }
     public Date getCreatedAt() { return createdAt; }
     public void setCreatedAt(Date createdAt) { this.createdAt = createdAt; }
 }

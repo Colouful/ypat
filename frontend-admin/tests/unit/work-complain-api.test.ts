@@ -59,10 +59,10 @@ describe('后台作品投诉 API', () => {
     await expect(api.handleWorkComplain(12, '1', '证据属实', true) as unknown as Promise<unknown>).resolves.toMatchObject({
       url: '/admin/work/complain/handle',
       data: undefined,
-      config: { params: { id: 12, status: '1', reason: '证据属实', offlineWork: true } },
+      config: { params: { id: 12, status: '1', reason: '证据属实', handleReason: '证据属实', offlineWork: true } },
     })
     expect(postMock).toHaveBeenNthCalledWith(1, '/admin/work/complain/handle', undefined, {
-      params: { id: 12, status: '1', reason: '证据属实', offlineWork: true },
+      params: { id: 12, status: '1', reason: '证据属实', handleReason: '证据属实', offlineWork: true },
     })
   })
 

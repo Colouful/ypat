@@ -4,6 +4,16 @@
  */
 import http from "./interface";
 import { getUrl } from "../utils";
+import config from "../../config";
+import localStorageObj from "@/common/localStorage";
+
+const getUploadBaseUrl = () => {
+  let baseUrl = config.apiUrl;
+  // #ifdef H5
+  baseUrl = "/dpc";
+  // #endif
+  return baseUrl;
+};
 /**
  * 将业务所有接口统一起来便于维护
  * 如果项目很大可以将 url 独立成文件，接口分成不同的模块
@@ -504,5 +514,27 @@ export const work_complain = (data) => {
     url,
     method: 'POST',
     data,
+  })
+}
+
+// 作品图片上传
+export const work_upload_image = (filePath) => {
+  const token = uni.getStorageSync(localStorageObj.token)
+  return new Promise((resolve, reject) => {
+    uni.uploadFile({
+      url: `${getUploadBaseUrl()}/work/upload/image`,
+      filePath,
+      name: 'file',
+      header: token ? { Token: token } : {},
+      success: (res) => {
+        try {
+          const data = typeof res.data === 'string' ? JSON.parse(res.data) : res.data
+          resolve(data)
+        } catch (e) {
+          reject(e)
+        }
+      },
+      fail: reject,
+    })
   })
 }

@@ -53,7 +53,8 @@ public class AdminWorkComplainControllerSourceTest {
         assertTrue(source.contains("if (StringUtils.isBlank(status))"));
         assertTrue(source.contains("qo.setOfflineWork(offlineWork)"));
         assertTrue(source.contains("qo.setStatus(status)"));
-        assertTrue(source.contains("qo.setReason(reason)"));
+        assertTrue(source.contains("String finalReason = StringUtils.isBlank(handleReason) ? reason : handleReason;"));
+        assertTrue(source.contains("qo.setReason(finalReason)"));
     }
 
     @Test
@@ -111,9 +112,12 @@ public class AdminWorkComplainControllerSourceTest {
         assertTrue(source.contains("public void adminHandle(WorkComplainQo qo)"));
         assertTrue(source.contains("qo.getOfflineWork()"));
         assertTrue(source.contains("workService.adminOffline("));
-        assertTrue(source.contains("int updated = workComplainRepository.updatePendingStatus(qo.getId(), targetStatus);"));
+        assertTrue(source.contains("String handleReason = StringUtils.defaultIfBlank(qo.getHandleReason(), qo.getReason());"));
+        assertTrue(source.contains("int updated = workComplainRepository.updatePendingStatusAndReason(qo.getId(), targetStatus, handleReason);"));
         assertTrue(source.contains("if (updated <= 0)"));
         assertTrue(source.contains("投诉已处理"));
+        assertTrue(source.contains("item.put(\"pics\", complain.getPics())"));
+        assertTrue(source.contains("item.put(\"handleReason\", complain.getHandleReason())"));
         assertTrue(source.contains("handled"));
         assertTrue(source.contains("rejected"));
         assertFalse(source.contains("workRepository.updateStatusAndAuditReason("));
@@ -127,7 +131,8 @@ public class AdminWorkComplainControllerSourceTest {
                 "WorkComplainRepository.java should exist");
 
         assertTrue(source.contains("JpaSpecificationExecutor<WorkComplain>"));
-        assertTrue(source.contains("updatePendingStatus("));
+        assertTrue(source.contains("updatePendingStatusAndReason("));
+        assertTrue(source.contains("c.handleReason = :handleReason"));
         assertTrue(source.contains("c.status = '0'"));
     }
 
@@ -143,22 +148,44 @@ public class AdminWorkComplainControllerSourceTest {
         assertTrue(source.contains("投诉内容：${complainContent}"));
         assertTrue(source.contains("用户已上传证据截图"));
         assertTrue(source.contains("reason: submitReason"));
+        assertTrue(source.contains("uploadEvidenceImages"));
+        assertTrue(source.contains("pics: uploadedPics.join(\",\")"));
+    }
+
+    @Test
+    public void adminHandleAcceptsExplicitHandleReasonParam() throws Exception {
+        String source = readSource(
+                "src/main/java/com/ypat/controller/AdminWorkComplainController.java",
+                "backend/system-wap/src/main/java/com/ypat/controller/AdminWorkComplainController.java",
+                "AdminWorkComplainController.java should exist");
+
+        assertTrue(source.contains("@RequestParam(value = \"handleReason\", required = false) String handleReason"));
+        assertTrue(source.contains("String finalReason = StringUtils.isBlank(handleReason) ? reason : handleReason;"));
+        assertTrue(source.contains("qo.setHandleReason(finalReason);"));
     }
 
     @Test
     public void workComplainQoExposesAdminFieldsAndAccessors() throws Exception {
         Field idField = WorkComplainQo.class.getDeclaredField("id");
         Field statusField = WorkComplainQo.class.getDeclaredField("status");
+        Field picsField = WorkComplainQo.class.getDeclaredField("pics");
+        Field handleReasonField = WorkComplainQo.class.getDeclaredField("handleReason");
         Field offlineWorkField = WorkComplainQo.class.getDeclaredField("offlineWork");
 
         assertNotNull(idField);
         assertNotNull(statusField);
+        assertNotNull(picsField);
+        assertNotNull(handleReasonField);
         assertNotNull(offlineWorkField);
 
         Method getId = WorkComplainQo.class.getDeclaredMethod("getId");
         Method setId = WorkComplainQo.class.getDeclaredMethod("setId", Long.class);
         Method getStatus = WorkComplainQo.class.getDeclaredMethod("getStatus");
         Method setStatus = WorkComplainQo.class.getDeclaredMethod("setStatus", String.class);
+        Method getPics = WorkComplainQo.class.getDeclaredMethod("getPics");
+        Method setPics = WorkComplainQo.class.getDeclaredMethod("setPics", String.class);
+        Method getHandleReason = WorkComplainQo.class.getDeclaredMethod("getHandleReason");
+        Method setHandleReason = WorkComplainQo.class.getDeclaredMethod("setHandleReason", String.class);
         Method getOfflineWork = WorkComplainQo.class.getDeclaredMethod("getOfflineWork");
         Method setOfflineWork = WorkComplainQo.class.getDeclaredMethod("setOfflineWork", Boolean.class);
 
@@ -166,6 +193,10 @@ public class AdminWorkComplainControllerSourceTest {
         assertNotNull(setId);
         assertNotNull(getStatus);
         assertNotNull(setStatus);
+        assertNotNull(getPics);
+        assertNotNull(setPics);
+        assertNotNull(getHandleReason);
+        assertNotNull(setHandleReason);
         assertNotNull(getOfflineWork);
         assertNotNull(setOfflineWork);
     }

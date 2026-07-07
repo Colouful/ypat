@@ -17,6 +17,9 @@ public interface MessInfoRepository extends JpaRepository<MessInfo, Long>, JpaSp
     @Query("select count(m.id) from MessInfo m join m.sendper where m.type =:type and m.sendper.id =:sendperid and m.ypatInfo.id =:ypatid")
     Long countSend(@Param("type") String type, @Param("sendperid") Long sendperid, @Param("ypatid") Long ypatid);
 
+    @Query("select count(m.id) from MessInfo m join m.sendper where m.type =:type and m.sendper.id =:sendperid and m.ypatInfo.workId =:workId")
+    Long countSendByWorkId(@Param("type") String type, @Param("sendperid") Long sendperid, @Param("workId") Long workId);
+
     @Query("select count(m.id) from MessInfo m join m.recper where m.type =:type and m.recper.id =:recperid and m.messviewflag =:messviewflag")
     Long countRecUnread(@Param("type") String type, @Param("recperid") Long recperid, @Param("messviewflag") String messviewflag);
 

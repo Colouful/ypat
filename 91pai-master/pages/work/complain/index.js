@@ -1,4 +1,4 @@
-import { work_complain, work_get } from "@/common/vmeitime-http";
+import { work_complain, work_get, work_upload_image } from "@/common/vmeitime-http";
 
 export default {
   data() {
@@ -84,11 +84,16 @@ export default {
       const submitReason = complainContent
         ? `投诉原因：${this.reason}\n投诉内容：${complainContent}`
         : `投诉原因：${this.reason}\n用户已上传证据截图`;
+      const uploadedPics = await this.uploadEvidenceImages().catch(() => null);
+      if (uploadedPics === null) {
+        this.tui.toast("证据上传失败，请稍后再试");
+        return;
+      }
       const res = await work_complain({
         workId: this.workId,
         reason: submitReason,
         content: complainContent,
-        pics: this.images,
+        pics: uploadedPics.join(","),
       }).catch(() => null);
       if (res && res.code === 200) {
         this.tui.toast("投诉已提交，平台会尽快处理");
@@ -96,6 +101,22 @@ export default {
       } else {
         this.tui.toast((res && res.msg) || "提交失败，请稍后再试");
       }
+    },
+    async uploadEvidenceImages() {
+      const urls = [];
+      for (let i = 0; i < this.images.length; i += 1) {
+        const filePath = this.images[i];
+        if (/^https?:\/\//.test(filePath)) {
+          urls.push(filePath);
+          continue;
+        }
+        const res = await work_upload_image(filePath);
+        if (!res || res.code !== 200 || !res.res || !res.res.url) {
+          throw new Error("upload failed");
+        }
+        urls.push(res.res.url);
+      }
+      return urls;
     },
   },
 };

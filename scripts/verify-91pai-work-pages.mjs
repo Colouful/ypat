@@ -30,6 +30,7 @@ const apiExports = [
   'export const work_sc_cancel',
   'export const work_quick_apply',
   'export const work_complain',
+  'export const work_upload_image',
 ]
 
 apiExports.forEach((item) => assertContains(apiFile, item))
@@ -60,6 +61,8 @@ assertContains('91pai-master/pages.json', '"path": "pages/mine/realname/intro/in
 assertContains('91pai-master/pages/home/home/index.vue', '<home-banner')
 assertContains('91pai-master/pages/home/home/index.vue', '<splash-overlay')
 assertContains('91pai-master/pages/work/complain/index.vue', '请选择投诉原因')
+assertContains('91pai-master/pages/work/complain/index.js', 'uploadEvidenceImages')
+assertContains('91pai-master/pages/work/apply/index.js', '约拍理由不少于六个字')
 assertContains('91pai-master/pages/work/apply/index.vue', '安全防骗提醒')
 assertContains('91pai-master/pages/mine/realname/intro/index.vue', '开始实名')
 

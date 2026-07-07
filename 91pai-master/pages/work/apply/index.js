@@ -70,8 +70,8 @@ export default {
       });
     },
     async submit() {
-      if (!this.reason) {
-        this.tui.toast("请输入约拍理由");
+      if (!this.reason || this.reason.trim().length < 6) {
+        this.tui.toast("约拍理由不少于六个字");
         return;
       }
       if (!this.userInfo.mobile && !this.wx) {
@@ -88,7 +88,7 @@ export default {
       }
       const res = await work_quick_apply({
         workId: this.workId,
-        reason: this.reason,
+        reason: this.reason.trim(),
         mobile: this.userInfo.mobile,
         wx: this.wx,
       }).catch(() => null);

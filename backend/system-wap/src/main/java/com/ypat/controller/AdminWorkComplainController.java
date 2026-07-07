@@ -59,16 +59,19 @@ public class AdminWorkComplainController {
     public ResponseApiBody handle(@RequestParam("id") Long id,
                                   @RequestParam("status") String status,
                                   @RequestParam(value = "reason", required = false) String reason,
+                                  @RequestParam(value = "handleReason", required = false) String handleReason,
                                   @RequestParam(value = "offlineWork", required = false) Boolean offlineWork) {
         validateId(id);
         if (StringUtils.isBlank(status)) {
             throw new SysException(ResponseCode.FAIL_PARA);
         }
+        String finalReason = StringUtils.isBlank(handleReason) ? reason : handleReason;
 
         WorkComplainQo qo = new WorkComplainQo();
         qo.setId(id);
         qo.setStatus(status);
-        qo.setReason(reason);
+        qo.setReason(finalReason);
+        qo.setHandleReason(finalReason);
         qo.setOfflineWork(offlineWork);
 
         String json = workComplainAdminServiceClient.handle(qo);
