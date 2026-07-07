@@ -350,9 +350,22 @@ onMounted(() => {
             <span class="detail-label">联系方式</span>
             <span>{{ getDisplayText(currentComplaint?.contact) }}</span>
           </div>
+          <div class="detail-item">
+            <span class="detail-label">处理状态</span>
+            <el-tag :type="getStatusTagType(currentComplaint?.status)" size="small">
+              {{ getStatusLabel(currentComplaint || { id: 0 }) }}
+            </el-tag>
+          </div>
           <div class="detail-item detail-item--full">
             <span class="detail-label">作品描述</span>
             <span>{{ getDisplayText(currentComplaint?.workDescription) }}</span>
+          </div>
+          <div
+            v-if="currentComplaint?.handleReason"
+            class="detail-item detail-item--full"
+          >
+            <span class="detail-label">处理备注</span>
+            <div class="history-reason">{{ currentComplaint.handleReason }}</div>
           </div>
           <div v-if="getEvidenceList(currentComplaint || { id: 0 }).length" class="detail-item detail-item--full">
             <span class="detail-label">投诉凭证</span>
@@ -402,12 +415,6 @@ onMounted(() => {
               active-text="下架"
               inactive-text="保留"
             />
-          </el-form-item>
-          <el-form-item
-            v-if="currentComplaint?.handleReason"
-            label="历史备注"
-          >
-            <div class="history-reason">{{ currentComplaint.handleReason }}</div>
           </el-form-item>
         </el-form>
       </div>

@@ -1,6 +1,15 @@
-import { readFileSync } from 'node:fs'
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
+import { mount, flushPromises } from '@vue/test-utils'
 import { resolve } from 'node:path'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { computed, defineComponent, h, inject, provide, type ComputedRef } from 'vue'
+
+beforeAll(() => {
+  vi.stubGlobal('ResizeObserver', class {
+    observe() {}
+    unobserve() {}
+    disconnect() {}
+  })
+})
 
 const getMock = vi.fn<(url: string, params?: Record<string, unknown>) => Promise<unknown>>(
   (url: string, params?: Record<string, unknown>) => Promise.resolve({ url, params }),
@@ -65,30 +74,229 @@ describe('后台作品投诉 API', () => {
 
     expect(item?.title).toBe('作品投诉')
   })
+})
 
-  it('详情弹窗应支持只读详情态', () => {
-    const source = readFileSync(
-      resolve(process.cwd(), 'src/views/manage/work-complain-list/index.vue'),
-      'utf8',
-    )
-
-    expect(source).toContain("type DialogMode = 'detail' | 'handle'")
-    expect(source).toContain("if (dialogMode.value === 'detail') return '投诉详情'")
-    expect(source).toContain('async function openDetailDialog(row: WorkComplainInfo)')
-    expect(source).toContain('@click="openDetailDialog(row as WorkComplainInfo)"')
-    expect(source).toContain('<el-form v-if="dialogMode === \'handle\'"')
-    expect(source).toContain('<el-button\n          v-if="dialogMode === \'handle\'"')
+describe('后台作品投诉页面行为', () => {
+  const tableDataKey = Symbol('table-data')
+  const ElButtonStub = defineComponent({
+    name: 'ElButton',
+    emits: ['click'],
+    setup(_, { slots, emit }) {
+      return () => h('button', { onClick: (event: MouseEvent) => emit('click', event) }, slots.default?.())
+    },
+  })
+  const ElTableStub = defineComponent({
+    name: 'ElTable',
+    props: {
+      data: {
+        type: Array,
+        default: () => [],
+      },
+    },
+    setup(props, { slots }) {
+      provide(tableDataKey, computed(() => props.data as Record<string, unknown>[]))
+      return () => h('div', { class: 'el-table-stub' }, slots.default?.())
+    },
+  })
+  const ElTableColumnStub = defineComponent({
+    name: 'ElTableColumn',
+    props: {
+      prop: {
+        type: String,
+        default: '',
+      },
+    },
+    setup(props, { slots }) {
+      const rows = inject<ComputedRef<Record<string, unknown>[]>>(tableDataKey, computed(() => []))
+      return () => h(
+        'div',
+        { class: 'el-table-column-stub' },
+        rows.value.map((row, index) => {
+          const content = slots.default?.({ row })
+            ?? [h('span', String(props.prop ? (row[props.prop] ?? '') : ''))]
+          return h('div', { key: `${String(props.prop)}-${index}` }, content)
+        }),
+      )
+    },
+  })
+  const SimpleWrapperStub = defineComponent({
+    setup(_, { slots }) {
+      return () => h('div', slots.default?.())
+    },
+  })
+  const ElDialogStub = defineComponent({
+    name: 'ElDialog',
+    props: {
+      modelValue: {
+        type: Boolean,
+        default: false,
+      },
+      title: {
+        type: String,
+        default: '',
+      },
+    },
+    emits: ['update:modelValue'],
+    setup(props, { slots }) {
+      return () => props.modelValue
+        ? h('div', { class: 'el-dialog-stub' }, [
+            h('div', { class: 'el-dialog-title' }, props.title),
+            h('div', { class: 'el-dialog-body' }, slots.default?.()),
+            h('div', { class: 'el-dialog-footer' }, slots.footer?.()),
+          ])
+        : null
+    },
+  })
+  const ElTagStub = defineComponent({
+    name: 'ElTag',
+    setup(_, { slots }) {
+      return () => h('span', { class: 'el-tag-stub' }, slots.default?.())
+    },
   })
 
-  it('待处理记录应同时保留详情、处理、驳回操作', () => {
-    const source = readFileSync(
-      resolve(process.cwd(), 'src/views/manage/work-complain-list/index.vue'),
-      'utf8',
-    )
+  afterEach(() => {
+    document.body.innerHTML = ''
+    vi.doUnmock('@/api/modules/work-complain')
+    vi.resetModules()
+  })
 
-    expect(source).toMatch(/>\s*详情\s*</)
-    expect(source).toContain('v-if="isPending(row as WorkComplainInfo)"')
-    expect(source).toMatch(/>\s*处理\s*</)
-    expect(source).toMatch(/>\s*驳回\s*</)
+  async function mountPage(options: {
+    listData: Array<Record<string, unknown>>
+    detailData: Record<string, unknown>
+  }) {
+    const getWorkComplainList = vi.fn().mockResolvedValue({
+      data: {
+        content: options.listData,
+        totalElements: options.listData.length,
+      },
+    })
+    const getWorkComplainDetail = vi.fn().mockResolvedValue({
+      data: options.detailData,
+    })
+    const handleWorkComplain = vi.fn().mockResolvedValue({
+      code: 200,
+      data: null,
+      msg: 'ok',
+      success: true,
+    })
+
+    vi.doMock('@/api/modules/work-complain', () => ({
+      getWorkComplainList,
+      getWorkComplainDetail,
+      handleWorkComplain,
+    }))
+
+    const viewPath = resolve(process.cwd(), 'src/views/manage/work-complain-list/index.vue')
+    const WorkComplainList = (await import(viewPath)).default
+    const wrapper = mount(WorkComplainList, {
+      attachTo: document.body,
+      global: {
+        components: {
+          ElButton: ElButtonStub,
+          ElDialog: ElDialogStub,
+          ElForm: SimpleWrapperStub,
+          ElFormItem: SimpleWrapperStub,
+          ElImage: SimpleWrapperStub,
+          ElInput: SimpleWrapperStub,
+          ElOption: SimpleWrapperStub,
+          ElPagination: SimpleWrapperStub,
+          ElSelect: SimpleWrapperStub,
+          ElSwitch: SimpleWrapperStub,
+          ElTable: ElTableStub,
+          ElTableColumn: ElTableColumnStub,
+          ElTag: ElTagStub,
+        },
+        directives: {
+          loading: () => undefined,
+        },
+      },
+    })
+
+    await flushPromises()
+
+    return { wrapper, getWorkComplainList, getWorkComplainDetail, handleWorkComplain }
+  }
+
+  it('点击详情时应展示只读详情、处理状态和处理备注', async () => {
+    const { wrapper, getWorkComplainDetail } = await mountPage({
+      listData: [
+        {
+          id: 23,
+          workId: 1001,
+          userId: 2001,
+          userNickname: '投诉人',
+          targetUserId: 3001,
+          targetNickname: '被投诉人',
+          reason: '骚扰',
+          status: '1',
+          statusText: '已处理',
+          createdAt: '2026-07-08 10:00:00',
+          workDescription: '作品描述',
+        },
+      ],
+      detailData: {
+        id: 23,
+        workId: 1001,
+        userId: 2001,
+        userNickname: '投诉人',
+        targetUserId: 3001,
+        targetNickname: '被投诉人',
+        reason: '骚扰',
+        contact: 'wechat-001',
+        status: '1',
+        statusText: '已处理',
+        createdAt: '2026-07-08 10:00:00',
+        workDescription: '作品描述',
+        handleReason: '证据属实',
+      },
+    })
+
+    const detailButton = wrapper
+      .findAll('button')
+      .find((button) => button.text().includes('详情'))
+
+    expect(detailButton, '列表中应存在详情入口').toBeTruthy()
+
+    await detailButton!.trigger('click')
+    await flushPromises()
+
+    expect(getWorkComplainDetail).toHaveBeenCalledWith(23)
+    expect(document.body.textContent).toContain('投诉详情')
+    expect(document.body.textContent).toContain('已处理')
+    expect(document.body.textContent).toContain('证据属实')
+    expect(document.body.textContent).not.toContain('确认提交')
+
+    wrapper.unmount()
+  })
+
+  it('待处理记录应同时渲染详情、处理、驳回操作', async () => {
+    const { wrapper } = await mountPage({
+      listData: [
+        {
+          id: 24,
+          workId: 1002,
+          userId: 2002,
+          userNickname: '投诉人二',
+          targetUserId: 3002,
+          targetNickname: '被投诉人二',
+          reason: '侵权',
+          status: '0',
+          statusText: '待处理',
+          createdAt: '2026-07-08 11:00:00',
+          workDescription: '待处理作品',
+        },
+      ],
+      detailData: {
+        id: 24,
+      },
+    })
+
+    const buttons = wrapper.findAll('button').map((button) => button.text())
+
+    expect(buttons).toContain('详情')
+    expect(buttons).toContain('处理')
+    expect(buttons).toContain('驳回')
+
+    wrapper.unmount()
   })
 })
