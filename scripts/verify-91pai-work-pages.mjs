@@ -64,6 +64,7 @@ assertContains('91pai-master/pages/work/complain/index.vue', '请选择投诉原
 assertContains('91pai-master/pages/work/complain/index.js', 'uploadEvidenceImages')
 assertContains('91pai-master/pages/work/apply/index.js', '约拍理由不少于六个字')
 assertContains('91pai-master/pages/work/apply/index.vue', '安全防骗提醒')
+assertContains('91pai-master/pages/work/apply/index.vue', '3 麻豆')
 assertContains('91pai-master/pages/mine/realname/intro/index.vue', '开始实名')
 
 console.log('91pai work pages verification passed')

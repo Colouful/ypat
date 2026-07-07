@@ -28,7 +28,7 @@
     </view>
     <view class="footer">
       <view class="cost">
-        <view class="cost-num">5 麻豆</view>
+        <view class="cost-num">3 麻豆</view>
         <view class="cost-left">提交约拍申请</view>
       </view>
       <view class="submit-btn" @tap="submit">确认提交</view>
