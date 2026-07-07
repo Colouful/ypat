@@ -78,7 +78,7 @@ import { useUserStore } from '@/stores/user'
 import * as userApi from '@/api/modules/user'
 import { uploadImage } from '@/api/modules/media'
 import { normalizeImageUrl } from '@/api/adapters'
-import { GENDER_LABELS, PROFESS_LABELS } from '@/constants/enums'
+import { GENDER_LABELS, PUBLIC_PROFESS_OPTIONS, getProfessLabel } from '@/constants/enums'
 import KeepIcon from '@/components/business/KeepIcon.vue'
 import type { UpdateUserParams } from '@/api/types'
 
@@ -89,8 +89,8 @@ const avatarFilePath = ref('')
 
 const genderKeys = Object.keys(GENDER_LABELS)
 const genderOptions = Object.values(GENDER_LABELS)
-const professionKeys = Object.keys(PROFESS_LABELS)
-const professionLabels = Object.values(PROFESS_LABELS)
+const professionKeys: string[] = PUBLIC_PROFESS_OPTIONS.map((item) => item.value)
+const professionLabels: string[] = PUBLIC_PROFESS_OPTIONS.map((item) => item.label)
 
 const form = reactive({
   nickname: '',
@@ -107,7 +107,7 @@ const today = new Date().toISOString().slice(0, 10)
 const genderIndex = computed(() => Math.max(0, genderKeys.indexOf(form.gender)))
 const professionIndex = computed(() => Math.max(0, professionKeys.indexOf(form.profess)))
 const genderText = computed(() => GENDER_LABELS[form.gender] || '')
-const professionText = computed(() => PROFESS_LABELS[form.profess] || '')
+const professionText = computed(() => getProfessLabel(form.profess))
 const regionValue = computed(() => [form.province, form.city, form.area])
 const regionText = computed(() => regionValue.value.filter(Boolean).join(' '))
 

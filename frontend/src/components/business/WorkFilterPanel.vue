@@ -43,6 +43,7 @@
 
 <script setup lang="ts">
 import { reactive, watch, computed } from 'vue'
+import { PUBLIC_PROFESS_OPTIONS } from '@/constants/enums'
 
 interface FilterValue {
   region: string
@@ -81,15 +82,7 @@ const genderOpts = [
 
 const professionOpts = [
   { value: '', label: '全部' },
-  { value: '0', label: '摄影师' },
-  { value: '1', label: '模特' },
-  { value: '2', label: '化妆师' },
-  { value: '3', label: '修图师' },
-  { value: '6', label: '商家' },
-  { value: '5', label: '经纪人' },
-  { value: '7', label: '造型师' },
-  { value: '8', label: '素人模特' },
-  { value: '4', label: '其他' },
+  ...PUBLIC_PROFESS_OPTIONS,
 ]
 
 const regionLabel = computed(() => {

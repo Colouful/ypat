@@ -1,5 +1,4 @@
 import { get, post, put } from '../request'
-import { PHOTO_STYLES } from '@/constants/enums'
 import type {
   ApiResult,
   MessInfo,
@@ -12,14 +11,29 @@ import type {
   UnreadCountResult,
 } from '../types'
 
+const LEGACY_PATSTYLE_CODE_BY_LABEL: Record<string, string> = {
+  '复古': '0',
+  INS: '1',
+  '胶片': '2',
+  '少女': '3',
+  '暗黑': '4',
+  '情绪': '5',
+  '夜景': '6',
+  '欧美': '7',
+  '商务': '8',
+  '韩系': '9',
+  '日系': '10',
+  '情侣': '11',
+  '样片': '12',
+}
+
 function normalizePatstyle(patstyle?: string): string | undefined {
   if (!patstyle) return patstyle
   return patstyle
     .split(',')
     .map((item) => {
       const value = item.trim()
-      const index = PHOTO_STYLES.indexOf(value)
-      return index >= 0 ? String(index) : value
+      return LEGACY_PATSTYLE_CODE_BY_LABEL[value] || value
     })
     .filter(Boolean)
     .join(',')

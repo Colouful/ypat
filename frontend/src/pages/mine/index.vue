@@ -188,7 +188,7 @@ import { useMemberStore } from '@/stores/member'
 import * as contentApi from '@/api/modules/content'
 import * as ypatApi from '@/api/modules/ypat'
 import { normalizeImageUrl } from '@/api/adapters'
-import { GENDER_LABELS, PROFESS_LABELS } from '@/constants/enums'
+import { GENDER_LABELS, getProfessLabel } from '@/constants/enums'
 import KeepIcon from '@/components/business/KeepIcon.vue'
 import KeepState from '@/components/business/KeepState.vue'
 import KeepTabBar from '@/components/business/KeepTabBar.vue'
@@ -221,7 +221,7 @@ const genderLabel = computed(() => {
 })
 const professLabel = computed(() => {
   const code = userInfo.value?.profess
-  return code ? PROFESS_LABELS[code] || '' : ''
+  return getProfessLabel(code)
 })
 const realnameState = computed(() => {
   const info = userInfo.value

@@ -39,7 +39,7 @@ const props = defineProps<{
 }>()
 
 import { computed } from 'vue'
-import { PROFESS_LABELS } from '@/constants/enums'
+import { getProfessLabel } from '@/constants/enums'
 
 const displayTitle = computed(() => {
   if (!props.work) return ''
@@ -53,7 +53,7 @@ const displayTitle = computed(() => {
 })
 
 function professionLabel(code: string): string {
-  return PROFESS_LABELS[code] || ''
+  return getProfessLabel(code)
 }
 
 const emit = defineEmits<{

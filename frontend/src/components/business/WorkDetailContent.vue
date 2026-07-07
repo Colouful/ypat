@@ -52,7 +52,7 @@
 
 <script setup lang="ts">
 import KeepIcon from './KeepIcon.vue'
-import { PROFESS_LABELS } from '@/constants/enums'
+import { getProfessLabel } from '@/constants/enums'
 import type { WorkDetail } from '@/api/types/work'
 
 const props = defineProps<{
@@ -64,7 +64,7 @@ const emit = defineEmits<{
 }>()
 
 function professLabel(code: string): string {
-  return PROFESS_LABELS[code] || ''
+  return getProfessLabel(code)
 }
 
 function previewImage(idx: number) {

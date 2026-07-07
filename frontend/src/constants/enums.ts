@@ -14,6 +14,7 @@ export const UserProfess = {
   OTHER: '7',
   /** 素人模特（2026-07 新增） */
   AMATEUR_MODEL: '8',
+  VIDEOGRAPHER: '9',
 } as const;
 
 export type UserProfessType = (typeof UserProfess)[keyof typeof UserProfess];
@@ -28,7 +29,22 @@ export const PROFESS_LABELS: Record<string, string> = {
   [UserProfess.BUSINESS]: '商家',
   [UserProfess.OTHER]: '其他',
   [UserProfess.AMATEUR_MODEL]: '素人模特',
+  [UserProfess.VIDEOGRAPHER]: '摄像师',
 };
+
+export const PUBLIC_PROFESS_OPTIONS = [
+  { label: '商家', value: UserProfess.BUSINESS },
+  { label: '摄影师', value: UserProfess.PHOTOGRAPHER },
+  { label: '化妆师', value: UserProfess.MAKEUP },
+  { label: '摄像师', value: UserProfess.VIDEOGRAPHER },
+  { label: '修图师', value: UserProfess.RETOUCHER },
+  { label: '模特', value: UserProfess.MODEL },
+] as const;
+
+export function getProfessLabel(value?: string): string {
+  if (!value) return '';
+  return PROFESS_LABELS[value] || value;
+}
 
 /** 用户性别 */
 export const UserGender = {
@@ -285,17 +301,33 @@ export const CHANNEL_LABELS: Record<string, string> = {
 
 /** 摄影风格列表 */
 export const PHOTO_STYLES: string[] = [
-  '复古',
-  'INS',
-  '胶片',
-  '少女',
+  '情侣',
+  '商务',
+  '民国',
+  '汉服',
+  '孕照',
+  '儿童摄影',
   '暗黑',
   '情绪',
   '夜景',
-  '欧美',
-  '商务',
+  '校园',
+  '妆容',
+  '古风',
+  '淘宝',
+  '时尚',
+  '和服',
+  '旗袍',
   '韩系',
+  '欧美',
+  '森系',
+  '少女',
+  '宝丽来',
+  '清新',
+  '婚礼',
+  'cosplay',
+  '胶片',
+  '黑白',
+  '纪实',
   '日系',
-  '情侣',
-  '样片',
+  '复古',
 ];

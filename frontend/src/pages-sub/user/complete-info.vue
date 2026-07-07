@@ -89,7 +89,7 @@ import { computed, reactive, ref } from 'vue'
 import { onLoad } from '@dcloudio/uni-app'
 import { useUserStore } from '@/stores/user'
 import * as userApi from '@/api/modules/user'
-import { GENDER_LABELS, PROFESS_LABELS, UserGender } from '@/constants/enums'
+import { GENDER_LABELS, PUBLIC_PROFESS_OPTIONS, UserGender } from '@/constants/enums'
 import { goRootTab, isRootTabUrl } from '@/utils/tab-navigation'
 import type { UpdateUserParams } from '@/api/types'
 
@@ -100,7 +100,7 @@ const today = new Date().toISOString().slice(0, 10)
 const genders = Object.entries(GENDER_LABELS)
   .filter(([value]) => value === UserGender.MALE || value === UserGender.FEMALE)
   .map(([value, label]) => ({ value, label }))
-const professions = Object.entries(PROFESS_LABELS).map(([value, label]) => ({ value, label }))
+const professions = PUBLIC_PROFESS_OPTIONS
 
 const existing = userStore.userInfo
 
