@@ -189,6 +189,15 @@ public class MemberService {
         return CopyUtil.copy(order, MemberOrderQo.class);
     }
 
+    public MemberOrderQo updatePaymentPrepared(String outTradeNo, String channel, String prepayId) {
+        MemberOrder order = memberOrderRepository.findByOutTradeNo(outTradeNo);
+        if (order == null) throw new SysException(ResponseCode.FAIL_NOT);
+        order.setChannel(channel);
+        order.setPrepayId(prepayId);
+        order.setUpdatedAt(new Date());
+        return CopyUtil.copy(memberOrderRepository.save(order), MemberOrderQo.class);
+    }
+
     public Map<String, Object> findUserOrders(Long userId, MemberOrderQo qo) {
         Pageable pageable = new PageRequest(
                 qo.getPage() == null ? 0 : qo.getPage(),
@@ -352,7 +361,7 @@ public class MemberService {
     }
 
     public Map<String, Object> findAdminOrders(MemberOrderQo qo) {
-        Page<MemberOrder> page = memberOrderRepository.findAll(orderSpec(qo), pageable(qo, new Sort(Sort.Direction.DESC, "credate")));
+        Page<MemberOrder> page = memberOrderRepository.findAll(orderSpec(qo), pageable(qo, new Sort(Sort.Direction.DESC, "credate", "id")));
         List<MemberOrderQo> content = page.getContent().stream()
                 .map(order -> CopyUtil.copy(order, MemberOrderQo.class))
                 .collect(Collectors.toList());
@@ -439,6 +448,7 @@ public class MemberService {
             List<Predicate> ps = new ArrayList<>();
             if (qo != null && qo.getUserId() != null) ps.add(cb.equal(root.get("userId"), qo.getUserId()));
             if (qo != null && hasText(qo.getStatus())) ps.add(cb.equal(root.get("status"), qo.getStatus()));
+            if (qo != null && hasText(qo.getChannel())) ps.add(cb.equal(root.get("channel"), qo.getChannel()));
             if (qo != null && hasText(qo.getOutTradeNo())) ps.add(cb.like(root.get("outTradeNo"), "%" + qo.getOutTradeNo().trim() + "%"));
             return cb.and(ps.toArray(new Predicate[0]));
         };

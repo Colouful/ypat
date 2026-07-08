@@ -12,6 +12,7 @@ import javax.persistence.Table;
 import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
 import javax.persistence.UniqueConstraint;
+import javax.persistence.Version;
 import java.io.Serializable;
 import java.util.Date;
 
@@ -75,6 +76,12 @@ public class MemberOrder implements Serializable {
     @Column(nullable = false, length = 1)
     private String status;
 
+    @Column(name = "channel", length = 16)
+    private String channel;
+
+    @Column(name = "prepay_id", length = 128)
+    private String prepayId;
+
     @Column(name = "wx_transaction_id", length = 64)
     private String wxTransactionId;
 
@@ -89,6 +96,10 @@ public class MemberOrder implements Serializable {
     @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     @Temporal(TemporalType.TIMESTAMP)
     private Date updatedAt;
+
+    @Version
+    @Column(nullable = false)
+    private Integer version;
 
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
@@ -114,6 +125,10 @@ public class MemberOrder implements Serializable {
     public void setDurationDays(Integer durationDays) { this.durationDays = durationDays; }
     public String getStatus() { return status; }
     public void setStatus(String status) { this.status = status; }
+    public String getChannel() { return channel; }
+    public void setChannel(String channel) { this.channel = channel; }
+    public String getPrepayId() { return prepayId; }
+    public void setPrepayId(String prepayId) { this.prepayId = prepayId; }
     public String getWxTransactionId() { return wxTransactionId; }
     public void setWxTransactionId(String wxTransactionId) { this.wxTransactionId = wxTransactionId; }
     public Date getPaidAt() { return paidAt; }
@@ -122,4 +137,6 @@ public class MemberOrder implements Serializable {
     public void setCredate(Date credate) { this.credate = credate; }
     public Date getUpdatedAt() { return updatedAt; }
     public void setUpdatedAt(Date updatedAt) { this.updatedAt = updatedAt; }
+    public Integer getVersion() { return version; }
+    public void setVersion(Integer version) { this.version = version; }
 }
