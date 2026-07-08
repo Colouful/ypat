@@ -5,6 +5,7 @@ import com.ypat.BannerQo;
 import com.ypat.ProductQo;
 import com.ypat.ResponseApiBody;
 import com.ypat.ResponseCode;
+import com.ypat.SysException;
 import com.ypat.service.ArticleServiceClient;
 import com.ypat.service.BannerServiceClient;
 import com.ypat.service.ProductServiceClient;
@@ -34,6 +35,72 @@ public class AdminPublishControllerTest {
         assertSuccessWithoutPayload(controller.upDown(3L, "1"));
         assertEquals(3L, client.upDown.getId().longValue());
         assertEquals("1", client.upDown.getStatus());
+    }
+
+    @Test
+    public void bannerSaveAcceptsMiniappJumpConfig() throws Exception {
+        AdminBannerController controller = new AdminBannerController();
+        RecordingBannerServiceClient client = new RecordingBannerServiceClient();
+        setField(controller, "bannerServiceClient", client);
+
+        BannerQo qo = new BannerQo();
+        qo.setTitle("banner");
+        qo.setImgpath("/img/banner.png");
+        qo.setJumpflag("1");
+        qo.setJumptype("miniapp");
+        qo.setJumpurl("/pages/work/index");
+
+        assertSuccessWithoutPayload(controller.save(qo));
+        assertEquals("1", client.saved.getJumpflag());
+        assertEquals("miniapp", client.saved.getJumptype());
+        assertEquals("/pages/work/index", client.saved.getJumpurl());
+    }
+
+    @Test
+    public void bannerSaveAcceptsWebJumpConfig() throws Exception {
+        AdminBannerController controller = new AdminBannerController();
+        RecordingBannerServiceClient client = new RecordingBannerServiceClient();
+        setField(controller, "bannerServiceClient", client);
+
+        BannerQo qo = new BannerQo();
+        qo.setTitle("banner");
+        qo.setImgpath("/img/banner.png");
+        qo.setJumpflag("1");
+        qo.setJumptype("web");
+        qo.setJumpurl("https://example.com/activity");
+
+        assertSuccessWithoutPayload(controller.save(qo));
+        assertEquals("1", client.saved.getJumpflag());
+        assertEquals("web", client.saved.getJumptype());
+        assertEquals("https://example.com/activity", client.saved.getJumpurl());
+    }
+
+    @Test(expected = SysException.class)
+    public void bannerSaveRejectsEnabledJumpWithoutTarget() {
+        AdminBannerController controller = new AdminBannerController();
+
+        BannerQo qo = new BannerQo();
+        qo.setTitle("banner");
+        qo.setImgpath("/img/banner.png");
+        qo.setJumpflag("1");
+        qo.setJumptype("miniapp");
+        qo.setJumpurl("");
+
+        controller.save(qo);
+    }
+
+    @Test(expected = SysException.class)
+    public void bannerSaveRejectsNonHttpWebTarget() {
+        AdminBannerController controller = new AdminBannerController();
+
+        BannerQo qo = new BannerQo();
+        qo.setTitle("banner");
+        qo.setImgpath("/img/banner.png");
+        qo.setJumpflag("1");
+        qo.setJumptype("web");
+        qo.setJumpurl("javascript:alert(1)");
+
+        controller.save(qo);
     }
 
     @Test
