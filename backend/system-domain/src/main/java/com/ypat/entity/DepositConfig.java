@@ -10,6 +10,7 @@ import javax.persistence.Id;
 import javax.persistence.Table;
 import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
+import javax.persistence.Version;
 import java.io.Serializable;
 import java.util.Date;
 
@@ -49,6 +50,9 @@ public class DepositConfig implements Serializable {
     @Temporal(TemporalType.TIMESTAMP)
     private Date updatedAt;
 
+    @Version
+    private Integer version;
+
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
     public String getEnabled() { return enabled; }
@@ -69,4 +73,6 @@ public class DepositConfig implements Serializable {
     public void setAgreementSummary(String agreementSummary) { this.agreementSummary = agreementSummary; }
     public Date getUpdatedAt() { return updatedAt; }
     public void setUpdatedAt(Date updatedAt) { this.updatedAt = updatedAt; }
+    public Integer getVersion() { return version; }
+    public void setVersion(Integer version) { this.version = version; }
 }

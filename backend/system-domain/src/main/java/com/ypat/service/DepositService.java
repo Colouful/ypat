@@ -67,16 +67,18 @@ public class DepositService {
         DepositConfig config = loadConfig();
         Integer amountFen = effectiveAmountFen(config);
         Date now = new Date();
+        Date cutoff = new Date(now.getTime() - REUSE_WINDOW_MILLIS);
 
-        Page<DepositOrder> recentPage = depositOrderRepository.findByUserIdAndStatusOrderByCreatedAtDesc(
+        Page<DepositOrder> recentPage = depositOrderRepository.findByUserIdAndStatusAndChannelAndAmountFenAndCreatedAtGreaterThanEqualOrderByCreatedAtDesc(
                 userId,
                 PaymentStatus.PENDING.value,
-                new PageRequest(0, 10, new Sort(Sort.Direction.DESC, "createdAt"))
+                channel,
+                amountFen,
+                cutoff,
+                new PageRequest(0, 1, new Sort(Sort.Direction.DESC, "createdAt"))
         );
-        for (DepositOrder recent : recentPage.getContent()) {
-            if (samePendingOrder(recent, channel, amountFen, now)) {
-                return CopyUtil.copy(recent, DepositOrderQo.class);
-            }
+        if (!recentPage.getContent().isEmpty()) {
+            return CopyUtil.copy(recentPage.getContent().get(0), DepositOrderQo.class);
         }
 
         DepositOrder order = new DepositOrder();
@@ -133,11 +135,11 @@ public class DepositService {
         config.setId(CONFIG_ID);
         config.setEnabled("1");
         config.setAmountFen(19900);
-        config.setTestEnabled("0");
+        config.setTestEnabled("1");
         config.setTestAmountFen(1);
-        config.setRefundWaitDays(0);
-        config.setEarlyRefundFeeRate(0);
-        config.setDisplayAmountFen(config.getAmountFen());
+        config.setRefundWaitDays(90);
+        config.setEarlyRefundFeeRate(15);
+        config.setDisplayAmountFen(config.getTestAmountFen());
         config.setUpdatedAt(new Date());
         return config;
     }
@@ -147,15 +149,6 @@ public class DepositService {
         Integer amount = "1".equals(config.getTestEnabled()) ? config.getTestAmountFen() : config.getAmountFen();
         if (amount == null || amount <= 0) throw new SysException(ResponseCode.FAIL_PAY_AMOUNT);
         return amount;
-    }
-
-    private boolean samePendingOrder(DepositOrder order, String channel, Integer amountFen, Date now) {
-        return order != null
-                && PaymentStatus.PENDING.value.equals(order.getStatus())
-                && channel.equals(order.getChannel())
-                && amountFen.equals(order.getAmountFen())
-                && order.getCreatedAt() != null
-                && now.getTime() - order.getCreatedAt().getTime() < REUSE_WINDOW_MILLIS;
     }
 
     private String generateOutTradeNo(Long userId) {

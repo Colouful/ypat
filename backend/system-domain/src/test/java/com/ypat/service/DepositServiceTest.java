@@ -22,6 +22,7 @@ import java.util.Date;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 
@@ -35,6 +36,21 @@ public class DepositServiceTest {
         DepositConfigQo qo = service.getConfig();
 
         assertEquals(Integer.valueOf(1), qo.getDisplayAmountFen());
+    }
+
+    @Test
+    public void getConfigUsesSqlDefaultsWhenConfigMissing() {
+        DepositService service = new DepositService();
+        ReflectionTestUtils.setField(service, "depositConfigRepository", depositConfigRepository(null));
+
+        DepositConfigQo qo = service.getConfig();
+
+        assertEquals("1", qo.getTestEnabled());
+        assertEquals(Integer.valueOf(19900), qo.getAmountFen());
+        assertEquals(Integer.valueOf(1), qo.getTestAmountFen());
+        assertEquals(Integer.valueOf(1), qo.getDisplayAmountFen());
+        assertEquals(Integer.valueOf(90), qo.getRefundWaitDays());
+        assertEquals(Integer.valueOf(15), qo.getEarlyRefundFeeRate());
     }
 
     @Test
@@ -56,13 +72,15 @@ public class DepositServiceTest {
     public void createPendingOrderReusesRecentPendingSameChannelAndAmount() {
         DepositService service = new DepositService();
         DepositOrder existing = order("D202607080001", 7L, "MINIAPP", 1, "PENDING", new Date());
+        SavedDepositOrder saved = new SavedDepositOrder();
         ReflectionTestUtils.setField(service, "depositConfigRepository", depositConfigRepository(config("1", 19900, 1)));
-        ReflectionTestUtils.setField(service, "depositOrderRepository", depositOrderRepository(0, existing, new SavedDepositOrder()));
+        ReflectionTestUtils.setField(service, "depositOrderRepository", depositOrderRepository(0, existing, saved));
 
         DepositOrderQo qo = service.createPendingOrder(7L, "MINIAPP");
 
         assertEquals("D202607080001", qo.getOutTradeNo());
         assertEquals(Integer.valueOf(1), qo.getAmountFen());
+        assertNull(saved.lastSaved);
     }
 
     @Test
@@ -139,6 +157,14 @@ public class DepositServiceTest {
             @Override
             public Object invoke(Object proxy, Method method, Object[] args) {
                 if ("findByUserIdAndStatusOrderByCreatedAtDesc".equals(method.getName())) {
+                    throw new AssertionError("createPendingOrder should use exact reuse query");
+                }
+                if ("findByUserIdAndStatusAndChannelAndAmountFenAndCreatedAtGreaterThanEqualOrderByCreatedAtDesc".equals(method.getName())) {
+                    assertEquals(Long.valueOf(7L), args[0]);
+                    assertEquals("PENDING", args[1]);
+                    assertEquals("MINIAPP", args[2]);
+                    assertEquals(Integer.valueOf(1), args[3]);
+                    assertTrue(args[4] instanceof Date);
                     return new PageImpl<DepositOrder>(recent == null ? Collections.<DepositOrder>emptyList() : Collections.singletonList(recent));
                 }
                 if ("save".equals(method.getName())) {
