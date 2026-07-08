@@ -12,11 +12,16 @@
     <view class="login-body">
       <!-- #ifdef MP-WEIXIN -->
       <button
+        v-if="agreed"
         class="wx-button"
         open-type="getPhoneNumber"
         :disabled="submitting"
         @getphonenumber="handleWechatPhoneAuthorization"
       >
+        <KeepIcon name="phone" :size="38" color="#FFFFFF" />
+        <text>{{ submitting ? '登录中...' : '微信一键登录' }}</text>
+      </button>
+      <button v-else class="wx-button" :disabled="submitting" @tap="showAgreementConfirm">
         <KeepIcon name="phone" :size="38" color="#FFFFFF" />
         <text>{{ submitting ? '登录中...' : '微信一键登录' }}</text>
       </button>
@@ -81,6 +86,35 @@
         <text class="login-agreement__link" @tap="goPrivacy">《隐私政策》</text>
       </view>
     </view>
+
+    <!-- #ifdef MP-WEIXIN -->
+    <view v-if="agreementConfirmVisible" class="agreement-modal" @tap="hideAgreementConfirm">
+      <view class="agreement-modal__panel" @tap.stop>
+        <text class="agreement-modal__title">请先同意服务协议</text>
+        <text class="agreement-modal__desc">
+          登录爱去拍前，请先阅读并同意平台协议。我们会在你授权后使用微信手机号完成登录匹配与账号安全校验。
+        </text>
+        <view class="agreement-modal__links">
+          <text class="agreement-modal__text">你可以查看</text>
+          <text class="agreement-modal__link" @tap.stop="goAgreement">《用户协议》</text>
+          <text class="agreement-modal__text">和</text>
+          <text class="agreement-modal__link" @tap.stop="goPrivacy">《隐私政策》</text>
+        </view>
+        <view class="agreement-modal__actions">
+          <button class="agreement-modal__cancel" @tap="hideAgreementConfirm">暂不同意</button>
+          <button
+            class="agreement-modal__confirm"
+            open-type="getPhoneNumber"
+            :disabled="submitting"
+            @tap="acceptAgreementBeforeAuthorization"
+            @getphonenumber="handleWechatPhoneAuthorization"
+          >
+            同意并授权登录
+          </button>
+        </view>
+      </view>
+    </view>
+    <!-- #endif -->
   </view>
 </template>
 
@@ -112,6 +146,7 @@ interface PhoneAuthorizationEvent {
 
 const userStore = useUserStore()
 const agreed = ref(false)
+const agreementConfirmVisible = ref(false)
 const submitting = ref(false)
 const codeSending = ref(false)
 const countdown = ref(0)
@@ -195,6 +230,20 @@ async function handleWechatPhoneAuthorization(event: PhoneAuthorizationEvent): P
   } finally {
     submitting.value = false
   }
+}
+
+function showAgreementConfirm(): void {
+  if (submitting.value) return
+  agreementConfirmVisible.value = true
+}
+
+function hideAgreementConfirm(): void {
+  agreementConfirmVisible.value = false
+}
+
+function acceptAgreementBeforeAuthorization(): void {
+  agreed.value = true
+  agreementConfirmVisible.value = false
 }
 
 function ensureAgreement(): boolean {
@@ -461,5 +510,95 @@ onLoad((query) => {
 .login-agreement__link {
   color: $color-text-primary;
   font-weight: 800;
+}
+
+.agreement-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 99;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 48rpx;
+  background: rgba(15, 18, 24, 0.52);
+}
+
+.agreement-modal__panel {
+  width: 100%;
+  padding: 44rpx 36rpx 32rpx;
+  border-radius: 24rpx;
+  background: #fff;
+  box-shadow: 0 24rpx 70rpx rgba(15, 18, 24, 0.18);
+}
+
+.agreement-modal__title {
+  display: block;
+  color: $color-text-primary;
+  font-size: 34rpx;
+  font-weight: 900;
+  text-align: center;
+}
+
+.agreement-modal__desc {
+  display: block;
+  margin-top: 24rpx;
+  color: $color-text-secondary;
+  font-size: 27rpx;
+  line-height: 1.7;
+}
+
+.agreement-modal__links {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  margin-top: 22rpx;
+  line-height: 1.7;
+}
+
+.agreement-modal__text,
+.agreement-modal__link {
+  font-size: 26rpx;
+}
+
+.agreement-modal__text {
+  color: $color-text-secondary;
+}
+
+.agreement-modal__link {
+  color: $color-primary-dark;
+  font-weight: 900;
+}
+
+.agreement-modal__actions {
+  display: flex;
+  gap: 20rpx;
+  margin-top: 36rpx;
+}
+
+.agreement-modal__cancel,
+.agreement-modal__confirm {
+  @include flex-center;
+  flex: 1;
+  min-width: 0;
+  height: 84rpx;
+  margin: 0;
+  border-radius: $radius-round;
+  font-size: 27rpx;
+  font-weight: 900;
+  line-height: 84rpx;
+}
+
+.agreement-modal__cancel {
+  color: $color-text-secondary;
+  background: $color-bg-chip;
+}
+
+.agreement-modal__confirm {
+  color: #fff;
+  background: $color-primary;
+}
+
+.agreement-modal__confirm[disabled] {
+  opacity: 0.65;
 }
 </style>
