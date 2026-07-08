@@ -108,11 +108,36 @@ describe('banner link helpers', () => {
     expect(preview).toHaveBeenCalledTimes(1)
   })
 
+  it('copies copy actions without previewing', () => {
+    const preview = vi.fn()
+
+    openBannerAction({ type: 'copy', url: 'https://example.com/a' }, preview)
+
+    expect(uni.setClipboardData).toHaveBeenCalledWith(expect.objectContaining({
+      data: 'https://example.com/a',
+    }))
+    expect(preview).not.toHaveBeenCalled()
+  })
+
   it('uses switchTab for tab miniapp pages', () => {
     openBannerAction({ type: 'miniapp', url: '/pages/work/index' }, vi.fn())
 
     expect(uni.switchTab).toHaveBeenCalledWith(expect.objectContaining({ url: '/pages/work/index' }))
     expect(uni.navigateTo).not.toHaveBeenCalled()
+  })
+
+  it('previews when tab miniapp navigation fails', () => {
+    const preview = vi.fn()
+    vi.mocked(uni.switchTab).mockImplementationOnce((options: UniApp.SwitchTabOptions) => {
+      options.fail?.({ errMsg: 'fail' })
+    })
+
+    openBannerAction({ type: 'miniapp', url: '/pages/home/index' }, preview)
+
+    expect(uni.switchTab).toHaveBeenCalledWith(expect.objectContaining({
+      url: '/pages/home/index',
+    }))
+    expect(preview).toHaveBeenCalledTimes(1)
   })
 
   it('uses navigateTo for non-tab miniapp pages and previews on failure', () => {
