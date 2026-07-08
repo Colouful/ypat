@@ -3,6 +3,8 @@ package com.ypat.service;
 import com.ypat.PageQo;
 import com.ypat.ResponseCode;
 import com.ypat.SysException;
+import com.ypat.entity.MessInfo;
+import com.ypat.entity.Record;
 import com.ypat.WorkAdminListItem;
 import com.ypat.WorkDetailQo;
 import com.ypat.WorkListItem;
@@ -17,9 +19,18 @@ import com.ypat.entity.WorkLike;
 import com.ypat.entity.WorkMedia;
 import com.ypat.entity.WorkTag;
 import com.ypat.entity.WorkTagRel;
+import com.ypat.entity.YpatInfo;
+import com.ypat.enums.MessType;
+import com.ypat.enums.RecordType;
 import com.ypat.enums.UserProfess;
+import com.ypat.enums.YesNo;
+import com.ypat.enums.YpatChargeWay;
+import com.ypat.enums.YpatPatstyle;
+import com.ypat.enums.YpatStatus;
 import com.ypat.enums.WorkStatus;
 import com.ypat.enums.YpatTarget;
+import com.ypat.repository.MessInfoRepository;
+import com.ypat.repository.RecordRepository;
 import com.ypat.repository.UserRepository;
 import com.ypat.repository.WorkComplainRepository;
 import com.ypat.repository.WorkFavoriteRepository;
@@ -28,6 +39,8 @@ import com.ypat.repository.WorkMediaRepository;
 import com.ypat.repository.WorkRepository;
 import com.ypat.repository.WorkTagRelRepository;
 import com.ypat.repository.WorkTagRepository;
+import com.ypat.repository.YpatInfoRepository;
+import com.ypat.util.Constant;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -64,6 +77,9 @@ public class WorkService {
     @Autowired private WorkFavoriteRepository workFavoriteRepository;
     @Autowired private WorkComplainRepository workComplainRepository;
     @Autowired private UserRepository userRepository;
+    @Autowired private YpatInfoRepository ypatInfoRepository;
+    @Autowired private MessInfoRepository messInfoRepository;
+    @Autowired private RecordRepository recordRepository;
 
     private static final Pattern MOBILE = Pattern.compile("(13[0-9]|14[01456879]|15[0-35-9]|16[2567]|17[0-8]|18[0-9]|19[0-35-9])\\d{8}");
     private static final Pattern WX = Pattern.compile("(?i)(wx|wechat|vx)[^a-z0-9]?[a-z][a-z0-9_-]{5,19}", Pattern.CASE_INSENSITIVE);
@@ -255,6 +271,9 @@ public class WorkService {
             userMap.put("avatar", user.getAvatarurl());
             userMap.put("gender", user.getGender());
             userMap.put("profession", user.getProfess());
+            userMap.put("profess", user.getProfess());
+            userMap.put("professTxt", UserProfess.getNameByCode(user.getProfess()));
+            userMap.put("professName", UserProfess.getNameByCode(user.getProfess()));
             userMap.put("city", user.getCity());
             userMap.put("mobile", null); // 不返回
             userMap.put("activeTime", "刚刚");
@@ -262,8 +281,15 @@ public class WorkService {
         res.put("user", userMap);
 
         // 当前用户状态
-        res.put("isLiked", viewerId != null && workLikeRepository.existsByWorkIdAndUserId(workId, viewerId));
-        res.put("isFavorited", viewerId != null && workFavoriteRepository.existsByWorkIdAndUserId(workId, viewerId));
+        boolean liked = viewerId != null && workLikeRepository.existsByWorkIdAndUserId(workId, viewerId);
+        boolean favorited = viewerId != null && workFavoriteRepository.existsByWorkIdAndUserId(workId, viewerId);
+        res.put("isLiked", liked);
+        res.put("isFavorited", favorited);
+        res.put("liked", liked);
+        res.put("favorited", favorited);
+        res.put("likeflag", liked ? "1" : "0");
+        res.put("colflag", favorited ? "1" : "0");
+        res.put("favoriteflag", favorited ? "1" : "0");
         res.put("isOwner", viewerId != null && viewerId.equals(work.getUserid()));
         return res;
     }
@@ -624,7 +650,7 @@ public class WorkService {
     /**
      * 投诉
      */
-    public void complain(Work work, Long userId, String reason, String contact) {
+    public void complain(Work work, Long userId, String reason, String contact, String pics) {
         if (work == null) throw new SysException(ResponseCode.FAIL_WORK_NOT_FOUND);
         if (userId == null) throw new SysException(ResponseCode.FAIL_AUTH);
         if (StringUtils.isBlank(reason) || reason.length() < 10 || reason.length() > 500) {
@@ -638,6 +664,7 @@ public class WorkService {
         c.setUserId(userId);
         c.setReason(reason);
         c.setContact(contact);
+        c.setPics(normalizePics(pics));
         c.setStatus("0");
         c.setCreatedAt(new Date());
         workComplainRepository.save(c);
@@ -660,16 +687,100 @@ public class WorkService {
         User author = userRepository.findById(work.getUserid());
         if (author == null) throw new SysException(ResponseCode.FAIL_NOT);
 
+        String reason = StringUtils.trimToEmpty(qo.getReason());
+        if (reason.length() < 6 || reason.length() > 120) {
+            throw new SysException(ResponseCode.FAIL_PARA);
+        }
+        User viewer = userRepository.findById(viewerId);
+        if (viewer == null) throw new SysException(ResponseCode.FAIL_AUTH);
+        if (StringUtils.isBlank(qo.getMobile()) && StringUtils.isBlank(qo.getWx())
+                && StringUtils.isBlank(viewer.getMobile()) && StringUtils.isBlank(viewer.getWx())) {
+            throw new SysException(ResponseCode.FAIL_PARA, "请完善联系方式");
+        }
+        int userPpd = viewer.getPpd() == null ? 0 : viewer.getPpd();
+        if (userPpd < Constant.APPLY_NEED_PPD) {
+            throw new SysException(ResponseCode.FAIL_BALANCE);
+        }
+        Long hasSent = messInfoRepository.countSendByWorkId(MessType.send.value, viewerId, workId);
+        if (hasSent != null && hasSent > 0) {
+            throw new SysException(ResponseCode.FAIL_EXIST);
+        }
+
         String target = mapProfessionToTarget(author.getProfess());
+        YpatInfo ypatInfo = createQuickApplyYpat(work, author, target);
+        viewer.setPpd(userPpd - Constant.APPLY_NEED_PPD);
+        if (StringUtils.isBlank(viewer.getWx()) && StringUtils.isNotBlank(qo.getWx())) {
+            viewer.setWx(qo.getWx());
+        }
+        userRepository.save(viewer);
+
+        Record record = new Record();
+        record.setCredate(new Date());
+        record.setPpd(-1 * Constant.APPLY_NEED_PPD);
+        record.setUserid(viewer.getId());
+        record.setType(RecordType.APP.value);
+        recordRepository.save(record);
+
+        MessInfo messInfo = new MessInfo();
+        messInfo.setCredate(new Date());
+        messInfo.setMessviewflag(YesNo.no.value);
+        messInfo.setLinkwayflag(YesNo.no.value);
+        messInfo.setStatus(YesNo.no.value);
+        messInfo.setSendper(viewer);
+        messInfo.setRecper(author);
+        messInfo.setYpatInfo(ypatInfo);
+        messInfo.setType(MessType.send.value);
+        messInfo.setContent(reason);
+        messInfoRepository.save(messInfo);
+
+        ypatInfo.setPattimes((ypatInfo.getPattimes() == null ? 0 : ypatInfo.getPattimes()) + 1);
+        ypatInfoRepository.save(ypatInfo);
+        author.setRectimes((author.getRectimes() == null ? 0 : author.getRectimes()) + 1);
+        userRepository.save(author);
 
         Map<String, Object> res = new HashMap<>();
         res.put("workId", workId);
+        res.put("ypatid", ypatInfo.getId());
+        res.put("messId", messInfo.getId());
         res.put("authorId", author.getId());
         res.put("authorNickname", author.getNickname());
         res.put("target", target);
         res.put("targetLabel", YpatTarget.getNameByCode(target));
         res.put("profession", author.getProfess());
         return res;
+    }
+
+    private YpatInfo createQuickApplyYpat(Work work, User author, String target) {
+        YpatInfo ypatInfo = new YpatInfo();
+        ypatInfo.setDescrib(StringUtils.defaultIfBlank(work.getDescription(), "来自作品的约拍申请"));
+        ypatInfo.setTarget(target);
+        ypatInfo.setPatdate(new Date());
+        ypatInfo.setPatarea(StringUtils.defaultIfBlank(work.getShootLocation(), author.getCity()));
+        ypatInfo.setPatslice(work.getReturnPhotoFlag() == null ? null : String.valueOf(work.getReturnPhotoFlag()));
+        ypatInfo.setChargeway(YpatChargeWay.fyxs.value);
+        ypatInfo.setProvince(author.getProvince());
+        ypatInfo.setCity(author.getCity());
+        ypatInfo.setArea(author.getArea());
+        ypatInfo.setCreditflag(YesNo.no.value);
+        ypatInfo.setRealnameflag(YesNo.no.value);
+        ypatInfo.setPatstyle(YpatPatstyle.s0.value);
+        ypatInfo.setStatus(YpatStatus.shtg.value);
+        ypatInfo.setPubdate(new Date());
+        ypatInfo.setReadtimes(0);
+        ypatInfo.setPattimes(0);
+        ypatInfo.setColtimes(0);
+        ypatInfo.setWorkId(work.getId());
+        ypatInfo.setUser(author);
+        return ypatInfoRepository.save(ypatInfo);
+    }
+
+    private String normalizePics(String pics) {
+        if (StringUtils.isBlank(pics)) return null;
+        List<String> normalized = new ArrayList<>();
+        for (String pic : pics.split(",")) {
+            if (StringUtils.isNotBlank(pic)) normalized.add(pic.trim());
+        }
+        return normalized.isEmpty() ? null : StringUtils.join(normalized, ",");
     }
 
     /**

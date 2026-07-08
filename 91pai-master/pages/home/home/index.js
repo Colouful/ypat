@@ -9,7 +9,9 @@ import homeItem from "@/components/custom/homeItem/index.vue";
 import tuiDrawer from "@/components/thor-ui/drawer/drawer";
 import tuiSkeleton from "@/components/thor-ui/tui-skeleton/tui-skeleton";
 import homeList from "@/components/custom/homeList/index.vue";
-import { my_ypat_unread_count } from "@/common/vmeitime-http";
+import homeBanner from "@/components/custom/homeBanner/index.vue";
+import splashOverlay from "@/components/custom/splashOverlay/index.vue";
+import { my_ypat_unread_count, banner_list } from "@/common/vmeitime-http";
 import { getUserInfo } from "@/common/utils";
 import localStorageObj from "@/common/localStorage";
 import demo from "@/components/custom/demo/index.vue";
@@ -24,6 +26,8 @@ export default {
     tuiDrawer,
     tuiSkeleton,
     homeList,
+    homeBanner,
+    splashOverlay,
     demo,
   },
   data() {
@@ -128,10 +132,12 @@ export default {
       ],
       homeData: [],
       msgCount: 0,
+      bannerList: [],
     };
   },
   onLoad() {
     uni.hideTabBar();
+    this.loadBannerList();
 
     this.$refs.mychild && this.$refs.mychild.downRefresh(false);
   },
@@ -139,13 +145,30 @@ export default {
     //  页面公用方法
     this.tui.commonFunc();
     //  页面公用方法 end
+    this.showSplashIfReady();
     if (uni.getStorageSync(localStorageObj.token)) {
       this.my_ypat_unread_count();
       this.user_get();
     }
   },
+  onReady() {
+    this.showSplashIfReady();
+  },
   mounted() {},
   methods: {
+    showSplashIfReady() {
+      this.$refs.splashOverlay && this.$refs.splashOverlay.checkAndShow();
+    },
+    async loadBannerList() {
+      const res = await banner_list({ page: 0, size: 5 }).catch(() => null);
+      if (res && res.code === 200 && res.res && res.res.content) {
+        this.bannerList = res.res.content;
+      } else if (res && res.code === 200 && Array.isArray(res.res)) {
+        this.bannerList = res.res;
+      } else {
+        this.bannerList = [];
+      }
+    },
     async user_get() {
       let res = await getUserInfo();
       this.userInfo = res;

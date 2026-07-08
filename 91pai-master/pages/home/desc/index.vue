@@ -192,7 +192,7 @@
         </view>
       </view>
       <confirm-alert @sure="sure" @cancle="cancle" :visiable="visiable" :button="button">
-        <view v-if="pathName==='/pages/mine/realname/index'">当前约拍对方要求您实名认证方可发起约拍，是否前去实名？</view>
+        <view v-if="isRealnamePath()">当前约拍对方要求您实名认证方可发起约拍，是否前去实名？</view>
         <view v-if="pathName==='/pages/mine/credit/index'">当前约拍对方要求您缴纳保证金方可发起约拍，是否缴纳？</view>
       </confirm-alert>
     </view>

@@ -75,7 +75,7 @@
           <view
            
             class="item-box"
-            @tap="navTo('/pages/mine/realname/index','realname')"
+            @tap="navTo('/pages/mine/realname/intro/index','realname')"
           >
             <view>
               <view class="title-item">
