@@ -247,6 +247,12 @@
           "style": {
             "navigationStyle": "custom"
           }
+        },
+        {
+          "path": "web-view",
+          "style": {
+            "navigationStyle": "custom"
+          }
         }
       ]
     },
