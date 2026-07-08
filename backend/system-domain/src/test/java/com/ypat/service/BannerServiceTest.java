@@ -36,6 +36,26 @@ public class BannerServiceTest {
         assertNull(saved.banner.getJumpurl());
     }
 
+    @Test
+    public void saveDefaultsBlankJumpflagToZero() {
+        BannerService service = new BannerService();
+        SavedBanner saved = new SavedBanner();
+        ReflectionTestUtils.setField(service, "bannerRepository", bannerRepository(saved));
+
+        BannerQo qo = new BannerQo();
+        qo.setTitle("banner");
+        qo.setImgpath("/img/banner.png");
+        qo.setJumpflag("");
+        qo.setJumptype("web");
+        qo.setJumpurl("https://example.com/activity");
+
+        service.save(qo);
+
+        assertEquals("0", saved.banner.getJumpflag());
+        assertNull(saved.banner.getJumptype());
+        assertNull(saved.banner.getJumpurl());
+    }
+
     @Test(expected = SysException.class)
     public void saveRejectsInvalidWebJumpUrl() {
         BannerService service = new BannerService();
@@ -47,6 +67,51 @@ public class BannerServiceTest {
         qo.setJumpflag("1");
         qo.setJumptype("web");
         qo.setJumpurl("javascript:alert(1)");
+
+        service.save(qo);
+    }
+
+    @Test(expected = SysException.class)
+    public void saveRejectsBlankJumpUrl() {
+        BannerService service = new BannerService();
+        ReflectionTestUtils.setField(service, "bannerRepository", bannerRepository(new SavedBanner()));
+
+        BannerQo qo = new BannerQo();
+        qo.setTitle("banner");
+        qo.setImgpath("/img/banner.png");
+        qo.setJumpflag("1");
+        qo.setJumptype("miniapp");
+        qo.setJumpurl("");
+
+        service.save(qo);
+    }
+
+    @Test(expected = SysException.class)
+    public void saveRejectsTooLongJumpUrl() {
+        BannerService service = new BannerService();
+        ReflectionTestUtils.setField(service, "bannerRepository", bannerRepository(new SavedBanner()));
+
+        BannerQo qo = new BannerQo();
+        qo.setTitle("banner");
+        qo.setImgpath("/img/banner.png");
+        qo.setJumpflag("1");
+        qo.setJumptype("web");
+        qo.setJumpurl(repeat("a", 501));
+
+        service.save(qo);
+    }
+
+    @Test(expected = SysException.class)
+    public void saveRejectsInvalidMiniappPath() {
+        BannerService service = new BannerService();
+        ReflectionTestUtils.setField(service, "bannerRepository", bannerRepository(new SavedBanner()));
+
+        BannerQo qo = new BannerQo();
+        qo.setTitle("banner");
+        qo.setImgpath("/img/banner.png");
+        qo.setJumpflag("1");
+        qo.setJumptype("miniapp");
+        qo.setJumpurl("/work/index");
 
         service.save(qo);
     }
@@ -64,6 +129,26 @@ public class BannerServiceTest {
         qo.setJumpurl("/pages/work/index");
 
         service.save(qo);
+    }
+
+    @Test
+    public void saveAcceptsMiniappPath() {
+        BannerService service = new BannerService();
+        SavedBanner saved = new SavedBanner();
+        ReflectionTestUtils.setField(service, "bannerRepository", bannerRepository(saved));
+
+        BannerQo qo = new BannerQo();
+        qo.setTitle("banner");
+        qo.setImgpath("/img/banner.png");
+        qo.setJumpflag("1");
+        qo.setJumptype("miniapp");
+        qo.setJumpurl("/pages-sub/work/detail?id=1");
+
+        service.save(qo);
+
+        assertEquals("1", saved.banner.getJumpflag());
+        assertEquals("miniapp", saved.banner.getJumptype());
+        assertEquals("/pages-sub/work/detail?id=1", saved.banner.getJumpurl());
     }
 
     @Test
@@ -119,6 +204,14 @@ public class BannerServiceTest {
         if (int.class.equals(type)) return 0;
         if (long.class.equals(type)) return 0L;
         return null;
+    }
+
+    private static String repeat(String value, int count) {
+        StringBuilder builder = new StringBuilder(value.length() * count);
+        for (int i = 0; i < count; i++) {
+            builder.append(value);
+        }
+        return builder.toString();
     }
 
     private static class SavedBanner {
