@@ -37,6 +37,7 @@ CREATE TABLE IF NOT EXISTS `t_deposit_order` (
   `paid_at`        DATETIME     DEFAULT NULL            COMMENT '支付完成时间',
   `created_at`     DATETIME     DEFAULT NULL            COMMENT '创建时间',
   `updated_at`     DATETIME     DEFAULT NULL            COMMENT '更新时间',
+  `version`        INT          NOT NULL DEFAULT 0      COMMENT '乐观锁版本号',
   PRIMARY KEY (`id`),
   UNIQUE KEY `uk_out_trade_no` (`out_trade_no`),
   KEY `idx_user_status` (`user_id`, `status`),
@@ -63,6 +64,7 @@ CREATE TABLE IF NOT EXISTS `t_payment_order` (
   `paid_at`            DATETIME      DEFAULT NULL            COMMENT '支付完成时间',
   `created_at`         DATETIME      DEFAULT NULL            COMMENT '创建时间',
   `updated_at`         DATETIME      DEFAULT NULL            COMMENT '更新时间',
+  `version`            INT           NOT NULL DEFAULT 0      COMMENT '乐观锁版本号',
   PRIMARY KEY (`id`),
   UNIQUE KEY `uk_payment_no` (`payment_no`),
   UNIQUE KEY `uk_out_trade_no` (`out_trade_no`),
@@ -77,9 +79,37 @@ INSERT INTO `t_deposit_config`
   (`id`, `enabled`, `amount_fen`, `test_enabled`, `test_amount_fen`, `display_amount_fen`,
    `refund_wait_days`, `early_refund_fee_rate`, `agreement_summary`, `updated_at`)
 VALUES
-  (1, '1', 10000, '0', 1, 10000, 0, 0, '保证金用于平台履约保障，具体规则以页面协议为准。', NOW())
+  (1, '1', 19900, '1', 1, 1, 90, 15, '保证金用于平台履约保障，满足协议约定后可按规则申请退还。', NOW())
 ON DUPLICATE KEY UPDATE
   `updated_at` = NOW();
+
+SET @ddl := (
+  SELECT IF(COUNT(*) = 0,
+    'ALTER TABLE `t_deposit_order` ADD COLUMN `version` INT NOT NULL DEFAULT 0 COMMENT ''乐观锁版本号''',
+    'SELECT ''skip t_deposit_order.version'''
+  )
+  FROM information_schema.COLUMNS
+  WHERE TABLE_SCHEMA = DATABASE()
+    AND TABLE_NAME = 't_deposit_order'
+    AND COLUMN_NAME = 'version'
+);
+PREPARE stmt FROM @ddl;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
+
+SET @ddl := (
+  SELECT IF(COUNT(*) = 0,
+    'ALTER TABLE `t_payment_order` ADD COLUMN `version` INT NOT NULL DEFAULT 0 COMMENT ''乐观锁版本号''',
+    'SELECT ''skip t_payment_order.version'''
+  )
+  FROM information_schema.COLUMNS
+  WHERE TABLE_SCHEMA = DATABASE()
+    AND TABLE_NAME = 't_payment_order'
+    AND COLUMN_NAME = 'version'
+);
+PREPARE stmt FROM @ddl;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
 
 SET @ddl := (
   SELECT IF(COUNT(*) = 0,
