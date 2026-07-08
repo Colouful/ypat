@@ -833,6 +833,7 @@ git diff --name-only dev6...HEAD | rg '^91pai-master/' || true
 运行：
 
 ```bash
+cd backend && mvn -pl system-domain -am -Dtest=BannerServiceTest -DfailIfNoTests=false test
 cd backend && mvn -pl system-wap -am -Dtest=AdminPublishControllerTest -DfailIfNoTests=false test
 ```
 
