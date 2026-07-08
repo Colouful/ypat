@@ -3,7 +3,7 @@ import { ref, reactive, computed, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import StatusTag from '@/components/common/StatusTag.vue'
 import BannerEditDialog from './BannerEditDialog.vue'
-import { getBannerList, upDownBanner, type Banner, type BannerListQuery } from '@/api/modules/banner'
+import { getBannerList, isBannerJumpType, isValidBannerJumpTarget, upDownBanner, type Banner, type BannerListQuery } from '@/api/modules/banner'
 import { getArticleStatusOptions, ArticleStatus } from '@/constants/enums'
 
 const query = reactive<BannerListQuery>({ name: '', status: '', page: 0, size: 10 })
@@ -28,15 +28,24 @@ function pageChange(page: number) { query.page = page - 1; fetchList() }
 function sizeChange(size: number) { query.size = size; query.page = 0; fetchList() }
 function openEdit(row?: Banner) { current.value = row || null; editVisible.value = true }
 function preview(url: string) { window.open(url, '_blank') }
+function isInvalidJumpConfig(row: Banner): boolean {
+  if (row.jumpflag !== '1') return false
+  const target = row.jumpurl?.trim() || ''
+  if (!isBannerJumpType(row.jumptype) || !target || target.length > 500) return true
+  return !isValidBannerJumpTarget(row.jumptype, target)
+}
+
 function getJumpText(row: Banner): string {
   if (row.jumpflag !== '1') return '不跳转'
+  if (isInvalidJumpConfig(row)) return '配置异常'
   if (row.jumptype === 'miniapp') return '小程序页面'
   if (row.jumptype === 'web') return '外部地址'
   return '未配置'
 }
 
-function getJumpTagType(row: Banner): 'info' | 'success' | 'warning' {
+function getJumpTagType(row: Banner): 'info' | 'success' | 'warning' | 'danger' {
   if (row.jumpflag !== '1') return 'info'
+  if (isInvalidJumpConfig(row)) return 'danger'
   if (row.jumptype === 'miniapp') return 'success'
   if (row.jumptype === 'web') return 'warning'
   return 'info'

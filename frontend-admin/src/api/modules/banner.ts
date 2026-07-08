@@ -1,6 +1,8 @@
 import { get, post } from '../request'
 import type { PageResult, PageQuery } from '../types'
 
+export type BannerJumpType = 'miniapp' | 'web'
+
 export interface Banner {
   id: number
   title: string
@@ -9,9 +11,19 @@ export interface Banner {
   status: string
   statusTxt: string
   jumpflag?: string
-  jumptype?: 'miniapp' | 'web' | string
+  jumptype?: BannerJumpType | (string & {})
   jumpurl?: string
 }
+
+export function isBannerJumpType(value: string | undefined): value is BannerJumpType {
+  return value === 'miniapp' || value === 'web'
+}
+
+export function isValidBannerJumpTarget(type: BannerJumpType, target: string): boolean {
+  if (type === 'miniapp') return target.startsWith('/pages/') || target.startsWith('/pages-sub/')
+  return target.startsWith('http://') || target.startsWith('https://')
+}
+
 export interface BannerListQuery extends PageQuery { name?: string; status?: string }
 export const getBannerList = (params: BannerListQuery) => get<PageResult<Banner>>('/admin/banner/list', params as Record<string, unknown>)
 export const getBannerDetail = (id: number) => get<Banner>('/admin/banner/detail', { id })

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, reactive, computed, watch } from 'vue'
 import { ElMessage } from 'element-plus'
-import { saveBanner, type Banner } from '@/api/modules/banner'
+import { isBannerJumpType, isValidBannerJumpTarget, saveBanner, type Banner, type BannerJumpType } from '@/api/modules/banner'
 import { uploadFiles } from '@/api/modules/upload'
 
 const props = defineProps<{ visible: boolean; data: Banner | null }>()
@@ -13,7 +13,7 @@ const form = reactive({
   title: '',
   imgpath: '',
   jumpflag: '0',
-  jumptype: 'miniapp',
+  jumptype: 'miniapp' as BannerJumpType | string,
   jumpurl: '',
 })
 const loading = ref(false)
@@ -48,6 +48,10 @@ function validateJumpConfig(): boolean {
     return true
   }
   const target = form.jumpurl.trim()
+  if (!isBannerJumpType(form.jumptype)) {
+    ElMessage.warning('请选择有效的跳转类型')
+    return false
+  }
   if (!target) {
     ElMessage.warning('请输入跳转目标')
     return false
@@ -56,11 +60,11 @@ function validateJumpConfig(): boolean {
     ElMessage.warning('跳转目标不能超过500个字符')
     return false
   }
-  if (form.jumptype === 'miniapp' && !target.startsWith('/pages/') && !target.startsWith('/pages-sub/')) {
+  if (form.jumptype === 'miniapp' && !isValidBannerJumpTarget(form.jumptype, target)) {
     ElMessage.warning('请输入 /pages 或 /pages-sub 开头的小程序页面路径')
     return false
   }
-  if (form.jumptype === 'web' && !target.startsWith('http://') && !target.startsWith('https://')) {
+  if (form.jumptype === 'web' && !isValidBannerJumpTarget(form.jumptype, target)) {
     ElMessage.warning('请输入 http 或 https 开头的外部地址')
     return false
   }
