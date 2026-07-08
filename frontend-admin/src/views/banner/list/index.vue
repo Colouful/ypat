@@ -28,6 +28,7 @@ function pageChange(page: number) { query.page = page - 1; fetchList() }
 function sizeChange(size: number) { query.size = size; query.page = 0; fetchList() }
 function openEdit(row?: Banner) { current.value = row || null; editVisible.value = true }
 function preview(url: string) { window.open(url, '_blank') }
+function asBanner(row: unknown): Banner { return row as Banner }
 function isInvalidJumpConfig(row: Banner): boolean {
   if (row.jumpflag !== '1') return false
   const target = row.jumpurl?.trim() || ''
@@ -76,15 +77,15 @@ onMounted(fetchList)
       <el-table-column label="状态" width="120" align="center"><template #default="{row}"><StatusTag :status="row.status" type="article"/></template></el-table-column>
       <el-table-column label="跳转" width="130" align="center">
         <template #default="{row}">
-          <el-tag :type="getJumpTagType(row as unknown as Banner)">{{ getJumpText(row as unknown as Banner) }}</el-tag>
+          <el-tag :type="getJumpTagType(asBanner(row))">{{ getJumpText(asBanner(row)) }}</el-tag>
         </template>
       </el-table-column>
       <el-table-column label="操作" width="240" align="center" fixed="right">
         <template #default="{row}">
-          <el-button type="primary" link size="small" @click="openEdit(row as unknown as Banner)">编辑</el-button>
-          <el-button type="info" link size="small" @click="preview((row as unknown as Banner).imgpath)">查看图片</el-button>
-          <el-button type="success" link size="small" v-if="row.status !== ArticleStatus.YFB.value" @click="doUpDown(row as unknown as Banner, ArticleStatus.YFB.value)">发布</el-button>
-          <el-button type="warning" link size="small" v-else @click="doUpDown(row as unknown as Banner, ArticleStatus.YCH.value)">撤回</el-button>
+          <el-button type="primary" link size="small" @click="openEdit(asBanner(row))">编辑</el-button>
+          <el-button type="info" link size="small" @click="preview(asBanner(row).imgpath)">查看图片</el-button>
+          <el-button type="success" link size="small" v-if="row.status !== ArticleStatus.YFB.value" @click="doUpDown(asBanner(row), ArticleStatus.YFB.value)">发布</el-button>
+          <el-button type="warning" link size="small" v-else @click="doUpDown(asBanner(row), ArticleStatus.YCH.value)">撤回</el-button>
         </template>
       </el-table-column>
     </el-table>

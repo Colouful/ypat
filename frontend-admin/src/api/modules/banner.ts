@@ -20,8 +20,10 @@ export function isBannerJumpType(value: string | undefined): value is BannerJump
 }
 
 export function isValidBannerJumpTarget(type: BannerJumpType, target: string): boolean {
-  if (type === 'miniapp') return target.startsWith('/pages/') || target.startsWith('/pages-sub/')
-  return target.startsWith('http://') || target.startsWith('https://')
+  const trimmedTarget = target.trim()
+  if (type === 'miniapp') return trimmedTarget.startsWith('/pages/') || trimmedTarget.startsWith('/pages-sub/')
+  const normalizedTarget = trimmedTarget.toLowerCase()
+  return normalizedTarget.startsWith('http://') || normalizedTarget.startsWith('https://')
 }
 
 export interface BannerListQuery extends PageQuery { name?: string; status?: string }
