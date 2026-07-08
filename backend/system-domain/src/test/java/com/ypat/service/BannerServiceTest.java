@@ -171,10 +171,42 @@ public class BannerServiceTest {
         assertEquals("HTTPS://example.com/activity", saved.banner.getJumpurl());
     }
 
+    @Test
+    public void upDownNormalizesDirtyDisabledJumpDataBeforeSave() {
+        BannerService service = new BannerService();
+        SavedBanner saved = new SavedBanner();
+        Banner existing = new Banner();
+        existing.setId(7L);
+        existing.setTitle("banner");
+        existing.setImgpath("/img/banner.png");
+        existing.setJumpflag("0");
+        existing.setJumptype("web");
+        existing.setJumpurl("https://example.com/activity");
+        ReflectionTestUtils.setField(service, "bannerRepository", bannerRepository(saved, existing));
+
+        BannerQo qo = new BannerQo();
+        qo.setId(7L);
+        qo.setStatus("1");
+
+        service.upDown(qo);
+
+        assertEquals("1", saved.banner.getStatus());
+        assertEquals("0", saved.banner.getJumpflag());
+        assertNull(saved.banner.getJumptype());
+        assertNull(saved.banner.getJumpurl());
+    }
+
     private static BannerRepository bannerRepository(final SavedBanner saved) {
+        return bannerRepository(saved, null);
+    }
+
+    private static BannerRepository bannerRepository(final SavedBanner saved, final Banner existing) {
         return proxy(BannerRepository.class, new InvocationHandler() {
             @Override
             public Object invoke(Object proxy, Method method, Object[] args) {
+                if ("findById".equals(method.getName())) {
+                    return existing;
+                }
                 if ("save".equals(method.getName())) {
                     saved.banner = (Banner) args[0];
                     return args[0];

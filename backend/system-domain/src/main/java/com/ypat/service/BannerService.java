@@ -47,6 +47,11 @@ public class BannerService {
     public void upDown(BannerQo bannerQo){
         Banner banner = get(bannerQo.getId());
         banner.setStatus(bannerQo.getStatus());
+        BannerQo normalized = CopyUtil.copy(banner, BannerQo.class);
+        normalizeAndValidateJump(normalized);
+        banner.setJumpflag(normalized.getJumpflag());
+        banner.setJumptype(normalized.getJumptype());
+        banner.setJumpurl(normalized.getJumpurl());
         bannerRepository.save(banner);
     }
 
