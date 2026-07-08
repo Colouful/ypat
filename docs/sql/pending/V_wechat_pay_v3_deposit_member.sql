@@ -35,8 +35,8 @@ CREATE TABLE IF NOT EXISTS `t_deposit_order` (
   `prepay_id`      VARCHAR(128) DEFAULT NULL            COMMENT '微信预支付 id',
   `transaction_id` VARCHAR(64)  DEFAULT NULL            COMMENT '微信支付订单号',
   `paid_at`        DATETIME     DEFAULT NULL            COMMENT '支付完成时间',
-  `created_at`     DATETIME     DEFAULT NULL            COMMENT '创建时间',
-  `updated_at`     DATETIME     DEFAULT NULL            COMMENT '更新时间',
+  `created_at`     DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `updated_at`     DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '更新时间',
   `version`        INT          NOT NULL DEFAULT 0      COMMENT '乐观锁版本号',
   PRIMARY KEY (`id`),
   UNIQUE KEY `uk_out_trade_no` (`out_trade_no`),
@@ -62,14 +62,15 @@ CREATE TABLE IF NOT EXISTS `t_payment_order` (
   `notify_event_id`    VARCHAR(128)  DEFAULT NULL            COMMENT '微信回调事件 id',
   `notify_digest`      VARCHAR(128)  DEFAULT NULL            COMMENT '回调摘要，用于幂等去重',
   `paid_at`            DATETIME      DEFAULT NULL            COMMENT '支付完成时间',
-  `created_at`         DATETIME      DEFAULT NULL            COMMENT '创建时间',
-  `updated_at`         DATETIME      DEFAULT NULL            COMMENT '更新时间',
+  `created_at`         DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `updated_at`         DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '更新时间',
   `version`            INT           NOT NULL DEFAULT 0      COMMENT '乐观锁版本号',
   PRIMARY KEY (`id`),
   UNIQUE KEY `uk_payment_no` (`payment_no`),
   UNIQUE KEY `uk_out_trade_no` (`out_trade_no`),
-  UNIQUE KEY `uk_business_order` (`business_type`, `business_order_no`),
+  KEY `idx_payment_order_business` (`business_type`, `business_order_no`),
   KEY `idx_user_status` (`user_id`, `status`),
+  KEY `idx_payment_order_user_created` (`user_id`, `created_at`),
   KEY `idx_status_updated_at` (`status`, `updated_at`),
   KEY `idx_notify_event_id` (`notify_event_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
@@ -82,6 +83,62 @@ VALUES
   (1, '1', 19900, '1', 1, 1, 90, 15, '保证金用于平台履约保障，满足协议约定后可按规则申请退还。', NOW())
 ON DUPLICATE KEY UPDATE
   `updated_at` = NOW();
+
+SET @ddl := (
+  SELECT IF(COUNT(*) = 1,
+    'UPDATE `t_deposit_order` SET `created_at` = NOW() WHERE `created_at` IS NULL',
+    'SELECT ''skip backfill t_deposit_order.created_at'''
+  )
+  FROM information_schema.COLUMNS
+  WHERE TABLE_SCHEMA = DATABASE()
+    AND TABLE_NAME = 't_deposit_order'
+    AND COLUMN_NAME = 'created_at'
+);
+PREPARE stmt FROM @ddl;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
+
+SET @ddl := (
+  SELECT IF(COUNT(*) = 1,
+    'ALTER TABLE `t_deposit_order` MODIFY COLUMN `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT ''创建时间''',
+    'SELECT ''skip normalize t_deposit_order.created_at'''
+  )
+  FROM information_schema.COLUMNS
+  WHERE TABLE_SCHEMA = DATABASE()
+    AND TABLE_NAME = 't_deposit_order'
+    AND COLUMN_NAME = 'created_at'
+);
+PREPARE stmt FROM @ddl;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
+
+SET @ddl := (
+  SELECT IF(COUNT(*) = 1,
+    'UPDATE `t_deposit_order` SET `updated_at` = NOW() WHERE `updated_at` IS NULL',
+    'SELECT ''skip backfill t_deposit_order.updated_at'''
+  )
+  FROM information_schema.COLUMNS
+  WHERE TABLE_SCHEMA = DATABASE()
+    AND TABLE_NAME = 't_deposit_order'
+    AND COLUMN_NAME = 'updated_at'
+);
+PREPARE stmt FROM @ddl;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
+
+SET @ddl := (
+  SELECT IF(COUNT(*) = 1,
+    'ALTER TABLE `t_deposit_order` MODIFY COLUMN `updated_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT ''更新时间''',
+    'SELECT ''skip normalize t_deposit_order.updated_at'''
+  )
+  FROM information_schema.COLUMNS
+  WHERE TABLE_SCHEMA = DATABASE()
+    AND TABLE_NAME = 't_deposit_order'
+    AND COLUMN_NAME = 'updated_at'
+);
+PREPARE stmt FROM @ddl;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
 
 SET @ddl := (
   SELECT IF(COUNT(*) = 0,
@@ -98,6 +155,62 @@ EXECUTE stmt;
 DEALLOCATE PREPARE stmt;
 
 SET @ddl := (
+  SELECT IF(COUNT(*) = 1,
+    'UPDATE `t_payment_order` SET `created_at` = NOW() WHERE `created_at` IS NULL',
+    'SELECT ''skip backfill t_payment_order.created_at'''
+  )
+  FROM information_schema.COLUMNS
+  WHERE TABLE_SCHEMA = DATABASE()
+    AND TABLE_NAME = 't_payment_order'
+    AND COLUMN_NAME = 'created_at'
+);
+PREPARE stmt FROM @ddl;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
+
+SET @ddl := (
+  SELECT IF(COUNT(*) = 1,
+    'ALTER TABLE `t_payment_order` MODIFY COLUMN `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT ''创建时间''',
+    'SELECT ''skip normalize t_payment_order.created_at'''
+  )
+  FROM information_schema.COLUMNS
+  WHERE TABLE_SCHEMA = DATABASE()
+    AND TABLE_NAME = 't_payment_order'
+    AND COLUMN_NAME = 'created_at'
+);
+PREPARE stmt FROM @ddl;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
+
+SET @ddl := (
+  SELECT IF(COUNT(*) = 1,
+    'UPDATE `t_payment_order` SET `updated_at` = NOW() WHERE `updated_at` IS NULL',
+    'SELECT ''skip backfill t_payment_order.updated_at'''
+  )
+  FROM information_schema.COLUMNS
+  WHERE TABLE_SCHEMA = DATABASE()
+    AND TABLE_NAME = 't_payment_order'
+    AND COLUMN_NAME = 'updated_at'
+);
+PREPARE stmt FROM @ddl;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
+
+SET @ddl := (
+  SELECT IF(COUNT(*) = 1,
+    'ALTER TABLE `t_payment_order` MODIFY COLUMN `updated_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT ''更新时间''',
+    'SELECT ''skip normalize t_payment_order.updated_at'''
+  )
+  FROM information_schema.COLUMNS
+  WHERE TABLE_SCHEMA = DATABASE()
+    AND TABLE_NAME = 't_payment_order'
+    AND COLUMN_NAME = 'updated_at'
+);
+PREPARE stmt FROM @ddl;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
+
+SET @ddl := (
   SELECT IF(COUNT(*) = 0,
     'ALTER TABLE `t_payment_order` ADD COLUMN `version` INT NOT NULL DEFAULT 0 COMMENT ''乐观锁版本号''',
     'SELECT ''skip t_payment_order.version'''
@@ -106,6 +219,48 @@ SET @ddl := (
   WHERE TABLE_SCHEMA = DATABASE()
     AND TABLE_NAME = 't_payment_order'
     AND COLUMN_NAME = 'version'
+);
+PREPARE stmt FROM @ddl;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
+
+SET @ddl := (
+  SELECT IF(COUNT(*) > 0,
+    'ALTER TABLE `t_payment_order` DROP INDEX `uk_business_order`',
+    'SELECT ''skip drop t_payment_order.uk_business_order'''
+  )
+  FROM information_schema.STATISTICS
+  WHERE TABLE_SCHEMA = DATABASE()
+    AND TABLE_NAME = 't_payment_order'
+    AND INDEX_NAME = 'uk_business_order'
+);
+PREPARE stmt FROM @ddl;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
+
+SET @ddl := (
+  SELECT IF(COUNT(*) = 0,
+    'ALTER TABLE `t_payment_order` ADD KEY `idx_payment_order_business` (`business_type`, `business_order_no`)',
+    'SELECT ''skip t_payment_order.idx_payment_order_business'''
+  )
+  FROM information_schema.STATISTICS
+  WHERE TABLE_SCHEMA = DATABASE()
+    AND TABLE_NAME = 't_payment_order'
+    AND INDEX_NAME = 'idx_payment_order_business'
+);
+PREPARE stmt FROM @ddl;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
+
+SET @ddl := (
+  SELECT IF(COUNT(*) = 0,
+    'ALTER TABLE `t_payment_order` ADD KEY `idx_payment_order_user_created` (`user_id`, `created_at`)',
+    'SELECT ''skip t_payment_order.idx_payment_order_user_created'''
+  )
+  FROM information_schema.STATISTICS
+  WHERE TABLE_SCHEMA = DATABASE()
+    AND TABLE_NAME = 't_payment_order'
+    AND INDEX_NAME = 'idx_payment_order_user_created'
 );
 PREPARE stmt FROM @ddl;
 EXECUTE stmt;
