@@ -28,6 +28,19 @@ function pageChange(page: number) { query.page = page - 1; fetchList() }
 function sizeChange(size: number) { query.size = size; query.page = 0; fetchList() }
 function openEdit(row?: Banner) { current.value = row || null; editVisible.value = true }
 function preview(url: string) { window.open(url, '_blank') }
+function getJumpText(row: Banner): string {
+  if (row.jumpflag !== '1') return '不跳转'
+  if (row.jumptype === 'miniapp') return '小程序页面'
+  if (row.jumptype === 'web') return '外部地址'
+  return '未配置'
+}
+
+function getJumpTagType(row: Banner): 'info' | 'success' | 'warning' {
+  if (row.jumpflag !== '1') return 'info'
+  if (row.jumptype === 'miniapp') return 'success'
+  if (row.jumptype === 'web') return 'warning'
+  return 'info'
+}
 async function doUpDown(row: Banner, status: string) {
   const text = status === ArticleStatus.YFB.value ? '发布' : '撤回'
   await ElMessageBox.confirm(`确定要${text}该横幅吗？`, '提示', { type: 'warning' })
@@ -52,7 +65,12 @@ onMounted(fetchList)
       <el-table-column prop="title" label="标题" min-width="180"/>
       <el-table-column prop="credate" label="创建时间" min-width="160"/>
       <el-table-column label="状态" width="120" align="center"><template #default="{row}"><StatusTag :status="row.status" type="article"/></template></el-table-column>
-      <el-table-column label="操作" width="220" align="center" fixed="right">
+      <el-table-column label="跳转" width="130" align="center">
+        <template #default="{row}">
+          <el-tag :type="getJumpTagType(row as unknown as Banner)">{{ getJumpText(row as unknown as Banner) }}</el-tag>
+        </template>
+      </el-table-column>
+      <el-table-column label="操作" width="240" align="center" fixed="right">
         <template #default="{row}">
           <el-button type="primary" link size="small" @click="openEdit(row as unknown as Banner)">编辑</el-button>
           <el-button type="info" link size="small" @click="preview((row as unknown as Banner).imgpath)">查看图片</el-button>
