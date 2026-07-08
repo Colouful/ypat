@@ -15,12 +15,12 @@
     <view class="deposit-card">
       <view>
         <text class="deposit-card__label">保证金金额</text>
-        <view class="deposit-card__price">
-          <text class="deposit-card__unit">¥</text>
-          <text class="deposit-card__amount">199</text>
+      <view class="deposit-card__price">
+        <text class="deposit-card__unit">¥</text>
+          <text class="deposit-card__amount">{{ depositAmountYuan }}</text>
         </view>
       </view>
-      <view class="deposit-card__tag">可申请退还</view>
+      <view class="deposit-card__tag">{{ configEnabled ? '可申请退还' : '暂未开放' }}</view>
     </view>
 
     <view class="section">
@@ -39,7 +39,6 @@
       <text class="agreement__link" @tap.stop="showAgreement">《保证金协议》</text>
     </view>
 
-    <!-- #ifdef MP-WEIXIN -->
     <button
       class="pay-btn"
       :class="{ 'pay-btn--disabled': !canPay }"
@@ -49,54 +48,53 @@
     >
       {{ isGuaranteed ? '已完成信用担保' : paying ? '处理中...' : '立即缴纳保证金' }}
     </button>
-    <!-- #endif -->
-
-    <!-- #ifndef MP-WEIXIN -->
-    <view class="unsupported">当前后端仅配置微信小程序支付，请在小程序内缴纳保证金。</view>
-    <!-- #endif -->
+    <view v-if="!configEnabled" class="unsupported">保证金服务暂未开放。</view>
   </view>
 </template>
 
 <script setup lang="ts">
 import { computed, ref } from 'vue'
-import { onUnload } from '@dcloudio/uni-app'
+import { onLoad, onUnload } from '@dcloudio/uni-app'
 import KeepIcon from '@/components/business/KeepIcon.vue'
 import KeepPageNav from '@/components/business/KeepPageNav.vue'
 import { useUserStore } from '@/stores/user'
-import * as paymentApi from '@/api/modules/payment'
-import type { OrderInfo } from '@/api/types'
-
-const DEPOSIT_FEE_FEN = 19900
+import * as depositApi from '@/api/modules/deposit'
+import { getPaymentChannel, redirectToH5Pay, toMiniappPayParams } from '@/services/payment-channel'
+import type { DepositConfig, DepositOrder } from '@/api/types'
 
 const userStore = useUserStore()
 const accepted = ref(false)
 const paying = ref(false)
+const depositConfig = ref<DepositConfig | null>(null)
 let pollingCancelled = false
 
 const isGuaranteed = computed(() => userStore.userInfo?.creditflag === '1')
-const canPay = computed(() => accepted.value && !paying.value && !isGuaranteed.value)
+const configEnabled = computed(() => depositConfig.value?.enabled !== '0')
+const canPay = computed(() => accepted.value && !paying.value && !isGuaranteed.value && configEnabled.value)
+const depositAmountFen = computed(() => depositConfig.value?.displayAmountFen || depositConfig.value?.amountFen || 0)
+const depositAmountYuan = computed(() => (depositAmountFen.value / 100).toFixed(2).replace(/\.00$/, ''))
 
-const notes = [
-  '保证金用于提升约拍双方的信用识别，不作为任何形式的交易款项。',
-  '缴纳之日起满 3 个月后，可联系平台客服申请退还。',
-  '提前退款将按旧版规则收取保证金金额 15% 作为平台管理费。',
+const notes = computed(() => [
+  depositConfig.value?.agreementSummary || '保证金用于提升约拍双方的信用识别，不作为任何形式的交易款项。',
+  `缴纳之日起满 ${depositConfig.value?.refundWaitDays || 90} 天后，可联系平台客服申请退还。`,
+  `提前退款将按旧版规则收取保证金金额 ${depositConfig.value?.earlyRefundFeeRate || 15}% 作为平台管理费。`,
   '保证金退款后，将不再展示信用担保标识。',
-]
+])
 
-function isPaid(order?: OrderInfo): boolean {
-  return order?.result_code === 'SUCCESS' || order?.status === '1'
+function isPaid(order?: DepositOrder): boolean {
+  return order?.status === 'PAID'
 }
 
-function isFailed(order?: OrderInfo): boolean {
-  return order?.result_code === 'FAIL' || Boolean(order?.err_code)
+function isFailed(order?: DepositOrder): boolean {
+  return Boolean(order && !['PENDING', 'PAID'].includes(order.status))
 }
 
 async function waitForServerConfirmation(outTradeNo: string, attempts = 10): Promise<'paid' | 'failed' | 'pending'> {
   for (let index = 0; index < attempts && !pollingCancelled; index += 1) {
     await new Promise((resolve) => setTimeout(resolve, 2000))
     try {
-      const result = await paymentApi.getOrderStatus(outTradeNo)
-      const order = result.data?.content?.[0]
+      const result = await depositApi.getDepositOrderStatus(outTradeNo)
+      const order = result.data
       if (isPaid(order)) return 'paid'
       if (isFailed(order)) return 'failed'
     } catch {
@@ -120,7 +118,7 @@ function invokeWechatPayment(data: {
       timeStamp: data.timeStamp,
       nonceStr: data.nonceStr,
       package: data.package,
-      signType: data.signType as 'MD5' | 'HMAC-SHA256',
+      signType: data.signType as never,
       paySign: data.paySign,
       success: () => resolve(),
       fail: (error) => reject(new Error(error.errMsg || '支付失败')),
@@ -143,26 +141,21 @@ async function pay(): Promise<void> {
   pollingCancelled = false
 
   try {
-    const order = await paymentApi.createOrder({
-      type: '2',
-      productid: 0,
-      total_fee: DEPOSIT_FEE_FEN,
-    })
-
-    if (!order.data?.package || !order.data.timeStamp || !order.data.nonceStr || !order.data.paySign || !order.data.out_trade_no) {
-      throw new Error('支付参数不完整')
+    const channel = getPaymentChannel()
+    const order = await depositApi.createDepositOrder(channel)
+    if (!order.data?.outTradeNo) {
+      throw new Error('下单失败')
     }
 
-    await invokeWechatPayment({
-      timeStamp: order.data.timeStamp,
-      nonceStr: order.data.nonceStr,
-      package: order.data.package,
-      signType: order.data.signType || 'HMAC-SHA256',
-      paySign: order.data.paySign,
-    })
+    if (channel === 'H5') {
+      redirectToH5Pay(order.data.h5Url)
+      return
+    }
+
+    await invokeWechatPayment(toMiniappPayParams(order.data))
 
     uni.showLoading({ title: '服务端确认中...' })
-    const state = await waitForServerConfirmation(order.data.out_trade_no)
+    const state = await waitForServerConfirmation(order.data.outTradeNo)
     uni.hideLoading()
 
     if (state === 'paid') {
@@ -198,6 +191,19 @@ function showAgreement(): void {
     showCancel: false,
   })
 }
+
+async function loadDepositConfig(): Promise<void> {
+  try {
+    const result = await depositApi.getDepositConfig()
+    if (result.success && result.data) depositConfig.value = result.data
+  } catch {
+    depositConfig.value = null
+  }
+}
+
+onLoad(() => {
+  void loadDepositConfig()
+})
 
 onUnload(() => {
   pollingCancelled = true

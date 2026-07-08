@@ -260,6 +260,53 @@ export interface CreateOrderResult {
   out_trade_no: string
 }
 
+export type PaymentChannel = 'MINIAPP' | 'H5' | 'APP'
+
+export interface PaymentPayParams {
+  timeStamp: string
+  nonceStr: string
+  packageValue?: string
+  package?: string
+  signType: string
+  paySign: string
+}
+
+export interface PaymentCreateResult {
+  outTradeNo: string
+  businessType: 'DEPOSIT' | 'MEMBER' | string
+  channel: PaymentChannel
+  amountFen: number
+  payParams?: PaymentPayParams
+  h5Url?: string
+}
+
+export interface DepositConfig {
+  id?: number
+  enabled: string
+  amountFen: number
+  testEnabled?: string
+  testAmountFen?: number
+  displayAmountFen?: number
+  refundWaitDays?: number
+  earlyRefundFeeRate?: number
+  agreementSummary?: string
+  updatedAt?: string
+}
+
+export interface DepositOrder {
+  id: number
+  outTradeNo: string
+  userId: number
+  amountFen: number
+  channel: PaymentChannel
+  status: 'PENDING' | 'PAID' | 'CANCELLED' | 'CLOSED' | 'REFUNDED' | string
+  prepayId?: string
+  transactionId?: string
+  paidAt?: string
+  createdAt?: string
+  updatedAt?: string
+}
+
 export interface OrderInfo {
   id: number
   type: string
@@ -369,12 +416,17 @@ export interface MemberStatus {
 
 export interface MemberOrderCreateResult {
   outTradeNo: string
-  appId: string
-  timeStamp: string
-  nonceStr: string
-  packageValue: string
-  signType: string
-  paySign: string
+  businessType?: string
+  channel?: PaymentChannel
+  amountFen?: number
+  appId?: string
+  timeStamp?: string
+  nonceStr?: string
+  packageValue?: string
+  signType?: string
+  paySign?: string
+  payParams?: PaymentPayParams
+  h5Url?: string
 }
 
 export interface MemberOrder {

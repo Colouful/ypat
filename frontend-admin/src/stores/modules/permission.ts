@@ -22,6 +22,9 @@ import QueryYpatList from '@/views/query/ypat-list/index.vue'
 import QueryMessList from '@/views/query/mess-list/index.vue'
 import PubeventList from '@/views/pubevent/list/index.vue'
 import OrderList from '@/views/order/list/index.vue'
+import PaymentOrder from '@/views/payment/order/index.vue'
+import DepositConfig from '@/views/deposit/config/index.vue'
+import DepositOrder from '@/views/deposit/order/index.vue'
 import MemberPlan from '@/views/member/plan/index.vue'
 import MemberRule from '@/views/member/rule/index.vue'
 import MemberUser from '@/views/member/user/index.vue'
@@ -44,6 +47,9 @@ const viewModules: Record<string, Component> = {
   'query/mess-list/index': QueryMessList,
   'pubevent/list/index': PubeventList,
   'order/list/index': OrderList,
+  'payment/order/index': PaymentOrder,
+  'deposit/config/index': DepositConfig,
+  'deposit/order/index': DepositOrder,
   'member/plan/index': MemberPlan,
   'member/rule/index': MemberRule,
   'member/user/index': MemberUser,

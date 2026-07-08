@@ -7,6 +7,8 @@ import type {
   MemberPlan,
   MemberStatus,
   PageResult,
+  PaymentChannel,
+  PaymentCreateResult,
 } from '../types'
 
 /** 套餐列表（公开接口，未登录也能调用）。 */
@@ -25,8 +27,8 @@ export function getMemberBenefitQuote(scene: 'SUBMIT_YPAT'): Promise<ApiResult<M
 }
 
 /** 创建会员订单 + 调微信统一下单，返回支付参数。 */
-export function createMemberOrder(planId: number): Promise<ApiResult<MemberOrderCreateResult>> {
-  return post('/member/order/create', { planId }, { withToken: false })
+export function createMemberOrder(planId: number, channel: PaymentChannel): Promise<ApiResult<PaymentCreateResult & MemberOrderCreateResult>> {
+  return post('/member/order/create', { planId, channel })
 }
 
 /** 轮询订单状态：支付成功后前端每 1.5s 调用，最多 20 次。 */

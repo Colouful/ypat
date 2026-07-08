@@ -59,6 +59,15 @@ export const menuConfig: MenuGroup[] = [
     icon: 'ShoppingCart',
     children: [
       { title: '订单列表', path: '/manage/order/index', component: 'order/list/index' },
+      { title: '支付流水', path: '/payment/order', component: 'payment/order/index' },
+    ],
+  },
+  {
+    title: '保证金系统',
+    icon: 'Wallet',
+    children: [
+      { title: '保证金配置', path: '/deposit/config', component: 'deposit/config/index' },
+      { title: '保证金订单', path: '/deposit/order', component: 'deposit/order/index' },
     ],
   },
   {

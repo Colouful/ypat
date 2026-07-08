@@ -198,7 +198,8 @@ import KeepPageNav from '@/components/business/KeepPageNav.vue'
 import { useUserStore } from '@/stores/user'
 import { useMemberStore } from '@/stores/member'
 import * as memberApi from '@/api/modules/member'
-import type { MemberOrderCreateResult, MemberPlan } from '@/api/types'
+import { getPaymentChannel, redirectToH5Pay, toMiniappPayParams } from '@/services/payment-channel'
+import type { MemberPlan, PaymentCreateResult } from '@/api/types'
 
 const userStore = useUserStore()
 const memberStore = useMemberStore()
@@ -288,7 +289,7 @@ async function createOrderAndPay(plan: MemberPlan): Promise<void> {
   if (!ensureLogin()) return
   submitting.value = true
   try {
-    const result = await memberApi.createMemberOrder(plan.id)
+    const result = await memberApi.createMemberOrder(plan.id, getPaymentChannel())
     if (!result.success || !result.data) {
       uni.showToast({ title: result.message || '下单失败', icon: 'none' })
       return
@@ -299,19 +300,29 @@ async function createOrderAndPay(plan: MemberPlan): Promise<void> {
   }
 }
 
-async function launchWxPay(payload: MemberOrderCreateResult): Promise<void> {
+async function launchWxPay(payload: PaymentCreateResult): Promise<void> {
   return new Promise((resolve) => {
+    if (payload.channel === 'H5') {
+      try {
+        redirectToH5Pay(payload.h5Url)
+      } catch (error) {
+        uni.showToast({ title: error instanceof Error ? error.message : '支付链接缺失', icon: 'none' })
+      }
+      resolve()
+      return
+    }
     // #ifdef MP-WEIXIN
+    const payParams = toMiniappPayParams(payload)
     uni.requestPayment({
       provider: 'wxpay',
-      timeStamp: payload.timeStamp,
-      nonceStr: payload.nonceStr,
-      package: payload.packageValue,
-      signType: payload.signType,
-      paySign: payload.paySign,
+      timeStamp: payParams.timeStamp,
+      nonceStr: payParams.nonceStr,
+      package: payParams.package,
+      signType: payParams.signType as never,
+      paySign: payParams.paySign,
       orderInfo: '',
       success: () => {
-        void onPaySuccess(payload.outTradeNo)
+        void onPaySuccess(payload.outTradeNo).finally(resolve)
       },
       fail: (err: { errMsg?: string }) => {
         const cancelled = err?.errMsg?.includes('cancel')
@@ -321,13 +332,8 @@ async function launchWxPay(payload: MemberOrderCreateResult): Promise<void> {
     } as UniApp.RequestPaymentOptions)
     // #endif
     // #ifdef H5
-    // H5 没有原生 requestPayment，跳到中间页提示用户在微信内打开
-    uni.showModal({
-      title: '请在小程序内开通',
-      content: 'H5 暂不支持微信支付，请在微信小程序内打开后开通。',
-      showCancel: false,
-      success: () => resolve(),
-    })
+    uni.showToast({ title: '正在跳转支付', icon: 'none' })
+    resolve()
     // #endif
     // #ifndef MP-WEIXIN || H5
     uni.showToast({ title: '当前平台暂不支持支付', icon: 'none' })

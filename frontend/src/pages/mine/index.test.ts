@@ -41,14 +41,16 @@ describe('mine navigation', () => {
     expect(source).toContain("title: '设置'")
   })
 
-  it('registers the credit guarantee page and keeps the legacy deposit contract', () => {
+  it('registers the credit guarantee page and uses configurable deposit payment', () => {
     const pagesJson = readSource('pages.json')
     const creditPage = readSource('pages-sub/user/credit.vue')
 
     expect(pagesJson).toContain('"path": "credit"')
     expect(creditPage).toContain('保证金金额')
-    expect(creditPage).toContain('199')
-    expect(creditPage).toContain("type: '2'")
+    expect(creditPage).toContain('depositAmountYuan')
+    expect(creditPage).toContain('createDepositOrder')
+    expect(creditPage).not.toContain('DEPOSIT_FEE_FEN')
+    expect(creditPage).not.toContain("type: '2'")
     expect(creditPage).toContain('uni.requestPayment')
     expect(creditPage).toContain('保证金协议')
   })

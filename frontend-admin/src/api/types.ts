@@ -110,3 +110,51 @@ export interface MemberOperationLog {
   sourceOrderNo?: string
   createdAt?: string
 }
+
+export interface DepositConfig {
+  id?: number
+  enabled: string
+  amountFen: number
+  testEnabled: string
+  testAmountFen: number
+  displayAmountFen?: number
+  refundWaitDays?: number
+  earlyRefundFeeRate?: number
+  agreementSummary?: string
+  updatedAt?: string
+}
+
+export interface DepositOrder {
+  id: number
+  outTradeNo: string
+  userId: number
+  amountFen: number
+  channel: string
+  status: string
+  prepayId?: string
+  transactionId?: string
+  paidAt?: string
+  createdAt?: string
+  updatedAt?: string
+}
+
+export interface PaymentOrder {
+  id: number
+  paymentNo: string
+  businessType: string
+  businessOrderNo: string
+  outTradeNo: string
+  userId: number
+  channel: string
+  amountFen: number
+  status: string
+  prepayId?: string
+  h5Url?: string
+  transactionId?: string
+  wechatTradeState?: string
+  notifyEventId?: string
+  notifyDigest?: string
+  paidAt?: string
+  createdAt?: string
+  updatedAt?: string
+}
