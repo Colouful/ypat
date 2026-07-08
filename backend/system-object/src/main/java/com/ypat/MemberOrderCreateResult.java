@@ -9,6 +9,10 @@ import java.io.Serializable;
 public class MemberOrderCreateResult implements Serializable {
     private String outTradeNo;
     private String appId;
+    private String channel;
+    private Integer amountFen;
+    private PaymentPayParams payParams;
+    private String h5Url;
     private String timeStamp;
     private String nonceStr;
     private String packageValue;
@@ -19,6 +23,14 @@ public class MemberOrderCreateResult implements Serializable {
     public void setOutTradeNo(String outTradeNo) { this.outTradeNo = outTradeNo; }
     public String getAppId() { return appId; }
     public void setAppId(String appId) { this.appId = appId; }
+    public String getChannel() { return channel; }
+    public void setChannel(String channel) { this.channel = channel; }
+    public Integer getAmountFen() { return amountFen; }
+    public void setAmountFen(Integer amountFen) { this.amountFen = amountFen; }
+    public PaymentPayParams getPayParams() { return payParams; }
+    public void setPayParams(PaymentPayParams payParams) { this.payParams = payParams; }
+    public String getH5Url() { return h5Url; }
+    public void setH5Url(String h5Url) { this.h5Url = h5Url; }
     public String getTimeStamp() { return timeStamp; }
     public void setTimeStamp(String timeStamp) { this.timeStamp = timeStamp; }
     public String getNonceStr() { return nonceStr; }

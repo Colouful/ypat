@@ -19,6 +19,8 @@ public class MemberOrderQo extends PageQo implements Serializable {
     private Integer giftPpd;
     private Integer durationDays;
     private String status;
+    private String channel;
+    private String prepayId;
     private String wxTransactionId;
     @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+8")
@@ -54,6 +56,10 @@ public class MemberOrderQo extends PageQo implements Serializable {
     public void setDurationDays(Integer durationDays) { this.durationDays = durationDays; }
     public String getStatus() { return status; }
     public void setStatus(String status) { this.status = status; }
+    public String getChannel() { return channel; }
+    public void setChannel(String channel) { this.channel = channel; }
+    public String getPrepayId() { return prepayId; }
+    public void setPrepayId(String prepayId) { this.prepayId = prepayId; }
     public String getWxTransactionId() { return wxTransactionId; }
     public void setWxTransactionId(String wxTransactionId) { this.wxTransactionId = wxTransactionId; }
     public Date getPaidAt() { return paidAt; }
