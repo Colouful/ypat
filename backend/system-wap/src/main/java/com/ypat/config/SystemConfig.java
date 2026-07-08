@@ -18,6 +18,15 @@ public class SystemConfig {
     private String wx_appsecret;
     private String wx_mchid;
     private String wx_key;
+    private String wx_pay_mode;
+    private String wx_h5_appid;
+    private String wx_mch_serial_no;
+    private String wx_mch_private_key_path;
+    private String wx_api_v3_key;
+    private String wx_pay_public_key_id;
+    private String wx_pay_public_key_path;
+    private String wx_notify_url;
+    private String wx_h5_scene_info;
     private String fdfs_path;
     private String bd_key;
     private String bd_secret;
@@ -48,6 +57,24 @@ public class SystemConfig {
     public void setWx_mchid(String wx_mchid) { this.wx_mchid = wx_mchid; }
     public String getWx_key() { return wx_key; }
     public void setWx_key(String wx_key) { this.wx_key = wx_key; }
+    public String getWx_pay_mode() { return wx_pay_mode; }
+    public void setWx_pay_mode(String wx_pay_mode) { this.wx_pay_mode = wx_pay_mode; }
+    public String getWx_h5_appid() { return wx_h5_appid; }
+    public void setWx_h5_appid(String wx_h5_appid) { this.wx_h5_appid = wx_h5_appid; }
+    public String getWx_mch_serial_no() { return wx_mch_serial_no; }
+    public void setWx_mch_serial_no(String wx_mch_serial_no) { this.wx_mch_serial_no = wx_mch_serial_no; }
+    public String getWx_mch_private_key_path() { return wx_mch_private_key_path; }
+    public void setWx_mch_private_key_path(String wx_mch_private_key_path) { this.wx_mch_private_key_path = wx_mch_private_key_path; }
+    public String getWx_api_v3_key() { return wx_api_v3_key; }
+    public void setWx_api_v3_key(String wx_api_v3_key) { this.wx_api_v3_key = wx_api_v3_key; }
+    public String getWx_pay_public_key_id() { return wx_pay_public_key_id; }
+    public void setWx_pay_public_key_id(String wx_pay_public_key_id) { this.wx_pay_public_key_id = wx_pay_public_key_id; }
+    public String getWx_pay_public_key_path() { return wx_pay_public_key_path; }
+    public void setWx_pay_public_key_path(String wx_pay_public_key_path) { this.wx_pay_public_key_path = wx_pay_public_key_path; }
+    public String getWx_notify_url() { return wx_notify_url; }
+    public void setWx_notify_url(String wx_notify_url) { this.wx_notify_url = wx_notify_url; }
+    public String getWx_h5_scene_info() { return wx_h5_scene_info; }
+    public void setWx_h5_scene_info(String wx_h5_scene_info) { this.wx_h5_scene_info = wx_h5_scene_info; }
     public String getFdfs_path() { return fdfs_path; }
     public void setFdfs_path(String fdfs_path) { this.fdfs_path = fdfs_path; }
     public String getWx_pub_appid() { return wx_pub_appid; }
@@ -61,6 +88,8 @@ public class SystemConfig {
                 "baiduIdCardConfigured=" + isConfigured(bd_ak_idcard, bd_sk_idcard) +
                 ", baiduMatchConfigured=" + isConfigured(bd_ak_idmatch, bd_sk_idmatch) +
                 ", wechatPayConfigured=" + isConfigured(wx_appid, wx_mchid, wx_key) +
+                ", wechatPayV3Configured=" + isConfigured(wx_appid, wx_mchid, wx_mch_serial_no,
+                wx_mch_private_key_path, wx_api_v3_key, wx_pay_public_key_id, wx_pay_public_key_path, wx_notify_url) +
                 ", wechatPublicConfigured=" + isConfigured(wx_pub_appid, wx_pub_appsecret) +
                 ", fileStorageConfigured=" + isConfigured(fdfs_path) +
                 '}';
