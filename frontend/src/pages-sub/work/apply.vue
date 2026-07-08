@@ -48,7 +48,13 @@
         <text class="bottom-bar__label">本次消耗</text>
         <text class="bottom-bar__value">1 拍拍豆</text>
       </view>
-      <button class="bottom-bar__submit" :disabled="submitDisabled" :loading="submitting" @tap="submitApply">
+      <button
+        class="bottom-bar__submit"
+        :class="{ 'bottom-bar__submit--disabled': submitDisabled }"
+        :loading="submitting"
+        hover-class="none"
+        @tap="submitApply"
+      >
         确认提交
       </button>
     </view>
@@ -341,19 +347,28 @@ onLoad((options) => {
 }
 
 .bottom-bar__submit {
+  @include flex-center;
+  box-sizing: border-box;
   flex: 1;
+  min-width: 0;
   height: 88rpx;
+  margin: 0;
+  padding: 0 28rpx;
+  border: 0;
   border-radius: $radius-round;
   color: #FFFFFF;
   background: $color-primary;
   font-size: 30rpx;
   font-weight: 900;
-  line-height: 88rpx;
+  line-height: 1;
   box-shadow: $shadow-keep-button;
+  white-space: nowrap;
 }
 
-.bottom-bar__submit[disabled] {
-  opacity: 0.45;
+.bottom-bar__submit--disabled {
+  color: #A7ADB4;
+  background: #EEF2F1;
+  box-shadow: none;
 }
 
 .bottom-bar__submit::after {

@@ -130,8 +130,8 @@ const hasMore = ref(true)
 const filterVisible = ref(false)
 const filterValue = ref<FilterValue>({
   target: ['all'],
-  chargeway: ['0'],
-  style: ['INS'],
+  chargeway: [],
+  style: [],
 })
 
 const tabs: Array<{ key: TabKey; label: string }> = [

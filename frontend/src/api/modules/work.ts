@@ -68,7 +68,11 @@ export function quickApply(params: WorkQuickApplyParams): Promise<ApiResult<Work
 }
 
 function isOn(value: unknown): boolean {
-  return value === true || value === 1 || value === '1' || value === 'true' || value === 'Y'
+  if (typeof value === 'string') {
+    const normalized = value.trim().toLowerCase()
+    return normalized === '1' || normalized === 'true' || normalized === 'y'
+  }
+  return value === true || value === 1
 }
 
 function normalizeWorkDetail(data: WorkDetail | null | undefined): WorkDetail {
@@ -110,8 +114,8 @@ function normalizeWorkDetail(data: WorkDetail | null | undefined): WorkDetail {
       avatar: normalizeImageUrl(userRaw.avatar || userRaw.imgpath || userRaw.avatarurl),
       profession: userRaw.profession || userRaw.profess,
     },
-    isLiked: Boolean(raw.isLiked) || isOn(raw.likeflag) || isOn(raw.liked),
-    isFavorited: Boolean(raw.isFavorited) || isOn(raw.colflag) || isOn(raw.favoriteflag) || isOn(raw.favoriteFlag) || isOn(raw.favorited),
-    isOwner: Boolean(raw.isOwner) || isOn(raw.ownerFlag),
+    isLiked: isOn(raw.isLiked) || isOn(raw.likeflag) || isOn(raw.liked),
+    isFavorited: isOn(raw.isFavorited) || isOn(raw.colflag) || isOn(raw.favoriteflag) || isOn(raw.favoriteFlag) || isOn(raw.favorited),
+    isOwner: isOn(raw.isOwner) || isOn(raw.ownerFlag),
   } as WorkDetail
 }
