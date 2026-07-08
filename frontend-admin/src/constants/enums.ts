@@ -122,6 +122,19 @@ export const YpatPatstyle = {
   SAMPLE: { value: '12', name: '样片' },
 } as const
 export const getYpatPatstyleOptions = () => Object.values(YpatPatstyle).map((o) => ({ label: o.name, value: o.value }))
+export function getYpatPatstyleText(value?: string): string {
+  if (!value) return '-'
+
+  return value
+    .split(',')
+    .map((item) => item.trim())
+    .filter(Boolean)
+    .map((item) => {
+      const style = Object.values(YpatPatstyle).find((option) => option.value === item || option.name === item)
+      return style?.name || item
+    })
+    .join('、') || '-'
+}
 
 /** 作品主题标签风格（对应后端 WorkDictController 默认标签） */
 export const WorkTagStyle = [

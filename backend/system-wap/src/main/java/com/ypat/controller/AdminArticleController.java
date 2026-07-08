@@ -5,7 +5,6 @@ import com.ypat.ResponseApiBody;
 import com.ypat.ResponseCode;
 import com.ypat.SysException;
 import com.ypat.service.ArticleServiceClient;
-import com.ypat.third.baidu.ai.GsonUtils;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonParser;
 import org.apache.commons.lang.StringUtils;
@@ -89,9 +88,8 @@ public class AdminArticleController {
         }
 
         logger.info("管理端文章保存：id={}, title={}", articleQo.getId(), articleQo.getTitle());
-        String res = articleServiceClient.add(articleQo);
-        JsonElement resData = JsonParser.parseString(res);
-        return ResponseApiBody.success(resData);
+        articleServiceClient.add(articleQo);
+        return ResponseApiBody.success(null);
     }
 
     /**
@@ -111,8 +109,7 @@ public class AdminArticleController {
         qo.setId(id);
         qo.setStatus(status);
 
-        String res = articleServiceClient.upDown(qo);
-        JsonElement resData = JsonParser.parseString(res);
-        return ResponseApiBody.success(resData);
+        articleServiceClient.upDown(qo);
+        return ResponseApiBody.success(null);
     }
 }

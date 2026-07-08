@@ -8,6 +8,5 @@ export function uploadFiles(files: File[], withWatermark = false): Promise<ApiRe
     method: 'POST',
     url: withWatermark ? '/admin/ypat/upload' : '/admin/upload',
     data: formData,
-    headers: { 'Content-Type': 'multipart/form-data' },
   }) as unknown as Promise<ApiResult<{ urls: string[] }>>
 }

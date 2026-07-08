@@ -7,12 +7,41 @@ import type { ApiResult, PageResult, PageQuery } from '../types'
 
 /** 实名认证用户信息（对应后端 OauthQo） */
 export interface OauthQo {
-  userid: number
-  name: string
-  certcode: string
-  pics: string[]
-  status: string
-  statusTxt: string
+  /** 用户分页接口返回 id，实名详情接口返回 userid。 */
+  id?: number
+  userid?: number
+  nickname?: string
+  mobile?: string
+  name?: string
+  certcode?: string
+  pics?: string[]
+  status?: string
+  statusTxt?: string
+  gender?: string
+  genderTxt?: string
+  profess?: string
+  professTxt?: string
+  ppd?: number
+  avatarurl?: string
+  imgpath?: string
+  realnameflag?: string
+  creditflag?: string
+  pubtimes?: number
+  rectimes?: number
+  coltimes?: number
+  recmobile?: string
+  province?: string
+  city?: string
+  area?: string
+  wx?: string
+  qq?: string
+  wb?: string
+  birthday?: string
+  channel?: string
+  channelTxt?: string
+  dataFlag?: string
+  internalBatchNo?: string
+  regisdate?: string
 }
 
 /** 用户列表查询参数 */

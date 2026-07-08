@@ -5,6 +5,7 @@ import {
   getYpatTargetOptions,
   getYpatPatstyleOptions,
   getYpatChargeWayOptions,
+  getYpatPatstyleText,
 } from '@/constants/enums'
 
 const query = reactive<YpatListQuery>({
@@ -21,6 +22,8 @@ const query = reactive<YpatListQuery>({
 const list = ref<YpatInfo[]>([])
 const total = ref(0)
 const loading = ref(false)
+const detailVisible = ref(false)
+const current = ref<YpatInfo | null>(null)
 const currentPage = computed(() => (query.page ?? 0) + 1)
 let listRequestSeq = 0
 
@@ -45,6 +48,21 @@ function sizeChange(size: number) { query.size = size; query.page = 0; fetchList
 function getAreaText(row: YpatInfo): string {
   return [row.province, row.city, row.area].filter(Boolean).join(' / ') || '-'
 }
+function formatEmpty(value?: string | number | null): string | number {
+  return value === 0 || value ? value : '-'
+}
+function getStyleText(row: YpatInfo): string {
+  return row.patstyleTxt || getYpatPatstyleText(row.patstyle)
+}
+function getFlagText(value?: string): string {
+  if (value === '1' || value === '2') return '是'
+  if (value === '0' || value === '3') return '否'
+  return '-'
+}
+function openDetail(row: YpatInfo): void {
+  current.value = row
+  detailVisible.value = true
+}
 onMounted(fetchList)
 </script>
 
@@ -61,22 +79,94 @@ onMounted(fetchList)
         <el-form-item><el-button type="primary" @click="search">查询</el-button></el-form-item>
       </el-form>
     </div>
-    <el-table v-loading="loading" :data="list" border stripe>
-      <el-table-column prop="id" label="ID" width="80" align="center"/>
-      <el-table-column prop="nickname" label="昵称" min-width="120"/>
-      <el-table-column prop="mobile" label="手机号" min-width="120"/>
-      <el-table-column prop="genderTxt" label="性别" width="80" align="center"/>
-      <el-table-column prop="targetTxt" label="约拍对象" min-width="120"/>
-      <el-table-column prop="patstyleTxt" label="风格" min-width="160" show-overflow-tooltip/>
-      <el-table-column prop="chargewayTxt" label="收费方式" min-width="120"/>
-      <el-table-column label="地区" min-width="160" show-overflow-tooltip><template #default="{row}">{{ getAreaText(row as YpatInfo) }}</template></el-table-column>
-      <el-table-column prop="workId" label="关联作品ID" width="110" align="center"/>
-      <el-table-column prop="pubdate" label="发布时间" min-width="160"/>
-      <el-table-column prop="pattimes" label="拍摄次数" width="100" align="center"/>
-      <el-table-column prop="readtimes" label="阅读次数" width="100" align="center"/>
-      <el-table-column prop="coltimes" label="收藏次数" width="100" align="center"/>
+    <el-table v-loading="loading" :data="list" border stripe row-key="id" style="width: 100%">
+      <el-table-column prop="id" label="ID" width="90" align="center" fixed="left"/>
+      <el-table-column prop="userid" label="用户ID" width="100" align="center">
+        <template #default="{ row }">{{ formatEmpty(row.userid) }}</template>
+      </el-table-column>
+      <el-table-column prop="nickname" label="昵称" min-width="130" show-overflow-tooltip>
+        <template #default="{ row }">{{ formatEmpty(row.nickname) }}</template>
+      </el-table-column>
+      <el-table-column prop="mobile" label="手机号" min-width="130">
+        <template #default="{ row }">{{ formatEmpty(row.mobile) }}</template>
+      </el-table-column>
+      <el-table-column prop="genderTxt" label="性别" width="90" align="center">
+        <template #default="{ row }">{{ formatEmpty(row.genderTxt) }}</template>
+      </el-table-column>
+      <el-table-column prop="professTxt" label="职业" min-width="110" show-overflow-tooltip>
+        <template #default="{ row }">{{ formatEmpty(row.professTxt) }}</template>
+      </el-table-column>
+      <el-table-column prop="targetTxt" label="约拍对象" min-width="120">
+        <template #default="{ row }">{{ formatEmpty(row.targetTxt) }}</template>
+      </el-table-column>
+      <el-table-column label="风格" min-width="180" show-overflow-tooltip>
+        <template #default="{ row }">{{ getStyleText(row as YpatInfo) }}</template>
+      </el-table-column>
+      <el-table-column prop="chargewayTxt" label="收费方式" min-width="120">
+        <template #default="{ row }">{{ formatEmpty(row.chargewayTxt) }}</template>
+      </el-table-column>
+      <el-table-column label="地区" min-width="170" show-overflow-tooltip>
+        <template #default="{row}">{{ getAreaText(row as YpatInfo) }}</template>
+      </el-table-column>
+      <el-table-column prop="patdate" label="约拍日期" min-width="120">
+        <template #default="{ row }">{{ formatEmpty(row.patdate) }}</template>
+      </el-table-column>
+      <el-table-column prop="workId" label="关联作品ID" width="110" align="center">
+        <template #default="{ row }">{{ formatEmpty(row.workId) }}</template>
+      </el-table-column>
+      <el-table-column prop="pubdate" label="发布时间" min-width="160">
+        <template #default="{ row }">{{ formatEmpty(row.pubdate) }}</template>
+      </el-table-column>
+      <el-table-column prop="pattimes" label="拍摄次数" width="100" align="center">
+        <template #default="{ row }">{{ formatEmpty(row.pattimes) }}</template>
+      </el-table-column>
+      <el-table-column prop="readtimes" label="阅读次数" width="100" align="center">
+        <template #default="{ row }">{{ formatEmpty(row.readtimes) }}</template>
+      </el-table-column>
+      <el-table-column prop="coltimes" label="收藏次数" width="100" align="center">
+        <template #default="{ row }">{{ formatEmpty(row.coltimes) }}</template>
+      </el-table-column>
+      <el-table-column label="操作" width="90" align="center" fixed="right">
+        <template #default="{ row }">
+          <el-button type="primary" link size="small" @click="openDetail(row as YpatInfo)">
+            详情
+          </el-button>
+        </template>
+      </el-table-column>
     </el-table>
     <div class="pagination-wrapper"><el-pagination :current-page="currentPage" :page-size="query.size" :total="total" :page-sizes="[10,20,50]" layout="total,sizes,prev,pager,next,jumper" background @current-change="pageChange" @size-change="sizeChange"/></div>
+    <el-drawer v-model="detailVisible" title="约拍详情" size="720px">
+      <div v-if="current" class="detail-content">
+        <el-descriptions title="发布人" :column="2" border>
+          <el-descriptions-item label="约拍ID">{{ formatEmpty(current.id) }}</el-descriptions-item>
+          <el-descriptions-item label="用户ID">{{ formatEmpty(current.userid) }}</el-descriptions-item>
+          <el-descriptions-item label="昵称">{{ formatEmpty(current.nickname) }}</el-descriptions-item>
+          <el-descriptions-item label="手机号">{{ formatEmpty(current.mobile) }}</el-descriptions-item>
+          <el-descriptions-item label="性别">{{ formatEmpty(current.genderTxt) }}</el-descriptions-item>
+          <el-descriptions-item label="职业">{{ formatEmpty(current.professTxt) }}</el-descriptions-item>
+          <el-descriptions-item label="实名认证">{{ getFlagText(current.realnameflag) }}</el-descriptions-item>
+          <el-descriptions-item label="信用认证">{{ getFlagText(current.creditflag) }}</el-descriptions-item>
+        </el-descriptions>
+
+        <el-descriptions title="约拍信息" :column="2" border>
+          <el-descriptions-item label="约拍对象">{{ formatEmpty(current.targetTxt) }}</el-descriptions-item>
+          <el-descriptions-item label="风格">{{ getStyleText(current) }}</el-descriptions-item>
+          <el-descriptions-item label="收费方式">{{ formatEmpty(current.chargewayTxt) }}</el-descriptions-item>
+          <el-descriptions-item label="金额">{{ formatEmpty(current.chargeamt) }}</el-descriptions-item>
+          <el-descriptions-item label="约拍日期">{{ formatEmpty(current.patdate) }}</el-descriptions-item>
+          <el-descriptions-item label="地区">{{ getAreaText(current) }}</el-descriptions-item>
+          <el-descriptions-item label="关联作品ID">{{ formatEmpty(current.workId) }}</el-descriptions-item>
+          <el-descriptions-item label="发布时间">{{ formatEmpty(current.pubdate) }}</el-descriptions-item>
+          <el-descriptions-item label="描述" :span="2">{{ formatEmpty(current.describ) }}</el-descriptions-item>
+        </el-descriptions>
+
+        <el-descriptions title="数据表现" :column="3" border>
+          <el-descriptions-item label="拍摄次数">{{ formatEmpty(current.pattimes) }}</el-descriptions-item>
+          <el-descriptions-item label="阅读次数">{{ formatEmpty(current.readtimes) }}</el-descriptions-item>
+          <el-descriptions-item label="收藏次数">{{ formatEmpty(current.coltimes) }}</el-descriptions-item>
+        </el-descriptions>
+      </div>
+    </el-drawer>
   </div>
 </template>
 
@@ -85,5 +175,11 @@ onMounted(fetchList)
   display: flex;
   justify-content: flex-end;
   margin-top: $spacing-lg;
+}
+
+.detail-content {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-lg;
 }
 </style>

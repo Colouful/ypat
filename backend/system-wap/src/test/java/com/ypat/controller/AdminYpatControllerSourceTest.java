@@ -70,16 +70,53 @@ public class AdminYpatControllerSourceTest {
     }
 
     @Test
+    public void adminYpatAuditTreatsVoidDownstreamResponseAsSuccess() throws IOException {
+        String source = readSource(
+                "src/main/java/com/ypat/controller/AdminYpatController.java",
+                "backend/system-wap/src/main/java/com/ypat/controller/AdminYpatController.java",
+                "AdminYpatController.java should exist");
+        String auditMethod = methodBody(source,
+                "public ResponseApiBody audit(",
+                "    /**\n     * 上推荐 / 取消推荐。");
+
+        assertTrue(auditMethod.contains("ypatServiceClient.audit(id, flag, null, reason)"));
+        assertTrue(auditMethod.contains("return ResponseApiBody.success(\"审核完成\")"));
+        assertFalse(auditMethod.contains("JsonParser.parseString(res)"));
+        assertFalse(auditMethod.contains("result.put(\"success\""));
+    }
+
+    @Test
+    public void adminYpatRecomTreatsVoidDownstreamResponseAsSuccess() throws IOException {
+        String source = readSource(
+                "src/main/java/com/ypat/controller/AdminYpatController.java",
+                "backend/system-wap/src/main/java/com/ypat/controller/AdminYpatController.java",
+                "AdminYpatController.java should exist");
+        String recomMethod = methodBody(source,
+                "public ResponseApiBody recom(",
+                "    /**\n     * 发布作品（后台代提交）。");
+
+        assertTrue(recomMethod.contains("ypatServiceClient.upRecom(id, recomflag)"));
+        assertTrue(recomMethod.contains("return ResponseApiBody.success(\"推荐状态已更新\")"));
+        assertFalse(recomMethod.contains("JsonParser.parseString(res)"));
+    }
+
+    @Test
     public void adminYpatSubmitUsesStorageServiceForAvatarAndWatermarkedWorks() throws IOException {
         String source = readSource(
                 "src/main/java/com/ypat/controller/AdminYpatController.java",
                 "backend/system-wap/src/main/java/com/ypat/controller/AdminYpatController.java",
                 "AdminYpatController.java should exist");
+        String submitMethod = methodBody(source,
+                "public ResponseApiBody submit(",
+                "    private void validateSubmitFields");
 
         assertTrue(source.contains("private StorageService storageService"));
         assertTrue(source.contains("storageService.upload(file.getInputStream(), ImageConst.IMAGE_TYPE, file.getContentType(), StorageBizPath.AVATAR)"));
         assertTrue(source.contains("imageMarkUtil.waterMake(inputStream)"));
         assertTrue(source.contains("storageService.upload(waterStream, ImageConst.IMAGE_TYPE, \"image/jpeg\", StorageBizPath.YPAT)"));
+        assertTrue(submitMethod.contains("ypatServiceClient.submit(ypatInfoQo)"));
+        assertTrue(submitMethod.contains("return ResponseApiBody.success(null)"));
+        assertFalse(submitMethod.contains("JsonParser.parseString(res)"));
         assertFalse(source.contains("fastDFSClient.uploanFile1"));
         assertFalse(source.contains("systemConfig.getFdfs_path() + fileId"));
     }
@@ -163,6 +200,14 @@ public class AdminYpatControllerSourceTest {
         Method method = AdminYpatController.class.getDeclaredMethod("normalizeSize", Integer.class);
         method.setAccessible(true);
         return (Integer) method.invoke(controller, new Object[]{size});
+    }
+
+    private String methodBody(String source, String startToken, String endToken) {
+        int start = source.indexOf(startToken);
+        assertTrue(start >= 0);
+        int end = source.indexOf(endToken, start);
+        assertTrue(end > start);
+        return source.substring(start, end);
     }
 
     private void assertParseResponseFail(AdminYpatController controller, String json, String expectedMessage) throws Exception {

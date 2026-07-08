@@ -1,6 +1,7 @@
 package com.ypat.controller;
 
 import com.ypat.YpatInfoQo;
+import com.ypat.ResponseApiBody;
 import com.ypat.ResponseCode;
 import com.ypat.SysException;
 import com.ypat.comm.Const;
@@ -83,7 +84,7 @@ public class YpatInfoController {
     }
 
     @PostMapping("/ypat/submit")
-    public String submit(@Valid YpatInfoQo ypatInfoQo) throws IOException {
+    public ResponseApiBody submit(@Valid YpatInfoQo ypatInfoQo) throws IOException {
         logger.info("约拍申请输入："+ypatInfoQo);
         if(ypatInfoQo.getPatdate()==null){
             throw new RuntimeException("patdate不能为空");
@@ -116,7 +117,7 @@ public class YpatInfoController {
 
         ypatInfoQo.setUserid(Long.parseLong(UserUtil.getUserId()));
         ypatInfoQo.setPics(picsList);
-        String res = ypatServiceClient.submit(ypatInfoQo);
+        ypatServiceClient.submit(ypatInfoQo);
         //推送消息
         try {
             String accessToken = wxMessClient.getAccessToken();
@@ -130,7 +131,7 @@ public class YpatInfoController {
         } catch (Exception e) {
             logger.error("消息推送失败：", e);
         }
-        return res;
+        return ResponseApiBody.success(null);
     }
 
     @RequestMapping(value = "/ypat/yd/add", method = {RequestMethod.POST, RequestMethod.PUT})

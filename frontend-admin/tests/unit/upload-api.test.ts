@@ -18,12 +18,12 @@ describe('后台上传 API', () => {
     expect(serviceMock).toHaveBeenNthCalledWith(1, expect.objectContaining({
       method: 'POST',
       url: '/admin/upload',
-      headers: { 'Content-Type': 'multipart/form-data' },
+      data: expect.any(FormData),
     }))
     expect(serviceMock).toHaveBeenNthCalledWith(2, expect.objectContaining({
       method: 'POST',
       url: '/admin/ypat/upload',
-      headers: { 'Content-Type': 'multipart/form-data' },
+      data: expect.any(FormData),
     }))
   })
 

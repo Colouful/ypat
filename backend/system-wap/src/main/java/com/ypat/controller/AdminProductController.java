@@ -5,7 +5,6 @@ import com.ypat.ResponseApiBody;
 import com.ypat.ResponseCode;
 import com.ypat.SysException;
 import com.ypat.service.ProductServiceClient;
-import com.ypat.third.baidu.ai.GsonUtils;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonParser;
 import org.apache.commons.lang.StringUtils;
@@ -86,9 +85,8 @@ public class AdminProductController {
         }
 
         logger.info("管理端产品保存：id={}, name={}", productQo.getId(), productQo.getName());
-        String res = productServiceClient.add(productQo);
-        JsonElement resData = JsonParser.parseString(res);
-        return ResponseApiBody.success(resData);
+        productServiceClient.add(productQo);
+        return ResponseApiBody.success(null);
     }
 
     /**
@@ -108,8 +106,7 @@ public class AdminProductController {
         qo.setId(id);
         qo.setStatus(status);
 
-        String res = productServiceClient.upDown(qo);
-        JsonElement resData = JsonParser.parseString(res);
-        return ResponseApiBody.success(resData);
+        productServiceClient.upDown(qo);
+        return ResponseApiBody.success(null);
     }
 }

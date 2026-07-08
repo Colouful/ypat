@@ -5,7 +5,6 @@ import com.ypat.ResponseApiBody;
 import com.ypat.ResponseCode;
 import com.ypat.SysException;
 import com.ypat.service.BannerServiceClient;
-import com.ypat.third.baidu.ai.GsonUtils;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonParser;
 import org.apache.commons.lang.StringUtils;
@@ -89,9 +88,8 @@ public class AdminBannerController {
         }
 
         logger.info("管理端横幅保存：id={}, title={}", bannerQo.getId(), bannerQo.getTitle());
-        String res = bannerServiceClient.add(bannerQo);
-        JsonElement resData = JsonParser.parseString(res);
-        return ResponseApiBody.success(resData);
+        bannerServiceClient.add(bannerQo);
+        return ResponseApiBody.success(null);
     }
 
     /**
@@ -111,8 +109,7 @@ public class AdminBannerController {
         qo.setId(id);
         qo.setStatus(status);
 
-        String res = bannerServiceClient.upDown(qo);
-        JsonElement resData = JsonParser.parseString(res);
-        return ResponseApiBody.success(resData);
+        bannerServiceClient.upDown(qo);
+        return ResponseApiBody.success(null);
     }
 }

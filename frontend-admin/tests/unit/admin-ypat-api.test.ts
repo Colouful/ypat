@@ -14,6 +14,54 @@ describe('后台约拍 API', () => {
     postMock.mockClear()
   })
 
+  it('列表数据应从 userQo 补齐用户展示字段', async () => {
+    const api = await import('@/api/modules/ypat')
+
+    const page = api.normalizeYpatListPage({
+      content: [
+        {
+          id: 2,
+          describ: '测试约拍',
+          nickname: '',
+          mobile: '',
+          gender: '',
+          genderTxt: '',
+          profess: '',
+          professTxt: '',
+          target: '0',
+          targetTxt: '约摄影师',
+          city: '上海',
+          pubdate: '2026-07-07',
+          status: '1',
+          statusTxt: '待审核',
+          recomflag: '0',
+          reason: '',
+          pics: [],
+          userQo: {
+            id: 8,
+            nickname: '内测摄影师',
+            gender: '1',
+            genderTxt: '男',
+            profess: '0',
+            professTxt: '摄影师',
+            mobile: '13800000000',
+            openid: 'openid',
+          },
+        },
+      ],
+      totalElements: 1,
+    })
+
+    expect(page.content[0]).toMatchObject({
+      nickname: '内测摄影师',
+      mobile: '13800000000',
+      gender: '1',
+      genderTxt: '男',
+      profess: '0',
+      professTxt: '摄影师',
+    })
+  })
+
   it('代发约拍应使用 multipart 表单提交文件和字段', async () => {
     const api = await import('@/api/modules/ypat')
     const avatar = new File(['avatar'], 'avatar.jpg', { type: 'image/jpeg' })
@@ -48,8 +96,6 @@ describe('后台约拍 API', () => {
     expect(formData.get('patstyle')).toBe('1,2')
     expect(formData.get('file')).toBe(avatar)
     expect(formData.getAll('files')).toEqual([workImage])
-    expect(config).toMatchObject({
-      headers: { 'Content-Type': 'multipart/form-data' },
-    })
+    expect(config).toBeUndefined()
   })
 })

@@ -132,6 +132,7 @@ import { getWorkTags } from '@/api/modules/dict'
 import { resolveWorkTagOptions, WORK_TAG_LIMIT } from '@/constants/work-tags'
 import { submit as submitYpat } from '@/api/modules/ypat'
 import { useMemberStore } from '@/stores/member'
+import { filePathToDataUrl } from '@/utils/file-base64'
 import type { WorkTag } from '@/api/types/work'
 import type { MediaItem } from '@/api/types/media'
 
@@ -263,7 +264,6 @@ async function onSubmit() {
   }
   submitting.value = true
   try {
-    const { filePathToDataUrl } = await import('@/utils/file-base64')
     const pics: string[] = []
     for (const m of mediaItems.value) {
       if (m.type === 'IMAGE') {

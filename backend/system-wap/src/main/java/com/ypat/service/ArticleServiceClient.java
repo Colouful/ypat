@@ -17,9 +17,9 @@ public interface ArticleServiceClient {
     String findPage(@RequestBody ArticleQo articleQo);
 
     @PostMapping("/service/article/add")
-    String add(@RequestBody ArticleQo articleQo);
+    void add(@RequestBody ArticleQo articleQo);
 
     @PostMapping("/service/article/upDown")
-    String upDown(@RequestBody ArticleQo articleQo);
+    void upDown(@RequestBody ArticleQo articleQo);
 
 }

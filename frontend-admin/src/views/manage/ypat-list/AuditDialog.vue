@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
 import { ElMessage } from 'element-plus'
+import { Check, CloseBold, Picture, User } from '@element-plus/icons-vue'
 import { auditYpat, type YpatInfo } from '@/api/modules/ypat'
 import { AuditFlag } from '@/constants/enums'
 
@@ -19,6 +20,19 @@ const localVisible = computed({
 
 const reason = ref('')
 const loading = ref(false)
+const styleTags = computed(() => (props.data ? getPatstyleList(props.data) : []))
+const previewImages = computed(() => props.data?.pics || [])
+const detailRows = computed(() => {
+  if (!props.data) return []
+  return [
+    { label: '性别', value: props.data.genderTxt || '-' },
+    { label: '职业', value: props.data.professTxt || '-' },
+    { label: '约拍对象', value: props.data.targetTxt || '-' },
+    { label: '收费方式', value: props.data.chargewayTxt || '-' },
+    { label: '地区', value: getAreaText(props.data) },
+    { label: '关联作品ID', value: props.data.workId || '-' },
+  ]
+})
 watch(
   () => [props.visible, props.data?.id] as const,
   ([visible]) => {
@@ -58,67 +72,269 @@ function getPatstyleList(data: YpatInfo): string[] {
   <el-dialog
     v-model="localVisible"
     title="约拍审核"
-    width="680px"
+    width="760px"
+    class="ypat-audit-dialog"
     :close-on-click-modal="!loading"
     :close-on-press-escape="!loading"
     :show-close="!loading"
   >
-    <div v-if="data">
-      <p><strong>ID：</strong>{{ data.id }}</p>
-      <p><strong>昵称：</strong>{{ data.nickname || '-' }}</p>
-      <p><strong>约拍对象：</strong>{{ data.targetTxt || '-' }}</p>
-      <p><strong>风格：</strong>{{ data.patstyleTxt || '-' }}</p>
-      <p><strong>收费方式：</strong>{{ data.chargewayTxt || '-' }}</p>
-      <p><strong>地区：</strong>{{ getAreaText(data) }}</p>
-      <p><strong>关联作品ID：</strong>{{ data.workId || '-' }}</p>
-      <p><strong>描述：</strong>{{ data.describ || '-' }}</p>
-      <div v-if="getPatstyleList(data).length" class="style-list">
-        <el-tag v-for="style in getPatstyleList(data)" :key="style" size="small">
-          {{ style }}
-        </el-tag>
+    <div v-if="data" class="audit-body">
+      <div class="audit-profile">
+        <div class="avatar">
+          <el-icon><User /></el-icon>
+        </div>
+        <div class="profile-main">
+          <div class="profile-title">
+            <span class="nickname">{{ data.nickname || '-' }}</span>
+            <el-tag size="small" type="warning" effect="light">ID {{ data.id }}</el-tag>
+          </div>
+          <div class="profile-sub">{{ data.pubdate || '暂无发布时间' }}</div>
+        </div>
       </div>
-      <div v-if="data.pics?.length" class="image-list">
-        <el-image
-          v-for="(pic, index) in data.pics"
-          :key="pic"
-          :src="pic"
-          fit="cover"
-          class="preview-image"
-          :preview-src-list="data.pics"
-          :initial-index="index"
-          preview-teleported
-        />
+
+      <div class="detail-grid">
+        <div v-for="item in detailRows" :key="item.label" class="detail-item">
+          <span class="detail-label">{{ item.label }}</span>
+          <span class="detail-value">{{ item.value }}</span>
+        </div>
       </div>
-      <el-form label-width="80px">
-        <el-form-item label="审核理由"><el-input v-model="reason" type="textarea" :rows="3" placeholder="审核不通过时填写"/></el-form-item>
+
+      <div class="section">
+        <div class="section-title">风格</div>
+        <div class="style-list">
+          <el-tag v-for="style in styleTags" :key="style" size="small">
+            {{ style }}
+          </el-tag>
+          <span v-if="!styleTags.length" class="empty-text">-</span>
+        </div>
+      </div>
+
+      <div class="section">
+        <div class="section-title">描述</div>
+        <div class="description">{{ data.describ || '-' }}</div>
+      </div>
+
+      <div class="section">
+        <div class="section-title">
+          <el-icon><Picture /></el-icon>
+          <span>图片</span>
+        </div>
+        <div v-if="previewImages.length" class="image-list">
+          <el-image
+            v-for="(pic, index) in previewImages"
+            :key="pic"
+            :src="pic"
+            fit="cover"
+            class="preview-image"
+            :preview-src-list="previewImages"
+            :initial-index="index"
+            preview-teleported
+          />
+        </div>
+        <span v-else class="empty-text">-</span>
+      </div>
+
+      <el-form label-position="top" class="audit-form">
+        <el-form-item label="审核理由">
+          <el-input
+            v-model="reason"
+            type="textarea"
+            :rows="3"
+            maxlength="120"
+            show-word-limit
+            placeholder="审核不通过时填写"
+          />
+        </el-form-item>
       </el-form>
     </div>
     <template #footer>
       <el-button :disabled="loading" @click="localVisible = false">取消</el-button>
-      <el-button type="danger" :loading="loading" :disabled="loading" @click="handleAudit(AuditFlag.REJECT)">不通过</el-button>
-      <el-button type="primary" :loading="loading" :disabled="loading" @click="handleAudit(AuditFlag.PASS)">通过</el-button>
+      <el-button
+        type="danger"
+        :icon="CloseBold"
+        :loading="loading"
+        :disabled="loading"
+        @click="handleAudit(AuditFlag.REJECT)"
+      >
+        不通过
+      </el-button>
+      <el-button
+        type="primary"
+        :icon="Check"
+        :loading="loading"
+        :disabled="loading"
+        @click="handleAudit(AuditFlag.PASS)"
+      >
+        通过
+      </el-button>
     </template>
   </el-dialog>
 </template>
 
 <style scoped lang="scss">
+.audit-body {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-lg;
+}
+
+.audit-profile {
+  display: flex;
+  align-items: center;
+  gap: $spacing-base;
+  padding: $spacing-base;
+  background: #f7f9fc;
+  border: 1px solid #e6ebf2;
+  border-radius: $radius-base;
+}
+
+.avatar {
+  display: inline-flex;
+  flex: 0 0 44px;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  color: #2f7fd2;
+  background: #eaf3ff;
+  border-radius: 50%;
+}
+
+.profile-main {
+  min-width: 0;
+}
+
+.profile-title {
+  display: flex;
+  flex-wrap: wrap;
+  gap: $spacing-sm;
+  align-items: center;
+}
+
+.nickname {
+  font-size: 18px;
+  font-weight: 600;
+  color: #1f2d3d;
+}
+
+.profile-sub {
+  margin-top: 4px;
+  font-size: 13px;
+  color: #909399;
+}
+
+.detail-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  border: 1px solid #e6ebf2;
+  border-radius: $radius-base;
+  overflow: hidden;
+}
+
+.detail-item {
+  min-width: 0;
+  padding: 12px 14px;
+  border-right: 1px solid #e6ebf2;
+  border-bottom: 1px solid #e6ebf2;
+}
+
+.detail-item:nth-child(3n) {
+  border-right: 0;
+}
+
+.detail-item:nth-last-child(-n + 3) {
+  border-bottom: 0;
+}
+
+.detail-label {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 12px;
+  color: #909399;
+}
+
+.detail-value {
+  display: block;
+  overflow: hidden;
+  font-size: 14px;
+  color: #303133;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.section {
+  min-width: 0;
+}
+
+.section-title {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  margin-bottom: $spacing-sm;
+  font-size: 14px;
+  font-weight: 600;
+  color: #303133;
+}
+
 .style-list {
   display: flex;
   flex-wrap: wrap;
   gap: $spacing-sm;
-  margin: $spacing-base 0;
+}
+
+.description {
+  padding: 12px 14px;
+  line-height: 1.7;
+  color: #303133;
+  white-space: pre-wrap;
+  background: #fafafa;
+  border: 1px solid #e6ebf2;
+  border-radius: $radius-base;
 }
 
 .image-list {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(96px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(92px, 1fr));
   gap: $spacing-sm;
-  margin: $spacing-base 0;
 }
 
 .preview-image {
-  width: 96px;
-  height: 96px;
+  width: 100%;
+  aspect-ratio: 1;
   border-radius: $radius-sm;
+  overflow: hidden;
+  border: 1px solid #e6ebf2;
+}
+
+.empty-text {
+  color: #909399;
+}
+
+.audit-form {
+  :deep(.el-form-item) {
+    margin-bottom: 0;
+  }
+}
+
+@media (max-width: 720px) {
+  .detail-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .detail-item:nth-child(3n) {
+    border-right: 1px solid #e6ebf2;
+  }
+
+  .detail-item:nth-child(2n) {
+    border-right: 0;
+  }
+
+  .detail-item:nth-last-child(-n + 3) {
+    border-bottom: 1px solid #e6ebf2;
+  }
+
+  .detail-item:nth-last-child(-n + 2) {
+    border-bottom: 0;
+  }
 }
 </style>

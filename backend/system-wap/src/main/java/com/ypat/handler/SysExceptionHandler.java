@@ -3,6 +3,7 @@ package com.ypat.handler;
 import com.ypat.ResponseApiBody;
 import com.ypat.ResponseCode;
 import com.ypat.SysException;
+import com.netflix.client.ClientException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.validation.BindException;
@@ -22,10 +23,12 @@ public class SysExceptionHandler {
     @ExceptionHandler(value = Exception.class)
     public ResponseApiBody exception(HttpServletRequest request, Exception exception) {
         ResponseApiBody apiBody = null;
-        logger.error("统一异常：", exception.getMessage());
+        logger.error("统一异常：", exception);
         if (exception instanceof SysException) {
             SysException ex = (SysException) exception;
             apiBody = new ResponseApiBody(ex.getCode(), ex.getMsg(), null);
+        } else if (isServiceDiscoveryException(exception)) {
+            apiBody = new ResponseApiBody(ResponseCode.FAIL_SER.getCode(), "内部服务暂不可用，请稍后重试", null);
         } else if (exception instanceof BindException) {
             BindingResult bindResult = ((BindException) exception).getBindingResult();
             if (bindResult != null && bindResult.hasErrors()) {
@@ -48,5 +51,20 @@ public class SysExceptionHandler {
             apiBody = new ResponseApiBody(ResponseCode.FAIL_PARA.getCode(), exception.getMessage(), null);
         }
         return apiBody;
+    }
+
+    private boolean isServiceDiscoveryException(Throwable exception) {
+        Throwable current = exception;
+        while (current != null) {
+            if (current instanceof ClientException) {
+                return true;
+            }
+            String message = current.getMessage();
+            if (message != null && message.contains("Load balancer does not have available server")) {
+                return true;
+            }
+            current = current.getCause();
+        }
+        return false;
     }
 }

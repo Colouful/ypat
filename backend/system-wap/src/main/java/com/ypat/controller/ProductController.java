@@ -23,8 +23,8 @@ public class ProductController {
     }
 
     @PutMapping("/product/add")
-    public String add(ProductQo productQo) {
-        return productServiceClient.add(productQo);
+    public void add(ProductQo productQo) {
+        productServiceClient.add(productQo);
     }
 
     @GetMapping("/product/list")

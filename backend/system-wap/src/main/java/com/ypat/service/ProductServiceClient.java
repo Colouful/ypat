@@ -17,9 +17,9 @@ public interface ProductServiceClient {
     String findPage(@RequestBody ProductQo productQo);
 
     @PostMapping("/service/product/add")
-    String add(@RequestBody ProductQo productQo);
+    void add(@RequestBody ProductQo productQo);
 
     @PostMapping("/service/product/upDown")
-    String upDown(@RequestBody ProductQo productQo);
+    void upDown(@RequestBody ProductQo productQo);
 
 }

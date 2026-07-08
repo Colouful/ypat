@@ -77,7 +77,8 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
                         "/member/plans",
                         "/wxpay/notify",
                         "/wxpub/notify",
-                        "/admin/captcha").permitAll()
+                        "/admin/captcha",
+                        "/internal/health/dependencies").permitAll()
                 .antMatchers("/admin/**").hasRole("ADMIN")
                 .anyRequest().authenticated();
 

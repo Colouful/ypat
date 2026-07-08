@@ -17,7 +17,7 @@ public interface YpatServiceClient {
     String add(@RequestBody YpatInfoQo ypatInfoQo);
 
     @PostMapping("/service/ypat/submit")
-    String submit(@RequestBody YpatInfoQo ypatInfoQo);
+    void submit(@RequestBody YpatInfoQo ypatInfoQo);
 
     @PostMapping("/service/ypat/audit")
     String audit(@RequestParam("id") Long id, @RequestParam("flag") String flag,

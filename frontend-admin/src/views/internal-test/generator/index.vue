@@ -21,6 +21,7 @@ import {
   getProfessOptions,
   getWorkTagStyleOptions,
 } from '@/constants/enums'
+import { regionCascaderOptions, toRegionFields, type RegionPath } from '@/utils/region'
 
 const contentTypeOptions = [
   { label: '约拍', value: 'ypat' },
@@ -40,6 +41,13 @@ const workMediaTabs = [
   { label: '图片', value: InternalTestMediaType.IMAGE.value },
   { label: '视频', value: InternalTestMediaType.VIDEO.value },
 ]
+const regionCascaderProps = {
+  value: 'label',
+  label: 'label',
+  children: 'children',
+  emitPath: true,
+  checkStrictly: true,
+} as const
 
 const form = reactive({
   mode: InternalTestGenerateMode.CREATE_AND_GENERATE.value,
@@ -75,6 +83,15 @@ let resourceRequestSeq = 0
 const isCreateMode = computed(() => form.mode === InternalTestGenerateMode.CREATE_AND_GENERATE.value)
 const needsYpat = computed(() => form.contentType === 'ypat' || form.contentType === 'both')
 const needsWork = computed(() => form.contentType === 'work' || form.contentType === 'both')
+const regionPath = computed<RegionPath>({
+  get: () => [form.province, form.city, form.area].filter(Boolean),
+  set: (path) => {
+    const fields = toRegionFields(path)
+    form.province = fields.province
+    form.city = fields.city
+    form.area = fields.area
+  },
+})
 
 function selectedIds(resources: InternalTestResource[]): number[] {
   return resources.map((item) => item.id).filter((id): id is number => typeof id === 'number')
@@ -189,7 +206,7 @@ function validateBeforeSubmit(): string | null {
       return '请输入至少一个已有内测用户 ID'
     }
   }
-  if (!form.city) return '请填写城市'
+  if (!form.city) return '请选择城市'
   if (!form.profess) return '请选择职业'
   if (!form.styleCode) return '请选择风格'
   if (!form.contentType) return '请选择内容类型'
@@ -307,13 +324,15 @@ onMounted(() => {
           <el-input v-model="form.userIdsText" placeholder="多个 ID 用英文逗号分隔" />
         </el-form-item>
         <el-form-item label="城市">
-          <el-input v-model="form.city" placeholder="请输入城市" />
-        </el-form-item>
-        <el-form-item label="省份">
-          <el-input v-model="form.province" placeholder="可选" />
-        </el-form-item>
-        <el-form-item label="地区">
-          <el-input v-model="form.area" placeholder="可选" />
+          <el-cascader
+            v-model="regionPath"
+            :options="regionCascaderOptions"
+            :props="regionCascaderProps"
+            clearable
+            filterable
+            placeholder="请选择省 / 市 / 区"
+            style="width: 240px"
+          />
         </el-form-item>
         <el-form-item label="职业">
           <el-select v-model="form.profess" placeholder="请选择职业" style="width: 240px">

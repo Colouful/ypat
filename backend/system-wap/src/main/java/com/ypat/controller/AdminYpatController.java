@@ -23,6 +23,7 @@ import org.apache.commons.lang.time.DateFormatUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -149,16 +150,12 @@ public class AdminYpatController {
         }
 
         logger.info("管理端约拍审核：id={}, flag={}", id, flag);
-        String res = ypatServiceClient.audit(id, flag, null, reason);
-        JsonElement resData = JsonParser.parseString(res);
+        ypatServiceClient.audit(id, flag, null, reason);
 
         // 微信消息推送（兼容旧逻辑，失败不影响主流程）
         pushAuditMessage(id, flag, reason);
 
-        Map<String, Object> result = new HashMap<>(4);
-        result.put("success", true);
-        result.put("data", resData);
-        return ResponseApiBody.success(result);
+        return ResponseApiBody.success("审核完成");
     }
 
     /**
@@ -176,9 +173,8 @@ public class AdminYpatController {
         }
 
         logger.info("管理端约拍推荐：id={}, recomflag={}", id, recomflag);
-        String res = ypatServiceClient.upRecom(id, recomflag);
-        JsonElement resData = JsonParser.parseString(res);
-        return ResponseApiBody.success(resData);
+        ypatServiceClient.upRecom(id, recomflag);
+        return ResponseApiBody.success("推荐状态已更新");
     }
 
     /**
@@ -186,7 +182,16 @@ public class AdminYpatController {
      *
      * <p>对应旧后台：POST /ypat/submit</p>
      */
-    @PostMapping("/submit")
+    @PostMapping(value = "/submit", consumes = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseApiBody submitJson(@RequestBody YpatInfoQo ypatInfoQo) {
+        if (ypatInfoQo.getPatdate() == null) {
+            throw new SysException(ResponseCode.FAIL_PARA.getCode(), "patdate不能为空");
+        }
+        validateSubmitFields(ypatInfoQo);
+        throw new SysException(ResponseCode.FAIL_PARA.getCode(), "请使用multipart/form-data上传作品图片");
+    }
+
+    @PostMapping(value = "/submit", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseApiBody submit(
             YpatInfoQo ypatInfoQo,
             @RequestParam(value = "file", required = false) MultipartFile file,
@@ -194,6 +199,10 @@ public class AdminYpatController {
 
         if (ypatInfoQo.getPatdate() == null) {
             throw new SysException(ResponseCode.FAIL_PARA.getCode(), "patdate不能为空");
+        }
+        validateSubmitFields(ypatInfoQo);
+        if (!hasUsableFiles(files)) {
+            throw new SysException(ResponseCode.FAIL_PARA.getCode(), "请至少上传一张有效作品图片");
         }
 
         // 1. 创建临时用户（头像）
@@ -217,6 +226,9 @@ public class AdminYpatController {
         List<String> picsList = new ArrayList<>();
         if (files != null && files.length > 0) {
             for (MultipartFile multipartFile : files) {
+                if (multipartFile == null || multipartFile.isEmpty() || multipartFile.getSize() <= 0) {
+                    continue;
+                }
                 InputStream inputStream = multipartFile.getInputStream();
                 InputStream waterStream = imageMarkUtil.waterMake(inputStream);
                 StoredObject storedObject = storageService.upload(waterStream, ImageConst.IMAGE_TYPE, "image/jpeg", StorageBizPath.YPAT);
@@ -232,9 +244,41 @@ public class AdminYpatController {
 
         ypatInfoQo.setUserid(user.getId());
         ypatInfoQo.setPics(picsList);
-        String res = ypatServiceClient.submit(ypatInfoQo);
-        JsonElement resData = JsonParser.parseString(res);
-        return ResponseApiBody.success(resData);
+        ypatServiceClient.submit(ypatInfoQo);
+        return ResponseApiBody.success(null);
+    }
+
+    private void validateSubmitFields(YpatInfoQo ypatInfoQo) {
+        if (StringUtils.isBlank(ypatInfoQo.getDescrib())) {
+            throw new SysException(ResponseCode.FAIL_PARA.getCode(), "describ不能为空");
+        }
+        if (StringUtils.isBlank(ypatInfoQo.getTarget())) {
+            throw new SysException(ResponseCode.FAIL_PARA.getCode(), "target不能为空");
+        }
+        if (StringUtils.isBlank(ypatInfoQo.getChargeway())) {
+            throw new SysException(ResponseCode.FAIL_PARA.getCode(), "chargeway不能为空");
+        }
+        if (StringUtils.isBlank(ypatInfoQo.getCity())) {
+            throw new SysException(ResponseCode.FAIL_PARA.getCode(), "city不能为空");
+        }
+        if (StringUtils.isBlank(ypatInfoQo.getProvince())) {
+            ypatInfoQo.setProvince(ypatInfoQo.getCity());
+        }
+        if (StringUtils.isBlank(ypatInfoQo.getNickname())) {
+            throw new SysException(ResponseCode.FAIL_PARA.getCode(), "nickname不能为空");
+        }
+    }
+
+    private boolean hasUsableFiles(MultipartFile[] files) {
+        if (files == null || files.length == 0) {
+            return false;
+        }
+        for (MultipartFile file : files) {
+            if (file != null && !file.isEmpty() && file.getSize() > 0) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private String genTempMobile() {

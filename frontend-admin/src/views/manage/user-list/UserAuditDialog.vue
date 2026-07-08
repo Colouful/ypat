@@ -17,6 +17,10 @@ const emit = defineEmits<{
 const detailLoading = ref(false)
 const detail = ref<OauthQo | null>(null)
 
+function getUserId(user?: OauthQo | null): number | undefined {
+  return user?.userid ?? user?.id
+}
+
 // 是否已审核（已审核状态隐藏审核按钮）
 const isAudited = computed(() => {
   const status = detail.value?.status
@@ -36,9 +40,10 @@ async function loadDetail(): Promise<void> {
     // 直接用列表传入的数据，或重新请求详情获取完整 pics
     detail.value = props.user
 
-    // 如果有 userid，请求完整详情（可能包含更多 pics）
-    if (props.user.userid) {
-      const res = await getUserDetail(props.user.userid)
+    // 列表接口返回 id，详情接口返回 userid；统一取可用的用户 ID。
+    const userId = getUserId(props.user)
+    if (userId) {
+      const res = await getUserDetail(userId)
       if (res.data) {
         detail.value = res.data
       }
@@ -126,7 +131,7 @@ watch(
         <h4 class="section-title">基本信息</h4>
         <el-descriptions :column="2" border>
           <el-descriptions-item label="用户ID">
-            {{ detail?.userid || '-' }}
+            {{ getUserId(detail) || '-' }}
           </el-descriptions-item>
           <el-descriptions-item label="姓名">
             {{ detail?.name || '-' }}

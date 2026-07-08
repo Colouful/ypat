@@ -23,6 +23,10 @@ const service: AxiosInstance = axios.create({
 // 请求拦截器：注入 Token Header
 service.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
+    if (isFormData(config.data)) {
+      unsetContentType(config.headers)
+    }
+
     const token = getToken()
     if (token) {
       // 后端 JWT Header 名为 "Token"（Const.HEADER_STRING），无 Bearer 前缀
@@ -34,6 +38,17 @@ service.interceptors.request.use(
     return Promise.reject(error)
   },
 )
+
+function isFormData(value: unknown): value is FormData {
+  return typeof FormData !== 'undefined' && value instanceof FormData
+}
+
+function unsetContentType(headers: InternalAxiosRequestConfig['headers']): void {
+  headers.delete?.('Content-Type')
+  headers.delete?.('content-type')
+  delete (headers as Record<string, unknown>)['Content-Type']
+  delete (headers as Record<string, unknown>)['content-type']
+}
 
 // 响应拦截器：解包 ResponseApiBody {code, msg, res} → ApiResult<T>
 service.interceptors.response.use(

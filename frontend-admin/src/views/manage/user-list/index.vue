@@ -29,6 +29,14 @@ const statusOptions = getUserStatusOptions()
 // 1-based 当前页（Element Plus pagination 使用 1-based，后端使用 0-based）
 const currentPage = computed(() => (queryParams.page ?? 0) + 1)
 
+function getUserId(row: OauthQo): number | undefined {
+  return row.userid ?? row.id
+}
+
+function formatEmpty(value?: string | number | null): string | number {
+  return value || '-'
+}
+
 /** 查询列表 */
 async function fetchList(): Promise<void> {
   loading.value = true
@@ -80,6 +88,12 @@ async function handleAudit(row: OauthQo): Promise<void> {
 async function handleAuditAction(flag: string): Promise<void> {
   if (!currentUser.value) return
 
+  const userId = getUserId(currentUser.value)
+  if (!userId) {
+    ElMessage.warning('缺少用户ID，无法审核')
+    return
+  }
+
   const actionText = flag === AuditFlag.PASS ? '通过' : '拒绝'
 
   try {
@@ -94,7 +108,7 @@ async function handleAuditAction(flag: string): Promise<void> {
     )
 
     auditLoading.value = true
-    await auditUser(currentUser.value.userid, flag)
+    await auditUser(userId, flag)
     ElMessage.success(`审核${actionText}成功`)
 
     auditDialogVisible.value = false
@@ -152,12 +166,39 @@ onMounted(() => {
         stripe
         style="width: 100%"
       >
-        <el-table-column prop="userid" label="ID" width="80" align="center" />
-        <el-table-column prop="name" label="姓名" min-width="120" />
-        <el-table-column prop="certcode" label="证件号码" min-width="180" show-overflow-tooltip />
+        <el-table-column label="ID" width="90" align="center">
+          <template #default="{ row }">
+            {{ formatEmpty(getUserId(row as OauthQo)) }}
+          </template>
+        </el-table-column>
+        <el-table-column prop="nickname" label="昵称" min-width="130" show-overflow-tooltip>
+          <template #default="{ row }">
+            {{ formatEmpty(row.nickname) }}
+          </template>
+        </el-table-column>
+        <el-table-column prop="mobile" label="手机号" min-width="130">
+          <template #default="{ row }">
+            {{ formatEmpty(row.mobile) }}
+          </template>
+        </el-table-column>
+        <el-table-column prop="name" label="实名姓名" min-width="120" show-overflow-tooltip>
+          <template #default="{ row }">
+            {{ formatEmpty(row.name) }}
+          </template>
+        </el-table-column>
+        <el-table-column prop="certcode" label="证件号码" min-width="190" show-overflow-tooltip>
+          <template #default="{ row }">
+            {{ formatEmpty(row.certcode) }}
+          </template>
+        </el-table-column>
+        <el-table-column prop="regisdate" label="注册时间" min-width="160" show-overflow-tooltip>
+          <template #default="{ row }">
+            {{ formatEmpty(row.regisdate) }}
+          </template>
+        </el-table-column>
         <el-table-column label="状态" width="120" align="center">
           <template #default="{ row }">
-            <StatusTag :status="row.status" />
+            <StatusTag :status="row.status || ''" />
           </template>
         </el-table-column>
         <el-table-column label="操作" width="100" align="center" fixed="right">

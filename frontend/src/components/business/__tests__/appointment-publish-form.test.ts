@@ -15,4 +15,10 @@ describe('AppointmentPublishForm mini-program controls', () => {
     expect(source).not.toContain('onPickRegion')
     expect(source).not.toContain('北京市 / 北京市 / 东城区')
   })
+
+  it('uses a static mini-program-safe image converter import before publishing', () => {
+    expect(source).toContain("import { filePathToDataUrl } from '@/utils/file-base64'")
+    expect(source).not.toContain("await import('@/utils/file-base64')")
+    expect(source).not.toContain('const { filePathToDataUrl }')
+  })
 })

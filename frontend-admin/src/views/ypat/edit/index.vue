@@ -33,7 +33,7 @@ function handleAvatarChange(file: UploadFile) {
 function syncWorkFiles(_file: UploadFile, files: UploadFiles) {
   const selectedFiles: File[] = []
   files.forEach((item) => {
-    if (item.raw) {
+    if (item.raw && item.raw.size > 0) {
       selectedFiles.push(item.raw)
     }
   })
@@ -48,6 +48,9 @@ async function submit() {
     if (!workFiles.value.length) {
       ElMessage.error('请至少上传一张作品图片')
       return
+    }
+    if (!form.value.province) {
+      form.value.province = form.value.city
     }
     form.value.patstyle = form.value.patstyleList.join(',')
     await submitYpat(form.value, avatarFile.value, workFiles.value)
