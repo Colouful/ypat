@@ -196,6 +196,50 @@ public class BannerServiceTest {
         assertNull(saved.banner.getJumpurl());
     }
 
+    @Test(expected = SysException.class)
+    public void upDownRejectsInvalidEnabledJumpWhenPublishing() {
+        BannerService service = new BannerService();
+        Banner existing = new Banner();
+        existing.setId(8L);
+        existing.setTitle("banner");
+        existing.setImgpath("/img/banner.png");
+        existing.setJumpflag("1");
+        existing.setJumptype("web");
+        existing.setJumpurl("javascript:alert(1)");
+        ReflectionTestUtils.setField(service, "bannerRepository", bannerRepository(new SavedBanner(), existing));
+
+        BannerQo qo = new BannerQo();
+        qo.setId(8L);
+        qo.setStatus("1");
+
+        service.upDown(qo);
+    }
+
+    @Test
+    public void upDownAllowsInvalidEnabledJumpWhenWithdrawing() {
+        BannerService service = new BannerService();
+        SavedBanner saved = new SavedBanner();
+        Banner existing = new Banner();
+        existing.setId(9L);
+        existing.setTitle("banner");
+        existing.setImgpath("/img/banner.png");
+        existing.setJumpflag("1");
+        existing.setJumptype("web");
+        existing.setJumpurl("javascript:alert(1)");
+        ReflectionTestUtils.setField(service, "bannerRepository", bannerRepository(saved, existing));
+
+        BannerQo qo = new BannerQo();
+        qo.setId(9L);
+        qo.setStatus("2");
+
+        service.upDown(qo);
+
+        assertEquals("2", saved.banner.getStatus());
+        assertEquals("0", saved.banner.getJumpflag());
+        assertNull(saved.banner.getJumptype());
+        assertNull(saved.banner.getJumpurl());
+    }
+
     private static BannerRepository bannerRepository(final SavedBanner saved) {
         return bannerRepository(saved, null);
     }

@@ -32,6 +32,7 @@ public class BannerService {
     private static final String JUMP_ENABLED = "1";
     private static final String JUMP_TYPE_MINIAPP = "miniapp";
     private static final String JUMP_TYPE_WEB = "web";
+    private static final String STATUS_WITHDRAW = "2";
     private static final int MAX_JUMP_URL_LENGTH = 500;
 
     @Autowired
@@ -48,10 +49,8 @@ public class BannerService {
         Banner banner = get(bannerQo.getId());
         banner.setStatus(bannerQo.getStatus());
         BannerQo normalized = CopyUtil.copy(banner, BannerQo.class);
-        normalizeAndValidateJump(normalized);
-        banner.setJumpflag(normalized.getJumpflag());
-        banner.setJumptype(normalized.getJumptype());
-        banner.setJumpurl(normalized.getJumpurl());
+        normalizeJumpForStatusUpdate(normalized);
+        applyJumpFields(banner, normalized);
         bannerRepository.save(banner);
     }
 
@@ -69,9 +68,7 @@ public class BannerService {
         bannerQo.setJumpflag(jumpflag);
 
         if (!JUMP_ENABLED.equals(jumpflag)) {
-            bannerQo.setJumpflag(JUMP_DISABLED);
-            bannerQo.setJumptype(null);
-            bannerQo.setJumpurl(null);
+            disableJump(bannerQo);
             return;
         }
 
@@ -96,6 +93,29 @@ public class BannerService {
 
         bannerQo.setJumptype(jumptype);
         bannerQo.setJumpurl(jumpurl);
+    }
+
+    private void normalizeJumpForStatusUpdate(BannerQo bannerQo) {
+        try {
+            normalizeAndValidateJump(bannerQo);
+        } catch (SysException e) {
+            if (!STATUS_WITHDRAW.equals(bannerQo.getStatus())) {
+                throw e;
+            }
+            disableJump(bannerQo);
+        }
+    }
+
+    private void disableJump(BannerQo bannerQo) {
+        bannerQo.setJumpflag(JUMP_DISABLED);
+        bannerQo.setJumptype(null);
+        bannerQo.setJumpurl(null);
+    }
+
+    private void applyJumpFields(Banner banner, BannerQo bannerQo) {
+        banner.setJumpflag(bannerQo.getJumpflag());
+        banner.setJumptype(bannerQo.getJumptype());
+        banner.setJumpurl(bannerQo.getJumpurl());
     }
 
     private boolean isMiniappPath(String value) {

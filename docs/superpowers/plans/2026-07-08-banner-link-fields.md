@@ -206,7 +206,7 @@ import com.ypat.SysException;
 运行：
 
 ```bash
-mvn -pl backend/system-wap -Dtest=AdminPublishControllerTest test
+cd backend && mvn -pl system-wap -am -Dtest=AdminPublishControllerTest -DfailIfNoTests=false test
 ```
 
 预期：FAIL(失败)，因为 `BannerQo`(横幅传输对象) 尚无字段访问器，`AdminBannerController`(后台横幅控制器) 尚无跳转校验。
@@ -280,7 +280,7 @@ mvn -pl backend/system-wap -Dtest=AdminPublishControllerTest test
 运行：
 
 ```bash
-mvn -pl backend/system-wap -Dtest=AdminPublishControllerTest test
+cd backend && mvn -pl system-wap -am -Dtest=AdminPublishControllerTest -DfailIfNoTests=false test
 ```
 
 预期：PASS(通过)。
@@ -833,7 +833,7 @@ git diff --name-only dev6...HEAD | rg '^91pai-master/' || true
 运行：
 
 ```bash
-mvn -pl backend/system-wap -Dtest=AdminPublishControllerTest test
+cd backend && mvn -pl system-wap -am -Dtest=AdminPublishControllerTest -DfailIfNoTests=false test
 ```
 
 预期：PASS(通过)。
