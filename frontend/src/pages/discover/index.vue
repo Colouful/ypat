@@ -91,7 +91,7 @@ const quickItems = [
 const flowItems = [
   { title: '我的发布', desc: '查看发布状态和收到的申请', icon: 'camera', action: () => checkLogin('/pages-sub/ypat/my-publish') },
   { title: '消息中心', desc: '处理收到的约拍与申请动态', icon: 'mail', action: () => openMessage() },
-  { title: '实名认证', desc: '完善信用资料，提高合作可信度', icon: 'shield', action: () => checkLogin('/pages-sub/user/realname') },
+  { title: '实名认证', desc: '完善信用资料，提高合作可信度', icon: 'shield', action: () => checkLogin('/pages-sub/user/realname-intro') },
   { title: '我的拍拍豆', desc: '充值、账单、收支记录统一管理', icon: 'wallet', action: () => checkLogin('/pages-sub/user/wallet') },
 ]
 

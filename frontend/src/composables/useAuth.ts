@@ -21,7 +21,7 @@ export function useAuth() {
       content: '完成实名认证后才能继续，是否前往认证？',
       confirmText: '去认证',
       success: ({ confirm }) => {
-        if (confirm) uni.navigateTo({ url: '/pages-sub/user/realname' })
+        if (confirm) uni.navigateTo({ url: '/pages-sub/user/realname-intro' })
       },
     })
     return false

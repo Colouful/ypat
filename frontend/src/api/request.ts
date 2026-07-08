@@ -239,7 +239,7 @@ function showBusinessGuide(code: string): void {
       title: '需要实名认证',
       content: '完成实名认证后才能继续当前操作。',
       confirmText: '去认证',
-      success: ({ confirm }) => confirm && uni.navigateTo({ url: '/pages-sub/user/realname' }),
+      success: ({ confirm }) => confirm && uni.navigateTo({ url: '/pages-sub/user/realname-intro' }),
     })
   } else if (code === '1009') {
     uni.showModal({

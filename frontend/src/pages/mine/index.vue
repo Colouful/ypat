@@ -305,7 +305,7 @@ function goCenter(): void {
   uni.navigateTo({ url: '/pages-sub/user/center' })
 }
 function goEditInfo(): void { if (requireLogin()) uni.navigateTo({ url: '/pages-sub/user/edit-info' }) }
-function goRealname(): void { if (requireLogin()) uni.navigateTo({ url: '/pages-sub/user/realname' }) }
+function goRealname(): void { if (requireLogin()) uni.navigateTo({ url: '/pages-sub/user/realname-intro' }) }
 function goMember(): void { if (requireLogin()) uni.navigateTo({ url: '/pages-sub/user/member/index' }) }
 function goHomepage(): void {
   if (!requireLogin()) return

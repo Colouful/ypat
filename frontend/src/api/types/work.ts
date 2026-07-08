@@ -5,7 +5,7 @@
 export type WorkMediaType = 'IMAGE' | 'VIDEO'
 
 export interface WorkMedia {
-  id: number
+  id?: number
   type: WorkMediaType | '1' | '2'
   url: string
   fileSize?: number
@@ -26,8 +26,11 @@ export interface WorkUser {
   id: number
   nickname?: string
   avatar?: string
+  avatarurl?: string
+  imgpath?: string
   gender?: string
   profession?: string
+  profess?: string
   city?: string
   area?: string
   activeTime?: string
@@ -73,6 +76,14 @@ export interface WorkDetail {
   isLiked: boolean
   isFavorited: boolean
   isOwner: boolean
+  likeflag?: string
+  liked?: boolean
+  colflag?: string
+  favoriteflag?: string
+  favorited?: boolean
+  favoriteFlag?: string
+  userid?: number
+  userId?: number
 }
 
 export interface WorkSubmitParams {
@@ -115,6 +126,16 @@ export interface WorkComplainParams {
   workId: number
   reason: string
   contact?: string
+  content?: string
+  pics?: string
+  blockFlag?: '0' | '1'
+}
+
+export interface WorkQuickApplyParams {
+  workId: number
+  reason: string
+  mobile?: string
+  wx?: string
 }
 
 export interface WorkQuickApplyResult {

@@ -36,7 +36,8 @@ export const MINE = {
   WALLET: '/pages/mine/wallet',
   TOPUP: '/pages/mine/topup',
   RECORDS: '/pages/mine/records',
-  REALNAME: '/pages/mine/realname',
+  REALNAME: '/pages-sub/user/realname-intro',
+  REALNAME_FORM: '/pages-sub/user/realname',
   FEEDBACK: '/pages/mine/feedback',
   ABOUT: '/pages/mine/about',
 } as const;

@@ -3,4 +3,7 @@
  */
 export interface QuickApplyParams {
   workId: number
+  reason: string
+  mobile?: string
+  wx?: string
 }

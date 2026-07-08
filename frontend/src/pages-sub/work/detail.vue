@@ -30,7 +30,7 @@ import { onShareAppMessage } from '@dcloudio/uni-app'
 import KeepPageNav from '@/components/business/KeepPageNav.vue'
 import WorkDetailContent from '@/components/business/WorkDetailContent.vue'
 import WorkActionBar from '@/components/business/WorkActionBar.vue'
-import { getDetail, like, unlike, favorite, unfavorite, complain, quickApply } from '@/api/modules/work'
+import { getDetail, like, unlike, favorite, unfavorite } from '@/api/modules/work'
 import type { WorkDetail } from '@/api/types/work'
 
 const id = ref<number>(0)
@@ -107,46 +107,14 @@ function onShare() {
   uni.showToast({ title: '点击右上角分享', icon: 'none' })
 }
 
-async function onApply() {
-  try {
-    const res = await quickApply(id.value)
-    const data = (res && res.data) || null
-    if (!data) {
-      uni.showToast({ title: '获取约拍信息失败', icon: 'none' })
-      return
-    }
-    // 跳到对应约拍表单，带 workId/authorId
-    const params = new URLSearchParams()
-    if (data.workId) params.set('workId', String(data.workId))
-    if (data.authorId) params.set('authorId', String(data.authorId))
-    params.set('target', data.target)
-    uni.navigateTo({ url: `/pages-sub/publish/appointment?${params.toString()}` })
-  } catch (e: any) {
-    uni.showToast({ title: e?.message || '操作失败', icon: 'none' })
-  }
+function onApply() {
+  if (!id.value) return
+  uni.navigateTo({ url: `/pages-sub/work/apply?workId=${id.value}` })
 }
 
 function onComplain() {
   if (!id.value) return
-  uni.showModal({
-    title: '投诉作品',
-    editable: true,
-    placeholderText: '请输入投诉理由（10-500 字）',
-    success: async (res) => {
-      if (!res.confirm || !res.content) return
-      const reason = (res.content || '').trim()
-      if (reason.length < 10) {
-        uni.showToast({ title: '理由至少 10 字', icon: 'none' })
-        return
-      }
-      try {
-        await complain({ workId: id.value, reason })
-        uni.showToast({ title: '投诉已提交', icon: 'success' })
-      } catch (e: any) {
-        uni.showToast({ title: e?.message || '提交失败', icon: 'none' })
-      }
-    },
-  })
+  uni.navigateTo({ url: `/pages-sub/work/complain?workId=${id.value}` })
 }
 
 onShareAppMessage(() => ({

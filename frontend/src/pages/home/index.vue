@@ -12,6 +12,8 @@
         </view>
       </view>
 
+      <HomeBanner />
+
       <view class="quick-grid">
         <view v-for="item in quickItems" :key="item.label" class="quick-grid__item" @tap="handleQuickItem(item.value)">
           <view class="quick-grid__icon">
@@ -77,6 +79,7 @@
     </view>
 
     <KeepTabBar active="home" />
+    <SplashOverlay />
 
     <KeepFilterSheet
       v-model:visible="filterVisible"
@@ -102,6 +105,8 @@ import KeepIcon from '@/components/business/KeepIcon.vue'
 import KeepState from '@/components/business/KeepState.vue'
 import KeepTabBar from '@/components/business/KeepTabBar.vue'
 import KeepYpatCard, { type KeepYpatCardItem } from '@/components/business/KeepYpatCard.vue'
+import HomeBanner from '@/components/business/HomeBanner.vue'
+import SplashOverlay from '@/components/business/SplashOverlay.vue'
 import { openMessage } from '@/utils/tab-navigation'
 import type { YpatInfo } from '@/api/types/index'
 

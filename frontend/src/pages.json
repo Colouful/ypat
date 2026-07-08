@@ -120,6 +120,12 @@
           }
         },
         {
+          "path": "realname-intro",
+          "style": {
+            "navigationStyle": "custom"
+          }
+        },
+        {
           "path": "wallet",
           "style": {
             "navigationStyle": "custom"
@@ -256,6 +262,18 @@
         },
         {
           "path": "detail",
+          "style": {
+            "navigationStyle": "custom"
+          }
+        },
+        {
+          "path": "complain",
+          "style": {
+            "navigationStyle": "custom"
+          }
+        },
+        {
+          "path": "apply",
           "style": {
             "navigationStyle": "custom"
           }

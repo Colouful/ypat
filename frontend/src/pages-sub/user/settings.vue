@@ -53,7 +53,7 @@ function getStorageSize(): void {
 }
 
 function handlePhone(): void { uni.showToast({ title: '暂不支持修改手机号', icon: 'none' }) }
-function goRealname(): void { uni.navigateTo({ url: '/pages-sub/user/realname' }) }
+function goRealname(): void { uni.navigateTo({ url: '/pages-sub/user/realname-intro' }) }
 function goAbout(): void { uni.navigateTo({ url: '/pages-sub/user/about' }) }
 function goFeedback(): void { uni.navigateTo({ url: '/pages-sub/user/feedback' }) }
 
