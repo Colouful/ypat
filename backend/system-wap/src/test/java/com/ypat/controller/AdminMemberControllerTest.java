@@ -151,5 +151,10 @@ public class AdminMemberControllerTest {
         public Boolean markPaid(String outTradeNo, String wxTransactionId, Long paidAtMs) {
             return true;
         }
+
+        @Override
+        public MemberOrderQo prepared(String outTradeNo, String channel, String prepayId) {
+            return null;
+        }
     }
 }
