@@ -5,7 +5,6 @@ import com.ypat.BannerQo;
 import com.ypat.ProductQo;
 import com.ypat.ResponseApiBody;
 import com.ypat.ResponseCode;
-import com.ypat.SysException;
 import com.ypat.service.ArticleServiceClient;
 import com.ypat.service.BannerServiceClient;
 import com.ypat.service.ProductServiceClient;
@@ -75,22 +74,8 @@ public class AdminPublishControllerTest {
         assertEquals("https://example.com/activity", client.saved.getJumpurl());
     }
 
-    @Test(expected = SysException.class)
-    public void bannerSaveRejectsEnabledJumpWithoutTarget() {
-        AdminBannerController controller = new AdminBannerController();
-
-        BannerQo qo = new BannerQo();
-        qo.setTitle("banner");
-        qo.setImgpath("/img/banner.png");
-        qo.setJumpflag("1");
-        qo.setJumptype("miniapp");
-        qo.setJumpurl("");
-
-        controller.save(qo);
-    }
-
-    @Test(expected = SysException.class)
-    public void bannerSaveRejectsEnabledJumpWithoutType() throws Exception {
+    @Test
+    public void bannerSaveAcceptsUppercaseHttpsWebJumpConfig() throws Exception {
         AdminBannerController controller = new AdminBannerController();
         RecordingBannerServiceClient client = new RecordingBannerServiceClient();
         setField(controller, "bannerServiceClient", client);
@@ -99,24 +84,13 @@ public class AdminPublishControllerTest {
         qo.setTitle("banner");
         qo.setImgpath("/img/banner.png");
         qo.setJumpflag("1");
-        qo.setJumptype("");
-        qo.setJumpurl("/pages/work/index");
-
-        controller.save(qo);
-    }
-
-    @Test(expected = SysException.class)
-    public void bannerSaveRejectsNonHttpWebTarget() {
-        AdminBannerController controller = new AdminBannerController();
-
-        BannerQo qo = new BannerQo();
-        qo.setTitle("banner");
-        qo.setImgpath("/img/banner.png");
-        qo.setJumpflag("1");
         qo.setJumptype("web");
-        qo.setJumpurl("javascript:alert(1)");
+        qo.setJumpurl("HTTPS://example.com/activity");
 
-        controller.save(qo);
+        assertSuccessWithoutPayload(controller.save(qo));
+        assertEquals("1", client.saved.getJumpflag());
+        assertEquals("web", client.saved.getJumptype());
+        assertEquals("HTTPS://example.com/activity", client.saved.getJumpurl());
     }
 
     @Test

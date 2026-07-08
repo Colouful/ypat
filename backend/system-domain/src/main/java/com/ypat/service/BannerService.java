@@ -1,10 +1,13 @@
 package com.ypat.service;
 
 import com.ypat.BannerQo;
+import com.ypat.ResponseCode;
+import com.ypat.SysException;
 import com.ypat.entity.Banner;
 import com.ypat.repository.BannerRepository;
 import com.ypat.util.CommonUtils;
 import com.ypat.util.CopyUtil;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -25,10 +28,17 @@ import java.util.*;
 @Transactional(rollbackFor = Exception.class)
 public class BannerService {
 
+    private static final String JUMP_DISABLED = "0";
+    private static final String JUMP_ENABLED = "1";
+    private static final String JUMP_TYPE_MINIAPP = "miniapp";
+    private static final String JUMP_TYPE_WEB = "web";
+    private static final int MAX_JUMP_URL_LENGTH = 500;
+
     @Autowired
     private BannerRepository bannerRepository;
 
     public void save(BannerQo bannerQo){
+        normalizeAndValidateJump(bannerQo);
         Banner banner = CopyUtil.copy(bannerQo, Banner.class);
         banner.setCredate(new Date());
         bannerRepository.save(banner);
@@ -47,6 +57,49 @@ public class BannerService {
     public BannerQo findById(Long id){
         Banner banner = get(id);
         return CopyUtil.copy(banner, BannerQo.class);
+    }
+
+    private void normalizeAndValidateJump(BannerQo bannerQo) {
+        String jumpflag = StringUtils.defaultIfBlank(bannerQo.getJumpflag(), JUMP_DISABLED).trim();
+        bannerQo.setJumpflag(jumpflag);
+
+        if (!JUMP_ENABLED.equals(jumpflag)) {
+            bannerQo.setJumpflag(JUMP_DISABLED);
+            bannerQo.setJumptype(null);
+            bannerQo.setJumpurl(null);
+            return;
+        }
+
+        String jumptype = StringUtils.trimToEmpty(bannerQo.getJumptype());
+        String jumpurl = StringUtils.trimToEmpty(bannerQo.getJumpurl());
+
+        if (!JUMP_TYPE_MINIAPP.equals(jumptype) && !JUMP_TYPE_WEB.equals(jumptype)) {
+            throw new SysException(ResponseCode.FAIL_PARA.getCode(), "跳转类型不正确");
+        }
+        if (StringUtils.isBlank(jumpurl)) {
+            throw new SysException(ResponseCode.FAIL_PARA.getCode(), "请输入跳转目标");
+        }
+        if (jumpurl.length() > MAX_JUMP_URL_LENGTH) {
+            throw new SysException(ResponseCode.FAIL_PARA.getCode(), "跳转目标不能超过500个字符");
+        }
+        if (JUMP_TYPE_MINIAPP.equals(jumptype) && !isMiniappPath(jumpurl)) {
+            throw new SysException(ResponseCode.FAIL_PARA.getCode(), "请输入 /pages 或 /pages-sub 开头的小程序页面路径");
+        }
+        if (JUMP_TYPE_WEB.equals(jumptype) && !isHttpUrl(jumpurl)) {
+            throw new SysException(ResponseCode.FAIL_PARA.getCode(), "请输入 http 或 https 开头的外部地址");
+        }
+
+        bannerQo.setJumptype(jumptype);
+        bannerQo.setJumpurl(jumpurl);
+    }
+
+    private boolean isMiniappPath(String value) {
+        return value.startsWith("/pages/") || value.startsWith("/pages-sub/");
+    }
+
+    private boolean isHttpUrl(String value) {
+        return StringUtils.startsWithIgnoreCase(value, "http://")
+                || StringUtils.startsWithIgnoreCase(value, "https://");
     }
 
     public Map<String, Object> findPage(BannerQo queryQo) {
