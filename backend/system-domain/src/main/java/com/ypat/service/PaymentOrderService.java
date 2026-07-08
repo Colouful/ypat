@@ -7,6 +7,7 @@ import com.ypat.enums.PaymentStatus;
 import com.ypat.repository.PaymentOrderRepository;
 import com.ypat.util.CopyUtil;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -47,7 +48,24 @@ public class PaymentOrderService {
         order.setCreatedAt(now);
         order.setUpdatedAt(now);
         order.setVersion(0);
-        return paymentOrderRepository.save(order);
+        try {
+            return paymentOrderRepository.save(order);
+        } catch (DataIntegrityViolationException ex) {
+            PaymentOrder existing = paymentOrderRepository.findByOutTradeNo(outTradeNo);
+            if (existing != null) return existing;
+            throw ex;
+        }
+    }
+
+    public PaymentOrderQo updatePrepared(String outTradeNo, String channel, String prepayId, String h5Url) {
+        if (!hasText(outTradeNo)) throw new com.ypat.SysException(com.ypat.ResponseCode.FAIL_PARA);
+        PaymentOrder order = paymentOrderRepository.findByOutTradeNo(outTradeNo);
+        if (order == null) throw new com.ypat.SysException(com.ypat.ResponseCode.FAIL_NOT);
+        if (hasText(channel)) order.setChannel(channel);
+        order.setPrepayId(prepayId);
+        order.setH5Url(h5Url);
+        order.setUpdatedAt(new Date());
+        return CopyUtil.copy(paymentOrderRepository.save(order), PaymentOrderQo.class);
     }
 
     public boolean markPaidIfPending(String outTradeNo, String txId, Date paidAt, String eventId, String digest) {

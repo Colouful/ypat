@@ -40,6 +40,11 @@ public interface MemberServiceClient {
     @PostMapping("/service/member/order/cancel")
     Boolean cancelOrder(@RequestParam("outTradeNo") String outTradeNo);
 
+    @PostMapping("/service/member/order/prepared")
+    MemberOrderQo prepared(@RequestParam("outTradeNo") String outTradeNo,
+                           @RequestParam("channel") String channel,
+                           @RequestParam(value = "prepayId", required = false) String prepayId);
+
     @GetMapping("/service/member/order/get")
     MemberOrderQo getOrder(@RequestParam("outTradeNo") String outTradeNo,
                            @RequestParam("userId") Long userId);

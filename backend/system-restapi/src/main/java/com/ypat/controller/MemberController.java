@@ -158,4 +158,11 @@ public class MemberController {
         java.util.Date paidAt = paidAtMs != null ? new java.util.Date(paidAtMs) : new java.util.Date();
         return memberService.markPaid(outTradeNo, wxTransactionId, paidAt);
     }
+
+    @PostMapping("/service/member/order/prepared")
+    public MemberOrderQo prepared(@RequestParam("outTradeNo") String outTradeNo,
+                                  @RequestParam("channel") String channel,
+                                  @RequestParam(value = "prepayId", required = false) String prepayId) {
+        return memberService.updatePaymentPrepared(outTradeNo, channel, prepayId);
+    }
 }

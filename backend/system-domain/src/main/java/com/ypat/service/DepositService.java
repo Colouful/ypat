@@ -107,6 +107,15 @@ public class DepositService {
         return true;
     }
 
+    public DepositOrderQo updatePaymentPrepared(String outTradeNo, String channel, String prepayId) {
+        DepositOrder order = depositOrderRepository.findByOutTradeNo(outTradeNo);
+        if (order == null) throw new SysException(ResponseCode.FAIL_NOT);
+        order.setChannel(channel);
+        order.setPrepayId(prepayId);
+        order.setUpdatedAt(new Date());
+        return CopyUtil.copy(depositOrderRepository.save(order), DepositOrderQo.class);
+    }
+
     public DepositOrderQo getOrder(String outTradeNo, Long userId) {
         DepositOrder order = depositOrderRepository.findByOutTradeNo(outTradeNo);
         if (order == null) return null;
