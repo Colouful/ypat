@@ -90,6 +90,22 @@ public class AdminPublishControllerTest {
     }
 
     @Test(expected = SysException.class)
+    public void bannerSaveRejectsEnabledJumpWithoutType() throws Exception {
+        AdminBannerController controller = new AdminBannerController();
+        RecordingBannerServiceClient client = new RecordingBannerServiceClient();
+        setField(controller, "bannerServiceClient", client);
+
+        BannerQo qo = new BannerQo();
+        qo.setTitle("banner");
+        qo.setImgpath("/img/banner.png");
+        qo.setJumpflag("1");
+        qo.setJumptype("");
+        qo.setJumpurl("/pages/work/index");
+
+        controller.save(qo);
+    }
+
+    @Test(expected = SysException.class)
     public void bannerSaveRejectsNonHttpWebTarget() {
         AdminBannerController controller = new AdminBannerController();
 

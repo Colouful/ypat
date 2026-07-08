@@ -109,7 +109,7 @@ public class AdminBannerController {
             return;
         }
 
-        String jumptype = StringUtils.defaultIfBlank(bannerQo.getJumptype(), JUMP_TYPE_MINIAPP).trim();
+        String jumptype = StringUtils.trimToEmpty(bannerQo.getJumptype());
         String jumpurl = StringUtils.trimToEmpty(bannerQo.getJumpurl());
 
         if (!JUMP_TYPE_MINIAPP.equals(jumptype) && !JUMP_TYPE_WEB.equals(jumptype)) {
