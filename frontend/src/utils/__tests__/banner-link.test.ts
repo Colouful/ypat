@@ -28,6 +28,14 @@ describe('resolveBannerAction', () => {
     }))).toEqual({ type: 'miniapp', url: '/pages/work/index' })
   })
 
+  it('previews enabled miniapp targets outside allowed page roots', () => {
+    expect(resolveBannerAction(banner({
+      jumpflag: '1',
+      jumptype: 'miniapp',
+      jumpurl: '/work/index',
+    }))).toEqual({ type: 'preview' })
+  })
+
   it('opens enabled web targets with lowercase protocol', () => {
     expect(resolveBannerAction(banner({
       jumpflag: '1',
@@ -50,6 +58,22 @@ describe('resolveBannerAction', () => {
       jumptype: 'web',
       jumpurl: 'ftp://example.com/a',
     }))).toEqual({ type: 'copy', url: 'ftp://example.com/a' })
+  })
+
+  it('copies enabled web targets that look like miniapp pages', () => {
+    expect(resolveBannerAction(banner({
+      jumpflag: '1',
+      jumptype: 'web',
+      jumpurl: '/pages/work/index',
+    }))).toEqual({ type: 'copy', url: '/pages/work/index' })
+  })
+
+  it('copies empty enabled web targets', () => {
+    expect(resolveBannerAction(banner({
+      jumpflag: '1',
+      jumptype: 'web',
+      jumpurl: '',
+    }))).toEqual({ type: 'copy', url: '' })
   })
 
   it('keeps legacy jumpUrl miniapp compatibility when jumpflag is missing', () => {

@@ -49,7 +49,7 @@ export function resolveBannerAction(item: Banner): BannerAction {
     }
 
     if (jumptype === 'web') {
-      return isWebUrl(jumpurl) ? { type: 'web', url: jumpurl } : inferActionFromUrl(jumpurl)
+      return isWebUrl(jumpurl) ? { type: 'web', url: jumpurl } : { type: 'copy', url: jumpurl }
     }
 
     return { type: 'preview' }
