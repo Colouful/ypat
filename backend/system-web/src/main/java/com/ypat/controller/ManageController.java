@@ -287,12 +287,17 @@ public class ManageController {
     @ResponseBody
     public String userAudit(Long id, String flag) {
         String res = oauthServiceClient.audit(id, flag);
+        String page = "";
+        String touserOpenid = null;
+        String pushResponse = null;
         try {
             String accessToken = wxMessClient.getAccessToken();
             if(accessToken != null) {
-                String page = "";
                 String userJson = userServiceClient.get(id);
                 UserQo userQo = GsonUtils.fromJson(userJson, UserQo.class);
+                if (userQo != null) {
+                    touserOpenid = userQo.getOpenid();
+                }
                 Map<String,String> contentMap = new HashMap<>();
                 contentMap.put("type", "实名认证");
                 if(UserStatus.shtg.value.equals(flag)) {
@@ -304,10 +309,12 @@ public class ManageController {
                     contentMap.put("result",UserStatus.shbtg.name);
                     contentMap.put("note","填写信息有误，请认证填写哦~");
                 }
-                wxMessClient.sendMsg(accessToken, userQo.getOpenid(), MessType.oauth, page, contentMap);
+                pushResponse = wxMessClient.sendMsg(accessToken, touserOpenid, MessType.oauth, page, contentMap);
+                recordWechatPush(MessType.oauth, null, null, id, touserOpenid, page, pushResponse, null);
             }
         } catch (Exception e) {
             logger.error("消息推送失败：", e);
+            recordWechatPush(MessType.oauth, null, null, id, touserOpenid, page, pushResponse, e);
         }
         return res;
     }

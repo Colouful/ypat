@@ -264,9 +264,9 @@ async function onSubmit() {
     uni.showToast({ title: '请选择面向地区', icon: 'none' })
     return
   }
-  await requestMessageSubscribe('publish')
   submitting.value = true
   try {
+    await requestMessageSubscribe('publish')
     const pics: string[] = []
     for (const m of mediaItems.value) {
       if (m.type === 'IMAGE') {
