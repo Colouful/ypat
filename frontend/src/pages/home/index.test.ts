@@ -11,4 +11,15 @@ describe('home default filters', () => {
     expect(source).toContain("const activeChip = ref('all')")
     expect(source).toContain("filterValue = ref<FilterValue>({\n  target: ['all'],\n  chargeway: [],\n  style: [],\n})")
   })
+
+  it('cardItems 使用共享 trust helper 解析认证与担保金状态，而不是直接用 OR 逻辑', () => {
+    const file = fileURLToPath(new URL('./index.vue', import.meta.url))
+    const source = readFileSync(file, 'utf8')
+
+    expect(source).toContain("import { resolveYpatCreditFlag, resolveYpatRealnameFlag } from '@/utils/ypat-trust'")
+    expect(source).toContain('realname: resolveYpatRealnameFlag(item.userQo?.realnameflag, item.realnameflag)')
+    expect(source).toContain('credit: resolveYpatCreditFlag(item.creditflag, item.userQo?.creditflag)')
+    expect(source).not.toContain("item.realnameflag === '1' || item.userQo?.realnameflag === '1'")
+    expect(source).not.toContain("item.creditflag === '1' || item.userQo?.creditflag === '1'")
+  })
 })

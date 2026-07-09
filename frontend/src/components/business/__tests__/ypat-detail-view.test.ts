@@ -199,6 +199,26 @@ describe('YpatDetailView', () => {
     expect(wrapper.find('.author-card__member').exists()).toBe(false)
   })
 
+  it('作者摘要会将职业编码转换为职业标签，避免直接展示裸编码', async () => {
+    const wrapper = await mountWithDetail(createDetail({
+      userQo: {
+        id: 214,
+        nickname: '职业编码作者',
+        profess: '0',
+        realnameflag: '1',
+        creditflag: '1',
+        memberActive: false,
+        memberLevel: '',
+        imgpath: '',
+      },
+    }))
+
+    const authorCard = wrapper.find('.author-card')
+
+    expect(authorCard.text()).toContain('摄影师')
+    expect(authorCard.text()).not.toContain('0')
+  })
+
   it('实名认证优先使用作者字段，并在作者字段无效或缺失时回退到约拍字段', async () => {
     const authorPriorityWrapper = await mountWithDetail(createDetail({
       realnameflag: '0',

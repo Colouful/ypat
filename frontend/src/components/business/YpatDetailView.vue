@@ -228,11 +228,12 @@ import { useUserStore } from '@/stores/user'
 import * as ypatApi from '@/api/modules/ypat'
 import { put } from '@/api/request'
 import { normalizeImageUrl } from '@/api/adapters'
-import { TARGET_LABELS } from '@/constants/enums'
+import { getProfessLabel, TARGET_LABELS } from '@/constants/enums'
 import KeepIcon from './KeepIcon.vue'
 import KeepState from './KeepState.vue'
 import type { YpatInfo } from '@/api/types'
 import { goRootTab } from '@/utils/tab-navigation'
+import { resolveYpatCreditFlag, resolveYpatRealnameFlag } from '@/utils/ypat-trust'
 
 const props = defineProps<{ id: number }>()
 const emit = defineEmits<{
@@ -252,9 +253,12 @@ const cityText = computed(() => [detail.value?.city, detail.value?.area].filter(
 const styleTags = computed(() => (detail.value?.patstyleTxt || detail.value?.patstyle || '').split(/[,，\s]+/).filter(Boolean).slice(0, 6))
 const targetLabel = computed(() => detail.value ? TARGET_LABELS[detail.value.target] || '约拍' : '约拍')
 const authorName = computed(() => detail.value?.userQo?.nickname || '匿名用户')
-const authorSummary = computed(() => detail.value?.userQo?.profess?.trim() || '摄影爱好者')
-const isRealname = computed(() => resolveFlag(detail.value?.userQo?.realnameflag, detail.value?.realnameflag))
-const isCreditPaid = computed(() => resolveFlag(detail.value?.creditflag, detail.value?.userQo?.creditflag))
+const authorSummary = computed(() => {
+  const profession = detail.value?.userQo?.profess?.trim()
+  return getProfessLabel(profession) || '摄影爱好者'
+})
+const isRealname = computed(() => resolveYpatRealnameFlag(detail.value?.userQo?.realnameflag, detail.value?.realnameflag))
+const isCreditPaid = computed(() => resolveYpatCreditFlag(detail.value?.creditflag, detail.value?.userQo?.creditflag))
 const isMemberActive = computed(() => detail.value?.userQo?.memberActive === true)
 const memberBadgeLabel = computed(() => resolveMemberBadge(detail.value?.userQo?.memberLevel))
 const realnameLabel = computed(() => isRealname.value ? '已认证' : '未认证')
@@ -280,12 +284,6 @@ const trustItems = computed(() => [
     tone: isMemberActive.value ? 'member' : 'muted',
   },
 ])
-
-function resolveFlag(primary?: string | null, fallback?: string | null): boolean {
-  if (primary === '1' || primary === '0') return primary === '1'
-  if (fallback === '1' || fallback === '0') return fallback === '1'
-  return false
-}
 
 function resolveMemberBadge(level?: string | null): string {
   switch ((level || '').trim().toUpperCase()) {

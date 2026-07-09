@@ -105,6 +105,7 @@ import KeepYpatCard, { type KeepYpatCardItem } from '@/components/business/KeepY
 import HomeBanner from '@/components/business/HomeBanner.vue'
 import SplashOverlay from '@/components/business/SplashOverlay.vue'
 import type { YpatInfo } from '@/api/types/index'
+import { resolveYpatCreditFlag, resolveYpatRealnameFlag } from '@/utils/ypat-trust'
 
 type TabKey = 'recommend' | 'nearby' | 'latest'
 type FilterValue = Record<string, string[]>
@@ -196,8 +197,8 @@ const cardItems = computed<KeepYpatCardItem[]>(() => list.value.map((item) => ({
   avatar: normalizeImageUrl(item.userQo?.imgpath || item.userQo?.avatarurl) || '/static/default-avatar.png',
   time: item.timeStr || item.pubdate || '刚刚',
   applyCount: item.pattimes || item.readtimes || 0,
-  realname: item.realnameflag === '1' || item.userQo?.realnameflag === '1',
-  credit: item.creditflag === '1' || item.userQo?.creditflag === '1',
+  realname: resolveYpatRealnameFlag(item.userQo?.realnameflag, item.realnameflag),
+  credit: resolveYpatCreditFlag(item.creditflag, item.userQo?.creditflag),
   memberActive: item.userQo?.memberActive === true,
   memberLevel: item.userQo?.memberLevel,
 })))
