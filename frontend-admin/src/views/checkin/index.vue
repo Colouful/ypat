@@ -10,6 +10,7 @@ import {
 import type { CheckinRecord, CheckinRule } from '@/api/types'
 
 const ruleLoading = ref(false)
+const ruleLoadFailed = ref(true)
 const recordsLoading = ref(false)
 const saving = ref(false)
 const records = ref<CheckinRecord[]>([])
@@ -38,13 +39,24 @@ async function loadRule() {
     const res = await getCheckinRule()
     if (res.data) {
       Object.assign(rule, res.data)
+      ruleLoadFailed.value = false
+    } else {
+      ruleLoadFailed.value = true
+      ElMessage.error('签到规则加载失败，请刷新后重试')
     }
+  } catch {
+    ruleLoadFailed.value = true
+    ElMessage.error('签到规则加载失败，请刷新后重试')
   } finally {
     ruleLoading.value = false
   }
 }
 
 async function submitRule() {
+  if (ruleLoadFailed.value) {
+    ElMessage.warning('签到规则加载失败，请刷新后再保存')
+    return
+  }
   if (rule.rewardPpd < 0) {
     ElMessage.warning('奖励拍豆数不能小于 0')
     return
@@ -149,7 +161,7 @@ onMounted(() => {
           />
         </el-form-item>
         <el-form-item>
-          <el-button type="primary" :loading="saving" @click="submitRule">保存</el-button>
+          <el-button type="primary" :loading="saving" :disabled="ruleLoadFailed" @click="submitRule">保存</el-button>
           <el-button @click="loadRule">刷新</el-button>
         </el-form-item>
       </el-form>

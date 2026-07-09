@@ -64,13 +64,13 @@ public class CheckinServiceTest {
         SaveCounter checkinSaves = new SaveCounter();
         SaveCounter recordSaves = new SaveCounter();
         SaveCounter userSaves = new SaveCounter();
+        SaveCounter ppdUpdates = new SaveCounter();
         Captured<Record> savedRecord = new Captured<Record>();
-        User user = user(1L, 3);
         CheckinService service = service(
                 rule(YesNo.yes.value, 1),
                 checkinRecords(null, checkinSaves),
                 records(recordSaves, savedRecord, 200L),
-                users(user, userSaves));
+                usersWithPpdIncrease(userSaves, ppdUpdates, user(1L, 3), user(1L, 4)));
 
         CheckinResultQo result = service.doCheckin(1L);
 
@@ -78,10 +78,10 @@ public class CheckinServiceTest {
         assertEquals(Integer.valueOf(1), result.getRewardPpd());
         assertEquals(Integer.valueOf(4), result.getCurrentPpd());
         assertEquals(Long.valueOf(200L), result.getRecordId());
-        assertEquals(Integer.valueOf(4), user.getPpd());
         assertEquals(2, checkinSaves.count);
         assertEquals(1, recordSaves.count);
-        assertEquals(1, userSaves.count);
+        assertEquals(0, userSaves.count);
+        assertEquals(1, ppdUpdates.count);
         assertNotNull(savedRecord.value);
         assertEquals(RecordType.CHECKIN.value, savedRecord.value.getType());
         assertEquals(Integer.valueOf(1), savedRecord.value.getPpd());
@@ -158,25 +158,42 @@ public class CheckinServiceTest {
         SaveCounter checkinSaves = new SaveCounter();
         SaveCounter recordSaves = new SaveCounter();
         SaveCounter userSaves = new SaveCounter();
+        SaveCounter ppdUpdates = new SaveCounter();
         Captured<Record> savedRecord = new Captured<Record>();
-        User user = user(1L, 3);
         CheckinService service = service(
                 rule(YesNo.yes.value, 0),
                 checkinRecords(null, checkinSaves),
                 records(recordSaves, savedRecord, 201L),
-                users(user, userSaves));
+                usersWithPpdIncrease(userSaves, ppdUpdates, user(1L, 3), user(1L, 3)));
 
         CheckinResultQo result = service.doCheckin(1L);
 
         assertTrue(result.getCheckedIn());
         assertEquals(Integer.valueOf(0), result.getRewardPpd());
         assertEquals(Integer.valueOf(3), result.getCurrentPpd());
-        assertEquals(Integer.valueOf(3), user.getPpd());
         assertEquals(2, checkinSaves.count);
         assertEquals(1, recordSaves.count);
-        assertEquals(1, userSaves.count);
+        assertEquals(0, userSaves.count);
+        assertEquals(1, ppdUpdates.count);
         assertNotNull(savedRecord.value);
         assertEquals(Integer.valueOf(0), savedRecord.value.getPpd());
+    }
+
+    @Test
+    public void doCheckinUsesAtomicPpdIncreaseAndReturnsLatestBalance() {
+        SaveCounter ppdUpdates = new SaveCounter();
+        CheckinService service = service(
+                rule(YesNo.yes.value, 2),
+                checkinRecords(null, new SaveCounter()),
+                records(new SaveCounter(), new Captured<Record>(), 202L),
+                usersWithPpdIncrease(new SaveCounter(), ppdUpdates, user(1L, 3), user(1L, 10)));
+
+        CheckinResultQo result = service.doCheckin(1L);
+
+        assertTrue(result.getCheckedIn());
+        assertEquals(Integer.valueOf(2), result.getRewardPpd());
+        assertEquals(Integer.valueOf(10), result.getCurrentPpd());
+        assertEquals(1, ppdUpdates.count);
     }
 
     @Test
@@ -319,6 +336,30 @@ public class CheckinServiceTest {
                 if ("findById".equals(method.getName())) {
                     findCount++;
                     return findCount == 1 ? first : second;
+                }
+                if ("save".equals(method.getName())) {
+                    if (saves != null) saves.count++;
+                    return args[0];
+                }
+                return defaultValue(method.getReturnType());
+            }
+        });
+    }
+
+    private static UserRepository usersWithPpdIncrease(final SaveCounter saves, final SaveCounter ppdUpdates,
+                                                       final User first, final User afterIncrease) {
+        return proxy(UserRepository.class, new InvocationHandler() {
+            private int findCount;
+
+            @Override
+            public Object invoke(Object proxy, Method method, Object[] args) {
+                if ("findById".equals(method.getName())) {
+                    findCount++;
+                    return findCount == 1 ? first : afterIncrease;
+                }
+                if ("increasePpdById".equals(method.getName())) {
+                    if (ppdUpdates != null) ppdUpdates.count++;
+                    return 1;
                 }
                 if ("save".equals(method.getName())) {
                     if (saves != null) saves.count++;

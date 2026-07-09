@@ -153,9 +153,15 @@ public class CheckinService {
         record.setUserid(userId);
         record = recordRepository.save(record);
 
-        Integer currentPpd = currentPpd(user) + rule.getRewardPpd();
-        user.setPpd(currentPpd);
-        userRepository.save(user);
+        int updated = userRepository.increasePpdById(userId, rule.getRewardPpd());
+        if (updated != 1) {
+            throw new SysException(ResponseCode.FAIL_NOT);
+        }
+        User latestUser = userRepository.findById(userId);
+        if (latestUser == null) {
+            throw new SysException(ResponseCode.FAIL_NOT);
+        }
+        Integer currentPpd = currentPpd(latestUser);
 
         checkinRecord.setRecordId(record.getId());
         checkinRecordRepository.save(checkinRecord);

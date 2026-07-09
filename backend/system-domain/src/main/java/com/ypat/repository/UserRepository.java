@@ -37,6 +37,10 @@ public interface UserRepository extends JpaRepository<User, Long>, JpaSpecificat
     @Query("update User u set u.status = :status where u.dataFlag = 'internal_test' and u.id in :userIds and (:batchNo is null or u.internalBatchNo = :batchNo)")
     int updateInternalTestUsersStatusByIds(@Param("userIds") List<Long> userIds, @Param("batchNo") String batchNo, @Param("status") String status);
 
+    @Modifying(clearAutomatically = true)
+    @Query("update User u set u.ppd = coalesce(u.ppd, 0) + :delta where u.id = :id")
+    int increasePpdById(@Param("id") Long id, @Param("delta") Integer delta);
+
     @Query("select count(u) from User u where (u.dataFlag is null or u.dataFlag <> 'internal_test') and (:batchNo is null or u.internalBatchNo = :batchNo) and (:city is null or u.city = :city) and (:area is null or u.area = :area) and (:profess is null or u.profess = :profess) and (:gender is null or u.gender = :gender)")
     Long countRealUsersForCleanup(@Param("batchNo") String batchNo, @Param("city") String city, @Param("area") String area, @Param("profess") String profess, @Param("gender") String gender);
 
