@@ -226,7 +226,7 @@ const tabs: { key: TabKey; label: string }[] = [
 
 const statusBarHeight = computed(() => appStore.statusBarHeight)
 const isLoggedIn = computed(() => userStore.isLoggedIn)
-const showCheckinEntry = computed(() => isLoggedIn.value && checkinToday.value?.enabled !== false)
+const showCheckinEntry = computed(() => isLoggedIn.value && checkinToday.value?.enabled === true)
 const userInfo = computed(() => userStore.userInfo)
 const memberStatus = computed(() => memberStore.status)
 const avatar = computed(() => normalizeImageUrl(userInfo.value?.imgpath || userInfo.value?.avatarurl) || '/static/default-avatar.png')
@@ -355,21 +355,25 @@ async function submitCheckin(): Promise<void> {
   checkinSubmitting.value = true
   try {
     const result = await checkinApi.doCheckin()
-    if (result.data?.checkedIn) {
-      checkinToday.value = {
-        ...(checkinToday.value || {
-          enabled: true,
-          rewardPpd: result.data.rewardPpd || 1,
-          confirmTitle: '每日签到',
-          confirmContent: '签到成功可获得 1 拍豆',
-          checkinDate: '',
-        }),
-        checkedIn: true,
-      }
-      await userStore.updateUserInfo()
-      const reward = Number(result.data.rewardPpd || 0)
-      uni.showToast({ title: reward > 0 ? `签到成功，获得 ${reward} 拍豆` : '今日已签到', icon: 'none' })
+    const data = result.data
+    if (!data?.checkedIn) {
+      uni.showToast({ title: data?.message || '签到失败，请稍后重试', icon: 'none' })
+      await loadCheckinToday()
+      return
     }
+    checkinToday.value = {
+      ...(checkinToday.value || {
+        enabled: true,
+        rewardPpd: data.rewardPpd || 1,
+        confirmTitle: '每日签到',
+        confirmContent: '签到成功可获得 1 拍豆',
+        checkinDate: '',
+      }),
+      checkedIn: true,
+    }
+    await userStore.updateUserInfo()
+    const reward = Number(data.rewardPpd || 0)
+    uni.showToast({ title: reward > 0 ? `签到成功，获得 ${reward} 拍豆` : '今日已签到', icon: 'none' })
   } catch {
     uni.showToast({ title: '签到失败，请稍后重试', icon: 'none' })
   } finally {

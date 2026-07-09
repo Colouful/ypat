@@ -61,6 +61,7 @@ describe('mine navigation', () => {
     expect(source).toContain('mine-top__left')
     expect(source).toContain('mine-top__checkin')
     expect(source).toContain('calendar-check')
+    expect(source).toContain('checkinToday.value?.enabled === true')
   })
 
   it('loads checkin status and executes checkin through confirm modal', () => {
@@ -70,6 +71,9 @@ describe('mine navigation', () => {
     expect(source).toContain('doCheckin')
     expect(source).toContain('uni.showModal')
     expect(source).toContain('checkinSubmitting')
+    expect(source).toContain('const data = result.data')
+    expect(source).toContain('!data?.checkedIn')
+    expect(source).toMatch(/if \(!data\?\.checkedIn\) \{[\s\S]*await loadCheckinToday\(\)[\s\S]*return/)
     expect(source).toContain('签到成功，获得')
   })
 })
