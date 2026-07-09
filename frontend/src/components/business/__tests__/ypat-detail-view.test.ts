@@ -430,6 +430,7 @@ describe('YpatDetailView', () => {
     expect(addFavorite).toHaveBeenCalledTimes(1)
     expect(addFavorite).toHaveBeenCalledWith(999, 101)
     expect(showToast).toHaveBeenCalledWith({ title: '收藏成功', icon: 'success' })
+    expect(navigateTo).not.toHaveBeenCalled()
     expect(applyYpat).not.toHaveBeenCalled()
   })
 
@@ -459,5 +460,6 @@ describe('YpatDetailView', () => {
       content: '一起拍一组复古人像',
     })
     expect(addFavorite).not.toHaveBeenCalled()
+    expect(navigateTo).not.toHaveBeenCalled()
   })
 })
