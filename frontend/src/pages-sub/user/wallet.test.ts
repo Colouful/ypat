@@ -49,6 +49,7 @@ describe('wallet page source contract', () => {
     expect(source).toContain('doCheckin')
     expect(source).toContain('checkinToday')
     expect(source).toContain('去签到')
+    expect(source).toContain('签到活动暂未开启')
     expect(source).not.toContain("title: '每日签到',\n        reward: 1,\n        desc: '每日签到获得拍豆',\n        actionText: '已签到',\n        doneText: '已签到',\n        done: true")
   })
 

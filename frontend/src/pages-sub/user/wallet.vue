@@ -348,7 +348,10 @@ function openCheckinConfirm(): void {
     return
   }
   if (checkinSubmitting.value) return
-  if (!checkinToday.value?.enabled) return
+  if (!checkinToday.value?.enabled) {
+    uni.showToast({ title: '签到活动暂未开启', icon: 'none' })
+    return
+  }
   if (checkinToday.value.checkedIn) {
     uni.showToast({ title: '今日已签到', icon: 'none' })
     return
