@@ -41,17 +41,20 @@ const targetUrl = ref('')
 const fallbackUrl = ref('')
 const loading = ref(true)
 const errorMessage = ref('')
+const loadFailed = ref(false)
 
 const showFallback = computed(() => !loading.value && (!targetUrl.value || Boolean(errorMessage.value)))
-const fallbackTitle = computed(() => (targetUrl.value ? '页面加载失败' : '无法打开链接'))
+const fallbackTitle = computed(() => (loadFailed.value ? '页面加载失败' : '无法打开链接'))
 const fallbackMessage = computed(() => errorMessage.value || '链接缺失或格式不受支持')
 
 function handleLoad(): void {
   loading.value = false
   errorMessage.value = ''
+  loadFailed.value = false
 }
 
 function handleError(): void {
+  loadFailed.value = true
   targetUrl.value = ''
   loading.value = false
   errorMessage.value = '当前页面暂时无法打开，请复制链接后在浏览器中访问'
@@ -64,6 +67,7 @@ function copyFallbackUrl(): void {
 
 onLoad((query) => {
   const result = resolveWebViewUrl(query?.url)
+  loadFailed.value = false
   targetUrl.value = result.targetUrl
   fallbackUrl.value = result.fallbackUrl
 
@@ -84,8 +88,14 @@ onLoad((query) => {
 
 .web-view-page__frame {
   width: 100%;
+  height: 100vh;
+}
+
+/* #ifdef H5 */
+.web-view-page__frame {
   height: calc(100vh - 96rpx - env(safe-area-inset-bottom));
 }
+/* #endif */
 
 .web-view-page__loading,
 .web-view-page__fallback {
