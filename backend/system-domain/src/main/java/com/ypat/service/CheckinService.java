@@ -135,11 +135,15 @@ public class CheckinService {
         try {
             checkinRecord = checkinRecordRepository.save(checkinRecord);
         } catch (DataIntegrityViolationException e) {
+            CheckinRecord racedRecord = checkinRecordRepository.findByUseridAndCheckinDate(userId, checkinDate);
+            if (racedRecord == null) {
+                throw e;
+            }
             User latestUser = userRepository.findById(userId);
             if (latestUser == null) {
                 throw new SysException(ResponseCode.FAIL_NOT);
             }
-            return result(true, 0, currentPpd(latestUser), null, MESSAGE_ALREADY_CHECKED);
+            return result(true, 0, currentPpd(latestUser), racedRecord.getRecordId(), MESSAGE_ALREADY_CHECKED);
         }
 
         Record record = new Record();
@@ -171,10 +175,11 @@ public class CheckinService {
                     predicates.add(criteriaBuilder.equal(root.get("userid"), query.getUserid()));
                 }
                 if (isNotBlank(query.getMobile())) {
+                    String queryMobile = query.getMobile().trim();
                     Subquery<Long> subquery = criteriaQuery.subquery(Long.class);
                     Root<User> userRoot = subquery.from(User.class);
                     subquery.select(userRoot.get("id"));
-                    subquery.where(criteriaBuilder.like(userRoot.get("mobile"), "%" + query.getMobile().trim() + "%"));
+                    subquery.where(criteriaBuilder.equal(userRoot.get("mobile"), queryMobile));
                     predicates.add(root.get("userid").in(subquery));
                 }
                 if (isNotBlank(query.getDateFrom())) {

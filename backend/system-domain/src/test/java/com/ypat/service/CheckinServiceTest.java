@@ -20,10 +20,14 @@ import org.springframework.dao.DataIntegrityViolationException;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -128,6 +132,28 @@ public class CheckinServiceTest {
     }
 
     @Test
+    public void doCheckinRethrowsIntegrityViolationWhenNoExistingRecord() {
+        SaveCounter recordSaves = new SaveCounter();
+        SaveCounter userSaves = new SaveCounter();
+        DataIntegrityViolationException exception = new DataIntegrityViolationException("not duplicate checkin");
+        CheckinService service = service(
+                rule(YesNo.yes.value, 1),
+                checkinRecordsFailingSaveWithoutExisting(exception),
+                records(recordSaves),
+                users(user(10L, 3), userSaves));
+
+        try {
+            service.doCheckin(10L);
+            fail("Expected DataIntegrityViolationException");
+        } catch (DataIntegrityViolationException e) {
+            assertSame(exception, e);
+        }
+
+        assertEquals(0, recordSaves.count);
+        assertEquals(0, userSaves.count);
+    }
+
+    @Test
     public void doCheckinAllowsZeroRewardWithoutChangingBalance() {
         SaveCounter checkinSaves = new SaveCounter();
         SaveCounter recordSaves = new SaveCounter();
@@ -170,6 +196,16 @@ public class CheckinServiceTest {
         assertEquals(0, checkinSaves.count);
     }
 
+    @Test
+    public void findRecordsUsesExactMobileSubquery() throws Exception {
+        String source = new String(Files.readAllBytes(Paths.get(
+                "src/main/java/com/ypat/service/CheckinService.java")), StandardCharsets.UTF_8);
+
+        assertTrue(source.contains("String queryMobile = query.getMobile().trim();"));
+        assertTrue(source.contains("criteriaBuilder.equal(userRoot.get(\"mobile\"), queryMobile)"));
+        assertFalse(source.contains("criteriaBuilder.like(userRoot.get(\"mobile\")"));
+    }
+
     private static CheckinService service(CheckinRuleRepository rules, CheckinRecordRepository checkins,
                                           RecordRepository records, UserRepository users) {
         return new CheckinService(rules, checkins, records, users);
@@ -194,12 +230,33 @@ public class CheckinServiceTest {
 
     private static CheckinRecordRepository checkinRecordsFailingSave() {
         return proxy(CheckinRecordRepository.class, new InvocationHandler() {
+            private int findCount;
+
             @Override
             public Object invoke(Object proxy, Method method, Object[] args) {
-                if ("findByUseridAndCheckinDate".equals(method.getName())) return null;
+                if ("findByUseridAndCheckinDate".equals(method.getName())) {
+                    findCount++;
+                    if (findCount == 1) return null;
+                    CheckinRecord record = new CheckinRecord();
+                    record.setUserid((Long) args[0]);
+                    record.setCheckinDate((String) args[1]);
+                    record.setRewardPpd(1);
+                    return record;
+                }
                 if ("save".equals(method.getName())) {
                     throw new DataIntegrityViolationException("duplicate checkin");
                 }
+                return defaultValue(method.getReturnType());
+            }
+        });
+    }
+
+    private static CheckinRecordRepository checkinRecordsFailingSaveWithoutExisting(final DataIntegrityViolationException exception) {
+        return proxy(CheckinRecordRepository.class, new InvocationHandler() {
+            @Override
+            public Object invoke(Object proxy, Method method, Object[] args) {
+                if ("findByUseridAndCheckinDate".equals(method.getName())) return null;
+                if ("save".equals(method.getName())) throw exception;
                 return defaultValue(method.getReturnType());
             }
         });
