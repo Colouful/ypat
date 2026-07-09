@@ -114,6 +114,28 @@ public class YpatInfoAdminFilterSourceTest {
         assertFalse(auditMethod.contains("setWorkId"));
     }
 
+    @Test
+    public void ypatAuthorPayloadIncludesMemberState() throws Exception {
+        String userQoSource = read("../system-object/src/main/java/com/ypat/UserQo.java");
+        String serviceSource = read("src/main/java/com/ypat/service/YpatInfoService.java");
+
+        assertTrue(userQoSource.contains("private Boolean memberActive"));
+        assertTrue(userQoSource.contains("private String memberLevel"));
+        assertTrue(userQoSource.contains("getMemberActive()"));
+        assertTrue(userQoSource.contains("setMemberActive(Boolean memberActive)"));
+        assertTrue(userQoSource.contains("getMemberLevel()"));
+        assertTrue(userQoSource.contains("setMemberLevel(String memberLevel)"));
+
+        assertTrue(serviceSource.contains("private UserMemberRepository userMemberRepository"));
+        assertTrue(serviceSource.contains("enrichMemberState(userQo, user.getId())"));
+        assertTrue(serviceSource.contains("boolean isActiveMember(UserMember member)"));
+        assertTrue(serviceSource.contains("member.getExpireAt().after(new Date())"));
+        assertTrue(serviceSource.contains("!\"NONE\".equals(member.getLevel())"));
+        assertTrue(serviceSource.contains("userQo.setMemberActive(true)"));
+        assertTrue(serviceSource.contains("userQo.setMemberLevel(member.getLevel())"));
+        assertTrue(serviceSource.contains("userQo.setMemberActive(false)"));
+    }
+
     private String methodBody(String source, String startToken, String endToken) {
         int start = source.indexOf(startToken);
         assertTrue(start >= 0);

@@ -43,6 +43,8 @@ public class YpatInfoService {
     @Autowired
     private UserYpatRepository userYpatRepository;
     @Autowired
+    private UserMemberRepository userMemberRepository;
+    @Autowired
     private MemberService memberService;
 
     public YpatInfoQo save(YpatInfoQo ypatInfo){
@@ -229,6 +231,7 @@ public class YpatInfoService {
                     }
                 }
             }
+            enrichMemberState(userQo, user.getId());
             ypatInfoQo.setUserQo(userQo);
         }
         List<YpatImg> ypatImgs = ypatInfo.getYpatImgs();
@@ -259,6 +262,26 @@ public class YpatInfoService {
 
     public YpatInfo get(Long id){
         return ypatInfoRepository.findById(id);
+    }
+
+    void enrichMemberState(UserQo userQo, Long userId) {
+        userQo.setMemberActive(false);
+        if(userId == null){
+            return;
+        }
+        UserMember member = userMemberRepository == null ? null : userMemberRepository.findOne(userId);
+        if(isActiveMember(member)){
+            userQo.setMemberActive(true);
+            userQo.setMemberLevel(member.getLevel());
+        }
+    }
+
+    boolean isActiveMember(UserMember member) {
+        return member != null
+                && member.getLevel() != null
+                && !"NONE".equals(member.getLevel())
+                && member.getExpireAt() != null
+                && member.getExpireAt().after(new Date());
     }
 
     public Map<String, Object> findPage(YpatInfoQo queryQo) {
@@ -301,6 +324,7 @@ public class YpatInfoService {
                             }
                         }
                     }
+                    enrichMemberState(userQo, user.getId());
                     qo.setUserQo(userQo);
                 }
                 content.add(qo);
