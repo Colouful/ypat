@@ -101,13 +101,61 @@ describe('Keep components', () => {
 
     const nameRow = wrapper.find('.keep-ypat-card__name-row')
     const memberBadge = nameRow.find('.keep-ypat-card__member')
+    const targetLabel = wrapper.find('.keep-ypat-card__tag--main .keep-ypat-card__label-text')
+    const chargeLabel = wrapper.find('.keep-ypat-card__tag--way .keep-ypat-card__label-text')
 
     expect(wrapper.findAll('.keep-ypat-card__label-text')).toHaveLength(4)
+    expect(targetLabel.exists()).toBe(true)
+    expect(targetLabel.text()).toBe(longTargetLabel)
+    expect(chargeLabel.exists()).toBe(true)
+    expect(chargeLabel.text()).toBe(longChargeLabel)
     expect(nameRow.find('.keep-ypat-card__name').exists()).toBe(true)
     expect(nameRow.find('.keep-ypat-card__name').text()).toContain(longName)
     expect(memberBadge.exists()).toBe(true)
     expect(memberBadge.text()).toContain('PRO')
     expect(memberBadge.findComponent(KeepIcon).props('name')).toBe('gem')
+  })
+
+  it('falls back to VIP badge when memberLevel is empty or unknown', () => {
+    const baseItem = {
+      id: 4,
+      title: '会员徽标默认文案',
+      targetLabel: '约造型师',
+      chargeLabel: '费用自理',
+      city: '成都',
+      name: '默认会员',
+      image: '/static/default-cover.png',
+      avatar: '/static/default-avatar.png',
+      time: '2小时前',
+      applyCount: 5,
+      realname: true,
+      credit: true,
+      memberActive: true,
+    }
+
+    const emptyLevelWrapper = mount(KeepYpatCard, {
+      props: {
+        item: {
+          ...baseItem,
+          memberLevel: '',
+        },
+      },
+    })
+
+    const unknownLevelWrapper = mount(KeepYpatCard, {
+      props: {
+        item: {
+          ...baseItem,
+          id: 5,
+          memberLevel: 'gold',
+        },
+      },
+    })
+
+    expect(emptyLevelWrapper.find('.keep-ypat-card__member').exists()).toBe(true)
+    expect(emptyLevelWrapper.find('.keep-ypat-card__member').text()).toContain('VIP')
+    expect(unknownLevelWrapper.find('.keep-ypat-card__member').exists()).toBe(true)
+    expect(unknownLevelWrapper.find('.keep-ypat-card__member').text()).toContain('VIP')
   })
 
   it('renders state action button and emits action', async () => {
