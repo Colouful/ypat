@@ -16,6 +16,9 @@ public class BannerQo extends PageQo implements java.io.Serializable {
     private Long userid;
     private String status;
     private String statusTxt;
+    private String jumpflag;
+    private String jumptype;
+    private String jumpurl;
 
     public BannerQo() {
     }
@@ -74,5 +77,29 @@ public class BannerQo extends PageQo implements java.io.Serializable {
 
     public void setStatusTxt(String statusTxt) {
         this.statusTxt = statusTxt;
+    }
+
+    public String getJumpflag() {
+        return jumpflag;
+    }
+
+    public void setJumpflag(String jumpflag) {
+        this.jumpflag = jumpflag;
+    }
+
+    public String getJumptype() {
+        return jumptype;
+    }
+
+    public void setJumptype(String jumptype) {
+        this.jumptype = jumptype;
+    }
+
+    public String getJumpurl() {
+        return jumpurl;
+    }
+
+    public void setJumpurl(String jumpurl) {
+        this.jumpurl = jumpurl;
     }
 }

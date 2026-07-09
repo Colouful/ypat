@@ -363,6 +363,14 @@ export interface Banner {
   credate?: string
   userid?: number
   status?: string
+  jumpflag?: string
+  jumptype?: 'miniapp' | 'web' | string
+  jumpurl?: string
+  jumpUrl?: string
+  linkUrl?: string
+  linkurl?: string
+  url?: string
+  path?: string
 }
 
 export interface BannerListParams extends PageParams {

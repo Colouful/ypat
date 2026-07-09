@@ -37,6 +37,63 @@ public class AdminPublishControllerTest {
     }
 
     @Test
+    public void bannerSaveAcceptsMiniappJumpConfig() throws Exception {
+        AdminBannerController controller = new AdminBannerController();
+        RecordingBannerServiceClient client = new RecordingBannerServiceClient();
+        setField(controller, "bannerServiceClient", client);
+
+        BannerQo qo = new BannerQo();
+        qo.setTitle("banner");
+        qo.setImgpath("/img/banner.png");
+        qo.setJumpflag("1");
+        qo.setJumptype("miniapp");
+        qo.setJumpurl("/pages/work/index");
+
+        assertSuccessWithoutPayload(controller.save(qo));
+        assertEquals("1", client.saved.getJumpflag());
+        assertEquals("miniapp", client.saved.getJumptype());
+        assertEquals("/pages/work/index", client.saved.getJumpurl());
+    }
+
+    @Test
+    public void bannerSaveAcceptsWebJumpConfig() throws Exception {
+        AdminBannerController controller = new AdminBannerController();
+        RecordingBannerServiceClient client = new RecordingBannerServiceClient();
+        setField(controller, "bannerServiceClient", client);
+
+        BannerQo qo = new BannerQo();
+        qo.setTitle("banner");
+        qo.setImgpath("/img/banner.png");
+        qo.setJumpflag("1");
+        qo.setJumptype("web");
+        qo.setJumpurl("https://example.com/activity");
+
+        assertSuccessWithoutPayload(controller.save(qo));
+        assertEquals("1", client.saved.getJumpflag());
+        assertEquals("web", client.saved.getJumptype());
+        assertEquals("https://example.com/activity", client.saved.getJumpurl());
+    }
+
+    @Test
+    public void bannerSaveAcceptsUppercaseHttpsWebJumpConfig() throws Exception {
+        AdminBannerController controller = new AdminBannerController();
+        RecordingBannerServiceClient client = new RecordingBannerServiceClient();
+        setField(controller, "bannerServiceClient", client);
+
+        BannerQo qo = new BannerQo();
+        qo.setTitle("banner");
+        qo.setImgpath("/img/banner.png");
+        qo.setJumpflag("1");
+        qo.setJumptype("web");
+        qo.setJumpurl("HTTPS://example.com/activity");
+
+        assertSuccessWithoutPayload(controller.save(qo));
+        assertEquals("1", client.saved.getJumpflag());
+        assertEquals("web", client.saved.getJumptype());
+        assertEquals("HTTPS://example.com/activity", client.saved.getJumpurl());
+    }
+
+    @Test
     public void articleSaveAndUpDownTreatVoidServiceResponseAsSuccess() throws Exception {
         AdminArticleController controller = new AdminArticleController();
         RecordingArticleServiceClient client = new RecordingArticleServiceClient();

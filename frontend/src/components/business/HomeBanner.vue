@@ -30,22 +30,15 @@ import { computed, onMounted, ref } from 'vue'
 import * as contentApi from '@/api/modules/content'
 import { normalizeImageUrl } from '@/api/adapters'
 import type { Banner } from '@/api/types'
+import { openBannerAction, resolveBannerAction } from '@/utils/banner-link'
 
 interface BannerView extends Banner {
   image: string
-  link?: string
 }
 
 const banners = ref<BannerView[]>([])
 
 const visibleBanners = computed(() => banners.value.filter((item) => item.image))
-
-function getBannerLink(item: Banner): string {
-  const record = item as unknown as Record<string, unknown>
-  const candidates = ['url', 'linkurl', 'linkUrl', 'jumpurl', 'jumpUrl', 'path']
-  const value = candidates.map((key) => record[key]).find((entry) => typeof entry === 'string' && entry.trim())
-  return typeof value === 'string' ? value.trim() : ''
-}
 
 async function loadBanners(): Promise<void> {
   try {
@@ -54,7 +47,6 @@ async function loadBanners(): Promise<void> {
       .map((item) => ({
         ...item,
         image: normalizeImageUrl(item.imgpath),
-        link: getBannerLink(item),
       }))
       .filter((item) => item.image)
     banners.value = list
@@ -64,13 +56,12 @@ async function loadBanners(): Promise<void> {
 }
 
 function handleTap(item: BannerView): void {
-  if (item.link?.startsWith('/')) {
-    uni.navigateTo({ url: item.link })
-    return
-  }
-  uni.previewImage({
-    urls: visibleBanners.value.map((banner) => banner.image),
-    current: item.image,
+  const action = resolveBannerAction(item)
+  openBannerAction(action, () => {
+    uni.previewImage({
+      urls: visibleBanners.value.map((banner) => banner.image),
+      current: item.image,
+    })
   })
 }
 

@@ -3,7 +3,7 @@ import { ref, reactive, computed, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import StatusTag from '@/components/common/StatusTag.vue'
 import BannerEditDialog from './BannerEditDialog.vue'
-import { getBannerList, upDownBanner, type Banner, type BannerListQuery } from '@/api/modules/banner'
+import { getBannerList, isBannerJumpType, isValidBannerJumpTarget, upDownBanner, type Banner, type BannerListQuery } from '@/api/modules/banner'
 import { getArticleStatusOptions, ArticleStatus } from '@/constants/enums'
 
 const query = reactive<BannerListQuery>({ name: '', status: '', page: 0, size: 10 })
@@ -28,6 +28,29 @@ function pageChange(page: number) { query.page = page - 1; fetchList() }
 function sizeChange(size: number) { query.size = size; query.page = 0; fetchList() }
 function openEdit(row?: Banner) { current.value = row || null; editVisible.value = true }
 function preview(url: string) { window.open(url, '_blank') }
+function asBanner(row: unknown): Banner { return row as Banner }
+function isInvalidJumpConfig(row: Banner): boolean {
+  if (row.jumpflag !== '1') return false
+  const target = row.jumpurl?.trim() || ''
+  if (!isBannerJumpType(row.jumptype) || !target || target.length > 500) return true
+  return !isValidBannerJumpTarget(row.jumptype, target)
+}
+
+function getJumpText(row: Banner): string {
+  if (row.jumpflag !== '1') return '不跳转'
+  if (isInvalidJumpConfig(row)) return '配置异常'
+  if (row.jumptype === 'miniapp') return '小程序页面'
+  if (row.jumptype === 'web') return '外部地址'
+  return '未配置'
+}
+
+function getJumpTagType(row: Banner): 'info' | 'success' | 'warning' | 'danger' {
+  if (row.jumpflag !== '1') return 'info'
+  if (isInvalidJumpConfig(row)) return 'danger'
+  if (row.jumptype === 'miniapp') return 'success'
+  if (row.jumptype === 'web') return 'warning'
+  return 'info'
+}
 async function doUpDown(row: Banner, status: string) {
   const text = status === ArticleStatus.YFB.value ? '发布' : '撤回'
   await ElMessageBox.confirm(`确定要${text}该横幅吗？`, '提示', { type: 'warning' })
@@ -52,12 +75,17 @@ onMounted(fetchList)
       <el-table-column prop="title" label="标题" min-width="180"/>
       <el-table-column prop="credate" label="创建时间" min-width="160"/>
       <el-table-column label="状态" width="120" align="center"><template #default="{row}"><StatusTag :status="row.status" type="article"/></template></el-table-column>
-      <el-table-column label="操作" width="220" align="center" fixed="right">
+      <el-table-column label="跳转" width="130" align="center">
         <template #default="{row}">
-          <el-button type="primary" link size="small" @click="openEdit(row as unknown as Banner)">编辑</el-button>
-          <el-button type="info" link size="small" @click="preview((row as unknown as Banner).imgpath)">查看图片</el-button>
-          <el-button type="success" link size="small" v-if="row.status !== ArticleStatus.YFB.value" @click="doUpDown(row as unknown as Banner, ArticleStatus.YFB.value)">发布</el-button>
-          <el-button type="warning" link size="small" v-else @click="doUpDown(row as unknown as Banner, ArticleStatus.YCH.value)">撤回</el-button>
+          <el-tag :type="getJumpTagType(asBanner(row))">{{ getJumpText(asBanner(row)) }}</el-tag>
+        </template>
+      </el-table-column>
+      <el-table-column label="操作" width="240" align="center" fixed="right">
+        <template #default="{row}">
+          <el-button type="primary" link size="small" @click="openEdit(asBanner(row))">编辑</el-button>
+          <el-button type="info" link size="small" @click="preview(asBanner(row).imgpath)">查看图片</el-button>
+          <el-button type="success" link size="small" v-if="row.status !== ArticleStatus.YFB.value" @click="doUpDown(asBanner(row), ArticleStatus.YFB.value)">发布</el-button>
+          <el-button type="warning" link size="small" v-else @click="doUpDown(asBanner(row), ArticleStatus.YCH.value)">撤回</el-button>
         </template>
       </el-table-column>
     </el-table>
