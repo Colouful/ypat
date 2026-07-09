@@ -52,6 +52,7 @@ export const menuConfig: MenuGroup[] = [
       { title: '约拍列表', path: '/manage/query/ypat/appindex', component: 'query/ypat-list/index' },
       { title: '消息列表', path: '/manage/query/mess/messindex', component: 'query/mess-list/index' },
       { title: '公众号关注', path: '/pubevent/index', component: 'pubevent/list/index' },
+      { title: '签到管理', path: '/checkin/index', component: 'checkin/index' },
     ],
   },
   {
