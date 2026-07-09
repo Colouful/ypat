@@ -2,8 +2,19 @@
   <view class="mine-page">
     <view class="mine-scroll" :style="{ paddingTop: statusBarHeight + 20 + 'px' }">
       <view class="mine-top">
-        <view class="mine-top__icon" @tap="goCenter">
-          <KeepIcon name="menu" :size="42" />
+        <view class="mine-top__left">
+          <view class="mine-top__icon" @tap="goCenter">
+            <KeepIcon name="menu" :size="42" />
+          </view>
+          <view
+            v-if="showCheckinEntry"
+            class="mine-top__checkin"
+            :class="{ 'mine-top__checkin--done': checkinToday?.checkedIn }"
+            @tap="openCheckinConfirm"
+          >
+            <KeepIcon name="calendar-check" :size="34" :color="checkinToday?.checkedIn ? '#9CA3AF' : '#17A857'" />
+            <text v-if="checkinToday?.checkedIn" class="mine-top__checkin-text">已签到</text>
+          </view>
         </view>
         <!-- <view class="mine-top__mail" @tap="goMessage">
           <KeepIcon name="mail" :size="42" />
@@ -187,11 +198,13 @@ import { useAppStore } from '@/stores/app'
 import { useMemberStore } from '@/stores/member'
 import * as contentApi from '@/api/modules/content'
 import * as ypatApi from '@/api/modules/ypat'
+import * as checkinApi from '@/api/modules/checkin'
 import { normalizeImageUrl } from '@/api/adapters'
 import { GENDER_LABELS, getProfessLabel } from '@/constants/enums'
 import KeepIcon from '@/components/business/KeepIcon.vue'
 import KeepState from '@/components/business/KeepState.vue'
 import KeepTabBar from '@/components/business/KeepTabBar.vue'
+import type { CheckinToday } from '@/api/types'
 import type { ParamInfo } from '@/api/types/area-types'
 
 type TabKey = 'overview' | 'apply' | 'works'
@@ -202,6 +215,8 @@ const memberStore = useMemberStore()
 const params = ref<ParamInfo | null>(null)
 const receivedCount = ref(0)
 const activeTab = ref<TabKey>('overview')
+const checkinToday = ref<CheckinToday | null>(null)
+const checkinSubmitting = ref(false)
 
 const tabs: { key: TabKey; label: string }[] = [
   { key: 'overview', label: '数据概览' },
@@ -211,6 +226,7 @@ const tabs: { key: TabKey; label: string }[] = [
 
 const statusBarHeight = computed(() => appStore.statusBarHeight)
 const isLoggedIn = computed(() => userStore.isLoggedIn)
+const showCheckinEntry = computed(() => isLoggedIn.value && checkinToday.value?.enabled !== false)
 const userInfo = computed(() => userStore.userInfo)
 const memberStatus = computed(() => memberStore.status)
 const avatar = computed(() => normalizeImageUrl(userInfo.value?.imgpath || userInfo.value?.avatarurl) || '/static/default-avatar.png')
@@ -276,12 +292,16 @@ async function loadPlatformParams(): Promise<void> {
 
 async function loadMineData(): Promise<void> {
   await loadPlatformParams()
-  if (!isLoggedIn.value || !userInfo.value?.id) return
+  if (!isLoggedIn.value || !userInfo.value?.id) {
+    await loadCheckinToday()
+    return
+  }
   await Promise.all([
     userStore.updateUserInfo(),
     userStore.refreshUnreadCount(),
     memberStore.refreshStatus(),
     loadReceivedCount(),
+    loadCheckinToday(),
   ])
 }
 
@@ -296,6 +316,64 @@ async function loadReceivedCount(): Promise<void> {
     receivedCount.value = Number(result.data?.totalElements || 0)
   } catch {
     receivedCount.value = Number(userInfo.value?.rectimes || 0)
+  }
+}
+
+async function loadCheckinToday(): Promise<void> {
+  if (!isLoggedIn.value) {
+    checkinToday.value = null
+    return
+  }
+  try {
+    const result = await checkinApi.getCheckinToday()
+    checkinToday.value = result.data || null
+  } catch {
+    checkinToday.value = null
+  }
+}
+
+function openCheckinConfirm(): void {
+  if (!requireLogin()) return
+  if (checkinSubmitting.value) return
+  if (!checkinToday.value?.enabled) return
+  if (checkinToday.value.checkedIn) {
+    uni.showToast({ title: '今日已签到', icon: 'none' })
+    return
+  }
+  uni.showModal({
+    title: checkinToday.value.confirmTitle || '每日签到',
+    content: checkinToday.value.confirmContent || `签到成功可获得 ${checkinToday.value.rewardPpd || 1} 拍豆`,
+    confirmText: '签到',
+    success: (res) => {
+      if (res.confirm) void submitCheckin()
+    },
+  })
+}
+
+async function submitCheckin(): Promise<void> {
+  if (checkinSubmitting.value) return
+  checkinSubmitting.value = true
+  try {
+    const result = await checkinApi.doCheckin()
+    if (result.data?.checkedIn) {
+      checkinToday.value = {
+        ...(checkinToday.value || {
+          enabled: true,
+          rewardPpd: result.data.rewardPpd || 1,
+          confirmTitle: '每日签到',
+          confirmContent: '签到成功可获得 1 拍豆',
+          checkinDate: '',
+        }),
+        checkedIn: true,
+      }
+      await userStore.updateUserInfo()
+      const reward = Number(result.data.rewardPpd || 0)
+      uni.showToast({ title: reward > 0 ? `签到成功，获得 ${reward} 拍豆` : '今日已签到', icon: 'none' })
+    }
+  } catch {
+    uni.showToast({ title: '签到失败，请稍后重试', icon: 'none' })
+  } finally {
+    checkinSubmitting.value = false
   }
 }
 
@@ -345,6 +423,12 @@ onPullDownRefresh(async () => {
   justify-content: space-between;
 }
 
+.mine-top__left {
+  display: flex;
+  align-items: center;
+  gap: 18rpx;
+}
+
 .mine-top__icon,
 .mine-top__mail {
   position: relative;
@@ -355,6 +439,30 @@ onPullDownRefresh(async () => {
   color: $color-text-primary;
   background: #fff;
   box-shadow: $shadow-keep-card;
+}
+
+.mine-top__checkin {
+  @include flex-center;
+  gap: 8rpx;
+  min-width: 76rpx;
+  height: 76rpx;
+  padding: 0 20rpx;
+  border-radius: $radius-round;
+  color: $color-primary;
+  background: #fff;
+  box-shadow: $shadow-keep-card;
+}
+
+.mine-top__checkin--done {
+  color: $color-text-tertiary;
+  background: #f4f5f6;
+}
+
+.mine-top__checkin-text {
+  color: $color-text-tertiary;
+  font-size: 24rpx;
+  font-weight: 800;
+  white-space: nowrap;
 }
 
 .mine-top__badge {

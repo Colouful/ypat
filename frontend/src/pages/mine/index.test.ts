@@ -54,4 +54,22 @@ describe('mine navigation', () => {
     expect(creditPage).toContain('uni.requestPayment')
     expect(creditPage).toContain('保证金协议')
   })
+
+  it('renders checkin entry beside the menu icon', () => {
+    const source = readSource('pages/mine/index.vue')
+
+    expect(source).toContain('mine-top__left')
+    expect(source).toContain('mine-top__checkin')
+    expect(source).toContain('calendar-check')
+  })
+
+  it('loads checkin status and executes checkin through confirm modal', () => {
+    const source = readSource('pages/mine/index.vue')
+
+    expect(source).toContain('getCheckinToday')
+    expect(source).toContain('doCheckin')
+    expect(source).toContain('uni.showModal')
+    expect(source).toContain('checkinSubmitting')
+    expect(source).toContain('签到成功，获得')
+  })
 })
