@@ -477,12 +477,19 @@ export interface InviteSummary {
   totalInvited: number
   totalReward: number
   rewardPpd: number
+  enabled?: string
+  ruleText?: string
+  shareTitle?: string
+  landingTitle?: string
 }
 
 export interface InviteRule {
+  enabled?: string
   rewardPpd: number
   rewardUnit: string
   ruleText: string
+  shareTitle?: string
+  landingTitle?: string
 }
 
 export interface InviteRecord {

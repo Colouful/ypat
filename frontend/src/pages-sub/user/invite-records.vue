@@ -3,7 +3,7 @@
     <KeepPageNav title="邀请记录" />
 
     <view v-if="records.length === 0 && !loading" class="empty">
-      <KeepState type="empty" title="还没有邀请记录" description="把你的邀请码分享给好友，他们注册后这里会显示" />
+      <KeepState type="empty" title="还没有邀请记录" description="邀请好友加入爱去拍，成功注册后奖励会显示在这里" />
     </view>
 
     <view v-else class="list">
@@ -88,7 +88,7 @@ onReachBottom(() => {
 .row__body { flex: 1; min-width: 0; }
 .row__name { display: block; color: $color-text-primary; font-size: 28rpx; font-weight: 800; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .row__time { display: block; margin-top: 6rpx; color: $color-text-helper; font-size: 22rpx; font-weight: 700; }
-.row__reward { flex: none; color: $color-primary-dark; font-size: 26rpx; font-weight: 900; }
+.row__reward { flex: none; color: $color-accent-gold; font-size: 26rpx; font-weight: 900; }
 
 .footer { padding: 28rpx 0; color: $color-text-helper; font-size: 24rpx; text-align: center; }
 </style>
