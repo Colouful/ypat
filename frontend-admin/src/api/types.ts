@@ -158,3 +158,24 @@ export interface PaymentOrder {
   createdAt?: string
   updatedAt?: string
 }
+
+export interface CheckinRule {
+  id?: number
+  enabled: string
+  rewardPpd: number
+  confirmTitle: string
+  confirmContent: string
+  createdAt?: string
+  updatedAt?: string
+}
+
+export interface CheckinRecord {
+  id: number
+  userid: number
+  mobile?: string
+  nickname?: string
+  checkinDate: string
+  rewardPpd: number
+  recordId?: number
+  createdAt?: string
+}
