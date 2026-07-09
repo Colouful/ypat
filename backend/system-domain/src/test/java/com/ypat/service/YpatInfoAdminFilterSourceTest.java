@@ -2,11 +2,14 @@ package com.ypat.service;
 
 import com.ypat.ResponseCode;
 import com.ypat.SysException;
+import com.ypat.UserQo;
 import com.ypat.YpatInfoQo;
+import com.ypat.entity.UserMember;
 import org.junit.Test;
 
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.Date;
 import java.util.LinkedHashSet;
 import java.util.Set;
 import java.nio.charset.StandardCharsets;
@@ -128,12 +131,49 @@ public class YpatInfoAdminFilterSourceTest {
 
         assertTrue(serviceSource.contains("private UserMemberRepository userMemberRepository"));
         assertTrue(serviceSource.contains("enrichMemberState(userQo, user.getId())"));
+        assertTrue(serviceSource.contains("Map<Long, UserMember> loadMemberMap(List<YpatInfo> ypatInfos)"));
+        assertTrue(serviceSource.contains("Iterable<UserMember> members = userMemberRepository.findAll(userIds)"));
+        assertTrue(serviceSource.contains("Map<Long, UserMember> memberMap = loadMemberMap(ypatInfoPage.getContent())"));
+        assertTrue(serviceSource.contains("enrichMemberState(userQo, memberMap.get(user.getId()))"));
         assertTrue(serviceSource.contains("boolean isActiveMember(UserMember member)"));
         assertTrue(serviceSource.contains("member.getExpireAt().after(new Date())"));
         assertTrue(serviceSource.contains("!\"NONE\".equals(member.getLevel())"));
         assertTrue(serviceSource.contains("userQo.setMemberActive(true)"));
         assertTrue(serviceSource.contains("userQo.setMemberLevel(member.getLevel())"));
         assertTrue(serviceSource.contains("userQo.setMemberActive(false)"));
+        assertTrue(serviceSource.contains("userQo.setMemberLevel(null)"));
+    }
+
+    @Test
+    public void enrichMemberStateSetsFieldsOnlyForActiveMember() {
+        YpatInfoService service = new YpatInfoService();
+        UserQo userQo = new UserQo();
+
+        UserMember activeMember = member("BASIC", new Date(System.currentTimeMillis() + 60000L));
+        assertTrue(service.isActiveMember(activeMember));
+        service.enrichMemberState(userQo, activeMember);
+        assertEquals(Boolean.TRUE, userQo.getMemberActive());
+        assertEquals("BASIC", userQo.getMemberLevel());
+
+        UserMember expiredMember = member("BASIC", new Date(System.currentTimeMillis() - 60000L));
+        assertFalse(service.isActiveMember(expiredMember));
+        service.enrichMemberState(userQo, expiredMember);
+        assertEquals(Boolean.FALSE, userQo.getMemberActive());
+        assertNull(userQo.getMemberLevel());
+
+        UserMember noneMember = member("NONE", new Date(System.currentTimeMillis() + 60000L));
+        userQo.setMemberActive(true);
+        userQo.setMemberLevel("BASIC");
+        assertFalse(service.isActiveMember(noneMember));
+        service.enrichMemberState(userQo, noneMember);
+        assertEquals(Boolean.FALSE, userQo.getMemberActive());
+        assertNull(userQo.getMemberLevel());
+
+        userQo.setMemberActive(true);
+        userQo.setMemberLevel("BASIC");
+        service.enrichMemberState(userQo, (UserMember) null);
+        assertEquals(Boolean.FALSE, userQo.getMemberActive());
+        assertNull(userQo.getMemberLevel());
     }
 
     private String methodBody(String source, String startToken, String endToken) {
@@ -166,5 +206,13 @@ public class YpatInfoAdminFilterSourceTest {
             return;
         }
         throw new AssertionError("Expected FAIL_PARA for patstyle=" + patstyle);
+    }
+
+    private UserMember member(String level, Date expireAt) {
+        UserMember member = new UserMember();
+        member.setUserId(1L);
+        member.setLevel(level);
+        member.setExpireAt(expireAt);
+        return member;
     }
 }

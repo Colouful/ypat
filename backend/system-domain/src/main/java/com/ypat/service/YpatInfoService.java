@@ -265,11 +265,17 @@ public class YpatInfoService {
     }
 
     void enrichMemberState(UserQo userQo, Long userId) {
-        userQo.setMemberActive(false);
         if(userId == null){
+            enrichMemberState(userQo, (UserMember) null);
             return;
         }
         UserMember member = userMemberRepository == null ? null : userMemberRepository.findOne(userId);
+        enrichMemberState(userQo, member);
+    }
+
+    void enrichMemberState(UserQo userQo, UserMember member) {
+        userQo.setMemberActive(false);
+        userQo.setMemberLevel(null);
         if(isActiveMember(member)){
             userQo.setMemberActive(true);
             userQo.setMemberLevel(member.getLevel());
@@ -284,10 +290,37 @@ public class YpatInfoService {
                 && member.getExpireAt().after(new Date());
     }
 
+    Map<Long, UserMember> loadMemberMap(List<YpatInfo> ypatInfos) {
+        Map<Long, UserMember> memberMap = new HashMap<Long, UserMember>();
+        if(CollectionUtils.isEmpty(ypatInfos) || userMemberRepository == null){
+            return memberMap;
+        }
+        Set<Long> userIds = new LinkedHashSet<Long>();
+        for (YpatInfo ypatInfo : ypatInfos) {
+            User user = ypatInfo.getUser();
+            if(user != null && user.getId() != null){
+                userIds.add(user.getId());
+            }
+        }
+        if(CollectionUtils.isEmpty(userIds)){
+            return memberMap;
+        }
+        Iterable<UserMember> members = userMemberRepository.findAll(userIds);
+        if(members != null){
+            for (UserMember member : members) {
+                if(member != null && member.getUserId() != null){
+                    memberMap.put(member.getUserId(), member);
+                }
+            }
+        }
+        return memberMap;
+    }
+
     public Map<String, Object> findPage(YpatInfoQo queryQo) {
         Page<YpatInfo> ypatInfoPage = findPageByPredicate(queryQo);
         List<YpatInfoQo> content = new ArrayList<>();
         if(!CollectionUtils.isEmpty(ypatInfoPage.getContent())){
+            Map<Long, UserMember> memberMap = loadMemberMap(ypatInfoPage.getContent());
             List<Long> ids = new ArrayList<>(10);
             for (YpatInfo ypatInfo : ypatInfoPage.getContent()) {
                 ids.add(ypatInfo.getId());
@@ -324,7 +357,7 @@ public class YpatInfoService {
                             }
                         }
                     }
-                    enrichMemberState(userQo, user.getId());
+                    enrichMemberState(userQo, memberMap.get(user.getId()));
                     qo.setUserQo(userQo);
                 }
                 content.add(qo);
