@@ -56,6 +56,24 @@ public class InviteService {
     @Autowired
     private InviteConfigRepository inviteConfigRepository;
 
+    public static class BindRelationResult {
+        private final boolean created;
+        private final InviteRelation relation;
+
+        public BindRelationResult(boolean created, InviteRelation relation) {
+            this.created = created;
+            this.relation = relation;
+        }
+
+        public boolean isCreated() {
+            return created;
+        }
+
+        public InviteRelation getRelation() {
+            return relation;
+        }
+    }
+
     public InviteConfigQo getConfig() {
         InviteConfig config = loadConfigEntity();
         InviteConfigQo qo = new InviteConfigQo();
@@ -144,26 +162,31 @@ public class InviteService {
      * - 唯一约束兜底：并发场景下两个事务同时写入也只会保留第一条
      */
     public void bindRelation(Long inviterUserid, Long inviteeUserid, String inviteCode, String source) {
-        if (inviterUserid == null || inviteeUserid == null) return;
+        bindRelationIfAbsent(inviterUserid, inviteeUserid, inviteCode, source, Constant.INVITE_NEED_PPD);
+    }
+
+    public BindRelationResult bindRelationIfAbsent(Long inviterUserid, Long inviteeUserid, String inviteCode, String source, Integer rewardPpd) {
+        if (inviterUserid == null || inviteeUserid == null) return new BindRelationResult(false, null);
         if (inviterUserid.equals(inviteeUserid)) {
             logger.warn("invite.bind.self_reject inviter={} invitee={}", inviterUserid, inviteeUserid);
-            return;
+            return new BindRelationResult(false, null);
         }
         InviteRelation existing = inviteRelationRepository.findByInviteeUserid(inviteeUserid);
-        if (existing != null) return;
+        if (existing != null) return new BindRelationResult(false, existing);
 
         InviteRelation relation = new InviteRelation();
         relation.setInviterUserid(inviterUserid);
         relation.setInviteeUserid(inviteeUserid);
         relation.setInviteCode(inviteCode);
         relation.setSource(StringUtils.isEmpty(source) ? "register" : source);
-        relation.setRewardPpd(Constant.INVITE_NEED_PPD);
+        relation.setRewardPpd(rewardPpd == null ? Constant.INVITE_NEED_PPD : rewardPpd);
         relation.setCredate(new Date());
         try {
-            inviteRelationRepository.save(relation);
+            return new BindRelationResult(true, inviteRelationRepository.save(relation));
         } catch (DataIntegrityViolationException ex) {
             // 唯一约束兜底：高并发下另一事务先写入了，本次跳过
             logger.warn("invite.bind.race_skip inviter={} invitee={}", inviterUserid, inviteeUserid);
+            return new BindRelationResult(false, inviteRelationRepository.findByInviteeUserid(inviteeUserid));
         }
     }
 
