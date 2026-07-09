@@ -18,6 +18,10 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/admin/checkin")
 public class AdminCheckinController {
+    private static final int DEFAULT_PAGE = 0;
+    private static final int DEFAULT_SIZE = 10;
+    private static final int MAX_SIZE = 100;
+
     @Autowired
     private CheckinServiceClient checkinServiceClient;
 
@@ -50,10 +54,13 @@ public class AdminCheckinController {
             qo = new CheckinRecordQo();
         }
         if (qo.getPage() == null || qo.getPage() < 0) {
-            qo.setPage(0);
+            qo.setPage(DEFAULT_PAGE);
         }
         if (qo.getSize() == null || qo.getSize() <= 0) {
-            qo.setSize(10);
+            qo.setSize(DEFAULT_SIZE);
+        }
+        if (qo.getSize() > MAX_SIZE) {
+            qo.setSize(MAX_SIZE);
         }
         return qo;
     }
