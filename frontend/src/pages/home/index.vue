@@ -104,7 +104,6 @@ import KeepTabBar from '@/components/business/KeepTabBar.vue'
 import KeepYpatCard, { type KeepYpatCardItem } from '@/components/business/KeepYpatCard.vue'
 import HomeBanner from '@/components/business/HomeBanner.vue'
 import SplashOverlay from '@/components/business/SplashOverlay.vue'
-import { openMessage } from '@/utils/tab-navigation'
 import type { YpatInfo } from '@/api/types/index'
 
 type TabKey = 'recommend' | 'nearby' | 'latest'
@@ -114,7 +113,6 @@ const userStore = useUserStore()
 const appStore = useAppStore()
 
 const statusBarHeight = computed(() => appStore.statusBarHeight)
-const unreadCount = computed(() => userStore.unreadCount)
 
 const currentCity = ref('')
 const activeTab = ref<TabKey>('recommend')
@@ -313,10 +311,6 @@ function goSearch() {
   uni.navigateTo({ url: '/pages-sub/ypat/search' })
 }
 
-function goMessage() {
-  openMessage()
-}
-
 async function getLocation() {
   // 必须由用户点击触发（不能在 onMounted/onLoad 自动调，否则微信直接拒且不弹原生框）
   // 第一步：检查是否已授权
@@ -421,35 +415,6 @@ onReachBottom(() => {
   color: $color-text-helper;
   font-size: 28rpx;
   font-weight: 700;
-}
-
-.home-message {
-  position: relative;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 72rpx;
-  height: 72rpx;
-  border-radius: 50%;
-  background: #fff;
-  box-shadow: $shadow-keep-card;
-}
-
-.home-message__badge {
-  position: absolute;
-  top: -8rpx;
-  right: -10rpx;
-  min-width: 34rpx;
-  height: 34rpx;
-  padding: 0 8rpx;
-  border: 4rpx solid #fff;
-  border-radius: $radius-round;
-  color: #fff;
-  background: $color-accent-red;
-  font-size: 20rpx;
-  font-weight: 900;
-  line-height: 34rpx;
-  text-align: center;
 }
 
 .quick-grid {
