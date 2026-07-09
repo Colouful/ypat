@@ -158,3 +158,31 @@ export interface PaymentOrder {
   createdAt?: string
   updatedAt?: string
 }
+
+export interface MessagePushLog {
+  id: number
+  eventType: string
+  businessType?: string
+  messageId?: number
+  ypatid?: number
+  sendperid?: number
+  recperid?: number
+  touserOpenid?: string
+  templateId?: string
+  pageUrl?: string
+  success?: string
+  wechatErrcode?: string
+  wechatErrmsg?: string
+  responseBody?: string
+  remark?: string
+  createdAt?: string
+}
+
+export interface MessagePushLogStats {
+  total?: number
+  successCount?: number
+  failedCount?: number
+  wechatTotal?: number
+  inAppTotal?: number
+  failedRate?: string
+}
