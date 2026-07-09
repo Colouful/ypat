@@ -71,8 +71,9 @@ async function fetchRecords() {
   recordsLoading.value = true
   try {
     const res = await getCheckinRecords(query)
-    records.value = res.data.content || []
-    total.value = res.data.totalElements || 0
+    const pageData = res.data ?? { content: [], totalElements: 0 }
+    records.value = pageData.content ?? []
+    total.value = pageData.totalElements ?? 0
   } finally {
     recordsLoading.value = false
   }
@@ -154,7 +155,7 @@ onMounted(() => {
       </el-form>
     </section>
 
-    <section class="panel" v-loading="recordsLoading">
+    <section class="panel">
       <div class="panel-title">签到记录</div>
       <div class="search-bar">
         <el-form :inline="true" :model="query" @submit.prevent>

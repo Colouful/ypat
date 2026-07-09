@@ -17,6 +17,13 @@ describe('admin checkin page source contract', () => {
     expect(page).toContain('getCheckinRecords')
   })
 
+  it('guards record page data and keeps loading only on table', () => {
+    expect(page).toContain('const pageData = res.data ?? { content: [], totalElements: 0 }')
+    expect(page).toContain('records.value = pageData.content ?? []')
+    expect(page).toContain('total.value = pageData.totalElements ?? 0')
+    expect(page).not.toContain('<section class="panel" v-loading="recordsLoading">')
+  })
+
   it('registers checkin menu and route component', () => {
     expect(menu).toContain('签到管理')
     expect(menu).toContain('checkin/index')
