@@ -357,6 +357,23 @@ export interface RecordListParams extends PageParams {
   type?: string
 }
 
+export interface CheckinToday {
+  enabled: boolean
+  checkedIn: boolean
+  rewardPpd: number
+  confirmTitle: string
+  confirmContent: string
+  checkinDate: string
+}
+
+export interface CheckinResult {
+  checkedIn: boolean
+  rewardPpd: number
+  currentPpd?: number
+  recordId?: number
+  message?: string
+}
+
 // ===== 内容 =====
 
 export interface Banner {

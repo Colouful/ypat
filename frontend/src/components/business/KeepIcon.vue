@@ -122,6 +122,13 @@ const iconMap: Record<string, IconPart[]> = {
   check: [
     { tag: 'path', attrs: { d: 'M20 6 9 17l-5-5' } },
   ],
+  'calendar-check': [
+    { tag: 'path', attrs: { d: 'M8 2v4' } },
+    { tag: 'path', attrs: { d: 'M16 2v4' } },
+    { tag: 'rect', attrs: { width: 18, height: 18, x: 3, y: 4, rx: 2 } },
+    { tag: 'path', attrs: { d: 'M3 10h18' } },
+    { tag: 'path', attrs: { d: 'm9 16 2 2 4-4' } },
+  ],
   'chevron-left': [
     { tag: 'path', attrs: { d: 'm15 18-6-6 6-6' } },
   ],

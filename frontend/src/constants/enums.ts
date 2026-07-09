@@ -243,6 +243,7 @@ export const RecordType = {
   PUBLISH: '3',
   APPLY: '4',
   VIEW_CONTACT: '5',
+  CHECKIN: '6',
 } as const;
 
 export type RecordTypeType = (typeof RecordType)[keyof typeof RecordType];
@@ -254,6 +255,7 @@ export const RECORD_TYPE_LABELS: Record<string, string> = {
   [RecordType.PUBLISH]: '发布约拍',
   [RecordType.APPLY]: '报名约拍',
   [RecordType.VIEW_CONTACT]: '查看联系方式',
+  [RecordType.CHECKIN]: '每日签到',
 };
 
 /** 订单类型 */
