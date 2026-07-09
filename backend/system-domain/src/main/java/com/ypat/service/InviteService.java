@@ -233,12 +233,7 @@ public class InviteService {
         if (qo == null || qo.getInviterUserid() == null) {
             return toPage(new PageImpl<>(Collections.emptyList()), Collections.emptyList());
         }
-        Sort sort = new Sort(Sort.Direction.DESC, "credate");
-        Pageable pageable = new PageRequest(
-                qo.getPage() == null ? 0 : qo.getPage(),
-                qo.getSize() == null ? 10 : qo.getSize(),
-                sort
-        );
+        Pageable pageable = pageRequest(qo);
 
         Specification<InviteRelation> spec = (root, query, cb) -> {
             List<Predicate> predicates = new ArrayList<>();
@@ -247,8 +242,46 @@ public class InviteService {
         };
         Page<InviteRelation> page = inviteRelationRepository.findAll(spec, pageable);
 
-        List<InviteRelationQo> content = new ArrayList<>(page.getNumberOfElements());
-        for (InviteRelation r : page.getContent()) {
+        return toPage(page, toRelationQos(page.getContent()));
+    }
+
+    public Map<String, Object> adminFindPage(InviteRelationQo qo) {
+        InviteRelationQo queryQo = qo == null ? new InviteRelationQo() : qo;
+        Pageable pageable = pageRequest(queryQo);
+
+        Specification<InviteRelation> spec = (root, query, cb) -> {
+            List<Predicate> predicates = new ArrayList<>();
+            if (queryQo.getInviterUserid() != null) {
+                predicates.add(cb.equal(root.get("inviterUserid"), queryQo.getInviterUserid()));
+            }
+            if (queryQo.getInviteeUserid() != null) {
+                predicates.add(cb.equal(root.get("inviteeUserid"), queryQo.getInviteeUserid()));
+            }
+            if (!StringUtils.isEmpty(queryQo.getInviteCode())) {
+                predicates.add(cb.equal(root.get("inviteCode"), queryQo.getInviteCode()));
+            }
+            if (!StringUtils.isEmpty(queryQo.getSource())) {
+                predicates.add(cb.equal(root.get("source"), queryQo.getSource()));
+            }
+            return cb.and(predicates.toArray(new Predicate[0]));
+        };
+        Page<InviteRelation> page = inviteRelationRepository.findAll(spec, pageable);
+
+        return toPage(page, toRelationQos(page.getContent()));
+    }
+
+    private Pageable pageRequest(InviteRelationQo qo) {
+        Sort sort = new Sort(Sort.Direction.DESC, "credate");
+        return new PageRequest(
+                qo.getPage() == null ? 0 : qo.getPage(),
+                qo.getSize() == null ? 10 : qo.getSize(),
+                sort
+        );
+    }
+
+    private List<InviteRelationQo> toRelationQos(List<InviteRelation> relations) {
+        List<InviteRelationQo> content = new ArrayList<>(relations.size());
+        for (InviteRelation r : relations) {
             InviteRelationQo dto = CopyUtil.copy(r, InviteRelationQo.class);
             User invitee = userRepository.findOne(r.getInviteeUserid());
             if (invitee != null) {
@@ -261,7 +294,7 @@ public class InviteService {
             }
             content.add(dto);
         }
-        return toPage(page, content);
+        return content;
     }
 
     private Map<String, Object> toPage(Page<?> page, List<?> content) {

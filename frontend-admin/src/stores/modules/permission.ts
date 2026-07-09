@@ -30,6 +30,8 @@ import MemberRule from '@/views/member/rule/index.vue'
 import MemberUser from '@/views/member/user/index.vue'
 import MemberOrder from '@/views/member/order/index.vue'
 import MemberLog from '@/views/member/log/index.vue'
+import InviteConfig from '@/views/invite/config/index.vue'
+import InviteRecords from '@/views/invite/records/index.vue'
 import InternalTestResource from '@/views/internal-test/resource/index.vue'
 import InternalTestGenerator from '@/views/internal-test/generator/index.vue'
 
@@ -55,6 +57,8 @@ const viewModules: Record<string, Component> = {
   'member/user/index': MemberUser,
   'member/order/index': MemberOrder,
   'member/log/index': MemberLog,
+  'invite/config/index': InviteConfig,
+  'invite/records/index': InviteRecords,
   'internal-test/resource/index': InternalTestResource,
   'internal-test/generator/index': InternalTestGenerator,
 }

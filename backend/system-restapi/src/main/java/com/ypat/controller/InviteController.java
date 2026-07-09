@@ -45,6 +45,6 @@ public class InviteController {
 
     @PostMapping("/service/invite/admin/findPage")
     public Map<String, Object> adminFindPage(@RequestBody InviteRelationQo qo) {
-        return inviteService.findPage(qo);
+        return inviteService.adminFindPage(qo);
     }
 }

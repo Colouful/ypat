@@ -82,6 +82,14 @@ export const menuConfig: MenuGroup[] = [
     ],
   },
   {
+    title: '邀请运营',
+    icon: 'Promotion',
+    children: [
+      { title: '邀请配置', path: '/invite/config', component: 'invite/config/index' },
+      { title: '邀请记录', path: '/invite/records', component: 'invite/records/index' },
+    ],
+  },
+  {
     title: '内测数据',
     icon: 'DataAnalysis',
     children: [
