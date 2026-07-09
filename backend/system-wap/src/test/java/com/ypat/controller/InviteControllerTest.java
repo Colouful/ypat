@@ -1,5 +1,6 @@
 package com.ypat.controller;
 
+import com.ypat.InviteConfigQo;
 import com.ypat.InviteRelationQo;
 import com.ypat.InviteSummaryQo;
 import com.ypat.model.SecurityUserDetails;
@@ -54,9 +55,12 @@ public class InviteControllerTest {
     @Test
     public void ruleAlwaysReturnsRewardPpd() {
         Map<String, Object> rule = controller.rule();
+        assertEquals("1", rule.get("enabled"));
         assertEquals(3, rule.get("rewardPpd"));
         assertEquals("拍拍豆", rule.get("rewardUnit"));
         assertNotNull(rule.get("ruleText"));
+        assertEquals("好友邀请你加入爱去拍，找摄影师、找模特更方便", rule.get("shareTitle"));
+        assertNotNull(rule.get("landingTitle"));
     }
 
     @Test
@@ -113,6 +117,28 @@ public class InviteControllerTest {
             page.put("number", 0);
             page.put("size", qo.getSize() == null ? 10 : qo.getSize());
             return page;
+        }
+
+        @Override
+        public InviteConfigQo config() {
+            InviteConfigQo qo = new InviteConfigQo();
+            qo.setEnabled("1");
+            qo.setRewardPpd(3);
+            qo.setRewardUnit("拍拍豆");
+            qo.setRuleText("好友通过你的邀请码注册后，自动到账 3 拍拍豆。");
+            qo.setShareTitle("好友邀请你加入爱去拍，找摄影师、找模特更方便");
+            qo.setLandingTitle("我正在使用爱去拍，找摄影师、找模特特别方便，推荐你也来体验。");
+            return qo;
+        }
+
+        @Override
+        public InviteConfigQo saveConfig(InviteConfigQo qo) {
+            return qo;
+        }
+
+        @Override
+        public Map<String, Object> adminFindPage(InviteRelationQo qo) {
+            return findPage(qo);
         }
     }
 }
