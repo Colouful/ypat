@@ -162,4 +162,110 @@ describe('YpatDetailView', () => {
     expect(authorCard.text()).toContain('约拍爱好者')
     expect(wrapper.find('.author-card__member').exists()).toBe(false)
   })
+
+  it('实名认证优先使用作者字段，并在作者字段缺失时回退到约拍字段', async () => {
+    const authorPriorityWrapper = await mountWithDetail(createDetail({
+      realnameflag: '0',
+      userQo: {
+        id: 203,
+        nickname: '作者优先认证',
+        profess: '摄影师',
+        realnameflag: '1',
+        creditflag: '1',
+        memberActive: false,
+        memberLevel: '',
+        imgpath: '',
+      },
+    }))
+
+    expect(authorPriorityWrapper.find('.detail-trust-row').text()).toContain('已认证')
+    expect(authorPriorityWrapper.find('.author-card').text()).toContain('已认证')
+
+    const fallbackWrapper = await mountWithDetail(createDetail({
+      realnameflag: '1',
+      userQo: {
+        id: 204,
+        nickname: '兼容回退认证',
+        profess: '摄影师',
+        realnameflag: 'unknown',
+        creditflag: '1',
+        memberActive: false,
+        memberLevel: '',
+        imgpath: '',
+      },
+    }))
+
+    expect(fallbackWrapper.find('.detail-trust-row').text()).toContain('已认证')
+    expect(fallbackWrapper.find('.author-card').text()).toContain('已认证')
+  })
+
+  it('担保金优先使用约拍字段，并在约拍字段缺失时回退到作者字段', async () => {
+    const detailPriorityWrapper = await mountWithDetail(createDetail({
+      creditflag: '1',
+      userQo: {
+        id: 205,
+        nickname: '约拍优先担保金',
+        profess: '摄影师',
+        realnameflag: '1',
+        creditflag: '0',
+        memberActive: false,
+        memberLevel: '',
+        imgpath: '',
+      },
+    }))
+
+    expect(detailPriorityWrapper.find('.detail-trust-row').text()).toContain('已缴担保金')
+    expect(detailPriorityWrapper.find('.author-card').text()).toContain('已缴担保金')
+
+    const fallbackWrapper = await mountWithDetail(createDetail({
+      creditflag: 'unknown',
+      userQo: {
+        id: 206,
+        nickname: '兼容回退担保金',
+        profess: '摄影师',
+        realnameflag: '1',
+        creditflag: '1',
+        memberActive: false,
+        memberLevel: '',
+        imgpath: '',
+      },
+    }))
+
+    expect(fallbackWrapper.find('.detail-trust-row').text()).toContain('已缴担保金')
+    expect(fallbackWrapper.find('.author-card').text()).toContain('已缴担保金')
+  })
+
+  it('会员徽标按会员等级映射展示 PRO 与默认 VIP 文案', async () => {
+    const proWrapper = await mountWithDetail(createDetail({
+      userQo: {
+        id: 207,
+        nickname: 'PRO会员作者',
+        profess: '摄影师',
+        realnameflag: '1',
+        creditflag: '1',
+        memberActive: true,
+        memberLevel: 'PRO',
+        imgpath: '',
+      },
+    }))
+
+    expect(proWrapper.find('.author-card__member').text()).toContain('PRO')
+    expect(proWrapper.find('.detail-trust-row').text()).toContain('PRO会员')
+
+    const defaultVipWrapper = await mountWithDetail(createDetail({
+      userQo: {
+        id: 208,
+        nickname: '默认会员作者',
+        profess: '摄影师',
+        realnameflag: '1',
+        creditflag: '1',
+        memberActive: true,
+        memberLevel: 'unknown',
+        imgpath: '',
+      },
+    }))
+
+    expect(defaultVipWrapper.find('.author-card__member').text()).toContain('VIP')
+    expect(defaultVipWrapper.find('.detail-trust-row').text()).toContain('VIP会员')
+  })
 })
