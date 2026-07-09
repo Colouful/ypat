@@ -39,6 +39,11 @@ describe('wallet page source contract', () => {
     expect(source).not.toMatch(/onShow\(\(\) => \{[\s\S]*fetchRecentRecords\(\)[\s\S]*\}\)/)
   })
 
+  it('treats checkin records as wallet income', () => {
+    const incomeTypesLine = source.match(/incomeTypes\s*=\s*new Set<string>\(\[[^\]]*\]\)/)?.[0] || ''
+    expect(incomeTypesLine).toContain('RecordType.CHECKIN')
+  })
+
   it('uses the app green theme for page and recharge popup', () => {
     expect(source).toContain('$color-primary')
     expect(source).toContain('$color-primary-dark')

@@ -32,7 +32,7 @@ const loading = ref(false)
 const hasMore = ref(true)
 const page = ref(0)
 const size = 20
-const incomeTypes = new Set<string>([RecordType.TOPUP, RecordType.INVITE, RecordType.SYSTEM])
+const incomeTypes = new Set<string>([RecordType.TOPUP, RecordType.INVITE, RecordType.SYSTEM, RecordType.CHECKIN])
 
 async function load(refresh = false): Promise<void> {
   if (loading.value || (!refresh && !hasMore.value)) return
@@ -75,6 +75,7 @@ function badge(type: string): string {
     [RecordType.PUBLISH]: '发',
     [RecordType.APPLY]: '报',
     [RecordType.VIEW_CONTACT]: '查',
+    [RecordType.CHECKIN]: '签',
   }
   return map[type] || '其'
 }
