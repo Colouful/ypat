@@ -163,7 +163,7 @@ describe('YpatDetailView', () => {
     expect(wrapper.find('.author-card__member').exists()).toBe(false)
   })
 
-  it('实名认证优先使用作者字段，并在作者字段缺失时回退到约拍字段', async () => {
+  it('实名认证优先使用作者字段，并在作者字段无效或缺失时回退到约拍字段', async () => {
     const authorPriorityWrapper = await mountWithDetail(createDetail({
       realnameflag: '0',
       userQo: {
@@ -181,7 +181,7 @@ describe('YpatDetailView', () => {
     expect(authorPriorityWrapper.find('.detail-trust-row').text()).toContain('已认证')
     expect(authorPriorityWrapper.find('.author-card').text()).toContain('已认证')
 
-    const fallbackWrapper = await mountWithDetail(createDetail({
+    const unknownFallbackWrapper = await mountWithDetail(createDetail({
       realnameflag: '1',
       userQo: {
         id: 204,
@@ -195,11 +195,48 @@ describe('YpatDetailView', () => {
       },
     }))
 
-    expect(fallbackWrapper.find('.detail-trust-row').text()).toContain('已认证')
-    expect(fallbackWrapper.find('.author-card').text()).toContain('已认证')
+    expect(unknownFallbackWrapper.find('.detail-trust-row').text()).toContain('已认证')
+    expect(unknownFallbackWrapper.find('.author-card').text()).toContain('已认证')
+
+    const emptyFallbackWrapper = await mountWithDetail(createDetail({
+      realnameflag: '1',
+      userQo: {
+        id: 209,
+        nickname: '空值回退认证',
+        profess: '摄影师',
+        realnameflag: '',
+        creditflag: '1',
+        memberActive: false,
+        memberLevel: '',
+        imgpath: '',
+      },
+    }))
+
+    expect(emptyFallbackWrapper.find('.detail-trust-row').text()).toContain('已认证')
+    expect(emptyFallbackWrapper.find('.author-card').text()).toContain('已认证')
+
+    const missingAuthorFlagDetail = createDetail({
+      realnameflag: '1',
+      userQo: {
+        id: 210,
+        nickname: '缺失回退认证',
+        profess: '摄影师',
+        creditflag: '1',
+        memberActive: false,
+        memberLevel: '',
+        imgpath: '',
+      },
+    })
+
+    if (missingAuthorFlagDetail.userQo) delete missingAuthorFlagDetail.userQo.realnameflag
+
+    const missingFallbackWrapper = await mountWithDetail(missingAuthorFlagDetail)
+
+    expect(missingFallbackWrapper.find('.detail-trust-row').text()).toContain('已认证')
+    expect(missingFallbackWrapper.find('.author-card').text()).toContain('已认证')
   })
 
-  it('担保金优先使用约拍字段，并在约拍字段缺失时回退到作者字段', async () => {
+  it('担保金优先使用约拍字段，并在约拍字段无效或缺失时回退到作者字段', async () => {
     const detailPriorityWrapper = await mountWithDetail(createDetail({
       creditflag: '1',
       userQo: {
@@ -217,7 +254,7 @@ describe('YpatDetailView', () => {
     expect(detailPriorityWrapper.find('.detail-trust-row').text()).toContain('已缴担保金')
     expect(detailPriorityWrapper.find('.author-card').text()).toContain('已缴担保金')
 
-    const fallbackWrapper = await mountWithDetail(createDetail({
+    const unknownFallbackWrapper = await mountWithDetail(createDetail({
       creditflag: 'unknown',
       userQo: {
         id: 206,
@@ -231,11 +268,48 @@ describe('YpatDetailView', () => {
       },
     }))
 
-    expect(fallbackWrapper.find('.detail-trust-row').text()).toContain('已缴担保金')
-    expect(fallbackWrapper.find('.author-card').text()).toContain('已缴担保金')
+    expect(unknownFallbackWrapper.find('.detail-trust-row').text()).toContain('已缴担保金')
+    expect(unknownFallbackWrapper.find('.author-card').text()).toContain('已缴担保金')
+
+    const emptyFallbackWrapper = await mountWithDetail(createDetail({
+      creditflag: '',
+      userQo: {
+        id: 211,
+        nickname: '空值回退担保金',
+        profess: '摄影师',
+        realnameflag: '1',
+        creditflag: '1',
+        memberActive: false,
+        memberLevel: '',
+        imgpath: '',
+      },
+    }))
+
+    expect(emptyFallbackWrapper.find('.detail-trust-row').text()).toContain('已缴担保金')
+    expect(emptyFallbackWrapper.find('.author-card').text()).toContain('已缴担保金')
+
+    const missingDetailFlag = createDetail({
+      userQo: {
+        id: 212,
+        nickname: '缺失回退担保金',
+        profess: '摄影师',
+        realnameflag: '1',
+        creditflag: '1',
+        memberActive: false,
+        memberLevel: '',
+        imgpath: '',
+      },
+    })
+
+    delete missingDetailFlag.creditflag
+
+    const missingFallbackWrapper = await mountWithDetail(missingDetailFlag)
+
+    expect(missingFallbackWrapper.find('.detail-trust-row').text()).toContain('已缴担保金')
+    expect(missingFallbackWrapper.find('.author-card').text()).toContain('已缴担保金')
   })
 
-  it('会员徽标按会员等级映射展示 PRO 与默认 VIP 文案', async () => {
+  it('会员徽标按会员等级映射展示 PRO、无效值与空值时的默认 VIP 文案', async () => {
     const proWrapper = await mountWithDetail(createDetail({
       userQo: {
         id: 207,
@@ -267,5 +341,21 @@ describe('YpatDetailView', () => {
 
     expect(defaultVipWrapper.find('.author-card__member').text()).toContain('VIP')
     expect(defaultVipWrapper.find('.detail-trust-row').text()).toContain('VIP会员')
+
+    const emptyLevelWrapper = await mountWithDetail(createDetail({
+      userQo: {
+        id: 213,
+        nickname: '空等级会员作者',
+        profess: '摄影师',
+        realnameflag: '1',
+        creditflag: '1',
+        memberActive: true,
+        memberLevel: '',
+        imgpath: '',
+      },
+    }))
+
+    expect(emptyLevelWrapper.find('.author-card__member').text()).toContain('VIP')
+    expect(emptyLevelWrapper.find('.detail-trust-row').text()).toContain('VIP会员')
   })
 })
