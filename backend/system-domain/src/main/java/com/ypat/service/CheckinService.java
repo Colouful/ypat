@@ -67,6 +67,10 @@ public class CheckinService {
 
     public CheckinTodayQo today(Long userId) {
         validateUserId(userId);
+        User user = userRepository.findById(userId);
+        if (user == null) {
+            throw new SysException(ResponseCode.FAIL_NOT);
+        }
         CheckinRule rule = getOrDefaultRule();
         String checkinDate = todayString();
         CheckinRecord record = checkinRecordRepository.findByUseridAndCheckinDate(userId, checkinDate);

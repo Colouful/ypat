@@ -2,6 +2,8 @@ package com.ypat.service;
 
 import com.ypat.CheckinResultQo;
 import com.ypat.CheckinTodayQo;
+import com.ypat.ResponseCode;
+import com.ypat.SysException;
 import com.ypat.entity.CheckinRecord;
 import com.ypat.entity.CheckinRule;
 import com.ypat.entity.Record;
@@ -22,20 +24,34 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 public class CheckinServiceTest {
 
     @Test
     public void todayReturnsUncheckedWhenNoRecord() {
-        CheckinService service = service(rule(YesNo.yes.value, 1), checkinRecords(null, null), records(null), users(null, null));
+        CheckinService service = service(rule(YesNo.yes.value, 1), checkinRecords(null, null), records(null), users(user(10L, 3), null));
 
-        CheckinTodayQo today = service.today(1L);
+        CheckinTodayQo today = service.today(10L);
 
         assertTrue(today.getEnabled());
         assertFalse(today.getCheckedIn());
         assertEquals(Integer.valueOf(1), today.getRewardPpd());
         assertEquals("每日签到", today.getConfirmTitle());
         assertNotNull(today.getCheckinDate());
+    }
+
+    @Test
+    public void todayThrowsWhenUserMissing() {
+        CheckinService service = service(rule(YesNo.yes.value, 1), checkinRecords(null, null), records(null), users(null, null));
+
+        try {
+            service.today(10L);
+            fail("Expected SysException");
+        } catch (SysException e) {
+            assertEquals(ResponseCode.FAIL_NOT.getCode(), e.getCode());
+            assertEquals(ResponseCode.FAIL_NOT.getMsg(), e.getMsg());
+        }
     }
 
     @Test
