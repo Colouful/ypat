@@ -2,28 +2,44 @@
   <view class="keep-ypat-card" @tap="$emit('tap', item)">
     <image class="keep-ypat-card__thumb" :src="item.image" mode="aspectFill" lazy-load />
     <view class="keep-ypat-card__body">
-      <text class="keep-ypat-card__title">{{ item.title }}</text>
+      <view class="keep-ypat-card__head">
+        <text class="keep-ypat-card__title">{{ item.title }}</text>
+      </view>
+
       <view class="keep-ypat-card__tags">
         <text class="keep-ypat-card__tag keep-ypat-card__tag--main">{{ item.targetLabel }}</text>
-        <text class="keep-ypat-card__way">{{ item.chargeLabel }}</text>
-        <text v-if="item.realname" class="keep-ypat-card__badge keep-ypat-card__badge--real">
+        <text class="keep-ypat-card__tag keep-ypat-card__tag--way">{{ item.chargeLabel }}</text>
+        <text class="keep-ypat-card__badge" :class="item.realname ? 'keep-ypat-card__badge--real' : 'keep-ypat-card__badge--muted'">
           <KeepIcon name="shield" :size="20" />
-          实名认证
+          {{ item.realname ? '已认证' : '未认证' }}
         </text>
-        <text v-if="item.credit" class="keep-ypat-card__badge keep-ypat-card__badge--credit">
+        <text class="keep-ypat-card__badge" :class="item.credit ? 'keep-ypat-card__badge--credit' : 'keep-ypat-card__badge--muted'">
           <KeepIcon name="star" :size="20" />
-          信用担保
+          {{ item.credit ? '已缴担保金' : '未缴担保金' }}
         </text>
       </view>
+
       <view class="keep-ypat-card__user">
         <image class="keep-ypat-card__avatar" :src="item.avatar" mode="aspectFill" />
-        <text class="keep-ypat-card__name">{{ item.name }}</text>
-        <text class="keep-ypat-card__city">
-          <KeepIcon name="map-pin" :size="22" />
-          {{ item.city }}
-        </text>
+        <view class="keep-ypat-card__identity">
+          <view class="keep-ypat-card__name-row">
+            <text class="keep-ypat-card__name">{{ item.name }}</text>
+            <text v-if="item.memberActive" class="keep-ypat-card__member">
+              <KeepIcon name="gem" :size="18" />
+              VIP
+            </text>
+          </view>
+          <text class="keep-ypat-card__city">
+            <KeepIcon name="map-pin" :size="22" />
+            {{ item.city }}
+          </text>
+        </view>
       </view>
-      <text class="keep-ypat-card__meta">已收到约拍 {{ item.applyCount }} · {{ item.time }}</text>
+
+      <view class="keep-ypat-card__meta">
+        <text>已收到约拍 {{ item.applyCount }}</text>
+        <text>{{ item.time }}</text>
+      </view>
     </view>
   </view>
 </template>
@@ -44,6 +60,8 @@ export interface KeepYpatCardItem {
   applyCount: number
   realname: boolean
   credit: boolean
+  memberActive?: boolean
+  memberLevel?: string
 }
 
 defineProps<{
@@ -56,7 +74,6 @@ defineEmits<{
 </script>
 
 <style scoped lang="scss">
-
 .keep-ypat-card {
   display: flex;
   gap: 24rpx;
@@ -82,6 +99,10 @@ defineEmits<{
   flex-direction: column;
 }
 
+.keep-ypat-card__head {
+  min-width: 0;
+}
+
 .keep-ypat-card__title {
   @include line-clamp(2);
   color: $color-text-primary;
@@ -94,21 +115,24 @@ defineEmits<{
   display: flex;
   align-items: center;
   flex-wrap: wrap;
-  gap: 12rpx;
+  gap: 10rpx;
   margin-top: 16rpx;
 }
 
 .keep-ypat-card__tag,
-.keep-ypat-card__way,
 .keep-ypat-card__badge {
   display: inline-flex;
   align-items: center;
-  gap: 4rpx;
+  justify-content: center;
+  gap: 6rpx;
   min-height: 42rpx;
-  padding: 0 14rpx;
+  max-width: 100%;
+  padding: 0 12rpx;
   border-radius: 10rpx;
   font-size: 22rpx;
   font-weight: 700;
+  line-height: 1;
+  white-space: nowrap;
 }
 
 .keep-ypat-card__tag--main {
@@ -116,10 +140,10 @@ defineEmits<{
   background: $color-bg-chip;
 }
 
-.keep-ypat-card__way {
-  padding: 0;
+.keep-ypat-card__tag--way {
   color: $color-text-secondary;
-  background: transparent;
+  background: rgba(255, 255, 255, 0.72);
+  border: 1rpx solid rgba(127, 137, 160, 0.18);
 }
 
 .keep-ypat-card__badge--real {
@@ -132,9 +156,15 @@ defineEmits<{
   background: $color-gold-soft;
 }
 
+.keep-ypat-card__badge--muted {
+  color: $color-text-helper;
+  background: $color-bg-chip;
+  border: 1rpx solid rgba(127, 137, 160, 0.18);
+}
+
 .keep-ypat-card__user {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   min-width: 0;
   margin-top: 18rpx;
 }
@@ -147,33 +177,76 @@ defineEmits<{
   background: $color-bg-chip;
 }
 
-.keep-ypat-card__name,
-.keep-ypat-card__city {
-  color: $color-text-secondary;
-  font-size: 24rpx;
-  font-weight: 600;
+.keep-ypat-card__identity {
+  min-width: 0;
+  flex: 1;
+  margin-left: 10rpx;
+}
+
+.keep-ypat-card__name-row {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  gap: 10rpx;
 }
 
 .keep-ypat-card__name {
-  max-width: 160rpx;
-  margin-left: 10rpx;
+  min-width: 0;
+  color: $color-text-secondary;
+  font-size: 24rpx;
+  font-weight: 700;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.keep-ypat-card__member {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4rpx;
+  min-height: 32rpx;
+  flex: none;
+  padding: 0 10rpx;
+  border-radius: 999rpx;
+  color: #8A5B14;
+  background: $color-gold-soft;
+  border: 1rpx solid rgba(156, 120, 54, 0.2);
+  font-size: 20rpx;
+  font-weight: 800;
+  line-height: 1;
 }
 
 .keep-ypat-card__city {
   display: inline-flex;
   align-items: center;
   gap: 4rpx;
-  margin-left: 16rpx;
+  max-width: 100%;
+  margin-top: 8rpx;
+  color: $color-text-helper;
+  font-size: 22rpx;
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .keep-ypat-card__meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16rpx;
   margin-top: auto;
   padding-top: 16rpx;
   color: $color-text-helper;
   font-size: 24rpx;
   font-weight: 700;
+}
+
+.keep-ypat-card__meta text {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 </style>

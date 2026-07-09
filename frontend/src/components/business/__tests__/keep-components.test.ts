@@ -6,7 +6,7 @@ import KeepState from '../KeepState.vue'
 import KeepYpatCard from '../KeepYpatCard.vue'
 
 describe('Keep components', () => {
-  it('renders ypat card title and trust badges', () => {
+  it('renders ypat card trust states and member badge', () => {
     const wrapper = mount(KeepYpatCard, {
       props: {
         item: {
@@ -22,14 +22,43 @@ describe('Keep components', () => {
           applyCount: 36,
           realname: true,
           credit: true,
+          memberActive: true,
+          memberLevel: 'BASIC',
         },
       },
     })
 
     expect(wrapper.text()).toContain('寻找气质女模')
     expect(wrapper.text()).toContain('约模特')
-    expect(wrapper.text()).toContain('实名认证')
-    expect(wrapper.text()).toContain('信用担保')
+    expect(wrapper.text()).toContain('已认证')
+    expect(wrapper.text()).toContain('已缴担保金')
+    expect(wrapper.text()).toContain('VIP')
+  })
+
+  it('renders negative ypat card trust states without member badge', () => {
+    const wrapper = mount(KeepYpatCard, {
+      props: {
+        item: {
+          id: 2,
+          title: '周末约一组城市街拍',
+          targetLabel: '约摄影师',
+          chargeLabel: '费用协商',
+          city: '杭州',
+          name: '匿名用户',
+          image: '/static/default-cover.png',
+          avatar: '/static/default-avatar.png',
+          time: '刚刚',
+          applyCount: 0,
+          realname: false,
+          credit: false,
+          memberActive: false,
+        },
+      },
+    })
+
+    expect(wrapper.text()).toContain('未认证')
+    expect(wrapper.text()).toContain('未缴担保金')
+    expect(wrapper.text()).not.toContain('VIP')
   })
 
   it('renders state action button and emits action', async () => {
