@@ -12,6 +12,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import javax.persistence.criteria.CriteriaBuilder;
@@ -40,6 +41,7 @@ public class MessagePushLogService {
     @Autowired
     private MessagePushLogRepository messagePushLogRepository;
 
+    @Transactional(propagation = Propagation.REQUIRES_NEW, rollbackFor = Exception.class)
     public void record(MessagePushLogQo qo) {
         if (qo == null || isBlank(qo.getEventType())) {
             return;

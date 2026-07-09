@@ -7,6 +7,7 @@ import com.ypat.YpatInfoQo;
 import com.ypat.comm.Const;
 import com.ypat.enums.MessType;
 import com.ypat.service.MessServiceClient;
+import com.ypat.service.MessagePushLogRecorder;
 import com.ypat.service.RecordServiceClient;
 import com.ypat.service.UserServiceClient;
 import com.ypat.service.YpatServiceClient;
@@ -43,6 +44,8 @@ public class MypatInfoController {
     private WxMessClient wxMessClient;
     @Autowired
     private YpatServiceClient ypatServiceClient;
+    @Autowired
+    private MessagePushLogRecorder messagePushLogRecorder;
 
     @GetMapping(value = {"/my/ypat/pub/list"})
     public String myPubList(YpatInfoQo ypatInfoQo) {
@@ -120,23 +123,32 @@ public class MypatInfoController {
         messInfoQo.setSendperid(userid);
         String res = systemServiceClient.myRecAdd(messInfoQo);
         //推送消息
+        String page = Const.PAGE_MESS;
+        String touserOpenid = null;
+        Long recperid = null;
+        String pushResponse = null;
         try {
             String accessToken = wxMessClient.getAccessToken();
             if(accessToken != null) {
-                String page = Const.PAGE_MESS;
                 String userJson = systemServiceClient.get(userid);
                 UserQo userQo = GsonUtils.fromJson(userJson, UserQo.class);
                 String ypatJson = ypatServiceClient.get(messInfoQo.getYpatid(), null);
                 YpatInfoQo ypatInfoQo = GsonUtils.fromJson(ypatJson, YpatInfoQo.class);
+                if (ypatInfoQo != null && ypatInfoQo.getUserQo() != null) {
+                    recperid = ypatInfoQo.getUserQo().getId();
+                    touserOpenid = ypatInfoQo.getUserQo().getOpenid();
+                }
 
                 Map<String,String> contentMap = new HashMap<>();
                 contentMap.put("area", ypatInfoQo.getCity());
                 contentMap.put("time", DateFormatUtils.format(new Date(),"yyyy-MM-dd HH:mm:ss"));
                 contentMap.put("note", userQo.getNickname()+" 向您发起了约拍");
-                wxMessClient.sendMsg(accessToken, ypatInfoQo.getUserQo().getOpenid(), MessType.send, page, contentMap);
+                pushResponse = wxMessClient.sendMsg(accessToken, touserOpenid, MessType.send, page, contentMap);
+                messagePushLogRecorder.recordWechat(MessType.send, messInfoQo.getYpatid(), userid, recperid, touserOpenid, page, pushResponse, null);
             }
         } catch (Exception e) {
             logger.error("消息推送失败：", e);
+            messagePushLogRecorder.recordWechat(MessType.send, messInfoQo.getYpatid(), userid, recperid, touserOpenid, page, pushResponse, e);
         }
         return res;
     }

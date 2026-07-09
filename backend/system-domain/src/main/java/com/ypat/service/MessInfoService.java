@@ -3,6 +3,7 @@ package com.ypat.service;
 import com.ypat.*;
 import com.ypat.entity.*;
 import com.ypat.entity.Record;
+import com.ypat.enums.MessagePushEventType;
 import com.ypat.enums.MessType;
 import com.ypat.enums.RecordType;
 import com.ypat.enums.UserImgType;
@@ -12,6 +13,8 @@ import com.ypat.repository.RecordRepository;
 import com.ypat.repository.UserRepository;
 import com.ypat.repository.YpatInfoRepository;
 import com.ypat.util.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -29,6 +32,7 @@ import java.util.*;
 @Service
 @Transactional(rollbackFor = Exception.class)
 public class MessInfoService {
+    private static Logger logger = LoggerFactory.getLogger(MessInfoService.class);
 
     @Autowired
     private MessInfoRepository messInfoRepository;
@@ -38,6 +42,8 @@ public class MessInfoService {
     private UserRepository userRepository;
     @Autowired
     private RecordRepository recordRepository;
+    @Autowired
+    private MessagePushLogService messagePushLogService;
 
     public void myRecAdd(MessInfoQo messInfoQo){
         Long userid = messInfoQo.getSendperid();
@@ -91,6 +97,7 @@ public class MessInfoService {
         messInfo.setType(MessType.send.value);
         messInfo.setContent(messInfoQo.getContent());
         messInfoRepository.save(messInfo);
+        recordInAppCreated(messInfo);
 
         //作品的约拍次数+1
         int times = ypatInfo.getPattimes()+1;
@@ -102,6 +109,32 @@ public class MessInfoService {
         recper.setRectimes(recTimes);
         userRepository.save(recper);
 
+    }
+
+    private void recordInAppCreated(MessInfo messInfo) {
+        try {
+            if (messInfo == null) {
+                return;
+            }
+            MessagePushLogQo qo = new MessagePushLogQo();
+            qo.setEventType(MessagePushEventType.IN_APP_CREATED.value);
+            qo.setBusinessType(messInfo.getType());
+            qo.setMessageId(messInfo.getId());
+            if (messInfo.getYpatInfo() != null) {
+                qo.setYpatid(messInfo.getYpatInfo().getId());
+            }
+            if (messInfo.getSendper() != null) {
+                qo.setSendperid(messInfo.getSendper().getId());
+            }
+            if (messInfo.getRecper() != null) {
+                qo.setRecperid(messInfo.getRecper().getId());
+            }
+            qo.setSuccess(YesNo.yes.value);
+            qo.setRemark("站内消息创建");
+            messagePushLogService.record(qo);
+        } catch (Exception e) {
+            logger.error("站内消息创建日志记录失败：", e);
+        }
     }
 
     public MessInfo get(Long id){

@@ -6,6 +6,8 @@ import com.ypat.SysException;
 import com.ypat.UserQo;
 import com.ypat.YpatInfoQo;
 import com.ypat.comm.ImageConst;
+import com.ypat.enums.MessType;
+import com.ypat.service.MessagePushLogRecorder;
 import com.ypat.service.UserServiceClient;
 import com.ypat.service.YpatServiceClient;
 import com.ypat.storage.StorageBizPath;
@@ -64,6 +66,8 @@ public class AdminYpatController {
 
     @Autowired(required = false)
     private WxMessClient wxMessClient;
+    @Autowired(required = false)
+    private MessagePushLogRecorder messagePushLogRecorder;
 
     /**
      * 申请列表分页查询。
@@ -345,6 +349,10 @@ public class AdminYpatController {
     }
 
     private void pushAuditMessage(Long id, String flag, String reason) {
+        String page = "";
+        String touserOpenid = null;
+        Long recperid = null;
+        String pushResponse = null;
         try {
             if (wxMessClient == null) {
                 return;
@@ -358,6 +366,8 @@ public class AdminYpatController {
             if (ypatInfoQo == null || ypatInfoQo.getUserQo() == null) {
                 return;
             }
+            recperid = ypatInfoQo.getUserQo().getId();
+            touserOpenid = ypatInfoQo.getUserQo().getOpenid();
             Map<String, String> contentMap = new HashMap<>();
             contentMap.put("time", DateFormatUtils.format(new Date(), "yyyy-MM-dd HH:mm:ss"));
             String content = ypatInfoQo.getDescrib();
@@ -368,9 +378,18 @@ public class AdminYpatController {
             // 消息模板字段简化为通用结果
             contentMap.put("result", "2".equals(flag) ? "审核通过" : "审核未通过");
             contentMap.put("note", StringUtils.isEmpty(reason) ? "无" : reason);
-            wxMessClient.sendMsg(accessToken, ypatInfoQo.getUserQo().getOpenid(), com.ypat.enums.MessType.audit, "", contentMap);
+            pushResponse = wxMessClient.sendMsg(accessToken, touserOpenid, MessType.audit, page, contentMap);
+            recordWechatPush(MessType.audit, id, null, recperid, touserOpenid, page, pushResponse, null);
         } catch (Exception e) {
             logger.error("约拍审核消息推送失败：", e);
+            recordWechatPush(MessType.audit, id, null, recperid, touserOpenid, page, pushResponse, e);
+        }
+    }
+
+    private void recordWechatPush(MessType messType, Long ypatid, Long sendperid, Long recperid,
+                                  String touserOpenid, String page, String responseBody, Exception error) {
+        if (messagePushLogRecorder != null) {
+            messagePushLogRecorder.recordWechat(messType, ypatid, sendperid, recperid, touserOpenid, page, responseBody, error);
         }
     }
 }
