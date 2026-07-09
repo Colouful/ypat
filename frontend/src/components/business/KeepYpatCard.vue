@@ -1,40 +1,85 @@
 <template>
-  <view class="keep-ypat-card" @tap="$emit('tap', item)">
-    <image class="keep-ypat-card__thumb" :src="item.image" mode="aspectFill" lazy-load />
+  <view
+    class="keep-ypat-card"
+    @tap="$emit('tap', item)"
+  >
+    <image
+      class="keep-ypat-card__thumb"
+      :src="item.image"
+      mode="aspectFill"
+      lazy-load
+    />
     <view class="keep-ypat-card__body">
       <view class="keep-ypat-card__head">
-        <text class="keep-ypat-card__title">{{ item.title }}</text>
+        <text class="keep-ypat-card__title">
+          {{ item.title }}
+        </text>
       </view>
 
       <view class="keep-ypat-card__tags">
         <text class="keep-ypat-card__tag keep-ypat-card__tag--main">
-          <text class="keep-ypat-card__label-text">{{ item.targetLabel }}</text>
+          <text class="keep-ypat-card__label-text">
+            {{ item.targetLabel }}
+          </text>
         </text>
         <text class="keep-ypat-card__tag keep-ypat-card__tag--way">
-          <text class="keep-ypat-card__label-text">{{ item.chargeLabel }}</text>
+          <text class="keep-ypat-card__label-text">
+            {{ item.chargeLabel }}
+          </text>
         </text>
-        <text class="keep-ypat-card__badge" :class="item.realname ? 'keep-ypat-card__badge--real' : 'keep-ypat-card__badge--muted'">
-          <KeepIcon name="shield" :size="20" />
-          <text class="keep-ypat-card__label-text">{{ item.realname ? '已认证' : '未认证' }}</text>
+        <text
+          class="keep-ypat-card__badge"
+          :class="item.realname ? 'keep-ypat-card__badge--real' : 'keep-ypat-card__badge--muted'"
+        >
+          <KeepIcon
+            name="shield"
+            :size="20"
+          />
+          <text class="keep-ypat-card__label-text">
+            {{ item.realname ? '已认证' : '未认证' }}
+          </text>
         </text>
-        <text class="keep-ypat-card__badge" :class="item.credit ? 'keep-ypat-card__badge--credit' : 'keep-ypat-card__badge--muted'">
-          <KeepIcon name="star" :size="20" />
-          <text class="keep-ypat-card__label-text">{{ item.credit ? '已缴担保金' : '未缴担保金' }}</text>
+        <text
+          class="keep-ypat-card__badge"
+          :class="item.credit ? 'keep-ypat-card__badge--credit' : 'keep-ypat-card__badge--muted'"
+        >
+          <KeepIcon
+            name="star"
+            :size="20"
+          />
+          <text class="keep-ypat-card__label-text">
+            {{ item.credit ? '已缴担保金' : '未缴担保金' }}
+          </text>
         </text>
       </view>
 
       <view class="keep-ypat-card__user">
-        <image class="keep-ypat-card__avatar" :src="item.avatar" mode="aspectFill" />
+        <image
+          class="keep-ypat-card__avatar"
+          :src="item.avatar"
+          mode="aspectFill"
+        />
         <view class="keep-ypat-card__identity">
           <view class="keep-ypat-card__name-row">
-            <text class="keep-ypat-card__name">{{ item.name }}</text>
-            <text v-if="item.memberActive" class="keep-ypat-card__member">
-              <KeepIcon name="gem" :size="18" />
-              VIP
+            <text class="keep-ypat-card__name">
+              {{ item.name }}
+            </text>
+            <text
+              v-if="item.memberActive"
+              class="keep-ypat-card__member"
+            >
+              <KeepIcon
+                name="gem"
+                :size="18"
+              />
+              {{ getMemberBadgeLabel(item.memberLevel) }}
             </text>
           </view>
           <text class="keep-ypat-card__city">
-            <KeepIcon name="map-pin" :size="22" />
+            <KeepIcon
+              name="map-pin"
+              :size="22"
+            />
             {{ item.city }}
           </text>
         </view>
@@ -75,6 +120,20 @@ defineProps<{
 defineEmits<{
   (event: 'tap', item: KeepYpatCardItem): void
 }>()
+
+const getMemberBadgeLabel = (memberLevel?: string) => {
+  const normalizedLevel = memberLevel?.trim().toUpperCase()
+
+  if (normalizedLevel === 'PLUS') {
+    return 'VIP+'
+  }
+
+  if (normalizedLevel === 'PRO') {
+    return 'PRO'
+  }
+
+  return 'VIP'
+}
 </script>
 
 <style scoped lang="scss">

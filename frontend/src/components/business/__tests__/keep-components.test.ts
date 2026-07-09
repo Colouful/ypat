@@ -7,7 +7,7 @@ import KeepState from '../KeepState.vue'
 import KeepYpatCard from '../KeepYpatCard.vue'
 
 describe('Keep components', () => {
-  it('renders ypat card trust states and member badge', () => {
+  it('renders ypat card trust states and member badge label from memberLevel', () => {
     const wrapper = mount(KeepYpatCard, {
       props: {
         item: {
@@ -24,7 +24,7 @@ describe('Keep components', () => {
           realname: true,
           credit: true,
           memberActive: true,
-          memberLevel: 'BASIC',
+          memberLevel: 'PLUS',
         },
       },
     })
@@ -33,12 +33,15 @@ describe('Keep components', () => {
     expect(wrapper.text()).toContain('约模特')
     expect(wrapper.text()).toContain('已认证')
     expect(wrapper.text()).toContain('已缴担保金')
-    expect(wrapper.text()).toContain('VIP')
+    expect(wrapper.text()).toContain('VIP+')
 
     expect(wrapper.findAll('.keep-ypat-card__label-text')).toHaveLength(4)
+    expect(wrapper.find('.keep-ypat-card__badge--real').exists()).toBe(true)
+    expect(wrapper.find('.keep-ypat-card__badge--credit').exists()).toBe(true)
 
     const memberBadge = wrapper.find('.keep-ypat-card__member')
     expect(memberBadge.exists()).toBe(true)
+    expect(memberBadge.text()).toContain('VIP+')
     expect(memberBadge.findComponent(KeepIcon).props('name')).toBe('gem')
   })
 
@@ -67,6 +70,44 @@ describe('Keep components', () => {
     expect(wrapper.text()).toContain('未缴担保金')
     expect(wrapper.text()).not.toContain('VIP')
     expect(wrapper.find('.keep-ypat-card__member').exists()).toBe(false)
+    expect(wrapper.findAll('.keep-ypat-card__badge--muted')).toHaveLength(2)
+  })
+
+  it('keeps label structure and member badge visible with long text content', () => {
+    const longTargetLabel = '约超长超长超长超长超长超长超长超长标签'
+    const longChargeLabel = '收费说明超长超长超长超长超长超长超长'
+    const longName = '这是一个很长很长很长很长很长很长的会员昵称展示'
+
+    const wrapper = mount(KeepYpatCard, {
+      props: {
+        item: {
+          id: 3,
+          title: '长文本布局保护用例',
+          targetLabel: longTargetLabel,
+          chargeLabel: longChargeLabel,
+          city: '北京',
+          name: longName,
+          image: '/static/default-cover.png',
+          avatar: '/static/default-avatar.png',
+          time: '1小时前',
+          applyCount: 8,
+          realname: true,
+          credit: false,
+          memberActive: true,
+          memberLevel: 'PRO',
+        },
+      },
+    })
+
+    const nameRow = wrapper.find('.keep-ypat-card__name-row')
+    const memberBadge = nameRow.find('.keep-ypat-card__member')
+
+    expect(wrapper.findAll('.keep-ypat-card__label-text')).toHaveLength(4)
+    expect(nameRow.find('.keep-ypat-card__name').exists()).toBe(true)
+    expect(nameRow.find('.keep-ypat-card__name').text()).toContain(longName)
+    expect(memberBadge.exists()).toBe(true)
+    expect(memberBadge.text()).toContain('PRO')
+    expect(memberBadge.findComponent(KeepIcon).props('name')).toBe('gem')
   })
 
   it('renders state action button and emits action', async () => {
