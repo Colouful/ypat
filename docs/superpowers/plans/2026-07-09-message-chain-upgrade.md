@@ -588,6 +588,7 @@ git commit -m "feat: add message push log service"
 - Modify: `backend/system-wap/src/main/java/com/ypat/controller/YpatInfoController.java`
 - Modify: `backend/system-wap/src/main/java/com/ypat/controller/OauthController.java`
 - Modify: `backend/system-wap/src/main/java/com/ypat/controller/AdminYpatController.java`
+- Modify: `backend/system-web/src/main/java/com/ypat/controller/ManageController.java`
 
 - [ ] **Step 1: 在 domain(领域服务) 记录站内创建事件**
 
@@ -680,7 +681,7 @@ git diff --check -- backend/system-domain/src/main/java/com/ypat/service/MessInf
 Commit:
 
 ```bash
-git add backend/system-domain/src/main/java/com/ypat/service/MessInfoService.java backend/system-domain/src/main/java/com/ypat/service/UserService.java backend/system-wap/src/main/java/com/ypat/controller/MypatInfoController.java backend/system-wap/src/main/java/com/ypat/controller/YpatInfoController.java backend/system-wap/src/main/java/com/ypat/controller/OauthController.java backend/system-wap/src/main/java/com/ypat/controller/AdminYpatController.java
+git add backend/system-domain/src/main/java/com/ypat/service/MessInfoService.java backend/system-domain/src/main/java/com/ypat/service/UserService.java backend/system-wap/src/main/java/com/ypat/controller/MypatInfoController.java backend/system-wap/src/main/java/com/ypat/controller/YpatInfoController.java backend/system-wap/src/main/java/com/ypat/controller/OauthController.java backend/system-wap/src/main/java/com/ypat/controller/AdminYpatController.java backend/system-web/src/main/java/com/ypat/controller/ManageController.java
 git commit -m "feat: record message push events"
 ```
 
