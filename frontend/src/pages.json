@@ -251,7 +251,7 @@
         {
           "path": "web-view",
           "style": {
-            "navigationStyle": "custom"
+            "navigationBarTitleText": "外部链接"
           }
         }
       ]

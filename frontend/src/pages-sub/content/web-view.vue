@@ -1,14 +1,19 @@
 <template>
   <view class="web-view-page">
-    <KeepPageNav title="外部链接" />
-
     <web-view
       v-if="targetUrl"
       class="web-view-page__frame"
       :src="targetUrl"
+      :fullscreen="false"
       @load="handleLoad"
       @error="handleError"
     />
+
+    <!-- #ifdef H5 -->
+    <view v-if="targetUrl" class="web-view-page__copy-bar">
+      <button class="web-view-page__copy-button" @tap="copyFallbackUrl">复制链接</button>
+    </view>
+    <!-- #endif -->
 
     <view v-if="showFallback" class="web-view-page__fallback">
       <view class="web-view-page__panel">
@@ -27,10 +32,10 @@
 </template>
 
 <script setup lang="ts">
-import KeepPageNav from '@/components/business/KeepPageNav.vue'
 import { computed, ref } from 'vue'
 import { onLoad } from '@dcloudio/uni-app'
 import { copyUrl } from '@/utils/banner-link'
+import { resolveWebViewUrl } from '@/utils/banner-web-view'
 
 const targetUrl = ref('')
 const fallbackUrl = ref('')
@@ -41,24 +46,13 @@ const showFallback = computed(() => !loading.value && (!targetUrl.value || Boole
 const fallbackTitle = computed(() => (targetUrl.value ? '页面加载失败' : '无法打开链接'))
 const fallbackMessage = computed(() => errorMessage.value || '链接缺失或格式不受支持')
 
-function isAllowedUrl(url: string): boolean {
-  return /^https?:\/\//i.test(url)
-}
-
-function decodeUrl(value: string): string {
-  try {
-    return decodeURIComponent(value)
-  } catch {
-    return value
-  }
-}
-
 function handleLoad(): void {
   loading.value = false
   errorMessage.value = ''
 }
 
 function handleError(): void {
+  targetUrl.value = ''
   loading.value = false
   errorMessage.value = '当前页面暂时无法打开，请复制链接后在浏览器中访问'
 }
@@ -69,23 +63,15 @@ function copyFallbackUrl(): void {
 }
 
 onLoad((query) => {
-  const rawUrl = typeof query?.url === 'string' ? query.url : ''
-  const decodedUrl = rawUrl ? decodeUrl(rawUrl).trim() : ''
-  fallbackUrl.value = decodedUrl
+  const result = resolveWebViewUrl(query?.url)
+  targetUrl.value = result.targetUrl
+  fallbackUrl.value = result.fallbackUrl
 
-  if (!decodedUrl) {
+  if (result.errorMessage) {
     loading.value = false
-    errorMessage.value = '未提供可打开的链接'
+    errorMessage.value = result.errorMessage
     return
   }
-
-  if (!isAllowedUrl(decodedUrl)) {
-    loading.value = false
-    errorMessage.value = '仅支持 http:// 或 https:// 开头的链接'
-    return
-  }
-
-  targetUrl.value = decodedUrl
 })
 </script>
 
@@ -98,7 +84,7 @@ onLoad((query) => {
 
 .web-view-page__frame {
   width: 100%;
-  height: 100vh;
+  height: calc(100vh - 96rpx - env(safe-area-inset-bottom));
 }
 
 .web-view-page__loading,
@@ -119,6 +105,31 @@ onLoad((query) => {
 
 .web-view-page__fallback {
   z-index: 3;
+}
+
+.web-view-page__copy-bar {
+  position: fixed;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 4;
+  padding: 16rpx 32rpx calc(16rpx + env(safe-area-inset-bottom));
+  background: rgba(255, 255, 255, 0.94);
+  box-shadow: 0 -8rpx 28rpx rgba(20, 24, 31, 0.08);
+}
+
+.web-view-page__copy-button,
+.web-view-page__button {
+  border-radius: $radius-round;
+  color: #FFFFFF;
+  background: $color-primary;
+  font-size: 28rpx;
+  font-weight: 700;
+}
+
+.web-view-page__copy-button {
+  height: 64rpx;
+  line-height: 64rpx;
 }
 
 .web-view-page__spinner {
@@ -176,11 +187,6 @@ onLoad((query) => {
 
 .web-view-page__button {
   margin-top: 32rpx;
-  border-radius: $radius-round;
-  color: #FFFFFF;
-  background: $color-primary;
-  font-size: 28rpx;
-  font-weight: 700;
 }
 
 @keyframes web-view-spin {
