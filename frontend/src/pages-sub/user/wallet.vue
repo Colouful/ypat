@@ -129,8 +129,9 @@ import { computed, ref } from 'vue'
 import { onLoad, onShow, onUnload } from '@dcloudio/uni-app'
 import { useUserStore } from '@/stores/user'
 import * as paymentApi from '@/api/modules/payment'
+import * as checkinApi from '@/api/modules/checkin'
 import { APPLY_PPD, PUBLISH_PPD, RECORD_TYPE_LABELS, RecordType, VIEW_CONTACT_PPD } from '@/constants/enums'
-import type { OrderInfo, Product, RecordInfo } from '@/api/types'
+import type { CheckinToday, OrderInfo, Product, RecordInfo } from '@/api/types'
 
 type TabKey = 'earn' | 'usage' | 'records'
 
@@ -141,6 +142,8 @@ const productsLoading = ref(false)
 const paying = ref(false)
 const showRechargeModal = ref(false)
 const walletLoaded = ref(false)
+const checkinToday = ref<CheckinToday | null>(null)
+const checkinSubmitting = ref(false)
 const records = ref<RecordInfo[]>([])
 const products = ref<Product[]>([])
 const selectedId = ref<number | null>(null)
@@ -166,12 +169,12 @@ const earnGroups = computed(() => [
     items: [
       {
         title: '每日签到',
-        reward: 1,
+        reward: checkinToday.value?.rewardPpd || 1,
         desc: '每日签到获得拍豆',
-        actionText: '已签到',
+        actionText: '去签到',
         doneText: '已签到',
-        done: true,
-        action: noop,
+        done: Boolean(checkinToday.value?.checkedIn),
+        action: openCheckinConfirm,
       },
       {
         title: '邀请好友',
@@ -239,8 +242,6 @@ const usageRows = [
   { title: '查看约拍请求联系方式', normal: VIEW_CONTACT_PPD, member: VIEW_CONTACT_PPD },
 ]
 
-function noop(): void {}
-
 function formatPrice(value: number): string {
   return (Number(value || 0) / 100).toFixed(2)
 }
@@ -282,7 +283,7 @@ function refreshWalletData(includeProducts = false): Promise<void> {
 
   walletRefreshPromise = (async () => {
     if (includeProducts && products.value.length === 0) await loadProducts()
-    if (walletLoaded.value) await userStore.updateUserInfo()
+    if (walletLoaded.value || !includeProducts) await userStore.updateUserInfo()
     await fetchRecentRecords()
     walletLoaded.value = true
   })().finally(() => {
@@ -326,6 +327,72 @@ function openRechargeModal(): void {
 function closeRechargeModal(): void {
   if (paying.value) return
   showRechargeModal.value = false
+}
+
+async function loadCheckinToday(): Promise<void> {
+  if (!userStore.userInfo?.id) {
+    checkinToday.value = null
+    return
+  }
+  try {
+    const result = await checkinApi.getCheckinToday()
+    checkinToday.value = result.data || null
+  } catch {
+    checkinToday.value = null
+  }
+}
+
+function openCheckinConfirm(): void {
+  if (!userStore.userInfo?.id) {
+    uni.showToast({ title: '请先登录', icon: 'none' })
+    return
+  }
+  if (checkinSubmitting.value) return
+  if (!checkinToday.value?.enabled) return
+  if (checkinToday.value.checkedIn) {
+    uni.showToast({ title: '今日已签到', icon: 'none' })
+    return
+  }
+  uni.showModal({
+    title: checkinToday.value.confirmTitle || '每日签到',
+    content: checkinToday.value.confirmContent || `签到成功可获得 ${checkinToday.value.rewardPpd || 1} 拍豆`,
+    confirmText: '签到',
+    success: (res) => {
+      if (res.confirm) void submitCheckin()
+    },
+  })
+}
+
+async function submitCheckin(): Promise<void> {
+  if (checkinSubmitting.value) return
+  checkinSubmitting.value = true
+  try {
+    const result = await checkinApi.doCheckin()
+    const data = result.data
+    if (!data?.checkedIn) {
+      uni.showToast({ title: data?.message || '签到失败，请稍后重试', icon: 'none' })
+      await loadCheckinToday()
+      return
+    }
+    checkinToday.value = {
+      ...(checkinToday.value || {
+        enabled: true,
+        rewardPpd: data.rewardPpd || 1,
+        confirmTitle: '每日签到',
+        confirmContent: '签到成功可获得 1 拍豆',
+        checkinDate: '',
+      }),
+      checkedIn: true,
+      rewardPpd: data.rewardPpd || checkinToday.value?.rewardPpd || 1,
+    }
+    await refreshWalletData()
+    const reward = Number(data.rewardPpd || 0)
+    uni.showToast({ title: reward > 0 ? `签到成功，获得 ${reward} 拍豆` : '今日已签到', icon: 'none' })
+  } catch {
+    uni.showToast({ title: '签到失败，请稍后重试', icon: 'none' })
+  } finally {
+    checkinSubmitting.value = false
+  }
 }
 
 function isIncome(type: string): boolean {
@@ -451,9 +518,11 @@ async function pay(): Promise<void> {
 
 onLoad(() => {
   void refreshWalletData(true)
+  void loadCheckinToday()
 })
 onShow(() => {
   if (walletLoaded.value) void refreshWalletData()
+  void loadCheckinToday()
 })
 onUnload(() => {
   pollingCancelled = true
