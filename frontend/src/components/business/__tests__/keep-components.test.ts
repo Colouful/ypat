@@ -2,6 +2,7 @@
 import { mount } from '@vue/test-utils'
 import { describe, expect, it } from 'vitest'
 import KeepFilterSheet from '../KeepFilterSheet.vue'
+import KeepIcon from '../KeepIcon.vue'
 import KeepState from '../KeepState.vue'
 import KeepYpatCard from '../KeepYpatCard.vue'
 
@@ -33,6 +34,12 @@ describe('Keep components', () => {
     expect(wrapper.text()).toContain('已认证')
     expect(wrapper.text()).toContain('已缴担保金')
     expect(wrapper.text()).toContain('VIP')
+
+    expect(wrapper.findAll('.keep-ypat-card__label-text')).toHaveLength(4)
+
+    const memberBadge = wrapper.find('.keep-ypat-card__member')
+    expect(memberBadge.exists()).toBe(true)
+    expect(memberBadge.findComponent(KeepIcon).props('name')).toBe('gem')
   })
 
   it('renders negative ypat card trust states without member badge', () => {
@@ -59,6 +66,7 @@ describe('Keep components', () => {
     expect(wrapper.text()).toContain('未认证')
     expect(wrapper.text()).toContain('未缴担保金')
     expect(wrapper.text()).not.toContain('VIP')
+    expect(wrapper.find('.keep-ypat-card__member').exists()).toBe(false)
   })
 
   it('renders state action button and emits action', async () => {

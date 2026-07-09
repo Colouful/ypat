@@ -7,15 +7,19 @@
       </view>
 
       <view class="keep-ypat-card__tags">
-        <text class="keep-ypat-card__tag keep-ypat-card__tag--main">{{ item.targetLabel }}</text>
-        <text class="keep-ypat-card__tag keep-ypat-card__tag--way">{{ item.chargeLabel }}</text>
+        <text class="keep-ypat-card__tag keep-ypat-card__tag--main">
+          <text class="keep-ypat-card__label-text">{{ item.targetLabel }}</text>
+        </text>
+        <text class="keep-ypat-card__tag keep-ypat-card__tag--way">
+          <text class="keep-ypat-card__label-text">{{ item.chargeLabel }}</text>
+        </text>
         <text class="keep-ypat-card__badge" :class="item.realname ? 'keep-ypat-card__badge--real' : 'keep-ypat-card__badge--muted'">
           <KeepIcon name="shield" :size="20" />
-          {{ item.realname ? '已认证' : '未认证' }}
+          <text class="keep-ypat-card__label-text">{{ item.realname ? '已认证' : '未认证' }}</text>
         </text>
         <text class="keep-ypat-card__badge" :class="item.credit ? 'keep-ypat-card__badge--credit' : 'keep-ypat-card__badge--muted'">
           <KeepIcon name="star" :size="20" />
-          {{ item.credit ? '已缴担保金' : '未缴担保金' }}
+          <text class="keep-ypat-card__label-text">{{ item.credit ? '已缴担保金' : '未缴担保金' }}</text>
         </text>
       </view>
 
@@ -125,6 +129,7 @@ defineEmits<{
   align-items: center;
   justify-content: center;
   gap: 6rpx;
+  min-width: 0;
   min-height: 42rpx;
   max-width: 100%;
   padding: 0 12rpx;
@@ -132,6 +137,12 @@ defineEmits<{
   font-size: 22rpx;
   font-weight: 700;
   line-height: 1;
+}
+
+.keep-ypat-card__label-text {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
   white-space: nowrap;
 }
 
@@ -209,7 +220,7 @@ defineEmits<{
   flex: none;
   padding: 0 10rpx;
   border-radius: 999rpx;
-  color: #8A5B14;
+  color: #9C7836;
   background: $color-gold-soft;
   border: 1rpx solid rgba(156, 120, 54, 0.2);
   font-size: 20rpx;
