@@ -17,6 +17,18 @@ const SCENE_TEMPLATE_IDS: Record<SubscribeMessageScene, number[]> = {
   message: [0, 1, 2],
 }
 
+let templateCache: TemplateIdItem[] | null = null
+
+export async function preloadMessageSubscribeTemplates(): Promise<void> {
+  if (templateCache) return
+  try {
+    const res = await getTemplateIds()
+    templateCache = res.data || []
+  } catch {
+    templateCache = []
+  }
+}
+
 export async function requestMessageSubscribe(scene: SubscribeMessageScene): Promise<SubscribeMessageResult> {
   const api = (uni as unknown as {
     requestSubscribeMessage?: (options: {
@@ -65,10 +77,15 @@ export function pickTemplateIds(scene: SubscribeMessageScene, templates: Templat
 }
 
 async function resolveTemplateIds(scene: SubscribeMessageScene): Promise<string[]> {
+  if (templateCache) {
+    return pickTemplateIds(scene, templateCache)
+  }
   try {
     const res = await getTemplateIds()
+    templateCache = res.data || []
     return pickTemplateIds(scene, res.data || [])
   } catch {
+    templateCache = []
     return []
   }
 }

@@ -71,7 +71,7 @@ import * as ypatApi from '@/api/modules/ypat'
 import { normalizeImageUrl } from '@/api/adapters'
 import { getProfessLabel, TARGET_LABELS } from '@/constants/enums'
 import { useUserStore } from '@/stores/user'
-import { requestMessageSubscribe } from '@/utils/subscribe-message'
+import { preloadMessageSubscribeTemplates, requestMessageSubscribe } from '@/utils/subscribe-message'
 import type { YpatInfo } from '@/api/types'
 import type { WorkDetail } from '@/api/types/work'
 
@@ -209,6 +209,7 @@ onLoad((options) => {
   wx.value = userStore.userInfo?.wx || ''
   if (ypatId.value) void loadYpat()
   else void loadWork()
+  void preloadMessageSubscribeTemplates()
   if (shouldShowSafety()) setTimeout(showSafetyModal, 220)
 })
 </script>

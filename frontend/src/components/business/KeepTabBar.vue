@@ -30,7 +30,9 @@
 </template>
 
 <script setup lang="ts">
+import { computed } from 'vue'
 import KeepIcon from './KeepIcon.vue'
+import { useUserStore } from '@/stores/user'
 import { goRootTab, openPublish, type RootTabUrl } from '@/utils/tab-navigation'
 
 type TabKey = 'home' | 'work' | 'publish' | 'message' | 'mine'
@@ -47,13 +49,14 @@ const props = withDefaults(defineProps<{
   active: TabKey
 }>(), {})
 
-const items: TabItem[] = [
+const userStore = useUserStore()
+const items = computed<TabItem[]>(() => [
   { key: 'home', label: '首页', icon: 'home', url: '/pages/home/index' },
   { key: 'work', label: '作品', icon: 'compass', url: '/pages/work/index' },
   { key: 'publish', label: '发布', icon: 'plus-circle' },
-  { key: 'message', label: '消息', icon: 'mail', url: '/pages/message/index' },
+  { key: 'message', label: '消息', icon: 'mail', url: '/pages/message/index', dot: userStore.unreadCount > 0 },
   { key: 'mine', label: '我的', icon: 'user', url: '/pages/mine/index' },
-]
+])
 
 const inactiveColor = '#B3B8BE'
 const primaryColor = '#23C268'
