@@ -84,16 +84,25 @@
           <text class="recharge-modal__close" @tap="closeRechargeModal">×</text>
         </view>
         <view v-if="productsLoading" class="state">套餐加载中...</view>
-        <view v-else-if="products.length === 0" class="state">暂无可用充值套餐</view>
+        <view v-else-if="recommendedProducts.length === 0" class="state">暂无可用充值套餐</view>
         <view v-else class="product-grid">
           <view
-            v-for="item in products"
+            v-for="item in recommendedProducts"
             :key="item.id"
-            :class="['product-card', { 'product-card--active': selectedId === item.id }]"
+            :class="[
+              'product-card',
+              {
+                'product-card--active': selectedId === item.id,
+                'product-card--recommended': isRecommendedProduct(item),
+              },
+            ]"
             @tap="selectedId = item.id"
           >
-            <text class="product-card__amount">{{ item.currval }} 拍豆</text>
+            <text v-if="isRecommendedProduct(item)" class="product-card__badge">优先推荐</text>
+            <text class="product-card__label">充值金额</text>
             <text class="product-card__price">¥{{ formatPrice(item.oldval) }}</text>
+            <text class="product-card__label product-card__label--ppd">获得拍豆数</text>
+            <text class="product-card__amount">{{ item.currval }} 拍豆</text>
           </view>
         </view>
 
@@ -128,11 +137,14 @@ const recordsLoading = ref(true)
 const productsLoading = ref(false)
 const paying = ref(false)
 const showRechargeModal = ref(false)
+const walletLoaded = ref(false)
 const records = ref<RecordInfo[]>([])
 const products = ref<Product[]>([])
 const selectedId = ref<number | null>(null)
 const incomeTypes = new Set<string>([RecordType.TOPUP, RecordType.INVITE, RecordType.SYSTEM])
 let pollingCancelled = false
+let walletRefreshPromise: Promise<void> | null = null
+let productLoadPromise: Promise<void> | null = null
 
 const tabs: Array<{ key: TabKey; label: string }> = [
   { key: 'earn', label: '获得拍豆' },
@@ -140,6 +152,7 @@ const tabs: Array<{ key: TabKey; label: string }> = [
   { key: 'records', label: '拍豆记录' },
 ]
 
+const recommendedProducts = computed(() => sortProductsByRecommendation(products.value))
 const selected = computed(() => products.value.find((item) => item.id === selectedId.value) || null)
 const userInfo = computed(() => userStore.userInfo)
 
@@ -228,6 +241,21 @@ function formatPrice(value: number): string {
   return (Number(value || 0) / 100).toFixed(2)
 }
 
+function isRecommendedProduct(item: Product): boolean {
+  return item.recommended === '1'
+}
+
+function sortProductsByRecommendation(list: Product[]): Product[] {
+  return list
+    .map((item, index) => ({ item, index }))
+    .sort((left, right) => {
+      const recommendDiff = Number(isRecommendedProduct(right.item)) - Number(isRecommendedProduct(left.item))
+      if (recommendDiff !== 0) return recommendDiff
+      return left.index - right.index
+    })
+    .map(({ item }) => item)
+}
+
 async function fetchRecentRecords(): Promise<void> {
   recordsLoading.value = true
   try {
@@ -245,22 +273,45 @@ async function fetchRecentRecords(): Promise<void> {
   }
 }
 
+function refreshWalletData(includeProducts = false): Promise<void> {
+  if (walletRefreshPromise) return walletRefreshPromise
+
+  walletRefreshPromise = (async () => {
+    if (includeProducts && products.value.length === 0) await loadProducts()
+    if (walletLoaded.value) await userStore.updateUserInfo()
+    await fetchRecentRecords()
+    walletLoaded.value = true
+  })().finally(() => {
+    walletRefreshPromise = null
+  })
+
+  return walletRefreshPromise
+}
+
 async function loadProducts(): Promise<void> {
-  productsLoading.value = true
-  try {
-    let result = await paymentApi.getProductList({ page: 0, size: 20, status: '0' })
-    let content = result.data?.content || []
-    if (content.length === 0) {
-      result = await paymentApi.getProductList({ page: 0, size: 20, status: '1' })
-      content = result.data?.content || []
+  if (productLoadPromise) return productLoadPromise
+
+  productLoadPromise = (async () => {
+    productsLoading.value = true
+    try {
+      let result = await paymentApi.getProductList({ page: 0, size: 20, status: '0' })
+      let content = result.data?.content || []
+      if (content.length === 0) {
+        result = await paymentApi.getProductList({ page: 0, size: 20, status: '1' })
+        content = result.data?.content || []
+      }
+      const sortedProducts = sortProductsByRecommendation(content)
+      products.value = sortedProducts
+      selectedId.value = sortedProducts[0]?.id || null
+    } catch (error) {
+      uni.showToast({ title: error instanceof Error ? error.message : '套餐加载失败', icon: 'none' })
+    } finally {
+      productsLoading.value = false
+      productLoadPromise = null
     }
-    products.value = content
-    selectedId.value = content[0]?.id || null
-  } catch (error) {
-    uni.showToast({ title: error instanceof Error ? error.message : '套餐加载失败', icon: 'none' })
-  } finally {
-    productsLoading.value = false
-  }
+  })()
+
+  return productLoadPromise
 }
 
 function openRechargeModal(): void {
@@ -395,12 +446,10 @@ async function pay(): Promise<void> {
 }
 
 onLoad(() => {
-  void loadProducts()
-  void fetchRecentRecords()
+  void refreshWalletData(true)
 })
 onShow(() => {
-  void userStore.updateUserInfo()
-  void fetchRecentRecords()
+  if (walletLoaded.value) void refreshWalletData()
 })
 onUnload(() => {
   pollingCancelled = true
@@ -410,13 +459,13 @@ onUnload(() => {
 <style scoped lang="scss">
 .page {
   min-height: 100vh;
-  background: #f5f5f6;
+  background: $color-bg-page;
 }
 
 .hero {
   min-height: 386rpx;
   color: #fff;
-  background: linear-gradient(135deg, #ff6f8a 0%, #ff4e63 100%);
+  background: linear-gradient(135deg, $color-primary 0%, $color-primary-dark 100%);
 }
 
 .hero :deep(.keep-page-nav__bar) {
@@ -463,7 +512,7 @@ onUnload(() => {
   width: 176rpx;
   height: 76rpx;
   border-radius: 999rpx;
-  color: #f25668;
+  color: $color-primary-dark;
   background: #fff;
   font-size: 28rpx;
   font-weight: 700;
@@ -510,7 +559,7 @@ onUnload(() => {
   width: 60rpx;
   height: 6rpx;
   border-radius: 999rpx;
-  background: #f85a6d;
+  background: $color-primary;
   content: '';
   transform: translateX(-50%);
 }
@@ -539,7 +588,7 @@ onUnload(() => {
   width: 6rpx;
   height: 28rpx;
   border-radius: 999rpx;
-  background: #ff5a69;
+  background: $color-primary;
   content: '';
 }
 
@@ -569,7 +618,7 @@ onUnload(() => {
 }
 
 .task-row__reward {
-  color: #f75b6f;
+  color: $color-primary-dark;
   font-size: 28rpx;
   font-weight: 700;
 }
@@ -591,7 +640,7 @@ onUnload(() => {
   height: 60rpx;
   border-radius: 999rpx;
   color: #fff;
-  background: #f85a6d;
+  background: $color-primary;
   font-size: 25rpx;
   font-weight: 700;
   line-height: 60rpx;
@@ -620,7 +669,7 @@ onUnload(() => {
 
 .usage-head text:nth-child(n + 2),
 .usage-row text:nth-child(n + 2) {
-  color: #f85a6d;
+  color: $color-primary-dark;
   text-align: right;
 }
 
@@ -650,7 +699,7 @@ onUnload(() => {
 }
 
 .record-row__amount {
-  color: #f85a6d;
+  color: $color-primary-dark;
   font-size: 29rpx;
   font-weight: 700;
 }
@@ -661,7 +710,7 @@ onUnload(() => {
 
 .record-more {
   padding: 30rpx 0;
-  color: #f85a6d;
+  color: $color-primary-dark;
   font-size: 26rpx;
   font-weight: 700;
   text-align: center;
@@ -688,7 +737,7 @@ onUnload(() => {
 
 .recharge-modal__panel {
   width: 100%;
-  max-height: 78vh;
+  max-height: 88vh;
   padding: 30rpx 28rpx 44rpx;
   border-radius: 34rpx 34rpx 0 0;
   background: #fff;
@@ -724,31 +773,64 @@ onUnload(() => {
 }
 
 .product-card {
-  padding: 30rpx 18rpx;
+  position: relative;
+  min-height: 184rpx;
+  padding: 30rpx 18rpx 24rpx;
   border: 2rpx solid #f0f0f0;
   border-radius: 8rpx;
   background: #fafafa;
+  box-sizing: border-box;
   text-align: center;
 }
 
 .product-card--active {
-  border-color: #f85a6d;
-  background: #fff5f7;
+  border-color: $color-primary;
+  background: $color-primary-light;
 }
 
-.product-card__amount {
+.product-card--recommended {
+  border-color: $color-primary-dark;
+}
+
+.product-card__badge {
+  position: absolute;
+  top: 0;
+  right: 0;
+  min-width: 112rpx;
+  height: 38rpx;
+  padding: 0 12rpx;
+  border-radius: 0 6rpx 0 8rpx;
+  color: #fff;
+  background: $color-primary;
+  font-size: 21rpx;
+  font-weight: 700;
+  line-height: 38rpx;
+  box-sizing: border-box;
+}
+
+.product-card__label {
+  display: block;
+  color: #888;
+  font-size: 23rpx;
+  line-height: 1.2;
+}
+
+.product-card__label--ppd {
+  margin-top: 18rpx;
+}
+
+.product-card__amount,
+.product-card__price {
   display: block;
   color: #222;
   font-size: 31rpx;
   font-weight: 800;
+  line-height: 1.25;
 }
 
 .product-card__price {
-  display: block;
-  margin-top: 10rpx;
-  color: #f85a6d;
-  font-size: 27rpx;
-  font-weight: 700;
+  margin-top: 8rpx;
+  color: $color-primary-dark;
 }
 
 .pay-btn {
@@ -756,7 +838,7 @@ onUnload(() => {
   height: 86rpx;
   border-radius: 999rpx;
   color: #fff;
-  background: #f85a6d;
+  background: $color-primary;
   font-size: 29rpx;
   font-weight: 800;
   line-height: 86rpx;

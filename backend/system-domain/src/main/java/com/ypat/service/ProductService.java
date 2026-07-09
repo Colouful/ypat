@@ -47,6 +47,9 @@ public class ProductService {
         if (StringUtils.isBlank(productQo.getStatus())) {
             productQo.setStatus("0");
         }
+        if (StringUtils.isBlank(productQo.getRecommended())) {
+            productQo.setRecommended("0");
+        }
         Product product = CopyUtil.copy(productQo, Product.class);
         productRepository.save(product);
     }
@@ -89,7 +92,7 @@ public class ProductService {
      * @return
      */
     public Page<Product> findPageByPredicate(ProductQo queryQo){
-        Sort sort = new Sort(Sort.Direction.DESC, "id");
+        Sort sort = new Sort(Sort.Direction.DESC, "recommended").and(new Sort(Sort.Direction.DESC, "id"));
         Pageable pageable  = new PageRequest(queryQo.getPage(), queryQo.getSize(), sort);
         return productRepository.findAll(new Specification<Product>() {
             @Override

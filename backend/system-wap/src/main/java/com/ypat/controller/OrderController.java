@@ -69,7 +69,7 @@ public class OrderController {
             if (StringUtils.isEmpty(orderQo.getProductid())) throw new SysException(ResponseCode.FAIL_PARA);
             ProductQo product = GsonUtils.fromJson(productServiceClient.get(orderQo.getProductid()), ProductQo.class);
             if (product == null || product.getOldval() == null || product.getOldval() < 1) throw new SysException(ResponseCode.FAIL_NOT);
-            if (!"1".equals(product.getStatus())) throw new SysException(ResponseCode.FAIL_VAL);
+            if (!isProductUpStatus(product.getStatus())) throw new SysException(ResponseCode.FAIL_VAL);
             orderQo.setTotal_fee(product.getOldval());
         } else if (orderQo.getTotal_fee() == null || orderQo.getTotal_fee() < 1) {
             throw new SysException(ResponseCode.FAIL_PARA);
@@ -102,5 +102,9 @@ public class OrderController {
     public String findPage(OrderQo orderQo) {
         orderQo.setUserid(Long.parseLong(UserUtil.getUserId()));
         return orderServiceClient.findPage(orderQo);
+    }
+
+    private boolean isProductUpStatus(String status) {
+        return "0".equals(status) || "up".equalsIgnoreCase(status);
     }
 }

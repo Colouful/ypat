@@ -238,6 +238,7 @@ export interface Product {
   currval: number
   oldval: number
   status: string
+  recommended?: string
 }
 
 export interface ProductListParams extends PageParams {

@@ -10,8 +10,8 @@ SET NAMES utf8mb4;
 --    docker exec -i ypat-workspace-mysql-1 \
 --        mysql -uroot -proot ypat < docker/mysql/dev-seed.sql
 --
---    重复执行安全：所有 INSERT 都是 INSERT IGNORE + 固定主键 id，
---    重跑不会产生重复数据，也不会破坏已有内容。
+--    重复执行安全：大多数 INSERT 使用 INSERT IGNORE + 固定主键 id；
+--    t_product 会通过 ON DUPLICATE KEY UPDATE 收敛到当前拍豆充值套餐配置。
 --
 -- ⚠️ 安全约束：仅本地/开发环境使用。禁止在 staging/production 执行。
 --
@@ -47,10 +47,33 @@ INSERT IGNORE INTO t_banner (id, title, imgpath, status, userid, credate) VALUES
     (3, '春季约拍优惠中',        'https://picsum.photos/seed/banner3/1200/400', 'down', 1, NOW());
 
 -- ---------- 3. Product ----------
-INSERT IGNORE INTO t_product (id, name, currval, oldval, status) VALUES
-    (1, '基础人像套餐（1小时）', 29900, 39900, 'up'),
-    (2, '写真套餐（3小时）',    69900, 89900, 'up'),
-    (3, '婚纱摄影套餐',        199900, 259900, 'up');
+SET @product_recommended_exists := (
+    SELECT COUNT(*)
+    FROM INFORMATION_SCHEMA.COLUMNS
+    WHERE TABLE_SCHEMA = DATABASE()
+      AND TABLE_NAME = 't_product'
+      AND COLUMN_NAME = 'recommended'
+);
+SET @product_recommended_sql := IF(
+    @product_recommended_exists = 0,
+    'ALTER TABLE t_product ADD COLUMN recommended varchar(1) DEFAULT ''0''',
+    'SELECT 1'
+);
+PREPARE product_recommended_stmt FROM @product_recommended_sql;
+EXECUTE product_recommended_stmt;
+DEALLOCATE PREPARE product_recommended_stmt;
+
+INSERT INTO t_product (id, name, currval, oldval, status, recommended) VALUES
+    (1, '10拍豆',  10,  990, '0', '0'),
+    (2, '30拍豆',  30, 2690, '0', '1'),
+    (3, '60拍豆',  60, 4990, '0', '0'),
+    (4, '100拍豆', 100, 7990, '0', '0')
+ON DUPLICATE KEY UPDATE
+    name = VALUES(name),
+    currval = VALUES(currval),
+    oldval = VALUES(oldval),
+    status = VALUES(status),
+    recommended = VALUES(recommended);
 
 -- ---------- 4. Article ----------
 INSERT IGNORE INTO t_article (id, title, describ, content, imgpath, plat, flag, status, readtimes, credate, userid) VALUES

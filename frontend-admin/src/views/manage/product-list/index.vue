@@ -55,6 +55,11 @@ onMounted(fetchList)
       <el-table-column prop="oldval" label="支付金额" width="120" align="center">
         <template #default="{row}">¥{{ (Number(row.oldval || 0) / 100).toFixed(2) }}</template>
       </el-table-column>
+      <el-table-column label="推荐" width="90" align="center">
+        <template #default="{row}">
+          <el-tag :type="row.recommended === '1' ? 'warning' : 'info'" size="small">{{ row.recommended === '1' ? '是' : '否' }}</el-tag>
+        </template>
+      </el-table-column>
       <el-table-column label="状态" width="120" align="center"><template #default="{row}"><StatusTag :status="row.status" type="product"/></template></el-table-column>
       <el-table-column label="操作" width="180" align="center" fixed="right">
         <template #default="{row}">

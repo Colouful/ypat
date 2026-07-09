@@ -12,6 +12,7 @@ export interface Product {
   currval: number
   oldval: number
   status: string
+  recommended?: string
 }
 
 /** 产品列表查询参数 */

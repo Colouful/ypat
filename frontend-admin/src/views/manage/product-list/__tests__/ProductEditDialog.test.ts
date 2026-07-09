@@ -12,4 +12,12 @@ describe('product edit dialog source contract', () => {
     expect(source).toContain('元')
     expect(source).toContain(':min="1"')
   })
+
+  it('allows admins to mark a ppd recharge package as preferred', () => {
+    expect(source).toContain('recommended')
+    expect(source).toContain('优先推荐')
+    expect(source).toContain('el-switch')
+    expect(source).toContain('active-value="1"')
+    expect(source).toContain('inactive-value="0"')
+  })
 })

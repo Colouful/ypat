@@ -1,16 +1,12 @@
 package com.ypat;
 
-import org.springframework.format.annotation.DateTimeFormat;
-
-import java.math.BigDecimal;
-import java.util.Date;
-
 public class ProductQo extends PageQo implements java.io.Serializable {
     private Long id;
     private String name;
     private Integer currval;
     private Integer oldval;
     private String status;
+    private String recommended;
 
     public ProductQo() {
     }
@@ -53,5 +49,13 @@ public class ProductQo extends PageQo implements java.io.Serializable {
 
     public void setStatus(String status) {
         this.status = status;
+    }
+
+    public String getRecommended() {
+        return recommended;
+    }
+
+    public void setRecommended(String recommended) {
+        this.recommended = recommended;
     }
 }

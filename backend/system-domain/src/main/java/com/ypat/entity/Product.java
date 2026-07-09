@@ -4,7 +4,6 @@ import org.hibernate.annotations.DynamicInsert;
 import org.hibernate.annotations.DynamicUpdate;
 
 import javax.persistence.*;
-import java.math.BigDecimal;
 
 @Entity
 @Table(name = "t_product")
@@ -18,6 +17,8 @@ public class Product implements java.io.Serializable {
     private Integer currval;
     private Integer oldval;
     private String status;
+    @Column(length = 1)
+    private String recommended;
 
     public Long getId() {
         return id;
@@ -57,5 +58,13 @@ public class Product implements java.io.Serializable {
 
     public void setStatus(String status) {
         this.status = status;
+    }
+
+    public String getRecommended() {
+        return recommended;
+    }
+
+    public void setRecommended(String recommended) {
+        this.recommended = recommended;
     }
 }

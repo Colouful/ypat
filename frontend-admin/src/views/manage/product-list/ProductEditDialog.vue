@@ -8,7 +8,14 @@ const props = defineProps<{ visible: boolean; data: Product | null }>()
 const emit = defineEmits(['update:visible', 'success'])
 const localVisible = computed({ get: () => props.visible, set: (v) => emit('update:visible', v) })
 
-const form = reactive({ id: undefined as number | undefined, name: '', currval: 1, oldval: 1, status: ProductStatus.UP.value })
+const form = reactive({
+  id: undefined as number | undefined,
+  name: '',
+  currval: 1,
+  oldval: 1,
+  status: ProductStatus.UP.value,
+  recommended: '0',
+})
 const loading = ref(false)
 const rules = {
   name: [{ required: true, message: '请输入产品名称', trigger: 'blur' }],
@@ -24,6 +31,7 @@ watch(() => props.visible, (v) => {
     form.currval = props.data?.currval ?? 1
     form.oldval = props.data?.oldval ?? 1
     form.status = props.data?.status || ProductStatus.UP.value
+    form.recommended = props.data?.recommended || '0'
   }
 })
 
@@ -50,6 +58,9 @@ async function submit() {
       <el-form-item label="支付金额" prop="oldval">
         <el-input-number v-model="form.oldval" :min="1"/>
         <span class="form-unit">分，{{ (form.oldval / 100).toFixed(2) }} 元</span>
+      </el-form-item>
+      <el-form-item label="优先推荐">
+        <el-switch v-model="form.recommended" active-value="1" inactive-value="0"/>
       </el-form-item>
     </el-form>
     <template #footer>
