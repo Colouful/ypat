@@ -18,6 +18,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
 
+import javax.annotation.PostConstruct;
 import javax.persistence.criteria.CriteriaBuilder;
 import javax.persistence.criteria.CriteriaQuery;
 import javax.persistence.criteria.Predicate;
@@ -33,6 +34,27 @@ public class ProductService {
 
     @Autowired
     private ProductRepository productRepository;
+
+    @PostConstruct
+    public void ensureDefaultPpdRechargeProducts() {
+        if (productRepository.count() > 0) {
+            return;
+        }
+        saveDefaultProduct("10拍豆", 10, 990, "0");
+        saveDefaultProduct("30拍豆", 30, 2690, "1");
+        saveDefaultProduct("60拍豆", 60, 4990, "0");
+        saveDefaultProduct("100拍豆", 100, 7990, "0");
+    }
+
+    private void saveDefaultProduct(String name, Integer currval, Integer oldval, String recommended) {
+        Product product = new Product();
+        product.setName(name);
+        product.setCurrval(currval);
+        product.setOldval(oldval);
+        product.setStatus("0");
+        product.setRecommended(recommended);
+        productRepository.save(product);
+    }
 
     public void save(ProductQo productQo){
         if (productQo == null || StringUtils.isBlank(productQo.getName())) {

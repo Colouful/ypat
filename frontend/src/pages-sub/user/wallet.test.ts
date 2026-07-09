@@ -22,6 +22,7 @@ describe('wallet page source contract', () => {
 
   it('renders recharge products as non-scrolling cards with amount, ppd and recommendation badge', () => {
     expect(source).toContain('recommendedProducts')
+    expect(source).toContain('hasRechargeProducts')
     expect(source).toContain('isRecommendedProduct')
     expect(source).toContain('product-card__badge')
     expect(source).toContain('优先推荐')
@@ -49,6 +50,9 @@ describe('wallet page source contract', () => {
 
   it('uses a taller recharge popup', () => {
     expect(source).toContain('max-height: 88vh')
+    expect(source).toContain('min-height: 640rpx')
+    expect(source).toContain('env(safe-area-inset-bottom)')
+    expect(source).toContain('recharge-empty__retry')
   })
 
   it('initializes ppd recharge products for local development', () => {

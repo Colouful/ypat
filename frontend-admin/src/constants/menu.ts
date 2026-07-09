@@ -36,7 +36,7 @@ export const menuConfig: MenuGroup[] = [
     children: [
       { title: '申请列表', path: '/manage/ypat-list', component: 'manage/ypat-list/index' },
       { title: '实名列表', path: '/manage/user/index', component: 'manage/user-list/index' },
-      { title: '产品列表', path: '/manage/product/index', component: 'manage/product-list/index' },
+      { title: '拍豆充值套餐', path: '/manage/product/index', component: 'manage/product-list/index' },
       { title: '作品管理', path: '/manage/work/index', component: 'manage/work-list/index' },
       { title: '作品投诉', path: '/manage/work-complain/index', component: 'manage/work-complain-list/index' },
       { title: '文章列表', path: '/article/index', component: 'article/list/index' },

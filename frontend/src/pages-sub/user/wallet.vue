@@ -83,8 +83,11 @@
           <text class="recharge-modal__title">拍豆充值</text>
           <text class="recharge-modal__close" @tap="closeRechargeModal">×</text>
         </view>
-        <view v-if="productsLoading" class="state">套餐加载中...</view>
-        <view v-else-if="recommendedProducts.length === 0" class="state">暂无可用充值套餐</view>
+        <view v-if="productsLoading" class="recharge-empty">套餐加载中...</view>
+        <view v-else-if="!hasRechargeProducts" class="recharge-empty">
+          <text>暂无可用充值套餐</text>
+          <button class="recharge-empty__retry" @tap.stop="loadProducts">重新加载</button>
+        </view>
         <view v-else class="product-grid">
           <view
             v-for="item in recommendedProducts"
@@ -107,13 +110,13 @@
         </view>
 
         <!-- #ifdef MP-WEIXIN -->
-        <button class="pay-btn" :disabled="!selected || paying" :loading="paying" @tap="pay">
+        <button v-if="hasRechargeProducts" class="pay-btn" :disabled="!selected || paying" :loading="paying" @tap="pay">
           {{ paying ? '处理中...' : `立即充值 ¥${selected ? formatPrice(selected.oldval) : '0.00'}` }}
         </button>
         <!-- #endif -->
 
         <!-- #ifndef MP-WEIXIN -->
-        <view class="unsupported">当前仅支持微信小程序支付</view>
+        <view v-if="hasRechargeProducts" class="unsupported">当前仅支持微信小程序支付</view>
         <!-- #endif -->
       </view>
     </view>
@@ -155,6 +158,7 @@ const tabs: Array<{ key: TabKey; label: string }> = [
 const recommendedProducts = computed(() => sortProductsByRecommendation(products.value))
 const selected = computed(() => products.value.find((item) => item.id === selectedId.value) || null)
 const userInfo = computed(() => userStore.userInfo)
+const hasRechargeProducts = computed(() => recommendedProducts.value.length > 0)
 
 const earnGroups = computed(() => [
   {
@@ -737,8 +741,9 @@ onUnload(() => {
 
 .recharge-modal__panel {
   width: 100%;
+  min-height: 640rpx;
   max-height: 88vh;
-  padding: 30rpx 28rpx 44rpx;
+  padding: 30rpx 28rpx calc(44rpx + env(safe-area-inset-bottom));
   border-radius: 34rpx 34rpx 0 0;
   background: #fff;
   box-sizing: border-box;
@@ -770,6 +775,33 @@ onUnload(() => {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
   gap: 18rpx;
+}
+
+.recharge-empty {
+  display: flex;
+  min-height: 340rpx;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: #999;
+  font-size: 28rpx;
+  text-align: center;
+}
+
+.recharge-empty__retry {
+  width: 176rpx;
+  height: 60rpx;
+  margin-top: 28rpx;
+  border-radius: 999rpx;
+  color: #fff;
+  background: $color-primary;
+  font-size: 25rpx;
+  font-weight: 700;
+  line-height: 60rpx;
+}
+
+.recharge-empty__retry::after {
+  border: 0;
 }
 
 .product-card {
