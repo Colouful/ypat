@@ -1,3 +1,6 @@
+SET NAMES utf8mb4;
+SET time_zone = '+08:00';
+
 CREATE TABLE IF NOT EXISTS `t_checkin_rule` (
   `id` bigint(20) NOT NULL AUTO_INCREMENT,
   `enabled` varchar(1) NOT NULL DEFAULT '1' COMMENT '是否启用: 1启用 0关闭',
@@ -25,4 +28,4 @@ CREATE TABLE IF NOT EXISTS `t_checkin_record` (
 INSERT INTO `t_checkin_rule` (`id`, `enabled`, `reward_ppd`, `confirm_title`, `confirm_content`, `created_at`, `updated_at`)
 SELECT 1, '1', 1, '每日签到', '签到成功可获得 1 拍豆', NOW(), NOW()
 FROM DUAL
-WHERE NOT EXISTS (SELECT 1 FROM `t_checkin_rule` WHERE `id` = 1);
+WHERE NOT EXISTS (SELECT 1 FROM `t_checkin_rule`);
