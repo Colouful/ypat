@@ -38,6 +38,8 @@ export interface UserInfo {
   avatarurl?: string
   realnameflag?: string
   creditflag?: string
+  memberActive?: boolean
+  memberLevel?: string
   pubtimes?: number
   rectimes?: number
   coltimes?: number

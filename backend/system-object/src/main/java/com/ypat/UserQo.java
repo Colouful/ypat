@@ -30,6 +30,8 @@ public class UserQo extends PageQo implements java.io.Serializable{
     private String realnameflag;
     @Size(max = 1, message = "creditflag最大一位")
     private String creditflag;
+    private Boolean memberActive;
+    private String memberLevel;
     private Integer pubtimes;
     private Integer rectimes;
     private Integer coltimes;
@@ -235,6 +237,22 @@ public class UserQo extends PageQo implements java.io.Serializable{
         this.creditflag = creditflag;
     }
 
+    public Boolean getMemberActive() {
+        return memberActive;
+    }
+
+    public void setMemberActive(Boolean memberActive) {
+        this.memberActive = memberActive;
+    }
+
+    public String getMemberLevel() {
+        return memberLevel;
+    }
+
+    public void setMemberLevel(String memberLevel) {
+        this.memberLevel = memberLevel;
+    }
+
     public Integer getPubtimes() {
         return pubtimes;
     }
@@ -404,6 +422,8 @@ public class UserQo extends PageQo implements java.io.Serializable{
                 ", avatarurl='" + avatarurl + '\'' +
                 ", realnameflag='" + realnameflag + '\'' +
                 ", creditflag='" + creditflag + '\'' +
+                ", memberActive=" + memberActive +
+                ", memberLevel='" + memberLevel + '\'' +
                 ", pubtimes=" + pubtimes +
                 ", rectimes=" + rectimes +
                 ", coltimes=" + coltimes +

@@ -6,10 +6,7 @@
           <KeepIcon name="search" :size="46" color="#B3B8BE" />
           <text class="home-search__placeholder">搜索摄影师 / 风格 / 城市</text>
         </view>
-        <view class="home-message" @tap="goMessage">
-          <KeepIcon name="mail" :size="38" color="#1B1E23" />
-          <text v-if="unreadCount > 0" class="home-message__badge">{{ unreadCount > 9 ? '9+' : unreadCount }}</text>
-        </view>
+        <!-- 新版首页暂不展示消息入口，未读刷新逻辑保留给后续入口复用。 -->
       </view>
 
       <HomeBanner />
@@ -107,8 +104,8 @@ import KeepTabBar from '@/components/business/KeepTabBar.vue'
 import KeepYpatCard, { type KeepYpatCardItem } from '@/components/business/KeepYpatCard.vue'
 import HomeBanner from '@/components/business/HomeBanner.vue'
 import SplashOverlay from '@/components/business/SplashOverlay.vue'
-import { openMessage } from '@/utils/tab-navigation'
 import type { YpatInfo } from '@/api/types/index'
+import { resolveYpatCreditFlag, resolveYpatRealnameFlag } from '@/utils/ypat-trust'
 
 type TabKey = 'recommend' | 'nearby' | 'latest'
 type FilterValue = Record<string, string[]>
@@ -117,7 +114,6 @@ const userStore = useUserStore()
 const appStore = useAppStore()
 
 const statusBarHeight = computed(() => appStore.statusBarHeight)
-const unreadCount = computed(() => userStore.unreadCount)
 
 const currentCity = ref('')
 const activeTab = ref<TabKey>('recommend')
@@ -150,10 +146,10 @@ const quickItems = [
 
 const quickChips = [
   { label: '全部', value: 'all' },
+  { label: '约模特', value: 'model' },
+  { label: '约摄影师', value: 'photographer' },
   { label: '希望互勉', value: 'free' },
   { label: '可付费', value: 'pay' },
-  { label: '约摄影师', value: 'photographer' },
-  { label: '约模特', value: 'model' },
   { label: 'INS', value: 'INS' },
   { label: '胶片', value: '胶片' },
   { label: '情绪', value: '情绪' },
@@ -201,8 +197,10 @@ const cardItems = computed<KeepYpatCardItem[]>(() => list.value.map((item) => ({
   avatar: normalizeImageUrl(item.userQo?.imgpath || item.userQo?.avatarurl) || '/static/default-avatar.png',
   time: item.timeStr || item.pubdate || '刚刚',
   applyCount: item.pattimes || item.readtimes || 0,
-  realname: item.realnameflag === '1' || item.userQo?.realnameflag === '1',
-  credit: item.creditflag === '1' || item.userQo?.creditflag === '1',
+  realname: resolveYpatRealnameFlag(item.userQo?.realnameflag, item.realnameflag),
+  credit: resolveYpatCreditFlag(item.creditflag, item.userQo?.creditflag),
+  memberActive: item.userQo?.memberActive === true,
+  memberLevel: item.userQo?.memberLevel,
 })))
 
 function buildParams() {
@@ -314,10 +312,6 @@ function goSearch() {
   uni.navigateTo({ url: '/pages-sub/ypat/search' })
 }
 
-function goMessage() {
-  openMessage()
-}
-
 async function getLocation() {
   // 必须由用户点击触发（不能在 onMounted/onLoad 自动调，否则微信直接拒且不弹原生框）
   // 第一步：检查是否已授权
@@ -422,35 +416,6 @@ onReachBottom(() => {
   color: $color-text-helper;
   font-size: 28rpx;
   font-weight: 700;
-}
-
-.home-message {
-  position: relative;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 72rpx;
-  height: 72rpx;
-  border-radius: 50%;
-  background: #fff;
-  box-shadow: $shadow-keep-card;
-}
-
-.home-message__badge {
-  position: absolute;
-  top: -8rpx;
-  right: -10rpx;
-  min-width: 34rpx;
-  height: 34rpx;
-  padding: 0 8rpx;
-  border: 4rpx solid #fff;
-  border-radius: $radius-round;
-  color: #fff;
-  background: $color-accent-red;
-  font-size: 20rpx;
-  font-weight: 900;
-  line-height: 34rpx;
-  text-align: center;
 }
 
 .quick-grid {

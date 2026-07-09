@@ -1,82 +1,222 @@
 <template>
   <view class="detail-page">
-    <KeepState v-if="loading" type="loading" title="加载中..." />
-    <KeepState v-else-if="errorMessage" type="error" :title="errorMessage" button-text="重新加载" @action="load" />
+    <KeepState
+      v-if="loading"
+      type="loading"
+      title="加载中..."
+    />
+    <KeepState
+      v-else-if="errorMessage"
+      type="error"
+      :title="errorMessage"
+      button-text="重新加载"
+      @action="load"
+    />
     <template v-else-if="detail">
       <view class="detail-topbar">
-        <view class="detail-icon-button" @tap="back">
-          <KeepIcon name="chevron-left" :size="42" />
+        <view
+          class="detail-icon-button"
+          @tap="back"
+        >
+          <KeepIcon
+            name="chevron-left"
+            :size="42"
+          />
         </view>
-        <view class="detail-icon-button" @tap="copyShareLink">
-          <KeepIcon name="copy" :size="38" />
+        <view
+          class="detail-icon-button"
+          @tap="copyShareLink"
+        >
+          <KeepIcon
+            name="copy"
+            :size="38"
+          />
         </view>
       </view>
 
       <view class="hero-wrap">
-        <swiper class="hero-swiper" circular :indicator-dots="images.length > 1">
-          <swiper-item v-for="(image, index) in images" :key="image">
-            <image :src="image" mode="aspectFill" @tap="preview(index)" />
+        <swiper
+          class="hero-swiper"
+          circular
+          :indicator-dots="images.length > 1"
+        >
+          <swiper-item
+            v-for="(image, index) in images"
+            :key="image"
+          >
+            <image
+              :src="image"
+              mode="aspectFill"
+              @tap="preview(index)"
+            />
           </swiper-item>
         </swiper>
-        <view class="hero-count">1 / {{ images.length || 1 }}</view>
+        <view class="hero-count">
+          1 / {{ images.length || 1 }}
+        </view>
       </view>
 
       <view class="detail-sheet">
-        <view class="detail-tags">
-          <text class="detail-tag detail-tag--green">{{ detail.targetTxt || targetLabel }}</text>
-          <text class="detail-tag detail-tag--green">{{ detail.chargewayTxt || detail.chargeway }}</text>
+        <view class="detail-tags detail-tag-row">
+          <text class="detail-tag detail-tag--green">
+            <text class="detail-tag__text">
+              {{ detail.targetTxt || targetLabel }}
+            </text>
+          </text>
+          <text class="detail-tag detail-tag--green">
+            <text class="detail-tag__text">
+              {{ detail.chargewayTxt || detail.chargeway }}
+            </text>
+          </text>
           <text class="detail-tag detail-tag--icon">
-            <KeepIcon name="map-pin" :size="24" />
-            {{ cityText }}
+            <KeepIcon
+              name="map-pin"
+              :size="24"
+            />
+            <text class="detail-tag__text">
+              {{ cityText }}
+            </text>
           </text>
         </view>
+        <view class="detail-trust-row">
+          <view
+            v-for="item in trustItems"
+            :key="item.key"
+            :class="['detail-trust-chip', `detail-trust-chip--${item.tone}`]"
+          >
+            <KeepIcon
+              :name="item.icon"
+              :size="22"
+            />
+            <text class="detail-trust-chip__text">
+              {{ item.label }}
+            </text>
+          </view>
+        </view>
 
-        <text class="detail-title">{{ detailTitle }}</text>
+        <text class="detail-title">
+          {{ detailTitle }}
+        </text>
         <view class="detail-meta">
           <text class="detail-meta__item">
-            <KeepIcon name="eye" :size="26" />
+            <KeepIcon
+              name="eye"
+              :size="26"
+            />
             {{ detail.readtimes || 0 }}
           </text>
           <text class="detail-meta__item">
-            <KeepIcon name="handshake" :size="26" />
+            <KeepIcon
+              name="handshake"
+              :size="26"
+            />
             约拍 {{ detail.pattimes || 0 }}
           </text>
           <text class="detail-meta__item">
-            <KeepIcon name="star" :size="26" />
+            <KeepIcon
+              name="star"
+              :size="26"
+            />
             收藏 {{ detail.coltimes || 0 }}
           </text>
         </view>
-        <text class="detail-body">{{ detail.describ }}</text>
+        <text class="detail-body">
+          {{ detail.describ }}
+        </text>
 
-        <view v-if="styleTags.length" class="style-tags">
-          <text v-for="style in styleTags" :key="style" class="style-tag">{{ style }}</text>
+        <view
+          v-if="styleTags.length"
+          class="style-tags"
+        >
+          <text
+            v-for="style in styleTags"
+            :key="style"
+            class="style-tag"
+          >
+            {{ style }}
+          </text>
         </view>
 
-        <view class="author-card" @tap="goProfile">
-          <image class="author-card__avatar" :src="authorAvatar" mode="aspectFill" />
+        <view
+          class="author-card"
+          @tap="goProfile"
+        >
+          <image
+            class="author-card__avatar"
+            :src="authorAvatar"
+            mode="aspectFill"
+          />
           <view class="author-card__info">
-            <text class="author-card__name">{{ detail.userQo?.nickname || '匿名用户' }}</text>
-            <text class="author-card__desc">{{ authorDesc }}</text>
+            <view class="author-card__name-row">
+              <text class="author-card__name">
+                {{ authorName }}
+              </text>
+              <text
+                v-if="isMemberActive"
+                class="author-card__member"
+              >
+                {{ memberBadgeLabel }}
+              </text>
+            </view>
+            <view class="author-card__trust">
+              <text :class="['author-card__trust-tag', isRealname ? 'author-card__trust-tag--verified' : 'author-card__trust-tag--muted']">
+                {{ realnameLabel }}
+              </text>
+              <text :class="['author-card__trust-tag', isCreditPaid ? 'author-card__trust-tag--secured' : 'author-card__trust-tag--muted']">
+                {{ creditLabel }}
+              </text>
+            </view>
+            <text class="author-card__desc">
+              {{ authorSummary }}
+            </text>
           </view>
-          <view class="author-card__profile">查看主页</view>
+          <view class="author-card__profile">
+            查看主页
+          </view>
         </view>
 
-        <text class="section-title">TA 的作品</text>
+        <text class="section-title">
+          TA 的作品
+        </text>
         <view class="portfolio-grid">
-          <image v-for="image in portfolioImages" :key="image" :src="image" mode="aspectFill" />
+          <image
+            v-for="image in portfolioImages"
+            :key="image"
+            :src="image"
+            mode="aspectFill"
+          />
         </view>
       </view>
 
       <view class="detail-actions">
-        <view class="detail-actions__mini" @tap="favorite">
-          <KeepIcon name="star" :size="42" />
+        <view
+          class="detail-actions__mini"
+          @tap="favorite"
+        >
+          <KeepIcon
+            name="star"
+            :size="42"
+          />
           <text>{{ favorited ? '已收藏' : '收藏' }}</text>
         </view>
-        <view class="detail-actions__mini" @tap="goProfile">
-          <KeepIcon name="mail" :size="42" />
+        <view
+          class="detail-actions__mini"
+          @tap="goProfile"
+        >
+          <KeepIcon
+            name="mail"
+            :size="42"
+          />
           <text>主页</text>
         </view>
-        <button class="detail-actions__primary" :disabled="actionLoading" :loading="actionLoading" @tap="apply">立即约拍</button>
+        <button
+          class="detail-actions__primary"
+          :disabled="actionLoading"
+          :loading="actionLoading"
+          @tap="apply"
+        >
+          立即约拍
+        </button>
       </view>
     </template>
   </view>
@@ -88,11 +228,12 @@ import { useUserStore } from '@/stores/user'
 import * as ypatApi from '@/api/modules/ypat'
 import { put } from '@/api/request'
 import { normalizeImageUrl } from '@/api/adapters'
-import { TARGET_LABELS } from '@/constants/enums'
+import { getProfessLabel, TARGET_LABELS } from '@/constants/enums'
 import KeepIcon from './KeepIcon.vue'
 import KeepState from './KeepState.vue'
 import type { YpatInfo } from '@/api/types'
 import { goRootTab } from '@/utils/tab-navigation'
+import { resolveYpatCreditFlag, resolveYpatRealnameFlag } from '@/utils/ypat-trust'
 
 const props = defineProps<{ id: number }>()
 const emit = defineEmits<{
@@ -111,11 +252,49 @@ const detailTitle = computed(() => detail.value?.describ?.split('\n')[0] || deta
 const cityText = computed(() => [detail.value?.city, detail.value?.area].filter(Boolean).join('·') || '同城')
 const styleTags = computed(() => (detail.value?.patstyleTxt || detail.value?.patstyle || '').split(/[,，\s]+/).filter(Boolean).slice(0, 6))
 const targetLabel = computed(() => detail.value ? TARGET_LABELS[detail.value.target] || '约拍' : '约拍')
-const authorDesc = computed(() => {
-  const realname = detail.value?.userQo?.realnameflag === '1' ? '已实名' : '未实名'
-  const credit = detail.value?.creditflag === '1' ? '信用担保' : '信用良好'
-  return `摄影爱好者 · ${realname} · ${credit}`
+const authorName = computed(() => detail.value?.userQo?.nickname || '匿名用户')
+const authorSummary = computed(() => {
+  const profession = detail.value?.userQo?.profess?.trim()
+  return getProfessLabel(profession) || '摄影爱好者'
 })
+const isRealname = computed(() => resolveYpatRealnameFlag(detail.value?.userQo?.realnameflag, detail.value?.realnameflag))
+const isCreditPaid = computed(() => resolveYpatCreditFlag(detail.value?.creditflag, detail.value?.userQo?.creditflag))
+const isMemberActive = computed(() => detail.value?.userQo?.memberActive === true)
+const memberBadgeLabel = computed(() => resolveMemberBadge(detail.value?.userQo?.memberLevel))
+const realnameLabel = computed(() => isRealname.value ? '已认证' : '未认证')
+const creditLabel = computed(() => isCreditPaid.value ? '已缴担保金' : '未缴担保金')
+const memberStatusLabel = computed(() => isMemberActive.value ? `${memberBadgeLabel.value}会员` : '非会员')
+const trustItems = computed(() => [
+  {
+    key: 'realname',
+    icon: 'shield',
+    label: realnameLabel.value,
+    tone: isRealname.value ? 'verified' : 'muted',
+  },
+  {
+    key: 'credit',
+    icon: 'wallet',
+    label: creditLabel.value,
+    tone: isCreditPaid.value ? 'secured' : 'muted',
+  },
+  {
+    key: 'member',
+    icon: 'gem',
+    label: memberStatusLabel.value,
+    tone: isMemberActive.value ? 'member' : 'muted',
+  },
+])
+
+function resolveMemberBadge(level?: string | null): string {
+  switch ((level || '').trim().toUpperCase()) {
+    case 'PLUS':
+      return 'VIP+'
+    case 'PRO':
+      return 'PRO'
+    default:
+      return 'VIP'
+  }
+}
 
 async function load(): Promise<void> {
   if (!props.id) {
@@ -161,10 +340,6 @@ function copyShareLink(): void {
 
 function goProfile(): void {
   if (detail.value?.userid) uni.navigateTo({ url: `/pages-sub/user/profile?id=${detail.value.userid}` })
-}
-
-function showToast(title: string): void {
-  uni.showToast({ title, icon: 'none' })
 }
 
 function requireLogin(): boolean {
@@ -299,11 +474,20 @@ watch(() => props.id, load, { immediate: true })
   gap: 14rpx;
 }
 
+.detail-tag-row,
+.detail-trust-row,
+.author-card__trust,
+.author-card__name-row {
+  min-width: 0;
+}
+
 .detail-tag,
 .style-tag {
   display: inline-flex;
   align-items: center;
   gap: 6rpx;
+  min-width: 0;
+  max-width: 100%;
   padding: 10rpx 22rpx;
   border-radius: $radius-round;
   color: $color-text-secondary;
@@ -312,9 +496,62 @@ watch(() => props.id, load, { immediate: true })
   font-weight: 800;
 }
 
+.detail-tag__text {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .detail-tag--green {
   color: $color-primary-dark;
   background: $color-primary-light;
+}
+
+.detail-trust-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14rpx;
+  margin-top: 16rpx;
+}
+
+.detail-trust-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8rpx;
+  min-width: 0;
+  max-width: 100%;
+  padding: 12rpx 24rpx;
+  border-radius: $radius-round;
+  font-size: 24rpx;
+  font-weight: 800;
+}
+
+.detail-trust-chip__text {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.detail-trust-chip--verified {
+  color: #176c71;
+  background: #e1f5f3;
+}
+
+.detail-trust-chip--secured {
+  color: #8b6b1d;
+  background: #fff4d5;
+}
+
+.detail-trust-chip--member {
+  color: #85621f;
+  background: #fff0c2;
+}
+
+.detail-trust-chip--muted {
+  color: $color-text-secondary;
+  background: #f2f4f7;
 }
 
 .detail-title {
@@ -365,6 +602,7 @@ watch(() => props.id, load, { immediate: true })
   padding: 28rpx;
   border: 1rpx solid $color-border;
   border-radius: $radius-keep-card;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.98) 0%, rgba(247, 249, 251, 0.96) 100%);
 }
 
 .author-card__avatar {
@@ -385,19 +623,74 @@ watch(() => props.id, load, { immediate: true })
   display: block;
 }
 
+.author-card__name-row {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+}
+
 .author-card__name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
   color: $color-text-primary;
   font-size: 32rpx;
   font-weight: 800;
 }
 
+.author-card__member {
+  flex: none;
+  padding: 6rpx 14rpx;
+  border-radius: $radius-round;
+  color: #7a5b16;
+  background: linear-gradient(135deg, #fff2bf 0%, #ffe39a 100%);
+  font-size: 20rpx;
+  font-weight: 900;
+  line-height: 1.2;
+}
+
+.author-card__trust {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10rpx;
+  margin-top: 12rpx;
+}
+
+.author-card__trust-tag {
+  display: inline-flex;
+  align-items: center;
+  max-width: 100%;
+  padding: 8rpx 18rpx;
+  border-radius: $radius-round;
+  font-size: 22rpx;
+  font-weight: 700;
+}
+
+.author-card__trust-tag--verified {
+  color: #176c71;
+  background: #e1f5f3;
+}
+
+.author-card__trust-tag--secured {
+  color: #8b6b1d;
+  background: #fff4d5;
+}
+
+.author-card__trust-tag--muted {
+  color: $color-text-secondary;
+  background: #f2f4f7;
+}
+
 .author-card__desc {
-  margin-top: 8rpx;
+  margin-top: 12rpx;
   color: $color-text-secondary;
   font-size: 24rpx;
+  line-height: 1.55;
 }
 
 .author-card__profile {
+  flex: none;
   padding: 16rpx 30rpx;
   border-radius: $radius-round;
   color: $color-primary-dark;
