@@ -6,10 +6,7 @@
           <KeepIcon name="search" :size="46" color="#B3B8BE" />
           <text class="home-search__placeholder">搜索摄影师 / 风格 / 城市</text>
         </view>
-        <view class="home-message" @tap="goMessage">
-          <KeepIcon name="mail" :size="38" color="#1B1E23" />
-          <text v-if="unreadCount > 0" class="home-message__badge">{{ unreadCount > 9 ? '9+' : unreadCount }}</text>
-        </view>
+        <!-- 新版首页暂不展示消息入口，未读刷新逻辑保留给后续入口复用。 -->
       </view>
 
       <HomeBanner />
@@ -150,10 +147,10 @@ const quickItems = [
 
 const quickChips = [
   { label: '全部', value: 'all' },
+  { label: '约模特', value: 'model' },
+  { label: '约摄影师', value: 'photographer' },
   { label: '希望互勉', value: 'free' },
   { label: '可付费', value: 'pay' },
-  { label: '约摄影师', value: 'photographer' },
-  { label: '约模特', value: 'model' },
   { label: 'INS', value: 'INS' },
   { label: '胶片', value: '胶片' },
   { label: '情绪', value: '情绪' },
@@ -203,6 +200,8 @@ const cardItems = computed<KeepYpatCardItem[]>(() => list.value.map((item) => ({
   applyCount: item.pattimes || item.readtimes || 0,
   realname: item.realnameflag === '1' || item.userQo?.realnameflag === '1',
   credit: item.creditflag === '1' || item.userQo?.creditflag === '1',
+  memberActive: item.userQo?.memberActive === true,
+  memberLevel: item.userQo?.memberLevel,
 })))
 
 function buildParams() {
