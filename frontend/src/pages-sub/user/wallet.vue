@@ -143,6 +143,7 @@ const paying = ref(false)
 const showRechargeModal = ref(false)
 const walletLoaded = ref(false)
 const checkinToday = ref<CheckinToday | null>(null)
+const checkinLoadFailed = ref(false)
 const checkinSubmitting = ref(false)
 const records = ref<RecordInfo[]>([])
 const products = ref<Product[]>([])
@@ -150,6 +151,7 @@ const selectedId = ref<number | null>(null)
 const incomeTypes = new Set<string>([RecordType.TOPUP, RecordType.INVITE, RecordType.SYSTEM, RecordType.CHECKIN])
 let pollingCancelled = false
 let walletRefreshPromise: Promise<void> | null = null
+let checkinLoadPromise: Promise<void> | null = null
 let productLoadPromise: Promise<void> | null = null
 
 const tabs: Array<{ key: TabKey; label: string }> = [
@@ -293,6 +295,13 @@ function refreshWalletData(includeProducts = false): Promise<void> {
   return walletRefreshPromise
 }
 
+async function refreshWalletDataAfterCheckin(): Promise<void> {
+  if (walletRefreshPromise) await walletRefreshPromise.catch(() => undefined)
+  await userStore.updateUserInfo()
+  await fetchRecentRecords()
+  walletLoaded.value = true
+}
+
 async function loadProducts(): Promise<void> {
   if (productLoadPromise) return productLoadPromise
 
@@ -332,14 +341,25 @@ function closeRechargeModal(): void {
 async function loadCheckinToday(): Promise<void> {
   if (!userStore.userInfo?.id) {
     checkinToday.value = null
+    checkinLoadFailed.value = false
     return
   }
-  try {
-    const result = await checkinApi.getCheckinToday()
-    checkinToday.value = result.data || null
-  } catch {
-    checkinToday.value = null
-  }
+  if (checkinLoadPromise) return checkinLoadPromise
+
+  checkinLoadPromise = (async () => {
+    try {
+      const result = await checkinApi.getCheckinToday()
+      checkinToday.value = result.data || null
+      checkinLoadFailed.value = false
+    } catch {
+      checkinToday.value = null
+      checkinLoadFailed.value = true
+    } finally {
+      checkinLoadPromise = null
+    }
+  })()
+
+  return checkinLoadPromise
 }
 
 function openCheckinConfirm(): void {
@@ -348,6 +368,10 @@ function openCheckinConfirm(): void {
     return
   }
   if (checkinSubmitting.value) return
+  if (checkinLoadFailed.value) {
+    uni.showToast({ title: '签到状态加载失败，请稍后重试', icon: 'none' })
+    return
+  }
   if (!checkinToday.value?.enabled) {
     uni.showToast({ title: '签到活动暂未开启', icon: 'none' })
     return
@@ -388,7 +412,8 @@ async function submitCheckin(): Promise<void> {
       checkedIn: true,
       rewardPpd: data.rewardPpd || checkinToday.value?.rewardPpd || 1,
     }
-    await refreshWalletData()
+    checkinLoadFailed.value = false
+    await refreshWalletDataAfterCheckin()
     const reward = Number(data.rewardPpd || 0)
     uni.showToast({ title: reward > 0 ? `签到成功，获得 ${reward} 拍豆` : '今日已签到', icon: 'none' })
   } catch {
