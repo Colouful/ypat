@@ -143,6 +143,7 @@ const paying = ref(false)
 const showRechargeModal = ref(false)
 const walletLoaded = ref(false)
 const checkinToday = ref<CheckinToday | null>(null)
+const checkinLoading = ref(false)
 const checkinLoadFailed = ref(false)
 const checkinSubmitting = ref(false)
 const records = ref<RecordInfo[]>([])
@@ -341,11 +342,13 @@ function closeRechargeModal(): void {
 async function loadCheckinToday(): Promise<void> {
   if (!userStore.userInfo?.id) {
     checkinToday.value = null
+    checkinLoading.value = false
     checkinLoadFailed.value = false
     return
   }
   if (checkinLoadPromise) return checkinLoadPromise
 
+  checkinLoading.value = true
   checkinLoadPromise = (async () => {
     try {
       const result = await checkinApi.getCheckinToday()
@@ -356,18 +359,22 @@ async function loadCheckinToday(): Promise<void> {
       checkinLoadFailed.value = true
     } finally {
       checkinLoadPromise = null
+      checkinLoading.value = false
     }
   })()
 
   return checkinLoadPromise
 }
 
-function openCheckinConfirm(): void {
+async function openCheckinConfirm(): Promise<void> {
   if (!userStore.userInfo?.id) {
     uni.showToast({ title: '请先登录', icon: 'none' })
     return
   }
   if (checkinSubmitting.value) return
+  if (checkinLoading.value || checkinLoadFailed.value || !checkinToday.value) {
+    await loadCheckinToday()
+  }
   if (checkinLoadFailed.value) {
     uni.showToast({ title: '签到状态加载失败，请稍后重试', icon: 'none' })
     return

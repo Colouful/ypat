@@ -48,13 +48,24 @@ describe('wallet page source contract', () => {
     expect(source).toContain('getCheckinToday')
     expect(source).toContain('doCheckin')
     expect(source).toContain('checkinToday')
+    expect(source).toContain('checkinLoading')
     expect(source).toContain('checkinLoadPromise')
     expect(source).toContain('checkinLoadFailed')
     expect(source).toContain('refreshWalletDataAfterCheckin')
+    expect(source).toContain('await refreshWalletDataAfterCheckin()')
     expect(source).toContain('去签到')
     expect(source).toContain('签到活动暂未开启')
     expect(source).toContain('签到状态加载失败，请稍后重试')
     expect(source).not.toContain("title: '每日签到',\n        reward: 1,\n        desc: '每日签到获得拍豆',\n        actionText: '已签到',\n        doneText: '已签到',\n        done: true")
+  })
+
+  it('retries or waits for checkin state before opening the confirm flow', () => {
+    expect(source).toContain('checkinLoading.value = true')
+    expect(source).toContain('checkinLoading.value = false')
+    expect(source).toContain('if (checkinLoading.value || checkinLoadFailed.value || !checkinToday.value)')
+    expect(source).toContain('await loadCheckinToday()')
+    expect(source).toMatch(/async function openCheckinConfirm\(\): Promise<void> \{[\s\S]*await loadCheckinToday\(\)[\s\S]*签到状态加载失败，请稍后重试/)
+    expect(source).toMatch(/async function submitCheckin\(\): Promise<void> \{[\s\S]*await refreshWalletDataAfterCheckin\(\)/)
   })
 
   it('uses the app green theme for page and recharge popup', () => {
