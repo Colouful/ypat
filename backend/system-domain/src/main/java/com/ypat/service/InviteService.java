@@ -1,10 +1,15 @@
 package com.ypat.service;
 
+import com.ypat.InviteConfigQo;
 import com.ypat.InviteRelationQo;
 import com.ypat.InviteSummaryQo;
+import com.ypat.ResponseCode;
+import com.ypat.SysException;
 import com.ypat.UserQo;
+import com.ypat.entity.InviteConfig;
 import com.ypat.entity.InviteRelation;
 import com.ypat.entity.User;
+import com.ypat.repository.InviteConfigRepository;
 import com.ypat.repository.InviteRelationRepository;
 import com.ypat.repository.UserRepository;
 import com.ypat.util.Constant;
@@ -37,11 +42,98 @@ import java.util.Map;
 public class InviteService {
 
     private static final Logger logger = LoggerFactory.getLogger(InviteService.class);
+    public static final String INVITE_ENABLED = "1";
+    public static final String INVITE_DISABLED = "0";
+    private static final String REWARD_UNIT = "拍拍豆";
+    private static final String DEFAULT_RULE_TEXT = "好友通过你的邀请码注册后，自动到账 3 拍拍豆。";
+    private static final String DEFAULT_SHARE_TITLE = "好友邀请你加入爱去拍，找摄影师、找模特更方便";
+    private static final String DEFAULT_LANDING_TITLE = "我正在使用爱去拍，找摄影师、找模特特别方便，推荐你也来体验。";
 
     @Autowired
     private InviteRelationRepository inviteRelationRepository;
     @Autowired
     private UserRepository userRepository;
+    @Autowired
+    private InviteConfigRepository inviteConfigRepository;
+
+    public InviteConfigQo getConfig() {
+        InviteConfig config = loadConfigEntity();
+        InviteConfigQo qo = new InviteConfigQo();
+        qo.setId(config.getId());
+        qo.setEnabled(config.getEnabled());
+        qo.setRewardPpd(config.getRewardPpd());
+        qo.setRewardUnit(REWARD_UNIT);
+        qo.setRuleText(config.getRuleText());
+        qo.setShareTitle(config.getShareTitle());
+        qo.setLandingTitle(config.getLandingTitle());
+        qo.setCreatedAt(config.getCreatedAt());
+        qo.setUpdatedAt(config.getUpdatedAt());
+        return qo;
+    }
+
+    public InviteConfigQo saveConfig(InviteConfigQo qo) {
+        validateConfig(qo);
+        Date now = new Date();
+        InviteConfig config = loadConfigEntity();
+        if (config.getCreatedAt() == null) config.setCreatedAt(now);
+        config.setUpdatedAt(now);
+        config.setEnabled(qo.getEnabled());
+        config.setRewardPpd(qo.getRewardPpd());
+        config.setRuleText(qo.getRuleText().trim());
+        config.setShareTitle(qo.getShareTitle().trim());
+        config.setLandingTitle(qo.getLandingTitle().trim());
+        InviteConfig saved = inviteConfigRepository.save(config);
+        return toConfigQo(saved);
+    }
+
+    private InviteConfig loadConfigEntity() {
+        List<InviteConfig> configs = inviteConfigRepository.findAll();
+        if (!configs.isEmpty()) return fillDefaultConfig(configs.get(0));
+        return fillDefaultConfig(new InviteConfig());
+    }
+
+    private InviteConfig fillDefaultConfig(InviteConfig config) {
+        if (StringUtils.isEmpty(config.getEnabled())) config.setEnabled(INVITE_ENABLED);
+        if (config.getRewardPpd() == null) config.setRewardPpd(Constant.INVITE_NEED_PPD);
+        if (StringUtils.isEmpty(config.getRuleText())) config.setRuleText(DEFAULT_RULE_TEXT);
+        if (StringUtils.isEmpty(config.getShareTitle())) config.setShareTitle(DEFAULT_SHARE_TITLE);
+        if (StringUtils.isEmpty(config.getLandingTitle())) config.setLandingTitle(DEFAULT_LANDING_TITLE);
+        return config;
+    }
+
+    private InviteConfigQo toConfigQo(InviteConfig config) {
+        fillDefaultConfig(config);
+        InviteConfigQo qo = new InviteConfigQo();
+        qo.setId(config.getId());
+        qo.setEnabled(config.getEnabled());
+        qo.setRewardPpd(config.getRewardPpd());
+        qo.setRewardUnit(REWARD_UNIT);
+        qo.setRuleText(config.getRuleText());
+        qo.setShareTitle(config.getShareTitle());
+        qo.setLandingTitle(config.getLandingTitle());
+        qo.setCreatedAt(config.getCreatedAt());
+        qo.setUpdatedAt(config.getUpdatedAt());
+        return qo;
+    }
+
+    private void validateConfig(InviteConfigQo qo) {
+        if (qo == null) throw new SysException(ResponseCode.FAIL_PARA);
+        if (!INVITE_ENABLED.equals(qo.getEnabled()) && !INVITE_DISABLED.equals(qo.getEnabled())) {
+            throw new SysException(ResponseCode.FAIL_PARA);
+        }
+        if (qo.getRewardPpd() == null || qo.getRewardPpd() < 0 || qo.getRewardPpd() > 999) {
+            throw new SysException(ResponseCode.FAIL_PARA);
+        }
+        if (StringUtils.isEmpty(qo.getRuleText()) || qo.getRuleText().trim().length() > 300) {
+            throw new SysException(ResponseCode.FAIL_PARA);
+        }
+        if (StringUtils.isEmpty(qo.getShareTitle()) || qo.getShareTitle().trim().length() > 120) {
+            throw new SysException(ResponseCode.FAIL_PARA);
+        }
+        if (StringUtils.isEmpty(qo.getLandingTitle()) || qo.getLandingTitle().trim().length() > 160) {
+            throw new SysException(ResponseCode.FAIL_PARA);
+        }
+    }
 
     /**
      * 注册时由 {@link UserService#save} 调用，把"被邀请人 → 邀请人"关系写入幂等表。
@@ -95,8 +187,14 @@ public class InviteService {
 
     public InviteSummaryQo getSummary(Long userId) {
         InviteSummaryQo summary = new InviteSummaryQo();
+        InviteConfigQo config = getConfig();
+        int rewardPpd = config.getRewardPpd() == null ? Constant.INVITE_NEED_PPD : config.getRewardPpd();
         summary.setInviteCode(InviteCodeCodec.encode(userId));
-        summary.setRewardPpd(Constant.INVITE_NEED_PPD);
+        summary.setRewardPpd(rewardPpd);
+        summary.setEnabled(config.getEnabled());
+        summary.setRuleText(config.getRuleText());
+        summary.setShareTitle(config.getShareTitle());
+        summary.setLandingTitle(config.getLandingTitle());
         if (userId == null) {
             summary.setTotalInvited(0L);
             summary.setTotalReward(0);
@@ -104,7 +202,7 @@ public class InviteService {
         }
         long count = inviteRelationRepository.countByInviterUserid(userId);
         summary.setTotalInvited(count);
-        summary.setTotalReward((int) count * Constant.INVITE_NEED_PPD);
+        summary.setTotalReward((int) count * rewardPpd);
         return summary;
     }
 
