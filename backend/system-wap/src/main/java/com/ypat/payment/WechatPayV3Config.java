@@ -10,6 +10,10 @@ import com.wechat.pay.java.core.notification.RSAPublicKeyNotificationConfig;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
+import java.io.File;
+import java.util.ArrayList;
+import java.util.List;
+
 @Component
 public class WechatPayV3Config {
 
@@ -49,14 +53,27 @@ public class WechatPayV3Config {
         if (hasText(mode) && !MODE_PUBLIC_KEY.equalsIgnoreCase(mode.trim())) {
             throw new SysException(ResponseCode.FAIL_PAY_CONFIG, "当前仅支持微信支付公钥模式");
         }
-        require("YPAT_WX_APP_ID", systemConfig.getWx_appid());
-        require("YPAT_WX_MCH_ID", systemConfig.getWx_mchid());
-        require("YPAT_WX_MCH_SERIAL_NO", systemConfig.getWx_mch_serial_no());
-        require("YPAT_WX_MCH_PRIVATE_KEY_PATH", systemConfig.getWx_mch_private_key_path());
-        require("YPAT_WX_API_V3_KEY", systemConfig.getWx_api_v3_key());
-        require("YPAT_WX_PAY_PUBLIC_KEY_ID", systemConfig.getWx_pay_public_key_id());
-        require("YPAT_WX_PAY_PUBLIC_KEY_PATH", systemConfig.getWx_pay_public_key_path());
-        require("YPAT_WX_NOTIFY_URL", systemConfig.getWx_notify_url());
+        List<String> missing = new ArrayList<>();
+        collectMissing(missing, "YPAT_WX_APP_ID", systemConfig.getWx_appid());
+        collectMissing(missing, "YPAT_WX_MCH_ID", systemConfig.getWx_mchid());
+        collectMissing(missing, "YPAT_WX_MCH_SERIAL_NO", systemConfig.getWx_mch_serial_no());
+        collectMissing(missing, "YPAT_WX_MCH_PRIVATE_KEY_PATH", systemConfig.getWx_mch_private_key_path());
+        collectMissing(missing, "YPAT_WX_API_V3_KEY", systemConfig.getWx_api_v3_key());
+        collectMissing(missing, "YPAT_WX_PAY_PUBLIC_KEY_ID", systemConfig.getWx_pay_public_key_id());
+        collectMissing(missing, "YPAT_WX_PAY_PUBLIC_KEY_PATH", systemConfig.getWx_pay_public_key_path());
+        collectMissing(missing, "YPAT_WX_NOTIFY_URL", systemConfig.getWx_notify_url());
+        if (!missing.isEmpty()) {
+            throw new SysException(ResponseCode.FAIL_PAY_CONFIG, String.join(", ", missing) + " 未配置");
+        }
+        if (shouldValidatePaymentKeyFiles()) {
+            List<String> unreadable = new ArrayList<>();
+            collectUnreadable(unreadable, "YPAT_WX_MCH_PRIVATE_KEY_PATH", systemConfig.getWx_mch_private_key_path());
+            collectUnreadable(unreadable, "YPAT_WX_PAY_PUBLIC_KEY_PATH", systemConfig.getWx_pay_public_key_path());
+            if (!unreadable.isEmpty()) {
+                throw new SysException(ResponseCode.FAIL_PAY_CONFIG,
+                        String.join(", ", unreadable) + " 文件不存在或不可读");
+            }
+        }
     }
 
     public String miniappAppId() {
@@ -86,6 +103,23 @@ public class WechatPayV3Config {
         if (!hasText(value)) {
             throw new SysException(ResponseCode.FAIL_PAY_CONFIG, name + " 未配置");
         }
+    }
+
+    private void collectMissing(List<String> missing, String name, String value) {
+        if (!hasText(value)) {
+            missing.add(name);
+        }
+    }
+
+    private void collectUnreadable(List<String> unreadable, String name, String path) {
+        File file = new File(path);
+        if (!file.isFile() || !file.canRead()) {
+            unreadable.add(name);
+        }
+    }
+
+    protected boolean shouldValidatePaymentKeyFiles() {
+        return true;
     }
 
     static boolean hasText(String value) {

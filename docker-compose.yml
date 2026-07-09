@@ -164,6 +164,18 @@ services:
       YPAT_COS_ENV_PREFIX: "${YPAT_COS_ENV_PREFIX:-dev}"
       YPAT_WX_APP_ID: "${YPAT_WX_APP_ID:-wx37ee5a90fc7ecb21}"
       YPAT_WX_APP_SECRET: "${YPAT_WX_APP_SECRET:-}"
+      YPAT_WX_PAY_MODE: "${YPAT_WX_PAY_MODE:-PUBLIC_KEY}"
+      YPAT_WX_H5_APP_ID: "${YPAT_WX_H5_APP_ID:-${YPAT_WX_APP_ID:-wx37ee5a90fc7ecb21}}"
+      YPAT_WX_MCH_ID: "${YPAT_WX_MCH_ID:-}"
+      YPAT_WX_MCH_SERIAL_NO: "${YPAT_WX_MCH_SERIAL_NO:-}"
+      YPAT_WX_MCH_PRIVATE_KEY_PATH: "${YPAT_WX_MCH_PRIVATE_KEY_PATH:-/run/secrets/wechat-pay/apiclient_key.pem}"
+      YPAT_WX_API_V3_KEY: "${YPAT_WX_API_V3_KEY:-}"
+      YPAT_WX_PAY_PUBLIC_KEY_ID: "${YPAT_WX_PAY_PUBLIC_KEY_ID:-}"
+      YPAT_WX_PAY_PUBLIC_KEY_PATH: "${YPAT_WX_PAY_PUBLIC_KEY_PATH:-/run/secrets/wechat-pay/pub_key.pem}"
+      YPAT_WX_NOTIFY_URL: "${YPAT_WX_NOTIFY_URL:-}"
+      YPAT_WX_H5_SCENE_INFO: "${YPAT_WX_H5_SCENE_INFO:-}"
+    volumes:
+      - "${YPAT_WX_PAY_SECRET_DIR:-./docker/secrets/wechat-pay}:/run/secrets/wechat-pay:ro"
     depends_on:
       mysql:
         condition: service_healthy

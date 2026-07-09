@@ -55,6 +55,7 @@ build/
 .env
 .env.local
 .env.*.local
+docker/secrets/
 .omx/
 
 # Frontend real env files (only .example files are committed)

@@ -73,23 +73,24 @@ export const useUserStore = defineStore('user', () => {
 
   /**
    * 小程序端"微信一键登录"按钮的统一入口。
-   * 真实流程: 将登录页通过 getPhoneNumber + uni.login 收集到的
-   * code / encryptedData / iv 透传给后端 /user/login(UserQo 接受这些字段),
-   * 由后端解密手机号并签发 token。**生产环境绝不使用测试账号。**
+   * 真实流程: code 先换取 openid/session_key，再连同手机号加密数据发给
+   * /user/login，由后端解密手机号并签发 token。**生产环境绝不使用测试账号。**
    *
-   * 开发环境保留测试账号便于无微信开发者工具联调
+   * 开发环境在非微信小程序运行时保留测试账号，便于无微信开发者工具联调
    * (手机号 18888888888 + 验证码 888888, 后端 H5_TEST_MOBILE 分支)。
    * 注意: 新版微信(基础库 2.21+)的 getPhoneNumber 已改为返回 code 换取,
    * 若后端仍依赖 encryptedData 解密失败,登录页已有明确提示(见 login/index.vue)。
    */
   async function login(input: WechatLoginInput): Promise<UserInfo> {
-    if (envConfig.env === 'development') {
+    if (envConfig.env === 'development' && !isWechatMiniProgramRuntime()) {
       return loginByPhoneInternal('18888888888', '888888')
     }
+    const session = await resolveWechatSession(input.code)
     const result = await post<LoginResult>(
       '/user/login',
       {
-        code: input.code,
+        openid: session.openid,
+        sessionKey: session.session_key,
         encryptedData: input.encryptedData,
         iv: input.iv,
         channel: input.channel ?? '0',
@@ -103,6 +104,23 @@ export const useUserStore = defineStore('user', () => {
       { withToken: false, showError: false },
     )
     return applyLoginResult(result)
+  }
+
+  async function resolveWechatSession(code: string): Promise<WxSessionResult> {
+    const result = await get<WxSessionResult>('/user/code', { code }, { withToken: false, showError: false })
+    const session = result.data
+    if (!result.success || session?.errcode) {
+      throw new Error(result.message || session?.errmsg || '微信登录失败，请重试')
+    }
+    if (!session?.openid || !session.session_key) {
+      throw new Error('未获取到 openid，请检查后端微信 appid/secret 配置')
+    }
+    return session
+  }
+
+  function isWechatMiniProgramRuntime(): boolean {
+    const runtime = globalThis as typeof globalThis & { wx?: { login?: unknown } }
+    return typeof runtime.wx?.login === 'function'
   }
 
   async function loginByPhone(input: H5PhoneLoginInput): Promise<UserInfo> {

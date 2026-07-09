@@ -1815,7 +1815,7 @@ Expected: tests pass.
 Run:
 
 ```bash
-rg -n "d6RQUhnQ4zPYndzQxRmR6u6UBH8M5MyG|eyJhbGciOi|PUB_KEY_ID_0117067809502026070500212194002000" backend frontend frontend-admin docs --glob '!**/target/**' --glob '!**/dist/**'
+rg -n "<REDACTED_SECRET_PATTERN>" backend frontend frontend-admin docs --glob '!**/target/**' --glob '!**/dist/**'
 ```
 
 Expected:

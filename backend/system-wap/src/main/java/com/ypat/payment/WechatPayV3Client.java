@@ -59,7 +59,12 @@ public class WechatPayV3Client {
         payer.setOpenid(command.getOpenid());
         req.setPayer(payer);
 
-        PrepayWithRequestPaymentResponse resp = gateway.prepayMiniapp(sdkConfig, req);
+        PrepayWithRequestPaymentResponse resp;
+        try {
+            resp = gateway.prepayMiniapp(sdkConfig, req);
+        } catch (RuntimeException ex) {
+            throw mapWechatPayException(ex);
+        }
         PaymentPayParams params = new PaymentPayParams();
         params.setTimeStamp(resp.getTimeStamp());
         params.setNonceStr(resp.getNonceStr());
@@ -90,11 +95,39 @@ public class WechatPayV3Client {
         req.setAmount(amount);
         req.setSceneInfo(h5Scene(command.getClientIp()));
 
-        PrepayResponse resp = gateway.prepayH5(sdkConfig, req);
+        PrepayResponse resp;
+        try {
+            resp = gateway.prepayH5(sdkConfig, req);
+        } catch (RuntimeException ex) {
+            throw mapWechatPayException(ex);
+        }
         if (resp == null || !WechatPayV3Config.hasText(resp.getH5Url())) {
             throw new SysException(ResponseCode.FAIL_ORDER, "微信 H5 下单未返回 h5_url");
         }
         return resp.getH5Url();
+    }
+
+    private RuntimeException mapWechatPayException(RuntimeException ex) {
+        if (ex instanceof SysException) {
+            return ex;
+        }
+        if (isWechatNoAuth(ex)) {
+            return new SysException(ResponseCode.FAIL_PAY,
+                    "商户号该产品权限未开通，请在微信支付商户平台 > 产品中心开通对应支付产品后重试");
+        }
+        return ex;
+    }
+
+    private boolean isWechatNoAuth(Throwable ex) {
+        Throwable current = ex;
+        while (current != null) {
+            String message = current.getMessage();
+            if (message != null && message.contains("NO_AUTH") && message.contains("产品权限未开通")) {
+                return true;
+            }
+            current = current.getCause();
+        }
+        return false;
     }
 
     public WechatNotifyPayload parseNotify(String serial, String timestamp, String nonce,

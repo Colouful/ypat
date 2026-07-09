@@ -2,6 +2,7 @@ package com.ypat.payment;
 
 import com.ypat.PaymentCreateResult;
 import com.ypat.PaymentPayParams;
+import com.ypat.ResponseCode;
 import com.ypat.SysException;
 import com.ypat.config.SystemConfig;
 import com.ypat.enums.PaymentBusinessType;
@@ -14,8 +15,12 @@ import com.wechat.pay.java.service.payments.jsapi.model.PrepayWithRequestPayment
 import com.wechat.pay.java.service.payments.model.Transaction;
 import org.junit.Test;
 
+import java.io.File;
+
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 public class WechatPaymentServiceTest {
 
@@ -59,14 +64,70 @@ public class WechatPaymentServiceTest {
         assertEquals("Ypat", gateway.lastH5Request.getSceneInfo().getH5Info().getAppName());
     }
 
-    @Test(expected = SysException.class)
-    public void missingV3ConfigFailsBeforeCreatingPayment() {
+    @Test
+    public void miniappPaymentNoAuthReturnsSafeBusinessMessage() {
+        FakeGateway gateway = new FakeGateway();
+        gateway.failWithNoAuth = true;
+        WechatPaymentService service = new WechatPaymentService(new WechatPayV3Client(config(), gateway));
+
+        try {
+            service.create(command(PaymentChannel.MINIAPP.value));
+            fail("expected wechat no auth to be mapped");
+        } catch (SysException ex) {
+            assertEquals(ResponseCode.FAIL_PAY.getCode(), ex.getCode());
+            assertTrue(ex.getMsg().contains("商户号该产品权限未开通"));
+            assertTrue(!ex.getMsg().contains("Authorization"));
+            assertTrue(!ex.getMsg().contains("signature"));
+            assertTrue(!ex.getMsg().contains("HttpRequest"));
+        }
+    }
+
+    @Test
+    public void missingV3ConfigListsEveryMissingPaymentSetting() {
         SystemConfig systemConfig = new SystemConfig();
         systemConfig.setWx_appid("wx-test-appid");
         WechatPayV3Config cfg = new WechatPayV3Config(systemConfig);
 
-        new WechatPaymentService(new WechatPayV3Client(cfg, new FakeGateway()))
-                .create(command(PaymentChannel.MINIAPP.value));
+        try {
+            new WechatPaymentService(new WechatPayV3Client(cfg, new FakeGateway()))
+                    .create(command(PaymentChannel.MINIAPP.value));
+            fail("expected missing v3 config to fail");
+        } catch (SysException ex) {
+            assertTrue(ex.getMsg().contains("YPAT_WX_MCH_ID"));
+            assertTrue(ex.getMsg().contains("YPAT_WX_MCH_SERIAL_NO"));
+            assertTrue(ex.getMsg().contains("YPAT_WX_MCH_PRIVATE_KEY_PATH"));
+            assertTrue(ex.getMsg().contains("YPAT_WX_API_V3_KEY"));
+            assertTrue(ex.getMsg().contains("YPAT_WX_PAY_PUBLIC_KEY_ID"));
+            assertTrue(ex.getMsg().contains("YPAT_WX_PAY_PUBLIC_KEY_PATH"));
+            assertTrue(ex.getMsg().contains("YPAT_WX_NOTIFY_URL"));
+        }
+    }
+
+    @Test
+    public void configuredV3PaymentFailsFastWhenMerchantPrivateKeyFileMissing() throws Exception {
+        File publicKey = File.createTempFile("wechat-pay-public-key", ".pem");
+        publicKey.deleteOnExit();
+
+        SystemConfig systemConfig = new SystemConfig();
+        systemConfig.setWx_pay_mode("PUBLIC_KEY");
+        systemConfig.setWx_appid("wx-test-appid");
+        systemConfig.setWx_mchid("1900000001");
+        systemConfig.setWx_mch_serial_no("merchant-serial");
+        systemConfig.setWx_mch_private_key_path(publicKey.getAbsolutePath() + ".missing");
+        systemConfig.setWx_api_v3_key("12345678901234567890123456789012");
+        systemConfig.setWx_pay_public_key_id("PUB_KEY_ID_TEST");
+        systemConfig.setWx_pay_public_key_path(publicKey.getAbsolutePath());
+        systemConfig.setWx_notify_url("https://example.com/payment/wechat/notify");
+        WechatPayV3Config cfg = new WechatPayV3Config(systemConfig);
+
+        try {
+            new WechatPaymentService(new WechatPayV3Client(cfg, new FakeGateway()))
+                    .create(command(PaymentChannel.MINIAPP.value));
+            fail("expected missing merchant private key file to fail");
+        } catch (SysException ex) {
+            assertTrue(ex.getMsg().contains("YPAT_WX_MCH_PRIVATE_KEY_PATH"));
+            assertTrue(ex.getMsg().contains("文件不存在或不可读"));
+        }
     }
 
     private static WechatPaymentService.WechatPaymentCommand command(String channel) {
@@ -107,16 +168,27 @@ public class WechatPaymentServiceTest {
             assertConfigured();
             return null;
         }
+
+        @Override
+        protected boolean shouldValidatePaymentKeyFiles() {
+            return false;
+        }
     }
 
     private static class FakeGateway implements WechatPayV3Client.Gateway {
         com.wechat.pay.java.service.payments.jsapi.model.PrepayRequest lastMiniappRequest;
         com.wechat.pay.java.service.payments.h5.model.PrepayRequest lastH5Request;
+        boolean failWithNoAuth;
 
         @Override
         public PrepayWithRequestPaymentResponse prepayMiniapp(Config config,
                 com.wechat.pay.java.service.payments.jsapi.model.PrepayRequest request) {
             lastMiniappRequest = request;
+            if (failWithNoAuth) {
+                throw new RuntimeException("Wrong HttpStatusCode[403]\n"
+                        + "httpResponseBody[{\"code\":\"NO_AUTH\",\"message\":\"商户号该产品权限未开通，请前往商户平台>产品中心检查后重试\"}]"
+                        + "\tHttpRequest[{\"headers\":{\"Authorization\":\"secret\",\"signature\":\"secret\"}}]");
+            }
             PrepayWithRequestPaymentResponse response = new PrepayWithRequestPaymentResponse();
             response.setAppId("wx-test-appid");
             response.setTimeStamp("1783499261");

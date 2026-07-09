@@ -22,12 +22,23 @@ import { useUserStore } from '../user'
 describe('user store login (GAP-AUTH-01)', () => {
   beforeEach(() => {
     setActivePinia(createPinia())
+    delete (globalThis as typeof globalThis & { wx?: unknown }).wx
     requestMocks.get.mockReset()
     requestMocks.post.mockReset()
-    requestMocks.get.mockResolvedValue({ success: true, data: { id: 1, token: 't' }, code: '200', message: '' })
+    requestMocks.get.mockImplementation((url: string) => {
+      if (url === '/user/code') {
+        return Promise.resolve({
+          success: true,
+          data: { openid: 'openid-1', session_key: 'session-1' },
+          code: '200',
+          message: '',
+        })
+      }
+      return Promise.resolve({ success: true, data: { id: 1, token: 't' }, code: '200', message: '' })
+    })
   })
 
-  it('production WeChat login forwards real credentials, never the test account', async () => {
+  it('production WeChat login resolves openid before login and never uses the test account', async () => {
     envMock.envConfig.env = 'production'
     requestMocks.post.mockResolvedValue({
       success: true,
@@ -38,10 +49,18 @@ describe('user store login (GAP-AUTH-01)', () => {
     const store = useUserStore()
     await store.login({ code: 'wx-code', encryptedData: 'enc', iv: 'iv', channel: '0' })
 
+    expect(requestMocks.get).toHaveBeenCalledWith('/user/code', { code: 'wx-code' }, { withToken: false, showError: false })
     const [url, payload] = requestMocks.post.mock.calls[0]
     expect(url).toBe('/user/login')
-    expect(payload).toMatchObject({ code: 'wx-code', encryptedData: 'enc', iv: 'iv', channel: '0' })
+    expect(payload).toMatchObject({
+      openid: 'openid-1',
+      sessionKey: 'session-1',
+      encryptedData: 'enc',
+      iv: 'iv',
+      channel: '0',
+    })
     // 关键: 生产环境绝不退化为硬编码测试账号
+    expect(payload.code).toBeUndefined()
     expect(payload.mobile).toBeUndefined()
     expect(JSON.stringify(payload)).not.toContain('18888888888')
   })
@@ -59,6 +78,23 @@ describe('user store login (GAP-AUTH-01)', () => {
 
     const [, payload] = requestMocks.post.mock.calls[0]
     expect(payload).toMatchObject({ mobile: '18888888888', smsCode: '888888', channel: '2' })
+  })
+
+  it('development WeChat mini-program runtime still resolves openid for payment flows', async () => {
+    envMock.envConfig.env = 'development'
+    ;(globalThis as typeof globalThis & { wx?: { login: () => void } }).wx = { login: vi.fn() }
+    requestMocks.post.mockResolvedValue({
+      success: true,
+      data: { id: 9, token: 'real-token' },
+      code: '200',
+      message: '',
+    })
+    const store = useUserStore()
+    await store.login({ code: 'wx-code', encryptedData: 'enc', iv: 'iv' })
+
+    const [, payload] = requestMocks.post.mock.calls[0]
+    expect(payload).toMatchObject({ openid: 'openid-1', sessionKey: 'session-1', channel: '0' })
+    expect(payload.mobile).toBeUndefined()
   })
 
   it('H5 phone login sends channel 2', async () => {
