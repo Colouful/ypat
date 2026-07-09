@@ -115,15 +115,15 @@ public class CheckinService {
             return result(false, 0, null, null, MESSAGE_CLOSED);
         }
 
-        String checkinDate = todayString();
-        CheckinRecord existing = checkinRecordRepository.findByUseridAndCheckinDate(userId, checkinDate);
-        if (existing != null) {
-            return result(true, 0, null, existing.getRecordId(), MESSAGE_ALREADY_CHECKED);
-        }
-
         User user = userRepository.findById(userId);
         if (user == null) {
             throw new SysException(ResponseCode.FAIL_NOT);
+        }
+
+        String checkinDate = todayString();
+        CheckinRecord existing = checkinRecordRepository.findByUseridAndCheckinDate(userId, checkinDate);
+        if (existing != null) {
+            return result(true, 0, currentPpd(user), existing.getRecordId(), MESSAGE_ALREADY_CHECKED);
         }
 
         Date now = new Date();
@@ -135,7 +135,7 @@ public class CheckinService {
         try {
             checkinRecord = checkinRecordRepository.save(checkinRecord);
         } catch (DataIntegrityViolationException e) {
-            return result(true, 0, null, null, MESSAGE_ALREADY_CHECKED);
+            return result(true, 0, currentPpd(user), null, MESSAGE_ALREADY_CHECKED);
         }
 
         Record record = new Record();
@@ -145,7 +145,7 @@ public class CheckinService {
         record.setUserid(userId);
         record = recordRepository.save(record);
 
-        Integer currentPpd = (user.getPpd() == null ? 0 : user.getPpd()) + rule.getRewardPpd();
+        Integer currentPpd = currentPpd(user) + rule.getRewardPpd();
         user.setPpd(currentPpd);
         userRepository.save(user);
 
@@ -240,6 +240,10 @@ public class CheckinService {
 
     private String todayString() {
         return LocalDate.now(CHECKIN_ZONE).toString();
+    }
+
+    private Integer currentPpd(User user) {
+        return user.getPpd() == null ? 0 : user.getPpd();
     }
 
     private CheckinResultQo result(Boolean checkedIn, Integer rewardPpd, Integer currentPpd, Long recordId, String message) {

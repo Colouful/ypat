@@ -15,6 +15,7 @@ import com.ypat.repository.CheckinRuleRepository;
 import com.ypat.repository.RecordRepository;
 import com.ypat.repository.UserRepository;
 import org.junit.Test;
+import org.springframework.dao.DataIntegrityViolationException;
 
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
@@ -100,9 +101,56 @@ public class CheckinServiceTest {
 
         assertTrue(result.getCheckedIn());
         assertEquals(Integer.valueOf(0), result.getRewardPpd());
+        assertEquals(Integer.valueOf(3), result.getCurrentPpd());
         assertEquals("今日已签到", result.getMessage());
         assertEquals(0, recordSaves.count);
         assertEquals(0, userSaves.count);
+    }
+
+    @Test
+    public void doCheckinReturnsCurrentPpdWhenDuplicateInsertHappens() {
+        SaveCounter recordSaves = new SaveCounter();
+        SaveCounter userSaves = new SaveCounter();
+        CheckinService service = service(
+                rule(YesNo.yes.value, 1),
+                checkinRecordsFailingSave(),
+                records(recordSaves),
+                users(user(1L, 3), userSaves));
+
+        CheckinResultQo result = service.doCheckin(1L);
+
+        assertTrue(result.getCheckedIn());
+        assertEquals(Integer.valueOf(0), result.getRewardPpd());
+        assertEquals(Integer.valueOf(3), result.getCurrentPpd());
+        assertEquals("今日已签到", result.getMessage());
+        assertEquals(0, recordSaves.count);
+        assertEquals(0, userSaves.count);
+    }
+
+    @Test
+    public void doCheckinAllowsZeroRewardWithoutChangingBalance() {
+        SaveCounter checkinSaves = new SaveCounter();
+        SaveCounter recordSaves = new SaveCounter();
+        SaveCounter userSaves = new SaveCounter();
+        Captured<Record> savedRecord = new Captured<Record>();
+        User user = user(1L, 3);
+        CheckinService service = service(
+                rule(YesNo.yes.value, 0),
+                checkinRecords(null, checkinSaves),
+                records(recordSaves, savedRecord, 201L),
+                users(user, userSaves));
+
+        CheckinResultQo result = service.doCheckin(1L);
+
+        assertTrue(result.getCheckedIn());
+        assertEquals(Integer.valueOf(0), result.getRewardPpd());
+        assertEquals(Integer.valueOf(3), result.getCurrentPpd());
+        assertEquals(Integer.valueOf(3), user.getPpd());
+        assertEquals(2, checkinSaves.count);
+        assertEquals(1, recordSaves.count);
+        assertEquals(1, userSaves.count);
+        assertNotNull(savedRecord.value);
+        assertEquals(Integer.valueOf(0), savedRecord.value.getPpd());
     }
 
     @Test
@@ -138,6 +186,19 @@ public class CheckinServiceTest {
                     rule.setConfirmTitle("每日签到");
                     rule.setConfirmContent("签到成功可获得 1 拍豆");
                     return rule;
+                }
+                return defaultValue(method.getReturnType());
+            }
+        });
+    }
+
+    private static CheckinRecordRepository checkinRecordsFailingSave() {
+        return proxy(CheckinRecordRepository.class, new InvocationHandler() {
+            @Override
+            public Object invoke(Object proxy, Method method, Object[] args) {
+                if ("findByUseridAndCheckinDate".equals(method.getName())) return null;
+                if ("save".equals(method.getName())) {
+                    throw new DataIntegrityViolationException("duplicate checkin");
                 }
                 return defaultValue(method.getReturnType());
             }
