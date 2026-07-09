@@ -13,10 +13,10 @@
       <KeepIcon name="chevron-right" :size="30" color="#83888F" />
     </view>
 
-    <view v-if="work" class="author-card">
+    <view v-if="applyTarget" class="author-card">
       <image class="author-card__avatar" :src="authorAvatar" mode="aspectFill" />
       <view class="author-card__body">
-        <text class="author-card__name">{{ work.user?.nickname || '匿名用户' }}</text>
+        <text class="author-card__name">{{ applyTarget.name }}</text>
         <text class="author-card__meta">{{ authorMeta }}</text>
       </view>
     </view>
@@ -67,23 +67,46 @@ import { onLoad } from '@dcloudio/uni-app'
 import KeepIcon from '@/components/business/KeepIcon.vue'
 import KeepPageNav from '@/components/business/KeepPageNav.vue'
 import { getDetail, quickApply } from '@/api/modules/work'
+import * as ypatApi from '@/api/modules/ypat'
 import { normalizeImageUrl } from '@/api/adapters'
-import { getProfessLabel } from '@/constants/enums'
+import { getProfessLabel, TARGET_LABELS } from '@/constants/enums'
 import { useUserStore } from '@/stores/user'
+import type { YpatInfo } from '@/api/types'
 import type { WorkDetail } from '@/api/types/work'
 
 const SAFETY_KEY = 'ypat_work_apply_safety_until'
 
 const userStore = useUserStore()
 const workId = ref(0)
+const ypatId = ref(0)
 const work = ref<WorkDetail | null>(null)
+const ypat = ref<YpatInfo | null>(null)
 const reason = ref('')
 const mobile = ref('')
 const wx = ref('')
 const submitting = ref(false)
 
-const authorAvatar = computed(() => normalizeImageUrl(work.value?.user?.avatar) || '/static/default-avatar.png')
+const applyTarget = computed(() => {
+  if (ypat.value) {
+    return {
+      name: ypat.value.userQo?.nickname || '匿名用户',
+      avatar: ypat.value.userQo?.imgpath || ypat.value.userQo?.avatarurl,
+    }
+  }
+  if (work.value) {
+    return {
+      name: work.value.user?.nickname || '匿名用户',
+      avatar: work.value.user?.avatar,
+    }
+  }
+  return null
+})
+const authorAvatar = computed(() => normalizeImageUrl(applyTarget.value?.avatar) || '/static/default-avatar.png')
 const authorMeta = computed(() => {
+  if (ypat.value) {
+    const target = TARGET_LABELS[ypat.value.target] || ypat.value.targetTxt
+    return [target, ypat.value.city].filter(Boolean).join(' · ') || '约拍发布者'
+  }
   const user = work.value?.user
   return [getProfessLabel(user?.profession || ''), user?.city].filter(Boolean).join(' · ') || '作品作者'
 })
@@ -99,6 +122,15 @@ async function loadWork(): Promise<void> {
     work.value = (await getDetail(workId.value)).data || null
   } catch {
     work.value = null
+  }
+}
+
+async function loadYpat(): Promise<void> {
+  if (!ypatId.value) return
+  try {
+    ypat.value = (await ypatApi.getDetail(ypatId.value, userStore.userInfo?.id)).data || null
+  } catch {
+    ypat.value = null
   }
 }
 
@@ -126,15 +158,30 @@ function onReasonInput(event: Event): void {
 }
 
 async function submitApply(): Promise<void> {
-  if (submitDisabled.value || !workId.value) return
+  if (submitDisabled.value || (!workId.value && !ypatId.value)) return
   submitting.value = true
   try {
-    await quickApply({
-      workId: workId.value,
-      reason: reason.value.trim(),
-      mobile: mobile.value.trim(),
-      wx: wx.value.trim(),
-    })
+    if (ypatId.value) {
+      const currentUserId = userStore.userInfo?.id
+      const publisherId = ypat.value?.userid
+      if (!currentUserId || !publisherId) {
+        uni.showToast({ title: '约拍信息不完整', icon: 'none' })
+        return
+      }
+      await ypatApi.applyYpat({
+        sendperid: currentUserId,
+        recperid: publisherId,
+        ypatid: ypatId.value,
+        content: buildYpatApplyContent(),
+      })
+    } else {
+      await quickApply({
+        workId: workId.value,
+        reason: reason.value.trim(),
+        mobile: mobile.value.trim(),
+        wx: wx.value.trim(),
+      })
+    }
     uni.showToast({ title: '约拍申请已提交', icon: 'success' })
     setTimeout(() => uni.navigateBack(), 800)
   } catch (error) {
@@ -144,11 +191,21 @@ async function submitApply(): Promise<void> {
   }
 }
 
+function buildYpatApplyContent(): string {
+  const contacts = [
+    mobile.value.trim() ? `手机号：${mobile.value.trim()}` : '',
+    wx.value.trim() ? `微信：${wx.value.trim()}` : '',
+  ].filter(Boolean)
+  return [reason.value.trim(), ...contacts].join('\n')
+}
+
 onLoad((options) => {
-  workId.value = Number(options?.workId || options?.id || 0)
+  ypatId.value = Number(options?.ypatId || 0)
+  workId.value = ypatId.value ? 0 : Number(options?.workId || options?.id || 0)
   mobile.value = userStore.userInfo?.mobile || ''
   wx.value = userStore.userInfo?.wx || ''
-  void loadWork()
+  if (ypatId.value) void loadYpat()
+  else void loadWork()
   if (shouldShowSafety()) setTimeout(showSafetyModal, 220)
 })
 </script>

@@ -1,11 +1,13 @@
 package com.ypat.service;
 
 import com.ypat.ProductQo;
+import com.ypat.ResponseCode;
+import com.ypat.SysException;
 import com.ypat.entity.Product;
-import com.ypat.enums.YesNo;
 import com.ypat.repository.ProductRepository;
 import com.ypat.util.CommonUtils;
 import com.ypat.util.CopyUtil;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -33,6 +35,18 @@ public class ProductService {
     private ProductRepository productRepository;
 
     public void save(ProductQo productQo){
+        if (productQo == null || StringUtils.isBlank(productQo.getName())) {
+            throw new SysException(ResponseCode.FAIL_PARA.getCode(), "产品名称不能为空");
+        }
+        if (productQo.getCurrval() == null || productQo.getCurrval() <= 0) {
+            throw new SysException(ResponseCode.FAIL_PARA.getCode(), "充值数量必须大于0");
+        }
+        if (productQo.getOldval() == null || productQo.getOldval() <= 0) {
+            throw new SysException(ResponseCode.FAIL_PARA.getCode(), "支付金额必须大于0");
+        }
+        if (StringUtils.isBlank(productQo.getStatus())) {
+            productQo.setStatus("0");
+        }
         Product product = CopyUtil.copy(productQo, Product.class);
         productRepository.save(product);
     }
@@ -82,7 +96,16 @@ public class ProductService {
             public Predicate toPredicate(Root<Product> root, CriteriaQuery<?> query, CriteriaBuilder criteriaBuilder) {
                 List<Predicate> predicatesList = new ArrayList<Predicate>();
                 if(CommonUtils.isNotNull(queryQo.getStatus())){
-                    predicatesList.add(criteriaBuilder.equal(root.get("status"), queryQo.getStatus()));
+                    if ("0".equals(queryQo.getStatus())) {
+                        predicatesList.add(root.get("status").in("0", "up"));
+                    } else if ("1".equals(queryQo.getStatus())) {
+                        predicatesList.add(root.get("status").in("1", "down"));
+                    } else {
+                        predicatesList.add(criteriaBuilder.equal(root.get("status"), queryQo.getStatus()));
+                    }
+                }
+                if(StringUtils.isNotBlank(queryQo.getName())){
+                    predicatesList.add(criteriaBuilder.like(root.get("name"), "%" + queryQo.getName().trim() + "%"));
                 }
                 query.where(predicatesList.toArray(new Predicate[predicatesList.size()]));
                 return query.getRestriction();

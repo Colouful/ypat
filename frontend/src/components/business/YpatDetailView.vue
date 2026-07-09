@@ -362,44 +362,13 @@ async function favorite(): Promise<void> {
   }
 }
 
-async function apply(): Promise<void> {
+function apply(): void {
   if (!requireLogin() || !detail.value || actionLoading.value) return
   if (detail.value.userid === userStore.userInfo!.id) {
     uni.showToast({ title: '不能报名自己发布的约拍', icon: 'none' })
     return
   }
-  // 约拍理由由用户填写并校验 ≥6 字(对齐旧版 orderShe content.length<6 拦截);
-  // 实名/保证金/拍拍豆余额/重复报名均由后端强制并经 request.ts showBusinessGuide
-  // 引导(1010 实名 / 1009 充值 / 1011 保证金 / 1006 已报名)。
-  const modal = await new Promise<UniApp.ShowModalRes>((resolve) => {
-    uni.showModal({
-      title: '报名约拍',
-      editable: true,
-      placeholderText: '简单介绍自己或拍摄想法（至少 6 个字）',
-      success: resolve,
-      fail: () => resolve({ confirm: false, cancel: true, content: '' }),
-    })
-  })
-  if (!modal.confirm) return
-  const content = (modal.content || '').trim()
-  if (content.length < 6) {
-    uni.showToast({ title: '约拍理由至少 6 个字', icon: 'none' })
-    return
-  }
-  actionLoading.value = true
-  try {
-    await ypatApi.applyYpat({
-      sendperid: userStore.userInfo!.id,
-      recperid: detail.value.userid,
-      ypatid: detail.value.id,
-      content,
-    })
-    uni.showToast({ title: '报名成功', icon: 'success' })
-  } catch (error) {
-    uni.showToast({ title: error instanceof Error ? error.message : '报名失败', icon: 'none' })
-  } finally {
-    actionLoading.value = false
-  }
+  uni.navigateTo({ url: `/pages-sub/work/apply?ypatId=${detail.value.id}` })
 }
 
 watch(() => props.id, load, { immediate: true })

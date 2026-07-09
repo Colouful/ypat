@@ -83,6 +83,12 @@ public class AdminProductController {
         if (productQo == null || StringUtils.isBlank(productQo.getName())) {
             throw new SysException(ResponseCode.FAIL_PARA.getCode(), "产品名称不能为空");
         }
+        if (productQo.getCurrval() == null || productQo.getCurrval() <= 0) {
+            throw new SysException(ResponseCode.FAIL_PARA.getCode(), "充值数量必须大于0");
+        }
+        if (productQo.getOldval() == null || productQo.getOldval() <= 0) {
+            throw new SysException(ResponseCode.FAIL_PARA.getCode(), "支付金额必须大于0");
+        }
 
         logger.info("管理端产品保存：id={}, name={}", productQo.getId(), productQo.getName());
         productServiceClient.add(productQo);

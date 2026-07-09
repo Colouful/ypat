@@ -49,8 +49,12 @@ onMounted(fetchList)
     <el-table v-loading="loading" :data="list" border stripe>
       <el-table-column prop="id" label="ID" width="80" align="center"/>
       <el-table-column prop="name" label="名称" min-width="150"/>
-      <el-table-column prop="currval" label="当前值" width="100" align="center"/>
-      <el-table-column prop="oldval" label="原值" width="100" align="center"/>
+      <el-table-column prop="currval" label="充值数量" width="120" align="center">
+        <template #default="{row}">{{ row.currval }} 拍豆</template>
+      </el-table-column>
+      <el-table-column prop="oldval" label="支付金额" width="120" align="center">
+        <template #default="{row}">¥{{ (Number(row.oldval || 0) / 100).toFixed(2) }}</template>
+      </el-table-column>
       <el-table-column label="状态" width="120" align="center"><template #default="{row}"><StatusTag :status="row.status" type="product"/></template></el-table-column>
       <el-table-column label="操作" width="180" align="center" fixed="right">
         <template #default="{row}">

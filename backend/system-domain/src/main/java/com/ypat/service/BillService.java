@@ -75,11 +75,12 @@ public class BillService {
                 if(order.getType().equals(OrderType.PPD.value)) {
                     //充值拍拍豆
                     Product product = productRepository.findById(order.getProductid());
-                    user.setPpd(user.getPpd() + product.getOldval());
+                    Integer rechargePpd = product == null ? 0 : product.getCurrval();
+                    user.setPpd((user.getPpd() == null ? 0 : user.getPpd()) + rechargePpd);
                     //增加收支记录
                     Record record = new Record();
                     record.setCredate(new Date());
-                    record.setPpd(product.getOldval());
+                    record.setPpd(rechargePpd);
                     record.setUserid(order.getUserid());
                     record.setType(RecordType.PAY.value);
                     recordRepository.save(record);

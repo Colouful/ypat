@@ -454,32 +454,16 @@ describe('YpatDetailView', () => {
     expect(applyYpat).not.toHaveBeenCalled()
   })
 
-  it('点击立即约拍在确认且文案合法时只调用一次报名接口并带正确参数', async () => {
-    applyYpat.mockResolvedValueOnce({})
-    showModal.mockImplementation((options: {
-      success?: (result: { confirm: boolean; cancel: boolean; content?: string }) => void
-    }) => {
-      options.success?.({
-        confirm: true,
-        cancel: false,
-        content: '一起拍一组复古人像',
-      })
-    })
-
+  it('点击立即约拍进入填写信息页面，不再弹窗直接报名', async () => {
     const wrapper = await mountWithDetail(createDetail())
 
     await wrapper.find('.detail-actions__primary').trigger('tap')
     await flushPromises()
 
-    expect(showModal).toHaveBeenCalledTimes(1)
-    expect(applyYpat).toHaveBeenCalledTimes(1)
-    expect(applyYpat).toHaveBeenCalledWith({
-      sendperid: 999,
-      recperid: 201,
-      ypatid: 101,
-      content: '一起拍一组复古人像',
-    })
+    expect(navigateTo).toHaveBeenCalledTimes(1)
+    expect(navigateTo).toHaveBeenCalledWith({ url: '/pages-sub/work/apply?ypatId=101' })
+    expect(showModal).not.toHaveBeenCalled()
+    expect(applyYpat).not.toHaveBeenCalled()
     expect(addFavorite).not.toHaveBeenCalled()
-    expect(navigateTo).not.toHaveBeenCalled()
   })
 })
