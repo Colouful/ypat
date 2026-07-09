@@ -35,6 +35,10 @@ public class CheckinController {
     private Long currentUserId() {
         String raw = UserUtil.getUserId();
         if (StringUtils.isBlank(raw)) throw new SysException(ResponseCode.FAIL_AUTH);
-        return Long.parseLong(raw);
+        try {
+            return Long.parseLong(raw);
+        } catch (NumberFormatException ex) {
+            throw new SysException(ResponseCode.FAIL_AUTH);
+        }
     }
 }
