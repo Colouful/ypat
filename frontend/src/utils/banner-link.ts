@@ -1,5 +1,5 @@
 import type { Banner } from '@/api/types'
-import { isRootTabUrl } from './tab-navigation'
+import { goRootTab, isRootTabUrl } from './tab-navigation'
 
 export type BannerAction =
   | { type: 'preview' }
@@ -81,17 +81,15 @@ export function openBannerAction(action: BannerAction, preview: () => void): voi
     return
   }
 
-  const navigateOptions = {
-    url: action.url,
-    fail: () => preview(),
-  }
-
   if (isRootTabUrl(action.url)) {
-    uni.switchTab(navigateOptions)
+    goRootTab(action.url)
     return
   }
 
-  uni.navigateTo(navigateOptions)
+  uni.navigateTo({
+    url: action.url,
+    fail: () => preview(),
+  })
 }
 
 export function copyUrl(url: string): void {

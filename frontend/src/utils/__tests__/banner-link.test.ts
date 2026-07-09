@@ -88,10 +88,11 @@ describe('banner link helpers', () => {
   beforeEach(() => {
     Object.assign(uni, {
       navigateTo: vi.fn(),
+      reLaunch: vi.fn(),
       setClipboardData: vi.fn(),
       showToast: vi.fn(),
-      switchTab: vi.fn(),
     })
+    vi.stubGlobal('getCurrentPages', vi.fn(() => [{ route: 'pages/home/index' }]))
   })
 
   it('builds encoded web-view urls', () => {
@@ -119,25 +120,20 @@ describe('banner link helpers', () => {
     expect(preview).not.toHaveBeenCalled()
   })
 
-  it('uses switchTab for tab miniapp pages', () => {
+  it('uses root tab navigation for root miniapp pages', () => {
     openBannerAction({ type: 'miniapp', url: '/pages/work/index' }, vi.fn())
 
-    expect(uni.switchTab).toHaveBeenCalledWith(expect.objectContaining({ url: '/pages/work/index' }))
+    expect(uni.reLaunch).toHaveBeenCalledWith({ url: '/pages/work/index' })
     expect(uni.navigateTo).not.toHaveBeenCalled()
   })
 
-  it('previews when tab miniapp navigation fails', () => {
+  it('ignores root miniapp navigation when already on the same root page', () => {
     const preview = vi.fn()
-    vi.mocked(uni.switchTab).mockImplementationOnce((options: UniApp.SwitchTabOptions) => {
-      options.fail?.({ errMsg: 'fail' })
-    })
 
     openBannerAction({ type: 'miniapp', url: '/pages/home/index' }, preview)
 
-    expect(uni.switchTab).toHaveBeenCalledWith(expect.objectContaining({
-      url: '/pages/home/index',
-    }))
-    expect(preview).toHaveBeenCalledTimes(1)
+    expect(uni.reLaunch).not.toHaveBeenCalled()
+    expect(preview).not.toHaveBeenCalled()
   })
 
   it('uses navigateTo for non-tab miniapp pages and previews on failure', () => {
