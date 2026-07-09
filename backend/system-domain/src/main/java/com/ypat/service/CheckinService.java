@@ -135,7 +135,11 @@ public class CheckinService {
         try {
             checkinRecord = checkinRecordRepository.save(checkinRecord);
         } catch (DataIntegrityViolationException e) {
-            return result(true, 0, currentPpd(user), null, MESSAGE_ALREADY_CHECKED);
+            User latestUser = userRepository.findById(userId);
+            if (latestUser == null) {
+                throw new SysException(ResponseCode.FAIL_NOT);
+            }
+            return result(true, 0, currentPpd(latestUser), null, MESSAGE_ALREADY_CHECKED);
         }
 
         Record record = new Record();

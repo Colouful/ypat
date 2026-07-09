@@ -115,13 +115,13 @@ public class CheckinServiceTest {
                 rule(YesNo.yes.value, 1),
                 checkinRecordsFailingSave(),
                 records(recordSaves),
-                users(user(1L, 3), userSaves));
+                usersSequence(userSaves, user(10L, 3), user(10L, 4)));
 
-        CheckinResultQo result = service.doCheckin(1L);
+        CheckinResultQo result = service.doCheckin(10L);
 
         assertTrue(result.getCheckedIn());
         assertEquals(Integer.valueOf(0), result.getRewardPpd());
-        assertEquals(Integer.valueOf(3), result.getCurrentPpd());
+        assertEquals(Integer.valueOf(4), result.getCurrentPpd());
         assertEquals("今日已签到", result.getMessage());
         assertEquals(0, recordSaves.count);
         assertEquals(0, userSaves.count);
@@ -244,6 +244,25 @@ public class CheckinServiceTest {
             @Override
             public Object invoke(Object proxy, Method method, Object[] args) {
                 if ("findById".equals(method.getName())) return user;
+                if ("save".equals(method.getName())) {
+                    if (saves != null) saves.count++;
+                    return args[0];
+                }
+                return defaultValue(method.getReturnType());
+            }
+        });
+    }
+
+    private static UserRepository usersSequence(final SaveCounter saves, final User first, final User second) {
+        return proxy(UserRepository.class, new InvocationHandler() {
+            private int findCount;
+
+            @Override
+            public Object invoke(Object proxy, Method method, Object[] args) {
+                if ("findById".equals(method.getName())) {
+                    findCount++;
+                    return findCount == 1 ? first : second;
+                }
                 if ("save".equals(method.getName())) {
                     if (saves != null) saves.count++;
                     return args[0];
