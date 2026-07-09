@@ -190,18 +190,25 @@ public class UserService {
                 }
             }
             if(inviterId != null){
-                User recUser = get(inviterId);
-                recUser.setPpd(recUser.getPpd() + Constant.INVITE_NEED_PPD);
-                userRepository.save(recUser);
-                //增加收支记录
-                Record record = new Record();
-                record.setCredate(new Date());
-                record.setPpd(Constant.INVITE_NEED_PPD);
-                record.setUserid(recUser.getId());
-                record.setType(RecordType.FRI.value);
-                recordRepository.save(record);
-                //写入邀请关系（幂等：uk_invitee_userid 兜底）
-                inviteService.bindRelation(inviterId, user.getId(), inviteCodeUsed, inviteSource);
+                InviteConfigQo inviteConfig = inviteService.getConfig();
+                Integer rewardPpd = inviteConfig.getRewardPpd() == null ? Constant.INVITE_NEED_PPD : inviteConfig.getRewardPpd();
+                boolean inviteEnabled = InviteService.INVITE_ENABLED.equals(inviteConfig.getEnabled());
+                if(inviteEnabled){
+                    InviteService.BindRelationResult bindResult =
+                            inviteService.bindRelationIfAbsent(inviterId, user.getId(), inviteCodeUsed, inviteSource, rewardPpd);
+                    if(bindResult.isCreated() && rewardPpd > 0){
+                        User recUser = get(inviterId);
+                        recUser.setPpd(recUser.getPpd() + rewardPpd);
+                        userRepository.save(recUser);
+                        //增加收支记录
+                        Record record = new Record();
+                        record.setCredate(new Date());
+                        record.setPpd(rewardPpd);
+                        record.setUserid(recUser.getId());
+                        record.setType(RecordType.FRI.value);
+                        recordRepository.save(record);
+                    }
+                }
             }
             userQo.setId(user.getId());
             return userQo;

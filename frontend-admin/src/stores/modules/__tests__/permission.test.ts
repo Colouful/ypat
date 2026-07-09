@@ -32,4 +32,17 @@ describe('permission dynamic routes', () => {
       expect(route?.meta?.placeholder, `${path} should not use PagePlaceholder`).toBeUndefined()
     }
   })
+
+  it('maps invite menu entries to real pages instead of placeholders', () => {
+    const store = usePermissionStore()
+    const routes = store.generateRoutes()
+    const invitePaths = ['invite/config', 'invite/records']
+
+    for (const path of invitePaths) {
+      const route = routes.find((item) => item.path === path)
+
+      expect(route, `${path} route should exist`).toBeTruthy()
+      expect(route?.meta?.placeholder, `${path} should not use PagePlaceholder`).toBeUndefined()
+    }
+  })
 })

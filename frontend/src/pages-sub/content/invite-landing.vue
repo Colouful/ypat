@@ -1,27 +1,49 @@
 <template>
   <view class="page">
-    <KeepPageNav title="爱去拍" />
+    <KeepPageNav title="好友邀请" />
 
     <view class="hero">
-      <view class="hero__logo"><KeepIcon name="camera" :size="80" color="#fff" /></view>
+      <view class="hero__logo"><KeepIcon name="camera" :size="70" color="#fff" /></view>
       <text class="hero__brand">爱去拍</text>
-      <text class="hero__slogan">遇见同频的拍摄伙伴</text>
+      <text class="hero__title">{{ landingTitle }}</text>
+      <view class="hero__tags">
+        <text>摄影师</text>
+        <text>模特</text>
+        <text>同城约拍</text>
+      </view>
     </view>
 
     <view v-if="inviteCode" class="invite-card">
-      <text class="invite-card__label">邀请码</text>
+      <text class="invite-card__label">好友的邀请码</text>
       <text class="invite-card__code">{{ inviteCode }}</text>
-      <text class="invite-card__hint">已为你准备好邀请码，注册即可绑定关系并领取奖励</text>
+      <text class="invite-card__hint">登录注册后会自动为你保留这份邀请关系</text>
+    </view>
+
+    <view class="reward-card">
+      <text class="reward-card__label">邀请奖励</text>
+      <view class="reward-card__main">
+        <text class="reward-card__number">{{ rewardPpd }}</text>
+        <text class="reward-card__unit">{{ rewardUnit }}</text>
+      </view>
+      <text class="reward-card__desc">{{ ruleText }}</text>
     </view>
 
     <view class="benefit">
-      <text class="benefit__title">注册即可享</text>
-      <view class="benefit__row"><view class="benefit__dot" /><text class="benefit__text">新用户注册赠送 10 拍拍豆</text></view>
-      <view class="benefit__row"><view class="benefit__dot" /><text class="benefit__text">{{ ruleText || '邀请规则加载中...' }}</text></view>
-      <view class="benefit__row"><view class="benefit__dot" /><text class="benefit__text">同城摄影师、模特、化妆师精准匹配</text></view>
+      <view class="benefit__row">
+        <KeepIcon name="check" :size="28" color="#23C268" />
+        <text>发现同城摄影师、模特、化妆师</text>
+      </view>
+      <view class="benefit__row">
+        <KeepIcon name="check" :size="28" color="#23C268" />
+        <text>发布约拍需求，找到更匹配的拍摄伙伴</text>
+      </view>
+      <view class="benefit__row">
+        <KeepIcon name="check" :size="28" color="#23C268" />
+        <text>通过好友邀请加入，注册链路自动绑定</text>
+      </view>
     </view>
 
-    <button class="cta" @tap="goLogin">登录并加入</button>
+    <button class="cta" :disabled="!inviteEnabled" @tap="goLogin">{{ ctaText }}</button>
     <view class="agreement">
       <text>登录即代表同意</text>
       <text class="agreement__link" @tap="goAgreement">《用户协议》</text>
@@ -32,27 +54,44 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
 import { onLoad } from '@dcloudio/uni-app'
 import KeepPageNav from '@/components/business/KeepPageNav.vue'
 import KeepIcon from '@/components/business/KeepIcon.vue'
 import * as inviteApi from '@/api/modules/invite'
+import type { InviteRule } from '@/api/types'
 import { captureInviteFromQuery } from '@/services/invite-context'
 
 const inviteCode = ref('')
-const ruleText = ref('')
+const inviteSource = ref('share')
+const rule = ref<InviteRule | null>(null)
+
+const inviteEnabled = computed(() => (rule.value?.enabled || '1') === '1')
+const rewardPpd = computed(() => rule.value?.rewardPpd ?? 0)
+const rewardUnit = computed(() => rule.value?.rewardUnit || '拍拍豆')
+const ruleText = computed(() => rule.value?.ruleText || `好友通过你的邀请码注册后，自动到账 ${rewardPpd.value} 拍拍豆。`)
+const landingTitle = computed(() => rule.value?.landingTitle || '我正在使用爱去拍，找摄影师、找模特特别方便，推荐你也来体验。')
+const ctaText = computed(() => (inviteEnabled.value ? '马上体验' : '邀请活动暂未开启'))
 
 async function loadRule(): Promise<void> {
   try {
     const result = await inviteApi.getInviteRule()
-    if (result.success && result.data) ruleText.value = result.data.ruleText
+    if (result.success && result.data) rule.value = result.data
   } catch {
-    ruleText.value = ''
+    rule.value = null
   }
 }
 
 function goLogin(): void {
-  uni.navigateTo({ url: '/pages/login/index' })
+  if (!inviteEnabled.value) {
+    uni.showToast({ title: '邀请活动暂未开启', icon: 'none' })
+    return
+  }
+  const params: string[] = []
+  if (inviteCode.value) params.push(`inviteCode=${encodeURIComponent(inviteCode.value)}`)
+  if (inviteSource.value) params.push(`source=${encodeURIComponent(inviteSource.value)}`)
+  const query = params.length ? `?${params.join('&')}` : ''
+  uni.navigateTo({ url: `/pages/login/index${query}` })
 }
 
 function goAgreement(): void { uni.navigateTo({ url: '/pages-sub/content/agreement' }) }
@@ -61,38 +100,189 @@ function goPrivacy(): void { uni.navigateTo({ url: '/pages-sub/content/privacy' 
 onLoad((query) => {
   const code = query?.inviteCode ? String(query.inviteCode) : ''
   const recmobile = query?.recmobile ? String(query.recmobile) : ''
-  if (code) inviteCode.value = code
-  captureInviteFromQuery({
-    inviteCode: code,
-    recmobile,
-    source: query?.source ? String(query.source) : 'share',
-  })
+  const source = query?.source ? String(query.source) : 'share'
+  inviteCode.value = code
+  inviteSource.value = source
+  captureInviteFromQuery({ inviteCode: code, recmobile, source })
   void loadRule()
 })
 </script>
 
 <style scoped lang="scss">
-.page { min-height: 100vh; padding: 24rpx 28rpx calc(60rpx + env(safe-area-inset-bottom)); background: $color-bg-page; }
+.page {
+  min-height: 100vh;
+  padding: 24rpx 28rpx calc(60rpx + env(safe-area-inset-bottom));
+  background: linear-gradient(180deg, #effff5 0%, #fff 420rpx, $color-bg-page 421rpx);
+}
 
-.hero { padding: 60rpx 0 36rpx; text-align: center; }
-.hero__logo { @include flex-center; width: 160rpx; height: 160rpx; margin: 0 auto 24rpx; border-radius: 52rpx; background: $color-primary; box-shadow: $shadow-keep-button; }
-.hero__brand { display: block; color: $color-text-primary; font-size: 52rpx; font-weight: 900; letter-spacing: 4rpx; }
-.hero__slogan { display: block; margin-top: 14rpx; color: $color-text-secondary; font-size: 28rpx; }
+.hero {
+  padding: 44rpx 18rpx 34rpx;
+  text-align: center;
+}
 
-.invite-card { margin: 30rpx 0; padding: 36rpx; border-radius: $radius-keep-card; background: #fff; box-shadow: $shadow-keep-card; text-align: center; }
-.invite-card__label { display: block; color: $color-text-secondary; font-size: 24rpx; font-weight: 700; }
-.invite-card__code { display: block; margin-top: 16rpx; color: $color-primary-dark; font-size: 52rpx; font-weight: 900; letter-spacing: 6rpx; }
-.invite-card__hint { display: block; margin-top: 16rpx; color: $color-text-helper; font-size: 24rpx; line-height: 1.6; }
+.hero__logo {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 132rpx;
+  height: 132rpx;
+  margin: 0 auto 22rpx;
+  border-radius: 42rpx;
+  background: $color-primary;
+  box-shadow: $shadow-keep-button;
+}
 
-.benefit { padding: 30rpx; border-radius: $radius-keep-card; background: $color-bg-chip; }
-.benefit__title { display: block; color: $color-text-primary; font-size: 30rpx; font-weight: 900; }
-.benefit__row { display: flex; align-items: flex-start; gap: 16rpx; margin-top: 18rpx; }
-.benefit__dot { margin-top: 14rpx; width: 12rpx; height: 12rpx; border-radius: 50%; background: $color-primary; }
-.benefit__text { flex: 1; color: $color-text-secondary; font-size: 26rpx; line-height: 1.6; }
+.hero__brand {
+  display: block;
+  color: $color-primary-dark;
+  font-size: 28rpx;
+  font-weight: 900;
+}
 
-.cta { margin-top: 40rpx; height: 96rpx; border-radius: 999rpx; color: #fff; background: $color-primary; font-size: 30rpx; font-weight: 900; line-height: 96rpx; }
-.cta::after { border: 0; }
+.hero__title {
+  display: block;
+  margin: 20rpx auto 0;
+  max-width: 620rpx;
+  color: $color-text-primary;
+  font-size: 38rpx;
+  font-weight: 900;
+  line-height: 1.45;
+}
 
-.agreement { margin-top: 24rpx; color: $color-text-secondary; font-size: 22rpx; text-align: center; }
-.agreement__link { color: $color-text-primary; font-weight: 800; }
+.hero__tags {
+  display: flex;
+  justify-content: center;
+  gap: 14rpx;
+  margin-top: 26rpx;
+
+  text {
+    padding: 8rpx 18rpx;
+    border-radius: $radius-round;
+    color: $color-primary-dark;
+    background: $color-primary-soft;
+    font-size: 22rpx;
+    font-weight: 800;
+  }
+}
+
+.invite-card,
+.reward-card,
+.benefit {
+  margin-bottom: 22rpx;
+  padding: 30rpx;
+  border-radius: $radius-keep-card;
+  background: #fff;
+  box-shadow: $shadow-keep-card;
+}
+
+.invite-card {
+  text-align: center;
+}
+
+.invite-card__label {
+  display: block;
+  color: $color-text-helper;
+  font-size: 24rpx;
+  font-weight: 800;
+}
+
+.invite-card__code {
+  display: block;
+  margin-top: 12rpx;
+  color: $color-primary-dark;
+  font-size: 50rpx;
+  font-weight: 900;
+  letter-spacing: 4rpx;
+}
+
+.invite-card__hint {
+  display: block;
+  margin-top: 12rpx;
+  color: $color-text-secondary;
+  font-size: 24rpx;
+  line-height: 1.6;
+}
+
+.reward-card {
+  background: linear-gradient(135deg, $color-primary-soft 0%, #fff 70%);
+}
+
+.reward-card__label {
+  display: block;
+  color: $color-primary-dark;
+  font-size: 24rpx;
+  font-weight: 900;
+}
+
+.reward-card__main {
+  display: flex;
+  align-items: baseline;
+  gap: 12rpx;
+  margin-top: 8rpx;
+  color: $color-accent-gold;
+}
+
+.reward-card__number {
+  font-size: 64rpx;
+  font-weight: 900;
+}
+
+.reward-card__unit {
+  font-size: 28rpx;
+  font-weight: 900;
+}
+
+.reward-card__desc {
+  display: block;
+  margin-top: 8rpx;
+  color: $color-text-secondary;
+  font-size: 26rpx;
+  line-height: 1.6;
+}
+
+.benefit__row {
+  display: flex;
+  align-items: flex-start;
+  gap: 14rpx;
+  color: $color-text-secondary;
+  font-size: 26rpx;
+  line-height: 1.6;
+}
+
+.benefit__row + .benefit__row {
+  margin-top: 18rpx;
+}
+
+.cta {
+  margin-top: 34rpx;
+  width: 100%;
+  height: 96rpx;
+  border-radius: $radius-round;
+  color: #fff;
+  background: $color-primary;
+  box-shadow: $shadow-keep-button;
+  font-size: 30rpx;
+  font-weight: 900;
+  line-height: 96rpx;
+}
+
+.cta[disabled] {
+  opacity: 0.55;
+}
+
+.cta::after {
+  border: 0;
+}
+
+.agreement {
+  margin-top: 24rpx;
+  color: $color-text-secondary;
+  font-size: 22rpx;
+  text-align: center;
+}
+
+.agreement__link {
+  color: $color-text-primary;
+  font-weight: 800;
+}
 </style>

@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 import {
+  buildInviteLandingPath,
   captureInviteFromQuery,
   clearInviteContext,
   consumeInviteContext,
@@ -59,5 +60,11 @@ describe('invite-context', () => {
     captureInviteFromQuery({ inviteCode: 'X' })
     clearInviteContext()
     expect(getInviteContext()).toBeNull()
+  })
+
+  it('builds invite landing path with source for share entry', () => {
+    expect(buildInviteLandingPath('IV 3F', 'share')).toBe(
+      '/pages-sub/content/invite-landing?inviteCode=IV%203F&source=share',
+    )
   })
 })

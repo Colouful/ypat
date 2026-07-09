@@ -14,6 +14,10 @@ public class InviteSummaryQo implements Serializable {
     private Long totalInvited;
     private Integer totalReward;
     private Integer rewardPpd;
+    private String enabled;
+    private String ruleText;
+    private String shareTitle;
+    private String landingTitle;
 
     public String getInviteCode() { return inviteCode; }
     public void setInviteCode(String inviteCode) { this.inviteCode = inviteCode; }
@@ -23,4 +27,12 @@ public class InviteSummaryQo implements Serializable {
     public void setTotalReward(Integer totalReward) { this.totalReward = totalReward; }
     public Integer getRewardPpd() { return rewardPpd; }
     public void setRewardPpd(Integer rewardPpd) { this.rewardPpd = rewardPpd; }
+    public String getEnabled() { return enabled; }
+    public void setEnabled(String enabled) { this.enabled = enabled; }
+    public String getRuleText() { return ruleText; }
+    public void setRuleText(String ruleText) { this.ruleText = ruleText; }
+    public String getShareTitle() { return shareTitle; }
+    public void setShareTitle(String shareTitle) { this.shareTitle = shareTitle; }
+    public String getLandingTitle() { return landingTitle; }
+    public void setLandingTitle(String landingTitle) { this.landingTitle = landingTitle; }
 }

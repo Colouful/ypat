@@ -1,5 +1,6 @@
 package com.ypat.controller;
 
+import com.ypat.InviteConfigQo;
 import com.ypat.InviteRelationQo;
 import com.ypat.InviteSummaryQo;
 import com.ypat.service.InviteService;
@@ -30,5 +31,20 @@ public class InviteController {
     @PostMapping("/service/invite/findPage")
     public Map<String, Object> findPage(@RequestBody InviteRelationQo qo) {
         return inviteService.findPage(qo);
+    }
+
+    @GetMapping("/service/invite/config")
+    public InviteConfigQo config() {
+        return inviteService.getConfig();
+    }
+
+    @PostMapping("/service/invite/config/save")
+    public InviteConfigQo saveConfig(@RequestBody InviteConfigQo qo) {
+        return inviteService.saveConfig(qo);
+    }
+
+    @PostMapping("/service/invite/admin/findPage")
+    public Map<String, Object> adminFindPage(@RequestBody InviteRelationQo qo) {
+        return inviteService.adminFindPage(qo);
     }
 }

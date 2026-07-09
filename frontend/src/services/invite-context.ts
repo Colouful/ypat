@@ -73,3 +73,12 @@ export function consumeInviteContext(currentUserMobile?: string): InviteContext 
 export function clearInviteContext(): void {
   uni.removeStorageSync(STORAGE_KEY)
 }
+
+export function buildInviteLandingPath(inviteCode?: string | null, source: string = 'share'): string {
+  const params: string[] = []
+  const code = (inviteCode || '').toString().trim()
+  if (code) params.push(`inviteCode=${encodeURIComponent(code)}`)
+  const entry = (source || '').toString().trim()
+  if (entry) params.push(`source=${encodeURIComponent(entry)}`)
+  return `/pages-sub/content/invite-landing${params.length ? `?${params.join('&')}` : ''}`
+}

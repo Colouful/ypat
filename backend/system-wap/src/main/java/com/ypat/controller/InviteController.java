@@ -1,5 +1,6 @@
 package com.ypat.controller;
 
+import com.ypat.InviteConfigQo;
 import com.ypat.InviteRelationQo;
 import com.ypat.InviteSummaryQo;
 import com.ypat.service.InviteServiceClient;
@@ -36,13 +37,14 @@ public class InviteController {
 
     @GetMapping(value = {"/invite/rule"})
     public Map<String, Object> rule() {
-        // 单独的规则接口供分享落地页 / 未登录浏览，不依赖 userId。
-        // 真实奖励数从 InviteService.getSummary(null) 透传 Constant.INVITE_NEED_PPD。
-        InviteSummaryQo summary = inviteServiceClient.summary(null);
+        InviteConfigQo config = inviteServiceClient.config();
         Map<String, Object> body = new HashMap<>();
-        body.put("rewardPpd", summary.getRewardPpd());
-        body.put("rewardUnit", "拍拍豆");
-        body.put("ruleText", "好友通过你的邀请码注册后，自动到账 " + summary.getRewardPpd() + " 拍拍豆。");
+        body.put("enabled", config.getEnabled());
+        body.put("rewardPpd", config.getRewardPpd());
+        body.put("rewardUnit", config.getRewardUnit() == null ? "拍拍豆" : config.getRewardUnit());
+        body.put("ruleText", config.getRuleText());
+        body.put("shareTitle", config.getShareTitle());
+        body.put("landingTitle", config.getLandingTitle());
         return body;
     }
 
