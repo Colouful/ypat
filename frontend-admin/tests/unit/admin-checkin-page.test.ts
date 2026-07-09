@@ -10,6 +10,8 @@ describe('admin checkin page source contract', () => {
   it('contains rule form and record table', () => {
     expect(page).toContain('签到规则')
     expect(page).toContain('签到记录')
+    expect(page).toContain('getCheckinRule')
+    expect(page).toContain('saveCheckinRule')
     expect(page).toContain('rewardPpd')
     expect(page).toContain('confirmTitle')
     expect(page).toContain('getCheckinRecords')
