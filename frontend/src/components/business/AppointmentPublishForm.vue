@@ -133,6 +133,7 @@ import { resolveWorkTagOptions, WORK_TAG_LIMIT } from '@/constants/work-tags'
 import { submit as submitYpat } from '@/api/modules/ypat'
 import { useMemberStore } from '@/stores/member'
 import { filePathToDataUrl } from '@/utils/file-base64'
+import { requestMessageSubscribe } from '@/utils/subscribe-message'
 import type { WorkTag } from '@/api/types/work'
 import type { MediaItem } from '@/api/types/media'
 
@@ -262,6 +263,7 @@ async function onSubmit() {
     uni.showToast({ title: '请选择面向地区', icon: 'none' })
     return
   }
+  await requestMessageSubscribe('publish')
   submitting.value = true
   try {
     const pics: string[] = []

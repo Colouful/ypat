@@ -200,6 +200,12 @@ export type UnreadCountResult = number
 
 // ===== 消息 =====
 
+export interface TemplateIdItem {
+  id: number
+  name: string
+  value: string
+}
+
 export interface MessInfo {
   id: number
   type?: string

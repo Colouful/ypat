@@ -71,6 +71,7 @@ import * as ypatApi from '@/api/modules/ypat'
 import { normalizeImageUrl } from '@/api/adapters'
 import { getProfessLabel, TARGET_LABELS } from '@/constants/enums'
 import { useUserStore } from '@/stores/user'
+import { requestMessageSubscribe } from '@/utils/subscribe-message'
 import type { YpatInfo } from '@/api/types'
 import type { WorkDetail } from '@/api/types/work'
 
@@ -161,6 +162,7 @@ async function submitApply(): Promise<void> {
   if (submitDisabled.value || (!workId.value && !ypatId.value)) return
   submitting.value = true
   try {
+    await requestMessageSubscribe('apply')
     if (ypatId.value) {
       const currentUserId = userStore.userInfo?.id
       const publisherId = ypat.value?.userid
@@ -183,6 +185,7 @@ async function submitApply(): Promise<void> {
       })
     }
     uni.showToast({ title: '约拍申请已提交', icon: 'success' })
+    void userStore.refreshUnreadCount()
     setTimeout(() => uni.navigateBack(), 800)
   } catch (error) {
     uni.showToast({ title: error instanceof Error ? error.message : '提交失败', icon: 'none' })

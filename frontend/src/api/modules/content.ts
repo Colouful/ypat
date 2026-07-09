@@ -6,6 +6,7 @@ import type {
   BannerListParams,
   Article,
   ArticleListParams,
+  TemplateIdItem,
 } from '../types'
 import type { AreaInfo, ParamInfo } from '../types/area-types'
 
@@ -25,7 +26,7 @@ export function getAreaList(): Promise<ApiResult<AreaInfo>> {
   return get('/area/list')
 }
 
-export function getTemplateIds(): Promise<ApiResult<string[]>> {
+export function getTemplateIds(): Promise<ApiResult<TemplateIdItem[]>> {
   return get('/tmplid/list')
 }
 
