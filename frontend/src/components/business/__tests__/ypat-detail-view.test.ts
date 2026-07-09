@@ -1,15 +1,37 @@
 // @vitest-environment jsdom
 import { flushPromises, mount } from '@vue/test-utils'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { YpatInfo } from '@/api/types'
 import YpatDetailView from '../YpatDetailView.vue'
 
-const { getDetail, addFavorite, applyYpat, put, goRootTab } = vi.hoisted(() => ({
+const {
+  getDetail,
+  addFavorite,
+  applyYpat,
+  put,
+  goRootTab,
+  getCurrentPages,
+  previewImage,
+  navigateBack,
+  navigateTo,
+  reLaunch,
+  setClipboardData,
+  showToast,
+  showModal,
+} = vi.hoisted(() => ({
   getDetail: vi.fn(),
   addFavorite: vi.fn(),
   applyYpat: vi.fn(),
   put: vi.fn(() => Promise.resolve({})),
   goRootTab: vi.fn(),
+  getCurrentPages: vi.fn(),
+  previewImage: vi.fn(),
+  navigateBack: vi.fn(),
+  navigateTo: vi.fn(),
+  reLaunch: vi.fn(),
+  setClipboardData: vi.fn(),
+  showToast: vi.fn(),
+  showModal: vi.fn(),
 }))
 
 vi.mock('@/api/modules/ypat', () => ({
@@ -84,27 +106,41 @@ async function mountWithDetail(detail: YpatInfo) {
 }
 
 describe('YpatDetailView', () => {
+  afterEach(() => {
+    vi.unstubAllGlobals()
+  })
+
   beforeEach(() => {
     getDetail.mockReset()
     addFavorite.mockReset()
     applyYpat.mockReset()
     put.mockClear()
     goRootTab.mockClear()
-    const globalWithUni = globalThis as typeof globalThis & {
-      getCurrentPages: () => unknown[]
-      uni: Record<string, ReturnType<typeof vi.fn>>
-    }
+    getCurrentPages.mockReset()
+    previewImage.mockReset()
+    navigateBack.mockReset()
+    navigateTo.mockReset()
+    reLaunch.mockReset()
+    setClipboardData.mockReset()
+    showToast.mockReset()
+    showModal.mockReset()
 
-    globalWithUni.getCurrentPages = vi.fn(() => [{ route: 'pages-sub/ypat/detail' }])
+    getCurrentPages.mockReturnValue([{ route: 'pages-sub/ypat/detail' }])
+    vi.stubGlobal('getCurrentPages', getCurrentPages)
 
-    Object.assign(globalWithUni.uni, {
-      previewImage: vi.fn(),
-      navigateBack: vi.fn(),
-      navigateTo: vi.fn(),
-      reLaunch: vi.fn(),
-      setClipboardData: vi.fn(),
-      showToast: vi.fn(),
-      showModal: vi.fn(),
+    const baseUni = (globalThis as typeof globalThis & {
+      uni: Record<string, unknown>
+    }).uni
+
+    vi.stubGlobal('uni', {
+      ...baseUni,
+      previewImage,
+      navigateBack,
+      navigateTo,
+      reLaunch,
+      setClipboardData,
+      showToast,
+      showModal,
     })
   })
 
@@ -357,5 +393,71 @@ describe('YpatDetailView', () => {
 
     expect(emptyLevelWrapper.find('.author-card__member').text()).toContain('VIP')
     expect(emptyLevelWrapper.find('.detail-trust-row').text()).toContain('VIP会员')
+  })
+
+  it('作者卡片与底部主页按钮都只触发主页跳转且不误调用收藏或报名接口', async () => {
+    const wrapper = await mountWithDetail(createDetail())
+
+    await wrapper.find('.author-card').trigger('tap')
+
+    expect(navigateTo).toHaveBeenCalledTimes(1)
+    expect(navigateTo).toHaveBeenCalledWith({ url: '/pages-sub/user/profile?id=201' })
+
+    navigateTo.mockClear()
+
+    const actionButtons = wrapper.findAll('.detail-actions__mini')
+    expect(actionButtons).toHaveLength(2)
+
+    await actionButtons[1].trigger('tap')
+
+    expect(navigateTo).toHaveBeenCalledTimes(1)
+    expect(navigateTo).toHaveBeenCalledWith({ url: '/pages-sub/user/profile?id=201' })
+    expect(addFavorite).not.toHaveBeenCalled()
+    expect(applyYpat).not.toHaveBeenCalled()
+  })
+
+  it('点击收藏只调用一次收藏接口并显示成功提示，不触发报名', async () => {
+    addFavorite.mockResolvedValueOnce({})
+
+    const wrapper = await mountWithDetail(createDetail())
+    const actionButtons = wrapper.findAll('.detail-actions__mini')
+
+    expect(actionButtons).toHaveLength(2)
+
+    await actionButtons[0].trigger('tap')
+    await flushPromises()
+
+    expect(addFavorite).toHaveBeenCalledTimes(1)
+    expect(addFavorite).toHaveBeenCalledWith(999, 101)
+    expect(showToast).toHaveBeenCalledWith({ title: '收藏成功', icon: 'success' })
+    expect(applyYpat).not.toHaveBeenCalled()
+  })
+
+  it('点击立即约拍在确认且文案合法时只调用一次报名接口并带正确参数', async () => {
+    applyYpat.mockResolvedValueOnce({})
+    showModal.mockImplementation((options: {
+      success?: (result: { confirm: boolean; cancel: boolean; content?: string }) => void
+    }) => {
+      options.success?.({
+        confirm: true,
+        cancel: false,
+        content: '一起拍一组复古人像',
+      })
+    })
+
+    const wrapper = await mountWithDetail(createDetail())
+
+    await wrapper.find('.detail-actions__primary').trigger('tap')
+    await flushPromises()
+
+    expect(showModal).toHaveBeenCalledTimes(1)
+    expect(applyYpat).toHaveBeenCalledTimes(1)
+    expect(applyYpat).toHaveBeenCalledWith({
+      sendperid: 999,
+      recperid: 201,
+      ypatid: 101,
+      content: '一起拍一组复古人像',
+    })
+    expect(addFavorite).not.toHaveBeenCalled()
   })
 })
