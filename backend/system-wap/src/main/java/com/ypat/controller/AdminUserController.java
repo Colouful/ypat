@@ -161,7 +161,7 @@ public class AdminUserController {
         logger.info("管理端实名审核：id={}, flag={}", id, flag);
 
         String result = oauthServiceClient.audit(id, flag);
-        JsonElement resData = JsonParser.parseString(result);
+        JsonElement resData = parseAuditResponse(result);
         pushOauthAuditMessage(id, flag);
 
         Map<String, Object> res = new HashMap<>(4);
@@ -169,6 +169,13 @@ public class AdminUserController {
         res.put("data", resData);
 
         return ResponseApiBody.success(res);
+    }
+
+    private JsonElement parseAuditResponse(String result) {
+        if (StringUtils.isBlank(result)) {
+            return JsonParser.parseString("{}");
+        }
+        return JsonParser.parseString(result);
     }
 
     private void pushOauthAuditMessage(Long id, String flag) {
