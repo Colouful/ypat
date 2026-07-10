@@ -1,14 +1,26 @@
 package com.ypat.service;
 
+import com.ypat.InternalTestGenerateQo;
+import com.ypat.InternalTestResourceQo;
+import com.ypat.InternalTestUserActionQo;
+import com.ypat.entity.InternalTestResource;
 import org.junit.Test;
 
+import javax.persistence.Column;
+import javax.persistence.Transient;
 import java.io.IOException;
+import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Date;
+import java.util.List;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 public class InternalTestDataSourceTest {
@@ -184,65 +196,133 @@ public class InternalTestDataSourceTest {
     public void lazyWorkbenchMigrationAddsResourceGroupUsageAndRegionFields() throws Exception {
         String sql = read("docs/sql/pending/V_admin_internal_test_data.sql");
 
-        assertTrue(sql.contains("ADD COLUMN `province`"));
-        assertTrue(sql.contains("ADD COLUMN `area`"));
-        assertTrue(sql.contains("ADD COLUMN `group_no`"));
-        assertTrue(sql.contains("ADD COLUMN `group_title`"));
-        assertTrue(sql.contains("ADD COLUMN `group_sort_no`"));
-        assertTrue(sql.contains("ADD COLUMN `used_flag`"));
-        assertTrue(sql.contains("ADD COLUMN `used_batch_no`"));
-        assertTrue(sql.contains("ADD COLUMN `used_target_type`"));
-        assertTrue(sql.contains("ADD COLUMN `used_target_id`"));
-        assertTrue(sql.contains("ADD COLUMN `used_at`"));
+        assertResourceColumnMigration(sql, "province",
+                "ALTER TABLE `t_internal_test_resource` ADD COLUMN `province` VARCHAR(64) DEFAULT NULL");
+        assertResourceColumnMigration(sql, "area",
+                "ALTER TABLE `t_internal_test_resource` ADD COLUMN `area` VARCHAR(64) DEFAULT NULL");
+        assertResourceColumnMigration(sql, "group_no",
+                "ALTER TABLE `t_internal_test_resource` ADD COLUMN `group_no` VARCHAR(64) DEFAULT NULL");
+        assertResourceColumnMigration(sql, "group_title",
+                "ALTER TABLE `t_internal_test_resource` ADD COLUMN `group_title` VARCHAR(128) DEFAULT NULL");
+        assertResourceColumnMigration(sql, "group_sort_no",
+                "ALTER TABLE `t_internal_test_resource` ADD COLUMN `group_sort_no` INT NOT NULL DEFAULT 0");
+        assertResourceColumnMigration(sql, "used_flag",
+                "ALTER TABLE `t_internal_test_resource` ADD COLUMN `used_flag` TINYINT NOT NULL DEFAULT 0");
+        assertResourceColumnMigration(sql, "used_batch_no",
+                "ALTER TABLE `t_internal_test_resource` ADD COLUMN `used_batch_no` VARCHAR(64) DEFAULT NULL");
+        assertResourceColumnMigration(sql, "used_target_type",
+                "ALTER TABLE `t_internal_test_resource` ADD COLUMN `used_target_type` VARCHAR(16) DEFAULT NULL");
+        assertResourceColumnMigration(sql, "used_target_id",
+                "ALTER TABLE `t_internal_test_resource` ADD COLUMN `used_target_id` BIGINT DEFAULT NULL");
+        assertResourceColumnMigration(sql, "used_at",
+                "ALTER TABLE `t_internal_test_resource` ADD COLUMN `used_at` DATETIME DEFAULT NULL");
     }
 
     @Test
     public void lazyWorkbenchDtosExposeBatchImportGenerationAndUserActionFields() throws Exception {
-        String resourceQo = read("backend/system-object/src/main/java/com/ypat/InternalTestResourceQo.java");
-        String generateQo = read("backend/system-object/src/main/java/com/ypat/InternalTestGenerateQo.java");
-        String actionQo = read("backend/system-object/src/main/java/com/ypat/InternalTestUserActionQo.java");
-        String entity = read("backend/system-domain/src/main/java/com/ypat/entity/InternalTestResource.java");
+        assertReadableWritable(InternalTestResourceQo.class, "urls", List.class);
+        assertReadableWritable(InternalTestResourceQo.class, "province", String.class);
+        assertReadableWritable(InternalTestResourceQo.class, "area", String.class);
+        assertReadableWritable(InternalTestResourceQo.class, "groupNo", String.class);
+        assertReadableWritable(InternalTestResourceQo.class, "groupTitle", String.class);
+        assertReadableWritable(InternalTestResourceQo.class, "groupSize", Integer.class);
+        assertReadableWritable(InternalTestResourceQo.class, "groupSortNo", Integer.class);
+        assertReadableWritable(InternalTestResourceQo.class, "usedFlag", Integer.class);
+        assertReadableWritable(InternalTestResourceQo.class, "usedBatchNo", String.class);
+        assertReadableWritable(InternalTestResourceQo.class, "usedTargetType", String.class);
+        assertReadableWritable(InternalTestResourceQo.class, "usedTargetId", Long.class);
+        assertReadableWritable(InternalTestResourceQo.class, "usedAt", Date.class);
 
-        assertTrue(resourceQo.contains("private java.util.List<String> urls;"));
-        assertTrue(resourceQo.contains("private String province;"));
-        assertTrue(resourceQo.contains("private String area;"));
-        assertTrue(resourceQo.contains("private String groupNo;"));
-        assertTrue(resourceQo.contains("private String groupTitle;"));
-        assertTrue(resourceQo.contains("private Integer groupSize;"));
-        assertTrue(resourceQo.contains("private Integer groupSortNo;"));
-        assertTrue(resourceQo.contains("private Integer usedFlag;"));
-        assertTrue(resourceQo.contains("private String usedBatchNo;"));
-        assertTrue(resourceQo.contains("private String usedTargetType;"));
-        assertTrue(resourceQo.contains("private Long usedTargetId;"));
-        assertTrue(resourceQo.contains("private java.util.Date usedAt;"));
-        assertTrue(generateQo.contains("private String actionType;"));
-        assertTrue(generateQo.contains("private Long userId;"));
-        assertTrue(generateQo.contains("private java.util.List<String> groupNos;"));
-        assertTrue(generateQo.contains("private String wx;"));
-        assertTrue(generateQo.contains("private String mobile;"));
-        assertTrue(generateQo.contains("private java.util.List<String> styleCodes;"));
-        assertTrue(generateQo.contains("private String patdate;"));
-        assertTrue(generateQo.contains("private String patslice;"));
-        assertTrue(generateQo.contains("private String describ;"));
-        assertTrue(generateQo.contains("private String target;"));
-        assertTrue(actionQo.contains("private Long userId;"));
-        assertTrue(actionQo.contains("private Integer days;"));
-        assertTrue(actionQo.contains("private String reason;"));
-        assertTrue(entity.contains("private java.util.List<String> urls;"));
-        assertTrue(entity.contains("private String province;"));
-        assertTrue(entity.contains("private String area;"));
-        assertTrue(entity.contains("private String groupNo;"));
-        assertTrue(entity.contains("private String groupTitle;"));
-        assertTrue(entity.contains("private Integer groupSize;"));
-        assertTrue(entity.contains("private Integer groupSortNo;"));
-        assertTrue(entity.contains("private Integer usedFlag;"));
-        assertTrue(entity.contains("private String usedBatchNo;"));
-        assertTrue(entity.contains("private String usedTargetType;"));
-        assertTrue(entity.contains("private Long usedTargetId;"));
-        assertTrue(entity.contains("private java.util.Date usedAt;"));
-        assertTrue(entity.contains("@Column(name = \"group_no\")"));
-        assertTrue(entity.contains("@Column(name = \"used_flag\")"));
-        assertTrue(entity.contains("@Column(name = \"used_target_id\")"));
+        assertReadableWritable(InternalTestGenerateQo.class, "actionType", String.class);
+        assertReadableWritable(InternalTestGenerateQo.class, "userId", Long.class);
+        assertReadableWritable(InternalTestGenerateQo.class, "groupNos", List.class);
+        assertReadableWritable(InternalTestGenerateQo.class, "wx", String.class);
+        assertReadableWritable(InternalTestGenerateQo.class, "mobile", String.class);
+        assertReadableWritable(InternalTestGenerateQo.class, "styleCodes", List.class);
+        assertReadableWritable(InternalTestGenerateQo.class, "patdate", String.class);
+        assertReadableWritable(InternalTestGenerateQo.class, "patslice", String.class);
+        assertReadableWritable(InternalTestGenerateQo.class, "describ", String.class);
+        assertReadableWritable(InternalTestGenerateQo.class, "target", String.class);
+
+        assertReadableWritable(InternalTestUserActionQo.class, "userId", Long.class);
+        assertReadableWritable(InternalTestUserActionQo.class, "days", Integer.class);
+        assertReadableWritable(InternalTestUserActionQo.class, "reason", String.class);
+
+        assertReadableWritable(InternalTestResource.class, "urls", List.class);
+        assertReadableWritable(InternalTestResource.class, "province", String.class);
+        assertReadableWritable(InternalTestResource.class, "area", String.class);
+        assertReadableWritable(InternalTestResource.class, "groupNo", String.class);
+        assertReadableWritable(InternalTestResource.class, "groupTitle", String.class);
+        assertReadableWritable(InternalTestResource.class, "groupSize", Integer.class);
+        assertReadableWritable(InternalTestResource.class, "groupSortNo", Integer.class);
+        assertReadableWritable(InternalTestResource.class, "usedFlag", Integer.class);
+        assertReadableWritable(InternalTestResource.class, "usedBatchNo", String.class);
+        assertReadableWritable(InternalTestResource.class, "usedTargetType", String.class);
+        assertReadableWritable(InternalTestResource.class, "usedTargetId", Long.class);
+        assertReadableWritable(InternalTestResource.class, "usedAt", Date.class);
+        assertTransientField(InternalTestResource.class, "urls");
+        assertTransientField(InternalTestResource.class, "groupSize");
+        assertColumnName(InternalTestResource.class, "groupNo", "group_no");
+        assertColumnName(InternalTestResource.class, "groupTitle", "group_title");
+        assertColumnName(InternalTestResource.class, "groupSortNo", "group_sort_no");
+        assertColumnName(InternalTestResource.class, "usedFlag", "used_flag");
+        assertColumnName(InternalTestResource.class, "usedBatchNo", "used_batch_no");
+        assertColumnName(InternalTestResource.class, "usedTargetType", "used_target_type");
+        assertColumnName(InternalTestResource.class, "usedTargetId", "used_target_id");
+        assertColumnName(InternalTestResource.class, "usedAt", "used_at");
+    }
+
+    private void assertResourceColumnMigration(String sql, String columnName, String ddlFragment) {
+        String block = migrationBlock(sql, "t_internal_test_resource", columnName);
+
+        assertTrue(block.contains("SELECT IF(COUNT(*) = 0,"));
+        assertTrue(block.contains("FROM information_schema.COLUMNS"));
+        assertTrue(block.contains("TABLE_SCHEMA = DATABASE()"));
+        assertTrue(block.contains("TABLE_NAME = 't_internal_test_resource'"));
+        assertTrue(block.contains("COLUMN_NAME = '" + columnName + "'"));
+        assertTrue(block.contains(ddlFragment));
+        assertTrue(block.contains("SELECT ''skip t_internal_test_resource." + columnName + "''"));
+        assertTrue(block.contains("PREPARE stmt FROM @ddl;"));
+        assertTrue(block.contains("EXECUTE stmt;"));
+        assertTrue(block.contains("DEALLOCATE PREPARE stmt;"));
+    }
+
+    private String migrationBlock(String sql, String tableName, String columnName) {
+        int columnIndex = sql.indexOf("COLUMN_NAME = '" + columnName + "'");
+        assertTrue("missing migration column guard for " + columnName, columnIndex >= 0);
+
+        int start = sql.lastIndexOf("SET @ddl := (", columnIndex);
+        int end = sql.indexOf("DEALLOCATE PREPARE stmt;", columnIndex);
+        assertTrue("missing migration start for " + columnName, start >= 0);
+        assertTrue("missing migration end for " + columnName, end >= 0);
+
+        String block = sql.substring(start, end + "DEALLOCATE PREPARE stmt;".length());
+        assertTrue(block.contains("TABLE_NAME = '" + tableName + "'"));
+        return block;
+    }
+
+    private void assertReadableWritable(Class<?> type, String fieldName, Class<?> fieldType) throws Exception {
+        Field field = type.getDeclaredField(fieldName);
+        assertEquals(fieldType, field.getType());
+
+        String accessorSuffix = fieldName.substring(0, 1).toUpperCase() + fieldName.substring(1);
+        Method getter = type.getMethod("get" + accessorSuffix);
+        assertEquals(fieldType, getter.getReturnType());
+
+        Method setter = type.getMethod("set" + accessorSuffix, fieldType);
+        assertEquals(Void.TYPE, setter.getReturnType());
+    }
+
+    private void assertTransientField(Class<?> type, String fieldName) throws Exception {
+        Field field = type.getDeclaredField(fieldName);
+        assertNotNull(field.getAnnotation(Transient.class));
+    }
+
+    private void assertColumnName(Class<?> type, String fieldName, String columnName) throws Exception {
+        Field field = type.getDeclaredField(fieldName);
+        Column column = field.getAnnotation(Column.class);
+        assertNotNull(column);
+        assertEquals(columnName, column.name());
     }
 
     private void assertEntityMarkers(String path) throws Exception {
