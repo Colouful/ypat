@@ -432,6 +432,56 @@ public class InternalTestDataSourceTest {
         assertEquals(1, state.groupNoPageCallCount);
     }
 
+    @Test
+    public void saveRejectsIdentityChangesForUsedResources() {
+        InternalTestResourceService service = new InternalTestResourceService();
+        RepositoryState state = new RepositoryState();
+        state.findOneResource = resource(11L, "G1", "enabled", 1);
+        state.findOneResource.setUrl("https://example.com/old.jpg");
+        state.findOneResource.setUsageType("work");
+        state.findOneResource.setMediaType("image");
+        ReflectionTestUtils.setField(service, "internalTestResourceRepository",
+                repositoryProxy(Collections.<InternalTestResource>emptyList(),
+                        Collections.<InternalTestResource>emptyList(),
+                        state));
+
+        InternalTestResourceQo qo = new InternalTestResourceQo();
+        qo.setId(11L);
+        qo.setUrl("https://example.com/new.jpg");
+        qo.setUsageType("work");
+        qo.setMediaType("image");
+        qo.setGroupNo("G1");
+
+        try {
+            service.save(qo);
+        } catch (SysException e) {
+            assertEquals(0, state.saveCount);
+            return;
+        }
+        fail("Expected SysException");
+    }
+
+    @Test
+    public void splitWorkGroupsUsesBlankLinesBeforeGroupSizeFallback() {
+        InternalTestResourceService service = new InternalTestResourceService();
+        InternalTestResourceQo qo = new InternalTestResourceQo();
+        qo.setUsageType("work");
+        qo.setGroupSize(2);
+
+        List<List<String>> groups = service.splitWorkGroups(Arrays.asList(
+                "https://example.com/a.jpg",
+                "https://example.com/b.jpg",
+                "",
+                "https://example.com/c.jpg",
+                "https://example.com/d.jpg",
+                "https://example.com/e.jpg"
+        ), qo);
+
+        assertEquals(2, groups.size());
+        assertEquals(Arrays.asList("https://example.com/a.jpg", "https://example.com/b.jpg"), groups.get(0));
+        assertEquals(Arrays.asList("https://example.com/c.jpg", "https://example.com/d.jpg", "https://example.com/e.jpg"), groups.get(1));
+    }
+
     private void assertResourceColumnMigration(String sql, String columnName, String ddlFragment) {
         String block = migrationBlock(sql, "t_internal_test_resource", columnName);
 
@@ -567,6 +617,9 @@ public class InternalTestDataSourceTest {
                         if ("findByGroupNoIn".equals(method.getName())) {
                             return filterByGroupNos(allGrouped, (List<String>) args[0]);
                         }
+                        if ("findOne".equals(method.getName())) {
+                            return state.findOneResource;
+                        }
                         if ("findAvailableGroupNos".equals(method.getName())) {
                             state.groupNoPageCallCount++;
                             return state.groupNosPage;
@@ -638,6 +691,7 @@ public class InternalTestDataSourceTest {
         private List<InternalTestResource> singleResourcesPage = Collections.emptyList();
         private Long availableGroupCount = 0L;
         private Long availableSingleCount = 0L;
+        private InternalTestResource findOneResource;
     }
 
     private void assertReadableWritable(Class<?> type, String fieldName, Class<?> fieldType) throws Exception {

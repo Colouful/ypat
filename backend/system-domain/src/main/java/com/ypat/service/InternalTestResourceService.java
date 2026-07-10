@@ -65,8 +65,7 @@ public class InternalTestResourceService {
 
     public Map<String, Object> batchSave(InternalTestResourceQo qo) {
         validateBatchQo(qo);
-        List<String> urls = normalizeUrls(qo.getUrls());
-        List<List<String>> groups = splitWorkGroups(urls, qo);
+        List<List<String>> groups = splitWorkGroups(qo.getUrls(), qo);
         List<InternalTestResourceQo> saved = new ArrayList<InternalTestResourceQo>();
         int duplicateCount = countInputDuplicateUrls(qo.getUrls());
         Date now = new Date();
@@ -201,6 +200,7 @@ public class InternalTestResourceService {
             if (resource == null) {
                 throw new SysException(ResponseCode.FAIL_NOT);
             }
+            validateUsedResourceImmutable(qo, resource);
             CopyUtil.copyIgnoreNull(qo, resource);
         }
         if (CommonUtils.isNull(resource.getStatus())) {
@@ -310,7 +310,7 @@ public class InternalTestResourceService {
     List<List<String>> splitWorkGroups(List<String> urls, InternalTestResourceQo qo) {
         List<List<String>> groups = new ArrayList<List<String>>();
         if (!InternalTestResourceUsageType.work.value.equals(qo.getUsageType())) {
-            for (String url : urls) {
+            for (String url : normalizeUrls(urls)) {
                 List<String> single = new ArrayList<String>();
                 single.add(url);
                 groups.add(single);
@@ -318,11 +318,47 @@ public class InternalTestResourceService {
             return groups;
         }
 
+        List<List<String>> blankLineGroups = splitWorkGroupsByBlankLines(urls);
+        if (blankLineGroups.size() > 1) {
+            return blankLineGroups;
+        }
+
+        List<String> normalizedUrls = normalizeUrls(urls);
         int groupSize = qo.getGroupSize() == null || qo.getGroupSize() < 1 ? 6 : qo.getGroupSize();
-        for (int start = 0; start < urls.size(); start += groupSize) {
-            groups.add(urls.subList(start, Math.min(urls.size(), start + groupSize)));
+        for (int start = 0; start < normalizedUrls.size(); start += groupSize) {
+            groups.add(normalizedUrls.subList(start, Math.min(normalizedUrls.size(), start + groupSize)));
         }
         return groups;
+    }
+
+    private List<List<String>> splitWorkGroupsByBlankLines(List<String> urls) {
+        List<List<String>> groups = new ArrayList<List<String>>();
+        List<String> current = new ArrayList<String>();
+        Set<String> seen = new HashSet<String>();
+        boolean hasSeparator = false;
+        for (String raw : urls) {
+            if (CommonUtils.isNull(raw) || raw.trim().length() == 0) {
+                if (!current.isEmpty()) {
+                    groups.add(current);
+                    current = new ArrayList<String>();
+                    hasSeparator = true;
+                }
+                continue;
+            }
+            String url = raw.trim();
+            if (seen.contains(url)) {
+                continue;
+            }
+            seen.add(url);
+            current.add(url);
+        }
+        if (!current.isEmpty()) {
+            groups.add(current);
+        }
+        if (groups.isEmpty()) {
+            throw new SysException(ResponseCode.FAIL_PARA, "请输入资源URL");
+        }
+        return hasSeparator ? groups : singleGroup(normalizeUrls(urls));
     }
 
     private String buildGroupNoPrefix() {
@@ -341,6 +377,26 @@ public class InternalTestResourceService {
 
     private String defaultStatus(String status) {
         return CommonUtils.isNotNull(status) ? status : InternalTestResourceStatus.enabled.value;
+    }
+
+    private void validateUsedResourceImmutable(InternalTestResourceQo qo, InternalTestResource resource) {
+        if (!Integer.valueOf(1).equals(resource.getUsedFlag())) {
+            return;
+        }
+        if (fieldChanged(resource.getUrl(), qo.getUrl())
+                || fieldChanged(resource.getUsageType(), qo.getUsageType())
+                || fieldChanged(resource.getMediaType(), qo.getMediaType())
+                || fieldChanged(resource.getGroupNo(), qo.getGroupNo())) {
+            throw new SysException(ResponseCode.FAIL_PARA, "已占用资源不能修改URL、用途、媒体类型或作品组");
+        }
+    }
+
+    private boolean fieldChanged(String oldValue, String newValue) {
+        return CommonUtils.isNotNull(newValue) && !safeEquals(oldValue, newValue);
+    }
+
+    private boolean safeEquals(String left, String right) {
+        return left == null ? right == null : left.equals(right);
     }
 
     private void validateUsageContext(String batchNo, String targetType, Long targetId) {
@@ -411,6 +467,12 @@ public class InternalTestResourceService {
         List<InternalTestResource> resources = new ArrayList<InternalTestResource>();
         resources.add(resource);
         return resources;
+    }
+
+    private List<List<String>> singleGroup(List<String> urls) {
+        List<List<String>> groups = new ArrayList<List<String>>();
+        groups.add(urls);
+        return groups;
     }
 
     private List<InternalTestResourceQo> copyResourceGroup(List<InternalTestResource> resources) {
