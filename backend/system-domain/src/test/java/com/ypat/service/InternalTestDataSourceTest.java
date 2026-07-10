@@ -3,25 +3,36 @@ package com.ypat.service;
 import com.ypat.InternalTestGenerateQo;
 import com.ypat.InternalTestResourceQo;
 import com.ypat.InternalTestUserActionQo;
+import com.ypat.SysException;
 import com.ypat.entity.InternalTestResource;
+import com.ypat.repository.InternalTestResourceRepository;
 import org.junit.Test;
+import org.springframework.data.domain.Sort;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import javax.persistence.Column;
 import javax.persistence.Transient;
 import java.io.IOException;
+import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
+import java.lang.reflect.Proxy;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 public class InternalTestDataSourceTest {
     private static String read(String path) throws IOException {
@@ -293,6 +304,7 @@ public class InternalTestDataSourceTest {
         assertTrue(service.contains("root.get(\"usedFlag\")"));
         assertTrue(service.contains("root.get(\"groupNo\")"));
         assertTrue(repo.contains("InternalTestResource findByUrl(String url);"));
+        assertTrue(repo.contains("List<InternalTestResource> findByGroupNoIn(List<String> groupNos);"));
         assertTrue(repo.contains("List<InternalTestResource> findByGroupNoInAndStatus(List<String> groupNos, String status);"));
         assertTrue(repo.contains("List<InternalTestResource> findByUsedBatchNo(String usedBatchNo);"));
 
@@ -302,8 +314,73 @@ public class InternalTestDataSourceTest {
         assertFalse(listAvailableGroups.contains("page(qo)"));
         assertFalse(listAvailableGroups.contains("result.put(\"totalPages\", 1)"));
         assertTrue(listAvailableGroups.contains("findAll(buildSpecification(qo)"));
+        assertTrue(listAvailableGroups.contains("findByGroupNoIn"));
+        assertTrue(listAvailableGroups.contains("isCompleteAvailableGroup"));
         assertTrue(listAvailableGroups.contains("pageGroups"));
         assertTrue(listAvailableGroups.contains("calculateTotalPages"));
+
+        String markResourcesUsed = methodBody(service,
+                "public void markResourcesUsed(List<InternalTestResource> resources",
+                "public int releaseResourcesByBatch(String batchNo)");
+        assertTrue(markResourcesUsed.contains("validateUsageContext(batchNo, targetType, targetId)"));
+        assertTrue(markResourcesUsed.contains("validateResourcesCanUse(resources)"));
+        assertTrue(service.contains("private void validateUsageContext(String batchNo, String targetType, Long targetId)"));
+
+        assertTrue(service.contains("private String buildGroupNoPrefix()"));
+        assertTrue(service.contains("UUID.randomUUID()"));
+        assertTrue(service.contains("yyyyMMddHHmmssSSS"));
+        assertTrue(service.contains("private String buildGroupNo(String prefix, int index)"));
+    }
+
+    @Test
+    public void markResourcesUsedRejectsMissingUsageContextBeforeSave() {
+        InternalTestResourceService service = new InternalTestResourceService();
+        final Counter saveCount = new Counter();
+        ReflectionTestUtils.setField(service, "internalTestResourceRepository",
+                repositoryProxy(Collections.<InternalTestResource>emptyList(),
+                        Collections.<InternalTestResource>emptyList(),
+                        saveCount));
+
+        List<InternalTestResource> resources = Collections.singletonList(resource(1L, "G1", "enabled", 0));
+
+        assertMarkResourcesUsedFails(service, resources, null, "work", 1L);
+        assertMarkResourcesUsedFails(service, resources, "B1", null, 1L);
+        assertMarkResourcesUsedFails(service, resources, "B1", "work", null);
+        assertEquals(0, saveCount.value);
+    }
+
+    @SuppressWarnings("unchecked")
+    @Test
+    public void listAvailableGroupsExcludesPartiallyAvailableWorkGroups() {
+        InternalTestResourceService service = new InternalTestResourceService();
+        List<InternalTestResource> candidates = Arrays.asList(
+                resource(1L, "G1", "enabled", 0),
+                resource(3L, "G2", "enabled", 0),
+                resource(4L, "G2", "enabled", 0),
+                resource(5L, null, "enabled", 0)
+        );
+        List<InternalTestResource> allGrouped = Arrays.asList(
+                resource(1L, "G1", "enabled", 0),
+                resource(2L, "G1", "enabled", 1),
+                resource(3L, "G2", "enabled", 0),
+                resource(4L, "G2", "enabled", 0)
+        );
+        ReflectionTestUtils.setField(service, "internalTestResourceRepository",
+                repositoryProxy(candidates, allGrouped, new Counter()));
+
+        InternalTestResourceQo qo = new InternalTestResourceQo();
+        qo.setPage(0);
+        qo.setSize(10);
+
+        Map<String, Object> result = service.listAvailableGroups(qo);
+        List<List<InternalTestResourceQo>> content = (List<List<InternalTestResourceQo>>) result.get("content");
+
+        assertEquals(2, content.size());
+        assertFalse(containsGroup(content, "G1"));
+        assertTrue(containsGroup(content, "G2"));
+        assertEquals(2, groupSize(content, "G2"));
+        assertEquals(2, ((Number) result.get("totalElements")).intValue());
+        assertEquals(1, ((Number) result.get("totalPages")).intValue());
     }
 
     private void assertResourceColumnMigration(String sql, String columnName, String ddlFragment) {
@@ -341,6 +418,117 @@ public class InternalTestDataSourceTest {
         assertTrue("missing method start marker: " + startMarker, start >= 0);
         assertTrue("missing method end marker: " + endMarker, end > start);
         return source.substring(start, end);
+    }
+
+    private InternalTestResource resource(Long id, String groupNo, String status, Integer usedFlag) {
+        InternalTestResource resource = new InternalTestResource();
+        resource.setId(id);
+        resource.setGroupNo(groupNo);
+        resource.setStatus(status);
+        resource.setUsedFlag(usedFlag);
+        resource.setUsageType("work");
+        resource.setMediaType("image");
+        resource.setUrl("https://example.com/" + id + ".jpg");
+        resource.setGroupSortNo(id == null ? 0 : id.intValue());
+        resource.setSortNo(id == null ? 0 : id.intValue());
+        return resource;
+    }
+
+    private void assertMarkResourcesUsedFails(InternalTestResourceService service,
+                                              List<InternalTestResource> resources,
+                                              String batchNo,
+                                              String targetType,
+                                              Long targetId) {
+        try {
+            service.markResourcesUsed(resources, batchNo, targetType, targetId);
+        } catch (SysException e) {
+            return;
+        }
+        fail("Expected SysException");
+    }
+
+    private boolean containsGroup(List<List<InternalTestResourceQo>> groups, String groupNo) {
+        return groupSize(groups, groupNo) > 0;
+    }
+
+    private int groupSize(List<List<InternalTestResourceQo>> groups, String groupNo) {
+        for (List<InternalTestResourceQo> group : groups) {
+            if (!group.isEmpty() && groupNo.equals(group.get(0).getGroupNo())) {
+                return group.size();
+            }
+        }
+        return 0;
+    }
+
+    @SuppressWarnings("unchecked")
+    private InternalTestResourceRepository repositoryProxy(final List<InternalTestResource> candidates,
+                                                          final List<InternalTestResource> allGrouped,
+                                                          final Counter saveCount) {
+        return (InternalTestResourceRepository) Proxy.newProxyInstance(
+                InternalTestResourceRepository.class.getClassLoader(),
+                new Class[]{InternalTestResourceRepository.class},
+                new InvocationHandler() {
+                    @Override
+                    public Object invoke(Object proxy, Method method, Object[] args) {
+                        if (method.getDeclaringClass().equals(Object.class)) {
+                            return objectMethod(proxy, method, args);
+                        }
+                        if ("findAll".equals(method.getName())
+                                && args != null
+                                && args.length == 2
+                                && args[1] instanceof Sort) {
+                            return candidates;
+                        }
+                        if ("findByGroupNoIn".equals(method.getName())) {
+                            return filterByGroupNos(allGrouped, (List<String>) args[0]);
+                        }
+                        if ("save".equals(method.getName())) {
+                            saveCount.value++;
+                            return args[0];
+                        }
+                        return defaultValue(method.getReturnType());
+                    }
+                });
+    }
+
+    private List<InternalTestResource> filterByGroupNos(List<InternalTestResource> resources, List<String> groupNos) {
+        List<InternalTestResource> result = new ArrayList<InternalTestResource>();
+        for (InternalTestResource resource : resources) {
+            if (groupNos.contains(resource.getGroupNo())) {
+                result.add(resource);
+            }
+        }
+        return result;
+    }
+
+    private Object objectMethod(Object proxy, Method method, Object[] args) {
+        if ("toString".equals(method.getName())) {
+            return "InternalTestResourceRepositoryProxy";
+        }
+        if ("hashCode".equals(method.getName())) {
+            return System.identityHashCode(proxy);
+        }
+        if ("equals".equals(method.getName())) {
+            return proxy == args[0];
+        }
+        return null;
+    }
+
+    private Object defaultValue(Class<?> type) {
+        if (!type.isPrimitive()) {
+            return null;
+        }
+        if (Boolean.TYPE.equals(type)) {
+            return false;
+        }
+        if (Character.TYPE.equals(type)) {
+            return '\0';
+        }
+        return 0;
+    }
+
+    private static class Counter {
+        private int value;
     }
 
     private void assertReadableWritable(Class<?> type, String fieldName, Class<?> fieldType) throws Exception {

@@ -31,6 +31,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 
 @Service
 @Transactional(rollbackFor = Exception.class)
@@ -68,10 +69,11 @@ public class InternalTestResourceService {
         int duplicateCount = countInputDuplicateUrls(qo.getUrls());
         Date now = new Date();
         int groupIndex = 0;
+        String groupNoPrefix = buildGroupNoPrefix();
 
         for (List<String> group : groups) {
             String groupNo = InternalTestResourceUsageType.work.value.equals(qo.getUsageType())
-                    ? buildGroupNo(groupIndex++)
+                    ? buildGroupNo(groupNoPrefix, groupIndex++)
                     : null;
             int sort = 0;
             for (String url : group) {
@@ -118,13 +120,31 @@ public class InternalTestResourceService {
                         .and(new Sort(Sort.Direction.ASC, "sortNo"))
                         .and(new Sort(Sort.Direction.DESC, "id")));
         Map<String, List<InternalTestResourceQo>> groups = new LinkedHashMap<String, List<InternalTestResourceQo>>();
+        Map<String, List<InternalTestResource>> candidateGroups = new LinkedHashMap<String, List<InternalTestResource>>();
         for (InternalTestResource resource : resources) {
-            InternalTestResourceQo item = CopyUtil.copy(resource, InternalTestResourceQo.class);
-            String groupNo = CommonUtils.isNotNull(item.getGroupNo()) ? item.getGroupNo() : "single-" + item.getId();
-            if (!groups.containsKey(groupNo)) {
-                groups.put(groupNo, new ArrayList<InternalTestResourceQo>());
+            if (CommonUtils.isNull(resource.getGroupNo())) {
+                if (isAvailableWorkResource(resource)) {
+                    groups.put("single-" + resource.getId(), copyResourceGroup(singleResourceList(resource)));
+                }
+            } else {
+                if (!candidateGroups.containsKey(resource.getGroupNo())) {
+                    candidateGroups.put(resource.getGroupNo(), new ArrayList<InternalTestResource>());
+                }
+                candidateGroups.get(resource.getGroupNo()).add(resource);
             }
-            groups.get(groupNo).add(item);
+        }
+
+        if (!candidateGroups.isEmpty()) {
+            List<String> groupNos = new ArrayList<String>(candidateGroups.keySet());
+            Map<String, List<InternalTestResource>> fullGroups = groupResourcesByGroupNo(
+                    internalTestResourceRepository.findByGroupNoIn(groupNos));
+            for (String groupNo : groupNos) {
+                List<InternalTestResource> fullGroup = fullGroups.get(groupNo);
+                List<InternalTestResource> candidateGroup = candidateGroups.get(groupNo);
+                if (isCompleteAvailableGroup(fullGroup, candidateGroup)) {
+                    groups.put(groupNo, copyResourceGroup(fullGroup));
+                }
+            }
         }
 
         List<List<InternalTestResourceQo>> pageGroups = pageGroups(groups, page, size);
@@ -136,17 +156,13 @@ public class InternalTestResourceService {
     }
 
     public void markResourcesUsed(List<InternalTestResource> resources, String batchNo, String targetType, Long targetId) {
+        validateUsageContext(batchNo, targetType, targetId);
         if (CommonUtils.isNull(resources)) {
             return;
         }
+        validateResourcesCanUse(resources);
         Date now = new Date();
         for (InternalTestResource resource : resources) {
-            if (resource == null) {
-                continue;
-            }
-            if (Integer.valueOf(1).equals(resource.getUsedFlag())) {
-                throw new SysException(ResponseCode.FAIL_PARA, "资源已被占用");
-            }
             resource.setUsedFlag(1);
             resource.setUsedBatchNo(batchNo);
             resource.setUsedTargetType(targetType);
@@ -314,8 +330,13 @@ public class InternalTestResourceService {
         return groups;
     }
 
-    private String buildGroupNo(int index) {
-        return "ITG" + new java.text.SimpleDateFormat("yyyyMMddHHmmss").format(new Date())
+    private String buildGroupNoPrefix() {
+        return "ITG" + new java.text.SimpleDateFormat("yyyyMMddHHmmssSSS").format(new Date())
+                + UUID.randomUUID().toString().replace("-", "").substring(0, 8).toUpperCase();
+    }
+
+    private String buildGroupNo(String prefix, int index) {
+        return prefix
                 + String.format("%03d", index);
     }
 
@@ -325,6 +346,84 @@ public class InternalTestResourceService {
 
     private String defaultStatus(String status) {
         return CommonUtils.isNotNull(status) ? status : InternalTestResourceStatus.enabled.value;
+    }
+
+    private void validateUsageContext(String batchNo, String targetType, Long targetId) {
+        if (CommonUtils.isNull(batchNo) || CommonUtils.isNull(targetType) || targetId == null) {
+            throw new SysException(ResponseCode.FAIL_PARA, "资源占用参数不能为空");
+        }
+    }
+
+    private void validateResourcesCanUse(List<InternalTestResource> resources) {
+        if (CommonUtils.isNull(resources)) {
+            return;
+        }
+        for (InternalTestResource resource : resources) {
+            if (resource == null) {
+                throw new SysException(ResponseCode.FAIL_PARA, "资源不能为空");
+            }
+            if (Integer.valueOf(1).equals(resource.getUsedFlag())) {
+                throw new SysException(ResponseCode.FAIL_PARA, "资源已被占用");
+            }
+        }
+    }
+
+    private Map<String, List<InternalTestResource>> groupResourcesByGroupNo(List<InternalTestResource> resources) {
+        Map<String, List<InternalTestResource>> groups = new LinkedHashMap<String, List<InternalTestResource>>();
+        if (CommonUtils.isNull(resources)) {
+            return groups;
+        }
+        for (InternalTestResource resource : resources) {
+            if (resource == null || CommonUtils.isNull(resource.getGroupNo())) {
+                continue;
+            }
+            if (!groups.containsKey(resource.getGroupNo())) {
+                groups.put(resource.getGroupNo(), new ArrayList<InternalTestResource>());
+            }
+            groups.get(resource.getGroupNo()).add(resource);
+        }
+        return groups;
+    }
+
+    private boolean isCompleteAvailableGroup(List<InternalTestResource> fullGroup, List<InternalTestResource> candidateGroup) {
+        if (CommonUtils.isNull(fullGroup) || CommonUtils.isNull(candidateGroup) || fullGroup.size() != candidateGroup.size()) {
+            return false;
+        }
+        Set<String> candidateKeys = new HashSet<String>();
+        for (InternalTestResource resource : candidateGroup) {
+            candidateKeys.add(resourceKey(resource));
+        }
+        for (InternalTestResource resource : fullGroup) {
+            if (!isAvailableWorkResource(resource) || !candidateKeys.contains(resourceKey(resource))) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private boolean isAvailableWorkResource(InternalTestResource resource) {
+        return resource != null
+                && InternalTestResourceUsageType.work.value.equals(resource.getUsageType())
+                && InternalTestResourceStatus.enabled.value.equals(resource.getStatus())
+                && !Integer.valueOf(1).equals(resource.getUsedFlag());
+    }
+
+    private String resourceKey(InternalTestResource resource) {
+        return resource.getId() != null ? "id:" + resource.getId() : "url:" + resource.getUrl();
+    }
+
+    private List<InternalTestResource> singleResourceList(InternalTestResource resource) {
+        List<InternalTestResource> resources = new ArrayList<InternalTestResource>();
+        resources.add(resource);
+        return resources;
+    }
+
+    private List<InternalTestResourceQo> copyResourceGroup(List<InternalTestResource> resources) {
+        List<InternalTestResourceQo> group = new ArrayList<InternalTestResourceQo>();
+        for (InternalTestResource resource : resources) {
+            group.add(CopyUtil.copy(resource, InternalTestResourceQo.class));
+        }
+        return group;
     }
 
     private List<List<InternalTestResourceQo>> pageGroups(Map<String, List<InternalTestResourceQo>> groups, int page, int size) {

@@ -13,6 +13,8 @@ public interface InternalTestResourceRepository extends JpaRepository<InternalTe
 
     InternalTestResource findByUrl(String url);
 
+    List<InternalTestResource> findByGroupNoIn(List<String> groupNos);
+
     List<InternalTestResource> findByGroupNoInAndStatus(List<String> groupNos, String status);
 
     List<InternalTestResource> findByUsedBatchNo(String usedBatchNo);
