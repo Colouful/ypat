@@ -62,7 +62,7 @@ onMounted(fetchList)
       <el-table-column prop="credate" label="创建时间" min-width="160"/>
       <el-table-column prop="content" label="内容" min-width="200" show-overflow-tooltip/>
       <el-table-column label="操作" width="110" fixed="right" align="center">
-        <template #default="{ row }"><el-button type="primary" link @click="openPushLog(row)">推送记录</el-button></template>
+        <template #default="{ row }"><el-button type="primary" link @click="openPushLog(row as MessInfo)">推送记录</el-button></template>
       </el-table-column>
     </el-table>
     <div class="pagination-wrapper"><el-pagination :current-page="currentPage" :page-size="query.size" :total="total" :page-sizes="[10,20,50]" layout="total,sizes,prev,pager,next,jumper" background @current-change="pageChange" @size-change="sizeChange"/></div>
