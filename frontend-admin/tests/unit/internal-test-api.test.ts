@@ -72,6 +72,9 @@ describe('内测数据 API', () => {
 
     await api.cleanupInternalData({ batchNo: 'IT202607060001' })
     expect(postMock).toHaveBeenCalledWith('/admin/internal-test/cleanup', { batchNo: 'IT202607060001' })
+
+    await api.cleanupInternalData({ cleanupAll: true })
+    expect(postMock).toHaveBeenCalledWith('/admin/internal-test/cleanup', { cleanupAll: true })
   })
 
   it('应使用内测工作台懒人版路由', async () => {

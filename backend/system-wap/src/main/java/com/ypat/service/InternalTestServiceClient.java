@@ -63,6 +63,11 @@ public interface InternalTestServiceClient {
                  @RequestParam(value = "profess", required = false) String profess,
                  @RequestParam(value = "gender", required = false) String gender);
 
+    @GetMapping("/service/internal-test/users/search")
+    String searchUsers(@RequestParam(value = "keyword", required = false) String keyword,
+                       @RequestParam(value = "page", required = false) Integer page,
+                       @RequestParam(value = "size", required = false) Integer size);
+
     @PostMapping("/service/internal-test/users/create")
     String createUsers(@RequestBody InternalTestGenerateQo qo);
 

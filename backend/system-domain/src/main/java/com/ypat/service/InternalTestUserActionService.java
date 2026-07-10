@@ -29,20 +29,25 @@ public class InternalTestUserActionService {
     public boolean grantMember(InternalTestUserActionQo qo) {
         User user = requireInternalUser(qo);
         int days = qo.getDays() == null || qo.getDays() <= 0 ? DEFAULT_MEMBER_DAYS : qo.getDays();
-        return memberService.adminGrant(user.getId(), days, null, reason(qo, "内测数据一键会员"));
+        return memberService.adminGrant(user.getId(), days, qo.getOperatorId(), reason(qo, "内测数据一键会员"));
     }
 
     public boolean verifyUser(InternalTestUserActionQo qo) {
         User user = requireInternalUser(qo);
+        String beforeValue = "realnameflag=" + user.getRealnameflag() + ",creditflag=" + user.getCreditflag();
         user.setRealnameflag(YesNo.yes.value);
         user.setCreditflag(YesNo.yes.value);
         userRepository.save(user);
+        memberService.recordAdminOperation(user.getId(), qo.getOperatorId(), "INTERNAL_TEST_VERIFY",
+                reason(qo, "内测数据一键认证"), beforeValue, "realnameflag=1,creditflag=1");
         return true;
     }
 
     public boolean markDepositPaid(InternalTestUserActionQo qo) {
         User user = requireInternalUser(qo);
-        depositService.createInternalTestPaidOrder(user.getId());
+        com.ypat.DepositOrderQo order = depositService.createInternalTestPaidOrder(user.getId());
+        memberService.recordAdminOperation(user.getId(), qo.getOperatorId(), "INTERNAL_TEST_DEPOSIT",
+                reason(qo, "内测数据一键保证金"), null, "outTradeNo=" + order.getOutTradeNo());
         return true;
     }
 

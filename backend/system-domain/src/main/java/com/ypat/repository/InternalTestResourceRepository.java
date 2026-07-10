@@ -43,6 +43,12 @@ public interface InternalTestResourceRepository extends JpaRepository<InternalTe
     @Modifying
     @Query("update InternalTestResource r set r.usedFlag = 0, r.usedBatchNo = null, "
             + "r.usedTargetType = null, r.usedTargetId = null, r.usedAt = null, r.updatedAt = :updatedAt "
+            + "where r.usedFlag = 1")
+    int releaseAllUsed(@Param("updatedAt") Date updatedAt);
+
+    @Modifying
+    @Query("update InternalTestResource r set r.usedFlag = 0, r.usedBatchNo = null, "
+            + "r.usedTargetType = null, r.usedTargetId = null, r.usedAt = null, r.updatedAt = :updatedAt "
             + "where (:batchNo is null or r.usedBatchNo = :batchNo) and r.usedTargetType = :targetType "
             + "and r.usedTargetId in :targetIds")
     int releaseByUsedTargets(@Param("batchNo") String batchNo,

@@ -26,6 +26,7 @@ import {
   getInternalTestGenerateActionOptions,
   getProfessOptions,
   getWorkTagStyleOptions,
+  getYpatPatstyleOptions,
   getYpatTargetOptions,
 } from '@/constants/enums'
 import { regionCascaderOptions, toRegionFields, type RegionPath } from '@/utils/region'
@@ -57,7 +58,7 @@ const form = reactive({
   city: '',
   area: '',
   styleCodes: [] as string[],
-  publishStatus: '1',
+  publishStatus: '2',
   groupNos: [] as string[],
   patdate: '',
   patslice: '',
@@ -71,16 +72,19 @@ const batches = ref<InternalTestBatch[]>([])
 const userOptions = ref<InternalTestUser[]>([])
 const workGroups = ref<InternalTestResourceGroup[]>([])
 const activeWorkMediaType = ref(InternalTestMediaType.IMAGE.value)
+const patTimeRange = ref<string[]>([])
 const userSearching = ref(false)
 const resourceLoading = ref(false)
 const batchLoading = ref(false)
 const submitting = ref(false)
 const cleaningBatchNo = ref('')
+const cleanupAllLoading = ref(false)
 const batchQuery = reactive({ batchNo: '', page: 0, size: 20 })
 
 const isCreateUsers = computed(() => form.actionType === InternalTestGenerateAction.CREATE_USERS.value)
 const isCreateWorks = computed(() => form.actionType === InternalTestGenerateAction.CREATE_WORKS.value)
 const isCreateYpats = computed(() => form.actionType === InternalTestGenerateAction.CREATE_YPATS.value)
+const styleOptions = computed(() => (isCreateYpats.value ? getYpatPatstyleOptions() : getWorkTagStyleOptions()))
 const regionPath = computed<RegionPath>({
   get: () => [form.province, form.city, form.area].filter(Boolean) as RegionPath,
   set: (path) => {
@@ -136,12 +140,14 @@ function validateBeforeSubmit(): string | null {
   if (isCreateWorks.value && !form.userId) return '请选择内测用户'
   if (isCreateWorks.value && form.groupNos.length === 0) return '请选择作品组'
   if (isCreateYpats.value && !form.userId) return '请选择内测用户'
-  if (isCreateYpats.value && !form.patdate) return '请选择约拍时间'
-  if (isCreateYpats.value && !form.city) return '请选择约拍地点'
+  if (isCreateYpats.value && !form.patdate) return '请选择约拍日期'
+  if (isCreateYpats.value && patTimeRange.value.length !== 2) return '请选择约拍时间段'
+  if (isCreateYpats.value && (!form.province || !form.city || !form.area)) return '约拍地点请选择到区县'
   if (isCreateYpats.value && !form.describ.trim()) return '请输入约拍要求'
   if (isCreateYpats.value && !form.wx.trim()) return '请输入微信号'
   if (isCreateYpats.value && !form.mobile.trim()) return '请输入联系电话'
-  if (isCreateYpats.value && form.styleCodes.length === 0) return '请选择风格'
+  if (isCreateYpats.value && !/^1\d{10}$/.test(form.mobile.trim())) return '请输入正确的联系电话'
+  if ((isCreateWorks.value || isCreateYpats.value) && form.styleCodes.length === 0) return '请选择风格'
   return null
 }
 
@@ -161,7 +167,7 @@ function buildPayload(): InternalTestGeneratePayload {
     publishStatus: form.publishStatus,
     groupNos: form.groupNos,
     patdate: form.patdate,
-    patslice: form.patslice,
+    patslice: isCreateYpats.value ? patTimeRange.value.join('-') : undefined,
     describ: form.describ,
     target: form.target,
     wx: form.wx,
@@ -213,6 +219,29 @@ async function cleanupBatch(batchNo: string): Promise<void> {
   }
 }
 
+async function cleanupAllInternalData(): Promise<void> {
+  await ElMessageBox.confirm(
+    '确认一键清除全部内测数据吗？用户将禁用，作品和约拍将下架，资源占用会释放；真实数据不会被处理。',
+    '高风险操作确认',
+    {
+      type: 'warning',
+      confirmButtonText: '确认清除全部',
+      cancelButtonText: '取消',
+    },
+  )
+  cleanupAllLoading.value = true
+  try {
+    const res = await cleanupInternalData({ cleanupAll: true })
+    ElMessage.success(
+      `清理完成：用户 ${res.data.userCount}，作品 ${res.data.workCount}，约拍 ${res.data.ypatCount}，释放资源 ${res.data.releasedResourceCount || 0}`,
+    )
+    batchQuery.batchNo = ''
+    await loadBatches()
+  } finally {
+    cleanupAllLoading.value = false
+  }
+}
+
 function styleChanged(): void {
   form.groupNos = []
   if (isCreateWorks.value) {
@@ -226,6 +255,7 @@ function workMediaChanged(): void {
 }
 
 function actionChanged(): void {
+  form.styleCodes = []
   if (isCreateWorks.value) {
     loadWorkGroups()
   }
@@ -322,13 +352,14 @@ onMounted(() => {
           <el-select
             v-model="form.styleCodes"
             multiple
+            :multiple-limit="5"
             clearable
             placeholder="请选择风格"
             style="width: 260px"
             @change="styleChanged"
           >
             <el-option
-              v-for="option in getWorkTagStyleOptions()"
+              v-for="option in styleOptions"
               :key="option.value"
               :label="option.label"
               :value="option.value"
@@ -352,8 +383,18 @@ onMounted(() => {
             />
           </el-select>
         </el-form-item>
-        <el-form-item v-if="isCreateYpats" label="时间">
+        <el-form-item v-if="isCreateYpats" label="日期">
           <el-date-picker v-model="form.patdate" type="date" value-format="YYYY-MM-DD" placeholder="请选择约拍日期" />
+        </el-form-item>
+        <el-form-item v-if="isCreateYpats" label="约拍时间段">
+          <el-time-picker
+            v-model="patTimeRange"
+            is-range
+            value-format="HH:mm"
+            range-separator="至"
+            start-placeholder="开始时间"
+            end-placeholder="结束时间"
+          />
         </el-form-item>
         <el-form-item v-if="isCreateYpats" label="要求">
           <el-input v-model="form.describ" type="textarea" :rows="3" maxlength="200" show-word-limit />
@@ -374,7 +415,7 @@ onMounted(() => {
             />
           </el-select>
         </el-form-item>
-        <el-form-item label="发布状态">
+        <el-form-item v-if="!isCreateUsers" label="发布状态">
           <el-select v-model="form.publishStatus" style="width: 240px">
             <el-option
               v-for="option in publishStatusOptions"
@@ -394,9 +435,14 @@ onMounted(() => {
     <section class="section-block">
       <div class="batch-header">
         <div class="section-title">批次结果</div>
-        <div class="batch-filter">
-          <el-input v-model="batchQuery.batchNo" clearable placeholder="批次号" />
-          <el-button :loading="batchLoading" @click="loadBatches">查询</el-button>
+        <div class="batch-actions">
+          <div class="batch-filter">
+            <el-input v-model="batchQuery.batchNo" clearable placeholder="批次号" />
+            <el-button :loading="batchLoading" @click="loadBatches">查询</el-button>
+          </div>
+          <el-button type="danger" plain :loading="cleanupAllLoading" @click="cleanupAllInternalData">
+            一键清除全部内测数据
+          </el-button>
         </div>
       </div>
       <el-table v-loading="batchLoading" :data="batches" border stripe>
@@ -480,5 +526,13 @@ onMounted(() => {
   gap: $spacing-sm;
   width: 320px;
   max-width: 100%;
+}
+
+.batch-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: $spacing-sm;
+  flex-wrap: wrap;
 }
 </style>

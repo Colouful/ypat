@@ -10,6 +10,7 @@ import com.ypat.ResponseApiBody;
 import com.ypat.ResponseCode;
 import com.ypat.SysException;
 import com.ypat.service.InternalTestServiceClient;
+import com.ypat.util.UserUtil;
 import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -124,6 +125,18 @@ public class AdminInternalTestController {
         return ResponseApiBody.success(parseResponseRes(json));
     }
 
+    @GetMapping("/users/search")
+    public ResponseApiBody searchUsers(InternalTestGenerateQo qo) {
+        if (qo == null) {
+            qo = new InternalTestGenerateQo();
+        }
+        String json = internalTestServiceClient.searchUsers(
+                qo.getKeyword(),
+                normalizePage(qo.getPage()),
+                normalizeSize(qo.getSize()));
+        return ResponseApiBody.success(parseResponseRes(json));
+    }
+
     @PostMapping("/users/create")
     public ResponseApiBody createUsers(@RequestBody InternalTestGenerateQo qo) {
         String json = internalTestServiceClient.createUsers(qo);
@@ -207,7 +220,20 @@ public class AdminInternalTestController {
             qo = new InternalTestUserActionQo();
         }
         qo.setUserId(userId);
+        qo.setOperatorId(currentOperatorId());
         return qo;
+    }
+
+    private Long currentOperatorId() {
+        String raw = UserUtil.getUserId();
+        if (StringUtils.isBlank(raw)) {
+            return null;
+        }
+        try {
+            return Long.parseLong(raw);
+        } catch (NumberFormatException ex) {
+            return null;
+        }
     }
 
     private JsonElement parseResponseRes(String json) {

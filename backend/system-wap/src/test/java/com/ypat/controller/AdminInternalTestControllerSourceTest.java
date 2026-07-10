@@ -73,6 +73,7 @@ public class AdminInternalTestControllerSourceTest {
         assertTrue(restapi.contains("InternalTestDataService"));
         assertThreeLayerGetRoute(wap, client, restapi, "resources");
         assertThreeLayerGetRoute(wap, client, restapi, "users");
+        assertThreeLayerGetRoute(wap, client, restapi, "users/search");
         assertThreeLayerGetRoute(wap, client, restapi, "batches");
         assertThreeLayerPostRoute(wap, client, restapi, "resources");
         assertThreeLayerPostRoute(wap, client, restapi, "resources/update");
@@ -155,6 +156,25 @@ public class AdminInternalTestControllerSourceTest {
         assertTrue(restapi.contains("dataService.generateUsers(qo)"));
         assertTrue(restapi.contains("dataService.generateWorks(qo)"));
         assertTrue(restapi.contains("dataService.generateYpats(qo)"));
+    }
+
+    @Test
+    public void threeLayersExposePagedInternalUserSearch() throws Exception {
+        String controller = readSource(
+                "src/main/java/com/ypat/controller/AdminInternalTestController.java",
+                "backend/system-wap/src/main/java/com/ypat/controller/AdminInternalTestController.java");
+        String client = readSource(
+                "src/main/java/com/ypat/service/InternalTestServiceClient.java",
+                "backend/system-wap/src/main/java/com/ypat/service/InternalTestServiceClient.java");
+        String restapi = readSource(
+                "../system-restapi/src/main/java/com/ypat/controller/InternalTestController.java",
+                "backend/system-restapi/src/main/java/com/ypat/controller/InternalTestController.java");
+
+        assertTrue(controller.contains("internalTestServiceClient.searchUsers("));
+        assertTrue(client.contains("@RequestParam(value = \"keyword\", required = false) String keyword"));
+        assertTrue(client.contains("@RequestParam(value = \"page\", required = false) Integer page"));
+        assertTrue(client.contains("@RequestParam(value = \"size\", required = false) Integer size"));
+        assertTrue(restapi.contains("dataService.searchUsers(qo)"));
     }
 
     @Test

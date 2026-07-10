@@ -76,6 +76,7 @@ export interface InternalTestGeneratePayload {
   ypatResourceIds?: number[]
   workResourceIds?: number[]
   batchNo?: string
+  cleanupAll?: boolean
 }
 
 export interface InternalTestResourceGroup {
@@ -108,6 +109,8 @@ export interface InternalTestBatch {
   userCount: number
   ypatCount: number
   workCount: number
+  ignoredRealCount?: number
+  releasedResourceCount?: number
   status?: string
   errors?: string[]
   createdAt?: string

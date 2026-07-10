@@ -28,6 +28,10 @@ public class InternalTestGenerateQo implements java.io.Serializable {
     private java.util.List<Long> ypatResourceIds;
     private java.util.List<Long> workResourceIds;
     private String batchNo;
+    private Boolean cleanupAll;
+    private String keyword;
+    private Integer page;
+    private Integer size;
 
     public String getMode() { return mode; }
     public void setMode(String mode) { this.mode = mode; }
@@ -83,4 +87,12 @@ public class InternalTestGenerateQo implements java.io.Serializable {
     public void setWorkResourceIds(java.util.List<Long> workResourceIds) { this.workResourceIds = workResourceIds; }
     public String getBatchNo() { return batchNo; }
     public void setBatchNo(String batchNo) { this.batchNo = batchNo; }
+    public Boolean getCleanupAll() { return cleanupAll; }
+    public void setCleanupAll(Boolean cleanupAll) { this.cleanupAll = cleanupAll; }
+    public String getKeyword() { return keyword; }
+    public void setKeyword(String keyword) { this.keyword = keyword; }
+    public Integer getPage() { return page; }
+    public void setPage(Integer page) { this.page = page; }
+    public Integer getSize() { return size; }
+    public void setSize(Integer size) { this.size = size; }
 }

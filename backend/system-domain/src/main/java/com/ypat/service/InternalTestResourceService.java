@@ -161,10 +161,24 @@ public class InternalTestResourceService {
 
         long totalElements = groupCount + singleCount;
         Map<String, Object> result = new LinkedHashMap<String, Object>();
-        result.put("content", new ArrayList<List<InternalTestResourceQo>>(groups.values()));
+        List<Map<String, Object>> content = new ArrayList<Map<String, Object>>();
+        for (Map.Entry<String, List<InternalTestResourceQo>> entry : groups.entrySet()) {
+            content.add(buildGroupView(entry.getKey(), entry.getValue()));
+        }
+        result.put("content", content);
         result.put("totalPages", calculateTotalPages(totalElements, size));
         result.put("totalElements", totalElements);
         return result;
+    }
+
+    private Map<String, Object> buildGroupView(String groupNo, List<InternalTestResourceQo> resources) {
+        Map<String, Object> group = new LinkedHashMap<String, Object>();
+        InternalTestResourceQo first = resources.isEmpty() ? null : resources.get(0);
+        group.put("groupNo", groupNo);
+        group.put("groupTitle", first == null ? null : first.getGroupTitle());
+        group.put("mediaType", first == null ? null : first.getMediaType());
+        group.put("resources", resources);
+        return group;
     }
 
     public void markResourcesUsed(List<InternalTestResource> resources, String batchNo, String targetType, Long targetId) {
@@ -186,6 +200,10 @@ public class InternalTestResourceService {
             return 0;
         }
         return internalTestResourceRepository.releaseByUsedBatchNo(batchNo, new Date());
+    }
+
+    public int releaseAllUsedResources() {
+        return internalTestResourceRepository.releaseAllUsed(new Date());
     }
 
     public int releaseResourcesByTargets(String batchNo, String targetType, List<Long> targetIds) {

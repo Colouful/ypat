@@ -224,7 +224,6 @@ async function saveResource(): Promise<void> {
       const urls = urlsText
         .split('\n')
         .map((item) => item.trim())
-        .filter(Boolean)
       await batchCreateInternalResources({
         ...payload,
         urls,

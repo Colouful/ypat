@@ -310,6 +310,15 @@ public class MemberService {
         return true;
     }
 
+    public void recordAdminOperation(Long userId, Long operatorId, String actionType, String reason,
+                                     String beforeValue, String afterValue) {
+        if (userId == null || actionType == null || actionType.trim().isEmpty()
+                || reason == null || reason.trim().isEmpty()) {
+            throw new SysException(ResponseCode.FAIL_PARA);
+        }
+        saveOperationLog(userId, operatorId, actionType.trim(), reason.trim(), beforeValue, afterValue, null);
+    }
+
     public Map<String, Object> findAdminUsers(MemberUserAdminQo qo) {
         Date now = new Date();
         List<MemberUserAdminQo> filtered = new ArrayList<>();

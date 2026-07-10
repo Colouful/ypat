@@ -74,6 +74,11 @@ public class InternalTestController {
         return ResponseApiBody.success(dataService.listUsers(qo));
     }
 
+    @GetMapping("/users/search")
+    public ResponseApiBody searchUsers(InternalTestGenerateQo qo) {
+        return ResponseApiBody.success(dataService.searchUsers(qo));
+    }
+
     @PostMapping("/users/create")
     public ResponseApiBody createUsers(@RequestBody InternalTestGenerateQo qo) {
         return ResponseApiBody.success(dataService.createUsers(qo));

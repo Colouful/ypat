@@ -221,6 +221,30 @@ public class InternalTestDataSourceTest {
     }
 
     @Test
+    public void cleanupAllIsExplicitCompleteAndKeysetPaginated() throws Exception {
+        String dataService = read("backend/system-domain/src/main/java/com/ypat/service/InternalTestDataService.java");
+        String generateQo = read("backend/system-object/src/main/java/com/ypat/InternalTestGenerateQo.java");
+        String userRepo = read("backend/system-domain/src/main/java/com/ypat/repository/UserRepository.java");
+        String resourceService = read("backend/system-domain/src/main/java/com/ypat/service/InternalTestResourceService.java");
+        String resourceRepo = read("backend/system-domain/src/main/java/com/ypat/repository/InternalTestResourceRepository.java");
+
+        assertTrue(generateQo.contains("private Boolean cleanupAll;"));
+        assertTrue(dataService.contains("Boolean.TRUE.equals(qo.getCleanupAll())"));
+        assertTrue(dataService.contains("releaseAllUsedResources"));
+        assertTrue(resourceService.contains("public int releaseAllUsedResources()"));
+        assertTrue(resourceRepo.contains("int releaseAllUsed("));
+
+        assertTrue(userRepo.contains("u.id > :afterId"));
+        assertTrue(userRepo.contains("@Param(\"afterId\") Long afterId"));
+        assertTrue(dataService.contains("Long afterId = 0L;"));
+        assertTrue(dataService.contains("afterId = internalUserIds.get(internalUserIds.size() - 1)"));
+        assertFalse(dataService.contains("int page = 0;"));
+
+        assertTrue(dataService.contains("releaseResourcesByTargets(batchNo, \"user\", userIds)"));
+        assertTrue(dataService.contains("target[3] += source[3];"));
+    }
+
+    @Test
     public void lazyWorkbenchMigrationAddsResourceGroupUsageAndRegionFields() throws Exception {
         String sql = read("docs/sql/pending/V_admin_internal_test_data.sql");
 
@@ -410,7 +434,7 @@ public class InternalTestDataSourceTest {
 
     @SuppressWarnings("unchecked")
     @Test
-    public void listAvailableGroupsExcludesPartiallyAvailableWorkGroups() {
+    public void listAvailableGroupsExcludesPartiallyAvailableWorkGroups() throws Exception {
         InternalTestResourceService service = new InternalTestResourceService();
         List<InternalTestResource> candidates = Arrays.asList(
                 resource(1L, "G1", "enabled", 0),
@@ -437,16 +461,20 @@ public class InternalTestDataSourceTest {
         qo.setSize(10);
 
         Map<String, Object> result = service.listAvailableGroups(qo);
-        List<List<InternalTestResourceQo>> content = (List<List<InternalTestResourceQo>>) result.get("content");
+        List<Map<String, Object>> content = (List<Map<String, Object>>) result.get("content");
 
         assertEquals(2, content.size());
-        assertFalse(containsGroup(content, "G1"));
-        assertTrue(containsGroup(content, "G2"));
-        assertEquals(2, groupSize(content, "G2"));
-        assertTrue(containsSingle(content, 5L));
+        assertFalse(containsGroupView(content, "G1"));
+        assertTrue(containsGroupView(content, "G2"));
+        assertEquals(2, groupViewSize(content, "G2"));
+        assertTrue(containsGroupView(content, "single-5"));
         assertEquals(2, ((Number) result.get("totalElements")).intValue());
         assertEquals(1, ((Number) result.get("totalPages")).intValue());
         assertEquals(1, state.groupNoPageCallCount);
+
+        String source = read("backend/system-domain/src/main/java/com/ypat/service/InternalTestDataService.java");
+        assertTrue(source.contains("groupNo.startsWith(\"single-\")"));
+        assertTrue(source.contains("internalTestResourceRepository.findOne(resourceId)"));
     }
 
     @Test
@@ -514,7 +542,14 @@ public class InternalTestDataSourceTest {
         assertTrue(service.contains("public InternalTestBatchQo generateYpats(InternalTestGenerateQo qo)"));
         assertTrue(service.contains("loadInternalUser(qo.getUserId())"));
         assertTrue(service.contains("loadAvailableWorkGroup"));
+        assertTrue(service.contains("internalTestResourceRepository.findByGroupNoIn(groupNos)"));
         assertTrue(service.contains("createWorkFromGroup"));
+        assertTrue(service.contains("WorkTagRepository"));
+        assertTrue(service.contains("WorkTagRelRepository"));
+        assertTrue(service.contains("bindWorkTags(work.getId(), qo.getStyleCodes())"));
+        assertTrue(service.contains("workTagRepository.findByCode(styleCode)"));
+        assertTrue(service.contains("workTagRelRepository.save(rel)"));
+        assertTrue(service.contains("作品风格不能为空"));
         assertTrue(service.contains("markResourcesUsed"));
         assertTrue(service.contains("markSingleResourceUsed(avatar, batchNo, \"user\", user.getId())"));
         assertTrue(service.contains("releaseResourcesByBatch"));
@@ -522,6 +557,12 @@ public class InternalTestDataSourceTest {
         assertTrue(service.contains("setWx(qo.getWx())"));
         assertTrue(service.contains("setMobile(qo.getMobile())"));
         assertTrue(service.contains("String.join(\",\", qo.getStyleCodes())"));
+        assertTrue(service.contains("validateYpatGeneration(qo)"));
+        assertTrue(service.contains("约拍日期和时间段不能为空"));
+        assertTrue(service.contains("约拍地点必须选择到区县"));
+        assertTrue(service.contains("约拍要求不能为空"));
+        assertTrue(service.contains("约拍风格不能为空"));
+        assertTrue(service.contains("联系电话格式错误"));
         assertTrue(service.contains("同一作品组不能同时包含图片和视频"));
         assertTrue(service.contains("只能操作内测用户"));
         assertTrue(service.contains("internalTestResourceService.releaseResourcesByTargets"));
@@ -543,8 +584,26 @@ public class InternalTestDataSourceTest {
     }
 
     @Test
+    public void internalUserSearchIsPagedAndRestrictedToInternalUsers() throws Exception {
+        String service = read("backend/system-domain/src/main/java/com/ypat/service/InternalTestDataService.java");
+        String generateQo = read("backend/system-object/src/main/java/com/ypat/InternalTestGenerateQo.java");
+
+        assertTrue(generateQo.contains("private String keyword;"));
+        assertTrue(generateQo.contains("private Integer page;"));
+        assertTrue(generateQo.contains("private Integer size;"));
+        assertTrue(service.contains("public Map<String, Object> searchUsers(InternalTestGenerateQo qo)"));
+        assertTrue(service.contains("Math.min(qo.getSize(), 50)"));
+        assertTrue(service.contains("root.get(\"dataFlag\")"));
+        assertTrue(service.contains("root.get(\"nickname\")"));
+        assertTrue(service.contains("root.get(\"mobile\")"));
+        assertTrue(service.contains("root.get(\"id\")"));
+    }
+
+    @Test
     public void internalUserActionsRequireInternalFlagAndUseRealBusinessServices() throws Exception {
         String service = read("backend/system-domain/src/main/java/com/ypat/service/InternalTestUserActionService.java");
+        String actionQo = read("backend/system-object/src/main/java/com/ypat/InternalTestUserActionQo.java");
+        String member = read("backend/system-domain/src/main/java/com/ypat/service/MemberService.java");
         String deposit = read("backend/system-domain/src/main/java/com/ypat/service/DepositService.java");
         String depositRepo = read("backend/system-domain/src/main/java/com/ypat/repository/DepositOrderRepository.java");
 
@@ -556,6 +615,10 @@ public class InternalTestDataSourceTest {
         assertTrue(service.contains("depositService.createInternalTestPaidOrder"));
         assertTrue(service.contains("user.setRealnameflag"));
         assertTrue(service.contains("user.setCreditflag"));
+        assertTrue(actionQo.contains("private Long operatorId;"));
+        assertTrue(service.contains("qo.getOperatorId()"));
+        assertTrue(service.contains("recordAdminOperation"));
+        assertTrue(member.contains("public void recordAdminOperation("));
         assertTrue(service.contains("只能操作内测用户"));
         assertTrue(deposit.contains("createInternalTestPaidOrder"));
         assertTrue(deposit.contains("INTERNAL_TEST"));
@@ -655,26 +718,18 @@ public class InternalTestDataSourceTest {
         fail("Expected SysException");
     }
 
-    private boolean containsGroup(List<List<InternalTestResourceQo>> groups, String groupNo) {
-        return groupSize(groups, groupNo) > 0;
+    private boolean containsGroupView(List<Map<String, Object>> groups, String groupNo) {
+        return groupViewSize(groups, groupNo) > 0;
     }
 
-    private int groupSize(List<List<InternalTestResourceQo>> groups, String groupNo) {
-        for (List<InternalTestResourceQo> group : groups) {
-            if (!group.isEmpty() && groupNo.equals(group.get(0).getGroupNo())) {
-                return group.size();
+    @SuppressWarnings("unchecked")
+    private int groupViewSize(List<Map<String, Object>> groups, String groupNo) {
+        for (Map<String, Object> group : groups) {
+            if (groupNo.equals(group.get("groupNo"))) {
+                return ((List<InternalTestResourceQo>) group.get("resources")).size();
             }
         }
         return 0;
-    }
-
-    private boolean containsSingle(List<List<InternalTestResourceQo>> groups, Long id) {
-        for (List<InternalTestResourceQo> group : groups) {
-            if (group.size() == 1 && id.equals(group.get(0).getId())) {
-                return true;
-            }
-        }
-        return false;
     }
 
     @SuppressWarnings("unchecked")
