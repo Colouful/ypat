@@ -24,11 +24,15 @@ describe('work page mini-program category tabs', () => {
     expect(source).toContain('local.region = city')
   })
 
-  it('does not enable native pull-down refresh without a refresh handler', () => {
-    const file = fileURLToPath(new URL('../../pages.json', import.meta.url))
-    const pagesJson = JSON.parse(readFileSync(file, 'utf8'))
+  it('enables native pull-down refresh and reloads the list through the page handler', () => {
+    const pagesFile = fileURLToPath(new URL('../../pages.json', import.meta.url))
+    const workFile = fileURLToPath(new URL('./index.vue', import.meta.url))
+    const pagesJson = JSON.parse(readFileSync(pagesFile, 'utf8'))
     const workPage = pagesJson.pages.find((page: { path: string }) => page.path === 'pages/work/index')
+    const source = readFileSync(workFile, 'utf8')
 
-    expect(workPage?.style?.enablePullDownRefresh).toBe(false)
+    expect(workPage?.style?.enablePullDownRefresh).toBe(true)
+    expect(source).toContain("import { onPullDownRefresh } from '@dcloudio/uni-app'")
+    expect(source).toMatch(/onPullDownRefresh\(\(\) => \{\s*load\(true\)\.finally\(\(\) => \{\s*uni\.stopPullDownRefresh\(\)\s*\}\)\s*\}\)/)
   })
 })

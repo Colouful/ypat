@@ -31,6 +31,7 @@ public class WebSecurityConfigSourceTest {
         assertTrue(source.contains("\"/user/login\""));
         assertTrue(source.contains("\"/user/sms/code\""));
         assertTrue(source.contains("\"/ypat/get\""));
+        assertTrue(source.contains("\"/invite/rule\""));
         assertTrue(source.contains("\"/internal/health/dependencies\""));
     }
 

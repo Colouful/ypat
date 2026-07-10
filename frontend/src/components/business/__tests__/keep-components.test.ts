@@ -38,6 +38,7 @@ describe('Keep components', () => {
     expect(wrapper.findAll('.keep-ypat-card__label-text')).toHaveLength(4)
     expect(wrapper.find('.keep-ypat-card__badge--real').exists()).toBe(true)
     expect(wrapper.find('.keep-ypat-card__badge--credit').exists()).toBe(true)
+    expect(wrapper.find('.keep-ypat-card__body + .keep-ypat-card__tags').exists()).toBe(true)
 
     const memberBadge = wrapper.find('.keep-ypat-card__member')
     expect(memberBadge.exists()).toBe(true)
@@ -45,7 +46,7 @@ describe('Keep components', () => {
     expect(memberBadge.findComponent(KeepIcon).props('name')).toBe('gem')
   })
 
-  it('renders negative ypat card trust states without member badge', () => {
+  it('hides negative ypat card trust states without member badge', () => {
     const wrapper = mount(KeepYpatCard, {
       props: {
         item: {
@@ -66,11 +67,12 @@ describe('Keep components', () => {
       },
     })
 
-    expect(wrapper.text()).toContain('未认证')
-    expect(wrapper.text()).toContain('未缴担保金')
+    expect(wrapper.text()).not.toContain('未认证')
+    expect(wrapper.text()).not.toContain('未缴担保金')
+    expect(wrapper.find('.keep-ypat-card__tags').exists()).toBe(false)
     expect(wrapper.text()).not.toContain('VIP')
     expect(wrapper.find('.keep-ypat-card__member').exists()).toBe(false)
-    expect(wrapper.findAll('.keep-ypat-card__badge--muted')).toHaveLength(2)
+    expect(wrapper.findAll('.keep-ypat-card__badge--muted')).toHaveLength(0)
   })
 
   it('keeps label structure and member badge visible with long text content', () => {
@@ -104,7 +106,7 @@ describe('Keep components', () => {
     const targetLabel = wrapper.find('.keep-ypat-card__tag--main .keep-ypat-card__label-text')
     const chargeLabel = wrapper.find('.keep-ypat-card__tag--way .keep-ypat-card__label-text')
 
-    expect(wrapper.findAll('.keep-ypat-card__label-text')).toHaveLength(4)
+    expect(wrapper.findAll('.keep-ypat-card__label-text')).toHaveLength(3)
     expect(targetLabel.exists()).toBe(true)
     expect(targetLabel.text()).toBe(longTargetLabel)
     expect(chargeLabel.exists()).toBe(true)

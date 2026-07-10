@@ -40,17 +40,33 @@
 
     <view class="tips-card">
       <text class="tips-card__title">温馨提示</text>
-      <text class="tips-card__text">提交后会消耗拍拍豆，作者可通过联系方式与你沟通。若对方要求绕开平台付款，请谨慎处理。</text>
+      <text class="tips-card__text">提交后会消耗拍豆，作者可通过联系方式与你沟通。若对方要求绕开平台付款，请谨慎处理。</text>
     </view>
 
     <view class="bottom-bar">
-      <view class="bottom-bar__cost">
-        <text class="bottom-bar__label">本次消耗</text>
-        <text class="bottom-bar__value">1 拍拍豆</text>
+      <view class="bottom-bar__cost" :class="{ 'bottom-bar__cost--warning': isBalanceInsufficient }">
+        <view class="cost-metric">
+          <text class="bottom-bar__label">剩余拍豆</text>
+          <view class="cost-metric__line">
+            <text class="bottom-bar__value">{{ currentPpd }}</text>
+            <text class="bottom-bar__unit">拍豆</text>
+          </view>
+        </view>
+        <view class="bottom-bar__divider" />
+        <view class="cost-metric">
+          <text class="bottom-bar__label">本次消耗</text>
+          <view class="cost-metric__line">
+            <text class="bottom-bar__value bottom-bar__value--cost">{{ applyCost }}</text>
+            <text class="bottom-bar__unit">拍豆</text>
+          </view>
+        </view>
       </view>
       <button
         class="bottom-bar__submit"
-        :class="{ 'bottom-bar__submit--disabled': submitDisabled }"
+        :class="{
+          'bottom-bar__submit--disabled': submitDisabled,
+          'bottom-bar__submit--warning': isBalanceInsufficient && !submitDisabled,
+        }"
         :loading="submitting"
         hover-class="none"
         @tap="submitApply"
@@ -63,13 +79,13 @@
 
 <script setup lang="ts">
 import { computed, ref } from 'vue'
-import { onLoad } from '@dcloudio/uni-app'
+import { onLoad, onShow } from '@dcloudio/uni-app'
 import KeepIcon from '@/components/business/KeepIcon.vue'
 import KeepPageNav from '@/components/business/KeepPageNav.vue'
 import { getDetail, quickApply } from '@/api/modules/work'
 import * as ypatApi from '@/api/modules/ypat'
 import { normalizeImageUrl } from '@/api/adapters'
-import { getProfessLabel, TARGET_LABELS } from '@/constants/enums'
+import { APPLY_PPD, getProfessLabel, TARGET_LABELS } from '@/constants/enums'
 import { useUserStore } from '@/stores/user'
 import { preloadMessageSubscribeTemplates, requestMessageSubscribe } from '@/utils/subscribe-message'
 import type { YpatInfo } from '@/api/types'
@@ -87,6 +103,9 @@ const mobile = ref('')
 const wx = ref('')
 const submitting = ref(false)
 
+const applyCost = APPLY_PPD
+const currentPpd = computed(() => Number(userStore.userInfo?.ppd || 0))
+const isBalanceInsufficient = computed(() => currentPpd.value < applyCost)
 const applyTarget = computed(() => {
   if (ypat.value) {
     return {
@@ -158,8 +177,32 @@ function onReasonInput(event: Event): void {
   reason.value = String(detail?.value ?? target?.value ?? '')
 }
 
+async function refreshPpdBalance(): Promise<number> {
+  try {
+    const latestUser = await userStore.updateUserInfo()
+    return Number(latestUser?.ppd ?? userStore.userInfo?.ppd ?? 0)
+  } catch {
+    return currentPpd.value
+  }
+}
+
+function showRechargeGuide(balance = currentPpd.value): void {
+  uni.showModal({
+    title: '拍豆余额不足',
+    content: `当前剩余 ${balance} 拍豆，本次提交需要 ${applyCost} 拍豆。充值后再回来提交约拍申请吧。`,
+    confirmText: '去充值',
+    cancelText: '稍后再说',
+    success: ({ confirm }) => confirm && uni.navigateTo({ url: '/pages-sub/user/recharge' }),
+  })
+}
+
 async function submitApply(): Promise<void> {
   if (submitDisabled.value || (!workId.value && !ypatId.value)) return
+  const latestPpd = await refreshPpdBalance()
+  if (latestPpd < applyCost) {
+    showRechargeGuide(latestPpd)
+    return
+  }
   submitting.value = true
   try {
     await requestMessageSubscribe('apply')
@@ -185,6 +228,7 @@ async function submitApply(): Promise<void> {
       })
     }
     uni.showToast({ title: '约拍申请已提交', icon: 'success' })
+    void userStore.updateUserInfo()
     void userStore.refreshUnreadCount()
     setTimeout(() => uni.navigateBack(), 800)
   } catch (error) {
@@ -209,15 +253,20 @@ onLoad((options) => {
   wx.value = userStore.userInfo?.wx || ''
   if (ypatId.value) void loadYpat()
   else void loadWork()
+  void refreshPpdBalance()
   void preloadMessageSubscribeTemplates()
   if (shouldShowSafety()) setTimeout(showSafetyModal, 220)
+})
+
+onShow(() => {
+  void refreshPpdBalance()
 })
 </script>
 
 <style scoped lang="scss">
 .apply-page {
   min-height: 100vh;
-  padding: 28rpx 28rpx calc(148rpx + env(safe-area-inset-bottom));
+  padding: 28rpx 28rpx calc(190rpx + env(safe-area-inset-bottom));
   background: $color-bg-page;
 }
 
@@ -382,14 +431,46 @@ onLoad((options) => {
   z-index: 100;
   display: flex;
   align-items: center;
-  gap: 24rpx;
+  gap: 18rpx;
   padding: 18rpx 28rpx calc(18rpx + env(safe-area-inset-bottom));
   background: rgba(255, 255, 255, 0.96);
   box-shadow: 0 -10rpx 30rpx rgba(20, 24, 31, 0.08);
 }
 
 .bottom-bar__cost {
-  min-width: 190rpx;
+  display: flex;
+  align-items: center;
+  flex: 1;
+  min-width: 0;
+  padding: 16rpx 18rpx;
+  border: 2rpx solid rgba(35, 194, 104, 0.14);
+  border-radius: 26rpx;
+  background: linear-gradient(135deg, rgba(35, 194, 104, 0.08), rgba(255, 255, 255, 0.96));
+}
+
+.bottom-bar__cost--warning {
+  border-color: rgba(255, 143, 31, 0.28);
+  background: linear-gradient(135deg, rgba(255, 143, 31, 0.11), rgba(255, 255, 255, 0.96));
+}
+
+.cost-metric {
+  min-width: 0;
+  flex: 1;
+}
+
+.cost-metric__line {
+  display: flex;
+  align-items: baseline;
+  gap: 6rpx;
+  margin-top: 4rpx;
+  white-space: nowrap;
+}
+
+.bottom-bar__divider {
+  width: 2rpx;
+  height: 54rpx;
+  margin: 0 16rpx;
+  background: rgba(131, 136, 143, 0.16);
 }
 
 .bottom-bar__label {
@@ -401,16 +482,30 @@ onLoad((options) => {
 
 .bottom-bar__value {
   display: block;
-  margin-top: 4rpx;
+  max-width: 112rpx;
+  overflow: hidden;
   color: $color-accent-orange;
   font-size: 30rpx;
   font-weight: 900;
+  line-height: 1.1;
+  text-overflow: ellipsis;
+}
+
+.bottom-bar__value--cost {
+  color: $color-text-primary;
+}
+
+.bottom-bar__unit {
+  color: $color-text-secondary;
+  font-size: 20rpx;
+  font-weight: 800;
 }
 
 .bottom-bar__submit {
   @include flex-center;
   box-sizing: border-box;
-  flex: 1;
+  width: 216rpx;
+  flex: none;
   min-width: 0;
   height: 88rpx;
   margin: 0;
@@ -430,6 +525,10 @@ onLoad((options) => {
   color: #A7ADB4;
   background: #EEF2F1;
   box-shadow: none;
+}
+
+.bottom-bar__submit--warning {
+  background: linear-gradient(135deg, $color-accent-orange, #FFB15C);
 }
 
 .bottom-bar__submit::after {

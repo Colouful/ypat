@@ -15,12 +15,12 @@
     <view class="deposit-card">
       <view>
         <text class="deposit-card__label">保证金金额</text>
-      <view class="deposit-card__price">
-        <text class="deposit-card__unit">¥</text>
+        <view class="deposit-card__price">
+          <text class="deposit-card__unit">¥</text>
           <text class="deposit-card__amount">{{ depositAmountYuan }}</text>
         </view>
       </view>
-      <view class="deposit-card__tag">{{ configEnabled ? '可申请退还' : '暂未开放' }}</view>
+      <view class="deposit-card__tag">{{ isGuaranteed ? '可申请退还' : configEnabled ? '缴纳后可退' : '暂未开放' }}</view>
     </view>
 
     <view class="section">
@@ -31,7 +31,7 @@
       </view>
     </view>
 
-    <view class="agreement" @tap="accepted = !accepted">
+    <view v-if="!isGuaranteed" class="agreement" @tap="accepted = !accepted">
       <view class="checkbox" :class="{ 'checkbox--checked': accepted }">
         <KeepIcon v-if="accepted" name="check" :size="24" color="#fff" />
       </view>
@@ -40,14 +40,16 @@
     </view>
 
     <button
+      v-if="!isGuaranteed"
       class="pay-btn"
       :class="{ 'pay-btn--disabled': !canPay }"
       :disabled="!canPay"
       :loading="paying"
       @tap="pay"
     >
-      {{ isGuaranteed ? '已完成信用担保' : paying ? '处理中...' : '立即缴纳保证金' }}
+      {{ paying ? '处理中...' : '立即缴纳保证金' }}
     </button>
+    <button v-else class="refund-btn" @tap="handleRefundRequest">申请退还</button>
     <view v-if="!configEnabled" class="unsupported">保证金服务暂未开放。</view>
   </view>
 </template>
@@ -189,6 +191,18 @@ function showAgreement(): void {
     title: '保证金协议',
     content: '保证金用于约拍诚信担保。平台将依据规则冻结、使用或处置保证金；退款、提前退款管理费及担保权益终止规则以平台公示为准。',
     showCancel: false,
+  })
+}
+
+function handleRefundRequest(): void {
+  uni.showModal({
+    title: '申请退还保证金',
+    content: '保证金退还需联系平台客服核验处理。缴纳满规则天数后可正常申请，提前退款将按规则收取平台管理费。',
+    confirmText: '去反馈',
+    cancelText: '知道了',
+    success: ({ confirm }) => {
+      if (confirm) uni.navigateTo({ url: '/pages-sub/user/feedback' })
+    },
   })
 }
 
@@ -387,6 +401,21 @@ onUnload(() => {
 }
 
 .pay-btn::after {
+  border: 0;
+}
+
+.refund-btn {
+  margin-top: 34rpx;
+  height: 92rpx;
+  border-radius: 999rpx;
+  color: $color-primary-dark;
+  background: $color-primary-light;
+  font-size: 28rpx;
+  font-weight: 900;
+  line-height: 92rpx;
+}
+
+.refund-btn::after {
   border: 0;
 }
 

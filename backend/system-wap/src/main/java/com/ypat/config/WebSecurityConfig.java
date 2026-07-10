@@ -75,6 +75,7 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
                         "/param/list",
                         "/product/list",
                         "/member/plans",
+                        "/invite/rule",
                         "/wxpay/notify",
                         "/wxpub/notify",
                         "/admin/captcha",

@@ -9,85 +9,93 @@
       mode="aspectFill"
       lazy-load
     />
-    <view class="keep-ypat-card__body">
-      <view class="keep-ypat-card__head">
-        <text class="keep-ypat-card__title">
-          {{ item.title }}
-        </text>
+    <view class="keep-ypat-card__content">
+      <view class="keep-ypat-card__body">
+        <view class="keep-ypat-card__head">
+          <text class="keep-ypat-card__title">
+            {{ item.title }}
+          </text>
+        </view>
+
+        <view class="keep-ypat-card__base-tags">
+          <text class="keep-ypat-card__tag keep-ypat-card__tag--main">
+            <text class="keep-ypat-card__label-text">
+              {{ item.targetLabel }}
+            </text>
+          </text>
+          <text class="keep-ypat-card__tag keep-ypat-card__tag--way">
+            <text class="keep-ypat-card__label-text">
+              {{ item.chargeLabel }}
+            </text>
+          </text>
+        </view>
+
+        <view class="keep-ypat-card__user">
+          <image
+            class="keep-ypat-card__avatar"
+            :src="item.avatar"
+            mode="aspectFill"
+          />
+          <view class="keep-ypat-card__identity">
+            <view class="keep-ypat-card__name-row">
+              <text class="keep-ypat-card__name">
+                {{ item.name }}
+              </text>
+              <text
+                v-if="item.memberActive"
+                class="keep-ypat-card__member"
+              >
+                <KeepIcon
+                  name="gem"
+                  :size="18"
+                />
+                {{ getMemberBadgeLabel(item.memberLevel) }}
+              </text>
+            </view>
+            <text class="keep-ypat-card__city">
+              <KeepIcon
+                name="map-pin"
+                :size="22"
+              />
+              {{ item.city }}
+            </text>
+          </view>
+        </view>
+
+        <view class="keep-ypat-card__meta">
+          <text>已收到约拍 {{ item.applyCount }}</text>
+          <text>{{ item.time }}</text>
+        </view>
       </view>
 
-      <view class="keep-ypat-card__tags">
-        <text class="keep-ypat-card__tag keep-ypat-card__tag--main">
-          <text class="keep-ypat-card__label-text">
-            {{ item.targetLabel }}
-          </text>
-        </text>
-        <text class="keep-ypat-card__tag keep-ypat-card__tag--way">
-          <text class="keep-ypat-card__label-text">
-            {{ item.chargeLabel }}
-          </text>
-        </text>
+      <view
+        v-if="item.realname || item.credit"
+        class="keep-ypat-card__tags"
+      >
         <text
-          class="keep-ypat-card__badge"
-          :class="item.realname ? 'keep-ypat-card__badge--real' : 'keep-ypat-card__badge--muted'"
+          v-if="item.realname"
+          class="keep-ypat-card__badge keep-ypat-card__badge--real"
         >
           <KeepIcon
             name="shield"
             :size="20"
           />
           <text class="keep-ypat-card__label-text">
-            {{ item.realname ? '已认证' : '未认证' }}
+            已认证
           </text>
         </text>
         <text
-          class="keep-ypat-card__badge"
-          :class="item.credit ? 'keep-ypat-card__badge--credit' : 'keep-ypat-card__badge--muted'"
+          v-if="item.credit"
+          class="keep-ypat-card__badge keep-ypat-card__badge--credit"
         >
           <KeepIcon
             name="star"
             :size="20"
           />
           <text class="keep-ypat-card__label-text">
-            {{ item.credit ? '已缴担保金' : '未缴担保金' }}
+            已缴担保金
           </text>
         </text>
-      </view>
-
-      <view class="keep-ypat-card__user">
-        <image
-          class="keep-ypat-card__avatar"
-          :src="item.avatar"
-          mode="aspectFill"
-        />
-        <view class="keep-ypat-card__identity">
-          <view class="keep-ypat-card__name-row">
-            <text class="keep-ypat-card__name">
-              {{ item.name }}
-            </text>
-            <text
-              v-if="item.memberActive"
-              class="keep-ypat-card__member"
-            >
-              <KeepIcon
-                name="gem"
-                :size="18"
-              />
-              {{ getMemberBadgeLabel(item.memberLevel) }}
-            </text>
-          </view>
-          <text class="keep-ypat-card__city">
-            <KeepIcon
-              name="map-pin"
-              :size="22"
-            />
-            {{ item.city }}
-          </text>
-        </view>
-      </view>
-
-      <view class="keep-ypat-card__meta">
-        <text>已收到约拍 {{ item.applyCount }}</text>
-        <text>{{ item.time }}</text>
       </view>
     </view>
   </view>
@@ -155,6 +163,13 @@ const getMemberBadgeLabel = (memberLevel?: string) => {
   background: $color-bg-chip;
 }
 
+.keep-ypat-card__content {
+  min-width: 0;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
 .keep-ypat-card__body {
   min-width: 0;
   flex: 1;
@@ -174,12 +189,17 @@ const getMemberBadgeLabel = (memberLevel?: string) => {
   line-height: 1.35;
 }
 
+.keep-ypat-card__base-tags,
 .keep-ypat-card__tags {
   display: flex;
   align-items: center;
   flex-wrap: wrap;
   gap: 10rpx;
   margin-top: 16rpx;
+}
+
+.keep-ypat-card__tags {
+  flex-wrap: nowrap;
 }
 
 .keep-ypat-card__tag,
@@ -224,12 +244,6 @@ const getMemberBadgeLabel = (memberLevel?: string) => {
 .keep-ypat-card__badge--credit {
   color: #9C7836;
   background: $color-gold-soft;
-}
-
-.keep-ypat-card__badge--muted {
-  color: $color-text-helper;
-  background: $color-bg-chip;
-  border: 1rpx solid rgba(127, 137, 160, 0.18);
 }
 
 .keep-ypat-card__user {

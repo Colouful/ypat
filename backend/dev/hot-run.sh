@@ -69,7 +69,7 @@ compile_module() {
 
 start_module() {
   echo "[hot-run] 使用 spring-boot:run 启动 ${MODULE}"
-  (cd "$MODULE" && mvn spring-boot:run $MAVEN_ARGS) &
+  (cd "$MODULE" && JAVA_TOOL_OPTIONS="${JAVA_TOOL_OPTIONS:-} -Dspring.devtools.restart.enabled=false" mvn spring-boot:run $MAVEN_ARGS) &
   APP_PID="$!"
 }
 

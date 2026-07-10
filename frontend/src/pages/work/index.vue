@@ -44,6 +44,7 @@
 
 <script setup lang="ts">
 import { computed, onMounted, ref, shallowRef } from 'vue'
+import { onPullDownRefresh } from '@dcloudio/uni-app'
 import KeepPageNav from '@/components/business/KeepPageNav.vue'
 import KeepTabBar from '@/components/business/KeepTabBar.vue'
 import WorkCard from '@/components/business/WorkCard.vue'
@@ -145,6 +146,12 @@ function goDetail(item: WorkListItem) {
 }
 
 onMounted(() => load(true))
+
+onPullDownRefresh(() => {
+  load(true).finally(() => {
+    uni.stopPullDownRefresh()
+  })
+})
 </script>
 
 <style lang="scss" scoped>

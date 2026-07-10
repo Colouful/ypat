@@ -11,7 +11,7 @@
       "path": "pages/work/index",
       "style": {
         "navigationStyle": "custom",
-        "enablePullDownRefresh": false
+        "enablePullDownRefresh": true
       }
     },
     {

@@ -89,7 +89,11 @@ import KeepTabBar from '@/components/business/KeepTabBar.vue'
 import { goRootTab } from '@/utils/tab-navigation'
 import type { MessInfo } from '@/api/types'
 import { resolveMessageNavigation } from '@/utils/message-navigation'
-import { preloadMessageSubscribeTemplates, requestMessageSubscribe } from '@/utils/subscribe-message'
+import {
+  getSubscribeMessageToastTitle,
+  preloadMessageSubscribeTemplates,
+  requestMessageSubscribe,
+} from '@/utils/subscribe-message'
 
 const appStore = useAppStore()
 const userStore = useUserStore()
@@ -171,7 +175,7 @@ async function openDetail(item: MessInfo): Promise<void> {
 async function enableSubscribe(): Promise<void> {
   const result = await requestMessageSubscribe('message')
   uni.showToast({
-    title: result.accepted.length > 0 ? '已开启提醒' : '未开启提醒',
+    title: getSubscribeMessageToastTitle(result),
     icon: 'none',
   })
 }

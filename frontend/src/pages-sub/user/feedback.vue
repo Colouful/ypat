@@ -75,7 +75,7 @@ async function handleSubmit(): Promise<void> {
 .feedback-textarea { width: 100%; min-height: 280rpx; }
 .feedback-card__footer { text-align: right; }
 .feedback-card__count { color: $color-text-helper; font-size: 23rpx; }
-.contact-input { margin-top: 18rpx; padding: 20rpx; border-radius: 16rpx; background: $color-bg-page; }
+.contact-input { width: 100%; height: 88rpx; box-sizing: border-box; margin-top: 18rpx; padding: 0 22rpx; border-radius: 16rpx; background: $color-bg-page; line-height: 88rpx; }
 .submit-btn { margin-top: 40rpx; padding: 26rpx; border-radius: 999rpx; color: #fff; background: $color-primary; text-align: center; }
 .submit-btn--disabled { opacity: .45; pointer-events: none; }
 .submit-btn__text { color: #fff; }

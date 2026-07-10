@@ -68,6 +68,7 @@ async function onLike() {
     if (work.value) {
       work.value = { ...work.value, isLiked: true, likeCount: (work.value.likeCount || 0) + 1 }
     }
+    uni.showToast({ title: '点赞成功', icon: 'success' })
   } catch (e: any) {
     uni.showToast({ title: e?.message || '操作失败', icon: 'none' })
   }
@@ -78,6 +79,7 @@ async function onUnlike() {
     if (work.value) {
       work.value = { ...work.value, isLiked: false, likeCount: Math.max(0, (work.value.likeCount || 0) - 1) }
     }
+    uni.showToast({ title: '已取消点赞', icon: 'none' })
   } catch (e: any) {
     uni.showToast({ title: e?.message || '操作失败', icon: 'none' })
   }
@@ -88,6 +90,7 @@ async function onFavorite() {
     if (work.value) {
       work.value = { ...work.value, isFavorited: true, favoriteCount: (work.value.favoriteCount || 0) + 1 }
     }
+    uni.showToast({ title: '收藏成功', icon: 'success' })
   } catch (e: any) {
     uni.showToast({ title: e?.message || '操作失败', icon: 'none' })
   }
@@ -98,13 +101,14 @@ async function onUnfavorite() {
     if (work.value) {
       work.value = { ...work.value, isFavorited: false, favoriteCount: Math.max(0, (work.value.favoriteCount || 0) - 1) }
     }
+    uni.showToast({ title: '已取消收藏', icon: 'none' })
   } catch (e: any) {
     uni.showToast({ title: e?.message || '操作失败', icon: 'none' })
   }
 }
 
 function onShare() {
-  uni.showToast({ title: '点击右上角分享', icon: 'none' })
+  uni.showToast({ title: '点击右上角分享给好友', icon: 'none' })
 }
 
 function onApply() {

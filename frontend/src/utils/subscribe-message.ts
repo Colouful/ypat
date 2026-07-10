@@ -17,6 +17,8 @@ const SCENE_TEMPLATE_IDS: Record<SubscribeMessageScene, number[]> = {
   message: [0, 1, 2],
 }
 
+const MESSAGE_TEST_TEMPLATE_ID = '7nzQyG3qOBV5Vb6nYCkZHh7hhKJoHp_kHC4mX6vo6lg'
+
 let templateCache: TemplateIdItem[] | null = null
 
 export async function preloadMessageSubscribeTemplates(): Promise<void> {
@@ -25,7 +27,7 @@ export async function preloadMessageSubscribeTemplates(): Promise<void> {
     const res = await getTemplateIds()
     templateCache = res.data || []
   } catch {
-    templateCache = []
+    templateCache = null
   }
 }
 
@@ -53,7 +55,8 @@ export async function requestMessageSubscribe(scene: SubscribeMessageScene): Pro
       success: (res) => {
         const accepted = tmplIds.filter((id) => res[id] === 'accept')
         const rejected = tmplIds.filter((id) => res[id] && res[id] !== 'accept')
-        resolve({ supported: true, requested: true, accepted, rejected })
+        const errMsg = res.errMsg && !res.errMsg.includes(':ok') ? res.errMsg : undefined
+        resolve({ supported: true, requested: true, accepted, rejected, error: errMsg })
       },
       fail: (error) => {
         resolve({
@@ -69,6 +72,10 @@ export async function requestMessageSubscribe(scene: SubscribeMessageScene): Pro
 }
 
 export function pickTemplateIds(scene: SubscribeMessageScene, templates: TemplateIdItem[]): string[] {
+  if (scene === 'message') {
+    return [MESSAGE_TEST_TEMPLATE_ID]
+  }
+
   const ids = SCENE_TEMPLATE_IDS[scene] || []
   return ids
     .map((id) => templates.find((item) => item.id === id)?.value)
@@ -76,7 +83,23 @@ export function pickTemplateIds(scene: SubscribeMessageScene, templates: Templat
     .slice(0, 3)
 }
 
+export function getSubscribeMessageToastTitle(result: SubscribeMessageResult): string {
+  if (result.accepted.length > 0) return '已开启提醒'
+  if (!result.supported) return result.error || '当前环境不支持订阅消息'
+  if (!result.requested) return result.error || '未配置订阅模板'
+  if (result.error?.includes('No template data return')) return '订阅模板未在微信后台配置'
+  if (result.error?.includes('template id exist')) return '订阅模板未在微信后台配置'
+  if (result.error?.includes('ban')) return '请在微信设置中开启订阅消息'
+  if (result.error) return result.error
+  if (result.rejected.length > 0) return '请在弹窗中勾选消息模板'
+  return '未开启提醒'
+}
+
 async function resolveTemplateIds(scene: SubscribeMessageScene): Promise<string[]> {
+  if (scene === 'message') {
+    return pickTemplateIds(scene, [])
+  }
+
   if (templateCache) {
     return pickTemplateIds(scene, templateCache)
   }
@@ -85,7 +108,7 @@ async function resolveTemplateIds(scene: SubscribeMessageScene): Promise<string[
     templateCache = res.data || []
     return pickTemplateIds(scene, res.data || [])
   } catch {
-    templateCache = []
+    templateCache = null
     return []
   }
 }

@@ -1,13 +1,30 @@
 <template>
   <view class="work-action-bar">
-    <view class="work-action-bar__btn" @tap="onLike">
-      <KeepIcon name="star" :size="40" :color="work.isLiked ? '#23C268' : '#83888F'" />
+    <view
+      class="work-action-bar__btn"
+      :class="{ 'work-action-bar__btn--active': work.isLiked }"
+      @tap="onLike"
+    >
+      <view class="work-action-bar__icon-wrap">
+        <KeepIcon name="star" :size="36" :color="work.isLiked ? '#23C268' : '#83888F'" />
+      </view>
+      <text class="work-action-bar__label">{{ work.isLiked ? '已赞' : '点赞' }}</text>
     </view>
-    <view class="work-action-bar__btn" @tap="onFavorite">
-      <KeepIcon name="gem" :size="40" :color="work.isFavorited ? '#23C268' : '#83888F'" />
+    <view
+      class="work-action-bar__btn"
+      :class="{ 'work-action-bar__btn--active': work.isFavorited }"
+      @tap="onFavorite"
+    >
+      <view class="work-action-bar__icon-wrap">
+        <KeepIcon name="gem" :size="36" :color="work.isFavorited ? '#23C268' : '#83888F'" />
+      </view>
+      <text class="work-action-bar__label">{{ work.isFavorited ? '已收藏' : '收藏' }}</text>
     </view>
     <view class="work-action-bar__btn" @tap="onShare">
-      <KeepIcon name="handshake" :size="40" color="#83888F" />
+      <view class="work-action-bar__icon-wrap">
+        <KeepIcon name="handshake" :size="36" color="#83888F" />
+      </view>
+      <text class="work-action-bar__label">分享</text>
     </view>
     <view v-if="!work.isOwner" class="work-action-bar__primary" @tap="onApply">
       <text>立即约拍</text>
@@ -77,10 +94,34 @@ function onOffline() { emit('offline') }
   z-index: 200;
   &__btn {
     width: 96rpx;
-    height: 80rpx;
+    height: 88rpx;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 6rpx;
+    border-radius: 24rpx;
+    transition: background-color 0.2s ease;
+    &--active {
+      .work-action-bar__label {
+        color: $color-primary;
+        font-weight: 800;
+      }
+    }
+  }
+  &__icon-wrap {
     display: flex;
     align-items: center;
     justify-content: center;
+    width: 42rpx;
+    height: 42rpx;
+  }
+  &__label {
+    color: $color-text-helper;
+    font-size: 20rpx;
+    font-weight: 700;
+    line-height: 1;
+    white-space: nowrap;
   }
   &__icon {
     font-size: 44rpx;

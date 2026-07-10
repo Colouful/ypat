@@ -55,6 +55,15 @@ describe('mine navigation', () => {
     expect(creditPage).toContain('保证金协议')
   })
 
+  it('hides deposit agreement and pay action after credit guarantee is active', () => {
+    const creditPage = readSource('pages-sub/user/credit.vue')
+
+    expect(creditPage).toContain('v-if="!isGuaranteed" class="agreement"')
+    expect(creditPage).toContain('v-if="!isGuaranteed"')
+    expect(creditPage).toContain('申请退还')
+    expect(creditPage).toContain('handleRefundRequest')
+  })
+
   it('renders checkin entry beside the menu icon', () => {
     const source = readSource('pages/mine/index.vue')
 
