@@ -185,6 +185,20 @@ DEALLOCATE PREPARE stmt;
 
 SET @ddl := (
   SELECT IF(COUNT(*) = 0,
+    'ALTER TABLE `t_internal_test_resource` ADD INDEX `idx_internal_resource_available_group` (`usage_type`, `status`, `used_flag`, `group_no`, `sort_no`, `id`)',
+    'SELECT ''skip t_internal_test_resource.idx_internal_resource_available_group'''
+  )
+  FROM information_schema.STATISTICS
+  WHERE TABLE_SCHEMA = DATABASE()
+    AND TABLE_NAME = 't_internal_test_resource'
+    AND INDEX_NAME = 'idx_internal_resource_available_group'
+);
+PREPARE stmt FROM @ddl;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
+
+SET @ddl := (
+  SELECT IF(COUNT(*) = 0,
     'ALTER TABLE `t_user` ADD COLUMN `internal_batch_no` VARCHAR(64) DEFAULT NULL COMMENT ''内测批次号''',
     'SELECT ''skip t_user.internal_batch_no'''
   )

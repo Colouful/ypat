@@ -24,6 +24,8 @@ import javax.persistence.criteria.CriteriaQuery;
 import javax.persistence.criteria.Predicate;
 import javax.persistence.criteria.Root;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -114,44 +116,55 @@ public class InternalTestResourceService {
 
         int page = qo.getPage() == null || qo.getPage() < 0 ? 0 : qo.getPage();
         int size = qo.getSize() == null || qo.getSize() <= 0 ? 20 : qo.getSize();
-        List<InternalTestResource> resources = internalTestResourceRepository.findAll(buildSpecification(qo),
-                new Sort(Sort.Direction.ASC, "groupNo")
-                        .and(new Sort(Sort.Direction.ASC, "groupSortNo"))
-                        .and(new Sort(Sort.Direction.ASC, "sortNo"))
-                        .and(new Sort(Sort.Direction.DESC, "id")));
+        String mediaType = normalizeOptional(qo.getMediaType());
+        String styleCode = normalizeOptional(qo.getStyleCode());
+        String profession = normalizeOptional(qo.getProfession());
+        String province = normalizeOptional(qo.getProvince());
+        String city = normalizeOptional(qo.getCity());
+        String area = normalizeOptional(qo.getArea());
+        String filterGroupNo = normalizeOptional(qo.getGroupNo());
+        String keyword = normalizeOptional(qo.getKeyword());
+        long groupCount = valueOrZero(internalTestResourceRepository.countAvailableGroups(
+                mediaType, styleCode, profession, province, city, area, filterGroupNo, keyword));
+        long singleCount = valueOrZero(internalTestResourceRepository.countAvailableSingleResources(
+                mediaType, styleCode, profession, province, city, area, filterGroupNo, keyword));
+        long pageStart = (long) page * size;
         Map<String, List<InternalTestResourceQo>> groups = new LinkedHashMap<String, List<InternalTestResourceQo>>();
-        Map<String, List<InternalTestResource>> candidateGroups = new LinkedHashMap<String, List<InternalTestResource>>();
-        for (InternalTestResource resource : resources) {
-            if (CommonUtils.isNull(resource.getGroupNo())) {
-                if (isAvailableWorkResource(resource)) {
-                    groups.put("single-" + resource.getId(), copyResourceGroup(singleResourceList(resource)));
-                }
-            } else {
-                if (!candidateGroups.containsKey(resource.getGroupNo())) {
-                    candidateGroups.put(resource.getGroupNo(), new ArrayList<InternalTestResource>());
-                }
-                candidateGroups.get(resource.getGroupNo()).add(resource);
-            }
-        }
 
-        if (!candidateGroups.isEmpty()) {
-            List<String> groupNos = new ArrayList<String>(candidateGroups.keySet());
+        int groupLimit = pageStart < groupCount ? (int) Math.min((long) size, groupCount - pageStart) : 0;
+        if (groupLimit > 0 && pageStart <= Integer.MAX_VALUE) {
+            List<String> groupNos = internalTestResourceRepository.findAvailableGroupNos(
+                    mediaType, styleCode, profession, province, city, area, filterGroupNo, keyword,
+                    (int) pageStart, groupLimit);
             Map<String, List<InternalTestResource>> fullGroups = groupResourcesByGroupNo(
                     internalTestResourceRepository.findByGroupNoIn(groupNos));
             for (String groupNo : groupNos) {
                 List<InternalTestResource> fullGroup = fullGroups.get(groupNo);
-                List<InternalTestResource> candidateGroup = candidateGroups.get(groupNo);
-                if (isCompleteAvailableGroup(fullGroup, candidateGroup)) {
+                if (isCompleteAvailableGroup(fullGroup, fullGroup)) {
+                    sortResourceGroup(fullGroup);
                     groups.put(groupNo, copyResourceGroup(fullGroup));
                 }
             }
         }
 
-        List<List<InternalTestResourceQo>> pageGroups = pageGroups(groups, page, size);
+        int remaining = size - groups.size();
+        long singleOffset = pageStart < groupCount ? 0L : pageStart - groupCount;
+        if (remaining > 0 && singleOffset < singleCount && singleOffset <= Integer.MAX_VALUE) {
+            List<InternalTestResource> singles = internalTestResourceRepository.findAvailableSingleResources(
+                    mediaType, styleCode, profession, province, city, area, filterGroupNo, keyword,
+                    (int) singleOffset, remaining);
+            for (InternalTestResource resource : singles) {
+                if (isAvailableWorkResource(resource) && CommonUtils.isNull(resource.getGroupNo())) {
+                    groups.put("single-" + resource.getId(), copyResourceGroup(singleResourceList(resource)));
+                }
+            }
+        }
+
+        long totalElements = groupCount + singleCount;
         Map<String, Object> result = new LinkedHashMap<String, Object>();
-        result.put("content", pageGroups);
-        result.put("totalPages", calculateTotalPages(groups.size(), size));
-        result.put("totalElements", groups.size());
+        result.put("content", new ArrayList<List<InternalTestResourceQo>>(groups.values()));
+        result.put("totalPages", calculateTotalPages(totalElements, size));
+        result.put("totalElements", totalElements);
         return result;
     }
 
@@ -160,16 +173,12 @@ public class InternalTestResourceService {
         if (CommonUtils.isNull(resources)) {
             return;
         }
-        validateResourcesCanUse(resources);
+        List<Long> ids = collectResourceIds(resources);
         Date now = new Date();
-        for (InternalTestResource resource : resources) {
-            resource.setUsedFlag(1);
-            resource.setUsedBatchNo(batchNo);
-            resource.setUsedTargetType(targetType);
-            resource.setUsedTargetId(targetId);
-            resource.setUsedAt(now);
-            resource.setUpdatedAt(now);
-            internalTestResourceRepository.save(resource);
+        int updated = internalTestResourceRepository.markResourcesUsedIfAvailable(
+                ids, batchNo, targetType, targetId, now, now);
+        if (updated != ids.size()) {
+            throw new SysException(ResponseCode.FAIL_PARA, "资源已被占用");
         }
     }
 
@@ -177,21 +186,7 @@ public class InternalTestResourceService {
         if (CommonUtils.isNull(batchNo)) {
             return 0;
         }
-        List<InternalTestResource> resources = internalTestResourceRepository.findByUsedBatchNo(batchNo);
-        if (CommonUtils.isNull(resources)) {
-            return 0;
-        }
-        Date now = new Date();
-        for (InternalTestResource resource : resources) {
-            resource.setUsedFlag(0);
-            resource.setUsedBatchNo(null);
-            resource.setUsedTargetType(null);
-            resource.setUsedTargetId(null);
-            resource.setUsedAt(null);
-            resource.setUpdatedAt(now);
-            internalTestResourceRepository.save(resource);
-        }
-        return resources.size();
+        return internalTestResourceRepository.releaseByUsedBatchNo(batchNo, new Date());
     }
 
     public InternalTestResourceQo save(InternalTestResourceQo qo) {
@@ -354,18 +349,18 @@ public class InternalTestResourceService {
         }
     }
 
-    private void validateResourcesCanUse(List<InternalTestResource> resources) {
-        if (CommonUtils.isNull(resources)) {
-            return;
-        }
+    private List<Long> collectResourceIds(List<InternalTestResource> resources) {
+        Set<Long> uniqueIds = new HashSet<Long>();
         for (InternalTestResource resource : resources) {
-            if (resource == null) {
+            if (resource == null || resource.getId() == null) {
                 throw new SysException(ResponseCode.FAIL_PARA, "资源不能为空");
             }
-            if (Integer.valueOf(1).equals(resource.getUsedFlag())) {
-                throw new SysException(ResponseCode.FAIL_PARA, "资源已被占用");
-            }
+            uniqueIds.add(resource.getId());
         }
+        if (uniqueIds.isEmpty()) {
+            throw new SysException(ResponseCode.FAIL_PARA, "资源不能为空");
+        }
+        return new ArrayList<Long>(uniqueIds);
     }
 
     private Map<String, List<InternalTestResource>> groupResourcesByGroupNo(List<InternalTestResource> resources) {
@@ -426,21 +421,44 @@ public class InternalTestResourceService {
         return group;
     }
 
-    private List<List<InternalTestResourceQo>> pageGroups(Map<String, List<InternalTestResourceQo>> groups, int page, int size) {
-        List<List<InternalTestResourceQo>> allGroups = new ArrayList<List<InternalTestResourceQo>>(groups.values());
-        int start = page * size;
-        if (start >= allGroups.size()) {
-            return new ArrayList<List<InternalTestResourceQo>>();
-        }
-        int end = Math.min(start + size, allGroups.size());
-        return new ArrayList<List<InternalTestResourceQo>>(allGroups.subList(start, end));
+    private void sortResourceGroup(List<InternalTestResource> resources) {
+        Collections.sort(resources, new Comparator<InternalTestResource>() {
+            @Override
+            public int compare(InternalTestResource left, InternalTestResource right) {
+                int byGroupSort = compareNullable(left.getGroupSortNo(), right.getGroupSortNo());
+                if (byGroupSort != 0) {
+                    return byGroupSort;
+                }
+                int bySort = compareNullable(left.getSortNo(), right.getSortNo());
+                if (bySort != 0) {
+                    return bySort;
+                }
+                return compareNullable(left.getId(), right.getId());
+            }
+        });
     }
 
-    private int calculateTotalPages(int totalElements, int size) {
-        if (totalElements == 0) {
-            return 0;
+    private <T extends Comparable<T>> int compareNullable(T left, T right) {
+        if (left == null) {
+            return right == null ? 0 : 1;
         }
-        return (totalElements + size - 1) / size;
+        return right == null ? -1 : left.compareTo(right);
+    }
+
+    private String normalizeOptional(String value) {
+        if (CommonUtils.isNull(value)) {
+            return null;
+        }
+        String normalized = value.trim();
+        return normalized.length() == 0 ? null : normalized;
+    }
+
+    private long valueOrZero(Long value) {
+        return value == null ? 0L : value;
+    }
+
+    private int calculateTotalPages(long totalElements, int size) {
+        return totalElements == 0 ? 0 : (int) ((totalElements + size - 1) / size);
     }
 
     private int countInputDuplicateUrls(List<String> urls) {

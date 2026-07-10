@@ -227,6 +227,8 @@ public class InternalTestDataSourceTest {
                 "ALTER TABLE `t_internal_test_resource` ADD COLUMN `used_target_id` BIGINT DEFAULT NULL");
         assertResourceColumnMigration(sql, "used_at",
                 "ALTER TABLE `t_internal_test_resource` ADD COLUMN `used_at` DATETIME DEFAULT NULL");
+        assertResourceIndexMigration(sql, "idx_internal_resource_available_group",
+                "ALTER TABLE `t_internal_test_resource` ADD INDEX `idx_internal_resource_available_group`");
     }
 
     @Test
@@ -307,24 +309,37 @@ public class InternalTestDataSourceTest {
         assertTrue(repo.contains("List<InternalTestResource> findByGroupNoIn(List<String> groupNos);"));
         assertTrue(repo.contains("List<InternalTestResource> findByGroupNoInAndStatus(List<String> groupNos, String status);"));
         assertTrue(repo.contains("List<InternalTestResource> findByUsedBatchNo(String usedBatchNo);"));
+        assertTrue(repo.contains("int markResourcesUsedIfAvailable("));
+        assertTrue(repo.contains("int releaseByUsedBatchNo("));
+        assertTrue(repo.contains("List<String> findAvailableGroupNos("));
+        assertTrue(repo.contains("Long countAvailableGroups("));
+        assertTrue(repo.contains("List<InternalTestResource> findAvailableSingleResources("));
+        assertTrue(repo.contains("Long countAvailableSingleResources("));
 
         String listAvailableGroups = methodBody(service,
                 "public Map<String, Object> listAvailableGroups(InternalTestResourceQo qo)",
                 "public void markResourcesUsed(List<InternalTestResource> resources");
         assertFalse(listAvailableGroups.contains("page(qo)"));
         assertFalse(listAvailableGroups.contains("result.put(\"totalPages\", 1)"));
-        assertTrue(listAvailableGroups.contains("findAll(buildSpecification(qo)"));
+        assertFalse(listAvailableGroups.contains("findAll(buildSpecification(qo)"));
+        assertTrue(listAvailableGroups.contains("findAvailableGroupNos"));
+        assertTrue(listAvailableGroups.contains("countAvailableGroups"));
+        assertTrue(listAvailableGroups.contains("findAvailableSingleResources"));
+        assertTrue(listAvailableGroups.contains("countAvailableSingleResources"));
         assertTrue(listAvailableGroups.contains("findByGroupNoIn"));
         assertTrue(listAvailableGroups.contains("isCompleteAvailableGroup"));
-        assertTrue(listAvailableGroups.contains("pageGroups"));
         assertTrue(listAvailableGroups.contains("calculateTotalPages"));
 
         String markResourcesUsed = methodBody(service,
                 "public void markResourcesUsed(List<InternalTestResource> resources",
                 "public int releaseResourcesByBatch(String batchNo)");
         assertTrue(markResourcesUsed.contains("validateUsageContext(batchNo, targetType, targetId)"));
-        assertTrue(markResourcesUsed.contains("validateResourcesCanUse(resources)"));
+        assertTrue(markResourcesUsed.contains("collectResourceIds(resources)"));
+        assertTrue(markResourcesUsed.contains("markResourcesUsedIfAvailable"));
+        assertTrue(markResourcesUsed.contains("if (updated != ids.size())"));
+        assertFalse(markResourcesUsed.contains("internalTestResourceRepository.save(resource)"));
         assertTrue(service.contains("private void validateUsageContext(String batchNo, String targetType, Long targetId)"));
+        assertTrue(service.contains("private List<Long> collectResourceIds(List<InternalTestResource> resources)"));
 
         assertTrue(service.contains("private String buildGroupNoPrefix()"));
         assertTrue(service.contains("UUID.randomUUID()"));
@@ -335,18 +350,39 @@ public class InternalTestDataSourceTest {
     @Test
     public void markResourcesUsedRejectsMissingUsageContextBeforeSave() {
         InternalTestResourceService service = new InternalTestResourceService();
-        final Counter saveCount = new Counter();
+        final RepositoryState state = new RepositoryState();
         ReflectionTestUtils.setField(service, "internalTestResourceRepository",
                 repositoryProxy(Collections.<InternalTestResource>emptyList(),
                         Collections.<InternalTestResource>emptyList(),
-                        saveCount));
+                        state));
 
         List<InternalTestResource> resources = Collections.singletonList(resource(1L, "G1", "enabled", 0));
 
         assertMarkResourcesUsedFails(service, resources, null, "work", 1L);
         assertMarkResourcesUsedFails(service, resources, "B1", null, 1L);
         assertMarkResourcesUsedFails(service, resources, "B1", "work", null);
-        assertEquals(0, saveCount.value);
+        assertEquals(0, state.saveCount);
+        assertEquals(0, state.markUsedCallCount);
+    }
+
+    @Test
+    public void markResourcesUsedUsesConditionalUpdateAndRejectsPartialUpdates() {
+        InternalTestResourceService service = new InternalTestResourceService();
+        final RepositoryState state = new RepositoryState();
+        state.markUsedAffectedRows = 1;
+        ReflectionTestUtils.setField(service, "internalTestResourceRepository",
+                repositoryProxy(Collections.<InternalTestResource>emptyList(),
+                        Collections.<InternalTestResource>emptyList(),
+                        state));
+
+        List<InternalTestResource> resources = Arrays.asList(
+                resource(1L, "G1", "enabled", 0),
+                resource(2L, "G1", "enabled", 0)
+        );
+
+        assertMarkResourcesUsedFails(service, resources, "B1", "work", 9L);
+        assertEquals(1, state.markUsedCallCount);
+        assertEquals(0, state.saveCount);
     }
 
     @SuppressWarnings("unchecked")
@@ -365,8 +401,13 @@ public class InternalTestDataSourceTest {
                 resource(3L, "G2", "enabled", 0),
                 resource(4L, "G2", "enabled", 0)
         );
+        RepositoryState state = new RepositoryState();
+        state.groupNosPage = Arrays.asList("G1", "G2");
+        state.availableGroupCount = 1L;
+        state.availableSingleCount = 1L;
+        state.singleResourcesPage = Collections.singletonList(resource(5L, null, "enabled", 0));
         ReflectionTestUtils.setField(service, "internalTestResourceRepository",
-                repositoryProxy(candidates, allGrouped, new Counter()));
+                repositoryProxy(candidates, allGrouped, state));
 
         InternalTestResourceQo qo = new InternalTestResourceQo();
         qo.setPage(0);
@@ -379,8 +420,10 @@ public class InternalTestDataSourceTest {
         assertFalse(containsGroup(content, "G1"));
         assertTrue(containsGroup(content, "G2"));
         assertEquals(2, groupSize(content, "G2"));
+        assertTrue(containsSingle(content, 5L));
         assertEquals(2, ((Number) result.get("totalElements")).intValue());
         assertEquals(1, ((Number) result.get("totalPages")).intValue());
+        assertEquals(1, state.groupNoPageCallCount);
     }
 
     private void assertResourceColumnMigration(String sql, String columnName, String ddlFragment) {
@@ -398,6 +441,25 @@ public class InternalTestDataSourceTest {
         assertTrue(block.contains("DEALLOCATE PREPARE stmt;"));
     }
 
+    private void assertResourceIndexMigration(String sql, String indexName, String ddlFragment) {
+        String block = indexMigrationBlock(sql, "t_internal_test_resource", indexName);
+
+        assertTrue(block.contains("FROM information_schema.STATISTICS"));
+        assertTrue(block.contains("TABLE_SCHEMA = DATABASE()"));
+        assertTrue(block.contains("TABLE_NAME = 't_internal_test_resource'"));
+        assertTrue(block.contains("INDEX_NAME = '" + indexName + "'"));
+        assertTrue(block.contains(ddlFragment));
+        assertTrue(block.contains("usage_type"));
+        assertTrue(block.contains("status"));
+        assertTrue(block.contains("used_flag"));
+        assertTrue(block.contains("group_no"));
+        assertTrue(block.contains("sort_no"));
+        assertTrue(block.contains("id"));
+        assertTrue(block.contains("PREPARE stmt FROM @ddl;"));
+        assertTrue(block.contains("EXECUTE stmt;"));
+        assertTrue(block.contains("DEALLOCATE PREPARE stmt;"));
+    }
+
     private String migrationBlock(String sql, String tableName, String columnName) {
         int columnIndex = sql.indexOf("COLUMN_NAME = '" + columnName + "'");
         assertTrue("missing migration column guard for " + columnName, columnIndex >= 0);
@@ -406,6 +468,20 @@ public class InternalTestDataSourceTest {
         int end = sql.indexOf("DEALLOCATE PREPARE stmt;", columnIndex);
         assertTrue("missing migration start for " + columnName, start >= 0);
         assertTrue("missing migration end for " + columnName, end >= 0);
+
+        String block = sql.substring(start, end + "DEALLOCATE PREPARE stmt;".length());
+        assertTrue(block.contains("TABLE_NAME = '" + tableName + "'"));
+        return block;
+    }
+
+    private String indexMigrationBlock(String sql, String tableName, String indexName) {
+        int index = sql.indexOf("INDEX_NAME = '" + indexName + "'");
+        assertTrue("missing migration index guard for " + indexName, index >= 0);
+
+        int start = sql.lastIndexOf("SET @ddl := (", index);
+        int end = sql.indexOf("DEALLOCATE PREPARE stmt;", index);
+        assertTrue("missing migration start for " + indexName, start >= 0);
+        assertTrue("missing migration end for " + indexName, end >= 0);
 
         String block = sql.substring(start, end + "DEALLOCATE PREPARE stmt;".length());
         assertTrue(block.contains("TABLE_NAME = '" + tableName + "'"));
@@ -460,10 +536,19 @@ public class InternalTestDataSourceTest {
         return 0;
     }
 
+    private boolean containsSingle(List<List<InternalTestResourceQo>> groups, Long id) {
+        for (List<InternalTestResourceQo> group : groups) {
+            if (group.size() == 1 && id.equals(group.get(0).getId())) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     @SuppressWarnings("unchecked")
     private InternalTestResourceRepository repositoryProxy(final List<InternalTestResource> candidates,
                                                           final List<InternalTestResource> allGrouped,
-                                                          final Counter saveCount) {
+                                                          final RepositoryState state) {
         return (InternalTestResourceRepository) Proxy.newProxyInstance(
                 InternalTestResourceRepository.class.getClassLoader(),
                 new Class[]{InternalTestResourceRepository.class},
@@ -482,8 +567,25 @@ public class InternalTestDataSourceTest {
                         if ("findByGroupNoIn".equals(method.getName())) {
                             return filterByGroupNos(allGrouped, (List<String>) args[0]);
                         }
+                        if ("findAvailableGroupNos".equals(method.getName())) {
+                            state.groupNoPageCallCount++;
+                            return state.groupNosPage;
+                        }
+                        if ("countAvailableGroups".equals(method.getName())) {
+                            return state.availableGroupCount;
+                        }
+                        if ("findAvailableSingleResources".equals(method.getName())) {
+                            return state.singleResourcesPage;
+                        }
+                        if ("countAvailableSingleResources".equals(method.getName())) {
+                            return state.availableSingleCount;
+                        }
+                        if ("markResourcesUsedIfAvailable".equals(method.getName())) {
+                            state.markUsedCallCount++;
+                            return state.markUsedAffectedRows;
+                        }
                         if ("save".equals(method.getName())) {
-                            saveCount.value++;
+                            state.saveCount++;
                             return args[0];
                         }
                         return defaultValue(method.getReturnType());
@@ -527,8 +629,15 @@ public class InternalTestDataSourceTest {
         return 0;
     }
 
-    private static class Counter {
-        private int value;
+    private static class RepositoryState {
+        private int saveCount;
+        private int markUsedCallCount;
+        private int markUsedAffectedRows;
+        private int groupNoPageCallCount;
+        private List<String> groupNosPage = Collections.emptyList();
+        private List<InternalTestResource> singleResourcesPage = Collections.emptyList();
+        private Long availableGroupCount = 0L;
+        private Long availableSingleCount = 0L;
     }
 
     private void assertReadableWritable(Class<?> type, String fieldName, Class<?> fieldType) throws Exception {
