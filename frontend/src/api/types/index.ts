@@ -538,6 +538,14 @@ export interface InviteRecordListParams extends PageParams {
 
 // ===== 实名认证 =====
 
+export type RealnameStatus = '0' | '1' | '2' | '3' | '4' | string
+
+export interface RealnamePaymentState {
+  paid: boolean
+  rejectedRetry: boolean
+  canSubmitWithoutPay: boolean
+}
+
 export interface OcrResult {
   userid?: number
   name: string
@@ -556,7 +564,7 @@ export interface OauthInfo {
   name: string
   certcode: string
   pics: string[]
-  status: '0' | '1' | '2' | '3' | string
+  status: RealnameStatus
   statusTxt?: string
 }
 

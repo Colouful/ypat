@@ -13,6 +13,7 @@ import * as paymentApi from '../modules/payment'
 import * as contentApi from '../modules/content'
 import * as ypatApi from '../modules/ypat'
 import * as feedbackApi from '../modules/feedback'
+import * as oauthApi from '../modules/oauth'
 
 describe('API contracts', () => {
   beforeEach(() => {
@@ -51,6 +52,33 @@ describe('API contracts', () => {
   it('getOrderStatus sends merchant order number only', async () => {
     await paymentApi.getOrderStatus('ORDER-1')
     expect(requestMocks.get).toHaveBeenCalledWith('/order/status', { out_trade_no: 'ORDER-1' })
+  })
+
+  it('realname OCR posts cardfront to /oauth/ocr', async () => {
+    await oauthApi.ocrIdCard('data:image/jpeg;base64,abc')
+    expect(requestMocks.post).toHaveBeenCalledWith('/oauth/ocr', { cardfront: 'data:image/jpeg;base64,abc' })
+  })
+
+  it('realname submit posts name certcode and photos to /oauth/add', async () => {
+    await oauthApi.submitAuth({
+      name: '张三',
+      certcode: '330102199001011234',
+      pics: [
+        'data:image/jpeg;base64,front',
+        'data:image/jpeg;base64,back',
+        'data:image/jpeg;base64,hand',
+      ],
+    })
+
+    expect(requestMocks.post).toHaveBeenCalledWith('/oauth/add', {
+      name: '张三',
+      certcode: '330102199001011234',
+      pics: [
+        'data:image/jpeg;base64,front',
+        'data:image/jpeg;base64,back',
+        'data:image/jpeg;base64,hand',
+      ],
+    })
   })
 
   it('content config endpoints use object responses', async () => {
