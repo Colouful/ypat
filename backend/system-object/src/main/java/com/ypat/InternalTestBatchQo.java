@@ -6,6 +6,7 @@ public class InternalTestBatchQo implements java.io.Serializable {
     private Integer ypatCount;
     private Integer workCount;
     private Integer ignoredRealCount;
+    private Integer releasedResourceCount;
     private String status;
     private java.util.List<String> errors;
     private java.util.Date createdAt;
@@ -20,6 +21,8 @@ public class InternalTestBatchQo implements java.io.Serializable {
     public void setWorkCount(Integer workCount) { this.workCount = workCount; }
     public Integer getIgnoredRealCount() { return ignoredRealCount; }
     public void setIgnoredRealCount(Integer ignoredRealCount) { this.ignoredRealCount = ignoredRealCount; }
+    public Integer getReleasedResourceCount() { return releasedResourceCount; }
+    public void setReleasedResourceCount(Integer releasedResourceCount) { this.releasedResourceCount = releasedResourceCount; }
     public String getStatus() { return status; }
     public void setStatus(String status) { this.status = status; }
     public java.util.List<String> getErrors() { return errors; }

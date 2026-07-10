@@ -134,6 +134,24 @@ public class AdminInternalTestController {
         return ResponseApiBody.success(parseResponseRes(json));
     }
 
+    @PostMapping("/generate/users")
+    public ResponseApiBody generateUsers(@RequestBody InternalTestGenerateQo qo) {
+        String json = internalTestServiceClient.generateUsers(qo);
+        return ResponseApiBody.success(parseResponseRes(json));
+    }
+
+    @PostMapping("/generate/works")
+    public ResponseApiBody generateWorks(@RequestBody InternalTestGenerateQo qo) {
+        String json = internalTestServiceClient.generateWorks(qo);
+        return ResponseApiBody.success(parseResponseRes(json));
+    }
+
+    @PostMapping("/generate/ypats")
+    public ResponseApiBody generateYpats(@RequestBody InternalTestGenerateQo qo) {
+        String json = internalTestServiceClient.generateYpats(qo);
+        return ResponseApiBody.success(parseResponseRes(json));
+    }
+
     @GetMapping("/batches")
     public ResponseApiBody batches(InternalTestGenerateQo qo) {
         String batchNo = qo == null ? null : qo.getBatchNo();

@@ -482,6 +482,49 @@ public class InternalTestDataSourceTest {
         assertEquals(Arrays.asList("https://example.com/c.jpg", "https://example.com/d.jpg", "https://example.com/e.jpg"), groups.get(1));
     }
 
+    @Test
+    public void dataServiceSplitsUserWorkYpatGenerationAndMarksResourcesUsed() throws Exception {
+        String service = read("backend/system-domain/src/main/java/com/ypat/service/InternalTestDataService.java");
+        String batchQo = read("backend/system-object/src/main/java/com/ypat/InternalTestBatchQo.java");
+        String resourceService = read("backend/system-domain/src/main/java/com/ypat/service/InternalTestResourceService.java");
+        String resourceRepo = read("backend/system-domain/src/main/java/com/ypat/repository/InternalTestResourceRepository.java");
+        String ypatRepo = read("backend/system-domain/src/main/java/com/ypat/repository/YpatInfoRepository.java");
+        String workRepo = read("backend/system-domain/src/main/java/com/ypat/repository/WorkRepository.java");
+
+        assertTrue(service.contains("InternalTestResourceService"));
+        assertTrue(service.contains("public InternalTestBatchQo generateUsers(InternalTestGenerateQo qo)"));
+        assertTrue(service.contains("public InternalTestBatchQo generateWorks(InternalTestGenerateQo qo)"));
+        assertTrue(service.contains("public InternalTestBatchQo generateYpats(InternalTestGenerateQo qo)"));
+        assertTrue(service.contains("loadInternalUser(qo.getUserId())"));
+        assertTrue(service.contains("loadAvailableWorkGroup"));
+        assertTrue(service.contains("createWorkFromGroup"));
+        assertTrue(service.contains("markResourcesUsed"));
+        assertTrue(service.contains("markSingleResourceUsed(avatar, batchNo, \"user\", user.getId())"));
+        assertTrue(service.contains("releaseResourcesByBatch"));
+        assertTrue(service.contains("setReleasedResourceCount"));
+        assertTrue(service.contains("setWx(qo.getWx())"));
+        assertTrue(service.contains("setMobile(qo.getMobile())"));
+        assertTrue(service.contains("String.join(\",\", qo.getStyleCodes())"));
+        assertTrue(service.contains("同一作品组不能同时包含图片和视频"));
+        assertTrue(service.contains("只能操作内测用户"));
+        assertTrue(service.contains("internalTestResourceService.releaseResourcesByTargets"));
+        assertTrue(service.contains("ypatInfoRepository.findInternalTestYpatIdsByUserIds"));
+        assertTrue(service.contains("workRepository.findInternalTestWorkIdsByUserIds"));
+        assertTrue(resourceService.contains("public int releaseResourcesByTargets(String batchNo, String targetType, List<Long> targetIds)"));
+        assertTrue(resourceRepo.contains("int releaseByUsedTargets("));
+        assertTrue(ypatRepo.contains("List<Long> findInternalTestYpatIdsByUserIds("));
+        assertTrue(workRepo.contains("List<Long> findInternalTestWorkIdsByUserIds("));
+        assertTrue(batchQo.contains("releasedResourceCount"));
+        assertTrue(batchQo.contains("getReleasedResourceCount"));
+        assertTrue(batchQo.contains("setReleasedResourceCount"));
+
+        String generate = methodBody(service,
+                "public InternalTestBatchQo generate(InternalTestGenerateQo qo)",
+                "public Map<String, Object> listUsers(InternalTestGenerateQo qo)");
+        assertTrue(generate.contains("markSingleResourceUsed"));
+        assertTrue(generate.contains("users.size()"));
+    }
+
     private void assertResourceColumnMigration(String sql, String columnName, String ddlFragment) {
         String block = migrationBlock(sql, "t_internal_test_resource", columnName);
 

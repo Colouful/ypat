@@ -46,8 +46,11 @@ import javax.persistence.criteria.CriteriaQuery;
 import javax.persistence.criteria.Predicate;
 import javax.persistence.criteria.Root;
 import java.math.BigDecimal;
+import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -80,10 +83,53 @@ public class InternalTestDataService {
     private WorkMediaRepository workMediaRepository;
     @Autowired
     private InternalTestResourceRepository internalTestResourceRepository;
+    @Autowired
+    private InternalTestResourceService internalTestResourceService;
 
     public InternalTestBatchQo createUsers(InternalTestGenerateQo qo) {
         CreateUsersResult usersResult = createInternalUsers(qo, buildBatchNo());
         return buildBatch(usersResult.batchNo, usersResult.users.size(), 0, 0);
+    }
+
+    public InternalTestBatchQo generateUsers(InternalTestGenerateQo qo) {
+        return createUsers(qo);
+    }
+
+    public InternalTestBatchQo generateWorks(InternalTestGenerateQo qo) {
+        if (qo == null || qo.getUserId() == null || CollectionUtils.isEmpty(qo.getGroupNos())) {
+            throw new SysException(ResponseCode.FAIL_PARA);
+        }
+        User user = loadInternalUser(qo.getUserId());
+        String batchNo = CommonUtils.isNotNull(qo.getBatchNo()) ? qo.getBatchNo() : buildBatchNo();
+        int workCount = 0;
+        for (String groupNo : qo.getGroupNos()) {
+            List<InternalTestResource> group = loadAvailableWorkGroup(groupNo);
+            Work work = createWorkFromGroup(user, group, qo, batchNo);
+            internalTestResourceService.markResourcesUsed(group, batchNo, "work", work.getId());
+            workCount++;
+        }
+        return buildBatch(batchNo, 0, 0, workCount);
+    }
+
+    public InternalTestBatchQo generateYpats(InternalTestGenerateQo qo) {
+        if (qo == null || qo.getUserId() == null) {
+            throw new SysException(ResponseCode.FAIL_PARA);
+        }
+        User user = loadInternalUser(qo.getUserId());
+        updateInternalUserContact(user, qo);
+        String batchNo = CommonUtils.isNotNull(qo.getBatchNo()) ? qo.getBatchNo() : buildBatchNo();
+        List<InternalTestResource> resources = ensureResources(
+                qo.getYpatResourceIds(),
+                InternalTestResourceUsageType.ypat.value,
+                InternalTestResourceMediaType.image.value,
+                qo.getStyleCode(),
+                1);
+        InternalTestResource resource = pick(resources, 0);
+        YpatInfo ypat = createYpat(user, resource, qo, batchNo);
+        List<InternalTestResource> usedResources = new ArrayList<InternalTestResource>();
+        usedResources.add(resource);
+        internalTestResourceService.markResourcesUsed(usedResources, batchNo, "ypat", ypat.getId());
+        return buildBatch(batchNo, 0, 1, 0);
     }
 
     public InternalTestBatchQo generate(InternalTestGenerateQo qo) {
@@ -106,9 +152,11 @@ public class InternalTestDataService {
                     InternalTestResourceUsageType.ypat.value,
                     InternalTestResourceMediaType.image.value,
                     qo.getStyleCode(),
-                    1);
+                    users.size());
             for (int i = 0; i < users.size(); i++) {
-                createYpat(users.get(i), pick(ypatResources, i), qo, batchNo);
+                InternalTestResource resource = ypatResources.get(i);
+                YpatInfo ypat = createYpat(users.get(i), resource, qo, batchNo);
+                markSingleResourceUsed(resource, batchNo, "ypat", ypat.getId());
                 ypatCount++;
             }
         }
@@ -118,9 +166,11 @@ public class InternalTestDataService {
                     InternalTestResourceUsageType.work.value,
                     null,
                     qo.getStyleCode(),
-                    1);
+                    users.size());
             for (int i = 0; i < users.size(); i++) {
-                createWork(users.get(i), pick(workResources, i), qo, batchNo);
+                InternalTestResource resource = workResources.get(i);
+                Work work = createWork(users.get(i), resource, qo, batchNo);
+                markSingleResourceUsed(resource, batchNo, "work", work.getId());
                 workCount++;
             }
         }
@@ -169,19 +219,23 @@ public class InternalTestDataService {
         int ypats;
         int works;
         int ignoredRealCount = 0;
+        int releasedResources = 0;
         if (hasCleanupUserFilter(qo)) {
             ignoredRealCount = countRealUsersForCleanup(qo, batchNo);
             int[] counts = cleanupInternalUsersByFilter(qo, batchNo);
             users = counts[0];
             ypats = counts[1];
             works = counts[2];
+            releasedResources = counts[3];
         } else {
             users = userRepository.updateInternalTestUsersStatus(batchNo, UserStatus.shbtg.value);
             ypats = ypatInfoRepository.updateInternalTestYpatStatus(batchNo, YpatStatus.shbtg.value, CLEANUP_REASON);
             works = workRepository.updateInternalTestWorkStatus(batchNo, WorkStatus.xj.value, CLEANUP_REASON);
+            releasedResources = batchNo == null ? 0 : internalTestResourceService.releaseResourcesByBatch(batchNo);
         }
         InternalTestBatchQo batch = buildBatch(batchNo, users, ypats, works);
         batch.setIgnoredRealCount(ignoredRealCount);
+        batch.setReleasedResourceCount(releasedResources);
         return batch;
     }
 
@@ -211,7 +265,7 @@ public class InternalTestDataService {
     }
 
     private int[] cleanupInternalUsersByFilter(InternalTestGenerateQo qo, String batchNo) {
-        int[] counts = new int[]{0, 0, 0};
+        int[] counts = new int[]{0, 0, 0, 0};
         if (!CollectionUtils.isEmpty(qo.getUserIds())) {
             for (List<Long> userIds : partition(qo.getUserIds())) {
                 List<Long> internalUserIds = userRepository.findInternalTestUserIdsForCleanupByIds(userIds, batchNo,
@@ -239,14 +293,18 @@ public class InternalTestDataService {
     }
 
     private int[] cleanupInternalUserIdChunk(List<Long> internalUserIds, String batchNo) {
-        int[] counts = new int[]{0, 0, 0};
+        int[] counts = new int[]{0, 0, 0, 0};
         if (CollectionUtils.isEmpty(internalUserIds)) {
             return counts;
         }
         for (List<Long> userIds : partition(internalUserIds)) {
+            List<Long> ypatIds = ypatInfoRepository.findInternalTestYpatIdsByUserIds(userIds, batchNo);
+            List<Long> workIds = workRepository.findInternalTestWorkIdsByUserIds(userIds, batchNo);
             counts[0] += userRepository.updateInternalTestUsersStatusByIds(userIds, batchNo, UserStatus.shbtg.value);
             counts[1] += ypatInfoRepository.updateInternalTestYpatStatusByUserIds(userIds, batchNo, YpatStatus.shbtg.value, CLEANUP_REASON);
             counts[2] += workRepository.updateInternalTestWorkStatusByUserIds(userIds, batchNo, WorkStatus.xj.value, CLEANUP_REASON);
+            counts[3] += internalTestResourceService.releaseResourcesByTargets(batchNo, "ypat", ypatIds);
+            counts[3] += internalTestResourceService.releaseResourcesByTargets(batchNo, "work", workIds);
         }
         return counts;
     }
@@ -298,7 +356,7 @@ public class InternalTestDataService {
                 InternalTestResourceUsageType.avatar.value,
                 InternalTestResourceMediaType.image.value,
                 null,
-                1);
+                qo.getUserCount());
 
         List<User> users = new ArrayList<User>();
         for (int i = 0; i < qo.getUserCount(); i++) {
@@ -325,27 +383,28 @@ public class InternalTestDataService {
             user.setInternalBatchNo(batchNo);
             user = userRepository.save(user);
             saveUserAvatar(user, avatar);
+            markSingleResourceUsed(avatar, batchNo, "user", user.getId());
             users.add(user);
         }
         return new CreateUsersResult(batchNo, users);
     }
 
-    private void createYpat(User user, InternalTestResource resource, InternalTestGenerateQo qo, String batchNo) {
+    private YpatInfo createYpat(User user, InternalTestResource resource, InternalTestGenerateQo qo, String batchNo) {
         Date now = new Date();
         YpatInfo ypat = new YpatInfo();
-        ypat.setDescrib(defaultString(resource.getDescription(), "内测约拍内容"));
-        ypat.setTarget(resolveTarget(qo.getTemplateType()));
-        ypat.setPatdate(now);
-        ypat.setPatarea(defaultString(user.getCity(), "杭州市"));
-        ypat.setPatslice("全天");
+        ypat.setDescrib(defaultString(qo.getDescrib(), defaultString(resource.getDescription(), "内测约拍内容")));
+        ypat.setTarget(defaultString(qo.getTarget(), resolveTarget(qo.getTemplateType())));
+        ypat.setPatdate(resolvePatdate(qo.getPatdate(), now));
+        ypat.setPatarea(defaultString(qo.getCity(), defaultString(user.getCity(), "杭州市")));
+        ypat.setPatslice(defaultString(qo.getPatslice(), "全天"));
         ypat.setChargeway("0");
         ypat.setChargeamt(BigDecimal.ZERO);
-        ypat.setProvince(user.getProvince());
-        ypat.setCity(user.getCity());
-        ypat.setArea(user.getArea());
+        ypat.setProvince(defaultString(qo.getProvince(), user.getProvince()));
+        ypat.setCity(defaultString(qo.getCity(), user.getCity()));
+        ypat.setArea(defaultString(qo.getArea(), user.getArea()));
         ypat.setCreditflag(YesNo.yes.value);
         ypat.setRealnameflag(YesNo.yes.value);
-        ypat.setPatstyle(defaultString(qo.getStyleCode(), "0"));
+        ypat.setPatstyle(resolveYpatStyle(qo));
         ypat.setStatus(resolveYpatStatus(qo.getPublishStatus()));
         ypat.setPubdate(now);
         ypat.setReadtimes(0);
@@ -363,9 +422,10 @@ public class InternalTestDataService {
         img.setType("0");
         img.setImgpath(resource.getUrl());
         ypatImgRepository.save(img);
+        return ypat;
     }
 
-    private void createWork(User user, InternalTestResource resource, InternalTestGenerateQo qo, String batchNo) {
+    private Work createWork(User user, InternalTestResource resource, InternalTestGenerateQo qo, String batchNo) {
         Date now = new Date();
         Work work = new Work();
         work.setUserid(user.getId());
@@ -400,6 +460,49 @@ public class InternalTestDataService {
         media.setUploadStatus("1");
         media.setCreatedAt(now);
         workMediaRepository.save(media);
+        return work;
+    }
+
+    private Work createWorkFromGroup(User user, List<InternalTestResource> group, InternalTestGenerateQo qo, String batchNo) {
+        Date now = new Date();
+        InternalTestResource first = group.get(0);
+        Work work = new Work();
+        work.setUserid(user.getId());
+        work.setDescription(defaultString(qo.getDescrib(), defaultString(first.getDescription(), "内测作品内容")));
+        work.setDevice("internal-test");
+        work.setShootLocation(defaultString(qo.getCity(), user.getCity()));
+        work.setReturnPhotoFlag(1);
+        work.setMediaType(toWorkMediaType(first.getMediaType()));
+        work.setIsNationwide(0);
+        work.setStatus(resolveWorkStatus(qo.getPublishStatus()));
+        work.setReadCount(0);
+        work.setLikeCount(0);
+        work.setFavoriteCount(0);
+        work.setPublishTime(now);
+        work.setCreatedAt(now);
+        work.setUpdatedAt(now);
+        work.setDeletedFlag(0);
+        work.setCity(defaultString(qo.getCity(), user.getCity()));
+        work.setArea(defaultString(qo.getArea(), user.getArea()));
+        work.setDataFlag(InternalTestDataFlag.internalTest.value);
+        work.setInternalBatchNo(batchNo);
+        work = workRepository.save(work);
+
+        int sort = 0;
+        for (InternalTestResource resource : group) {
+            WorkMedia media = new WorkMedia();
+            media.setWorkId(work.getId());
+            media.setUserId(user.getId());
+            media.setType(toWorkMediaType(resource.getMediaType()));
+            media.setUrl(resource.getUrl());
+            media.setFileSize(0L);
+            media.setMime(InternalTestResourceMediaType.video.value.equals(resource.getMediaType()) ? "video/mp4" : "image/jpeg");
+            media.setSortNo(sort++);
+            media.setUploadStatus("1");
+            media.setCreatedAt(now);
+            workMediaRepository.save(media);
+        }
+        return work;
     }
 
     private List<InternalTestResource> ensureResources(List<Long> ids, final String usageType, final String mediaType, final String styleCode, int minCount) {
@@ -424,6 +527,7 @@ public class InternalTestDataService {
                     if (CommonUtils.isNotNull(styleCode)) {
                         predicates.add(cb.or(cb.equal(root.get("styleCode"), styleCode), cb.isNull(root.get("styleCode"))));
                     }
+                    predicates.add(cb.or(cb.isNull(root.get("usedFlag")), cb.equal(root.get("usedFlag"), 0)));
                     query.orderBy(cb.asc(root.get("sortNo")), cb.desc(root.get("id")));
                     query.where(predicates.toArray(new Predicate[predicates.size()]));
                     return query.getRestriction();
@@ -480,6 +584,12 @@ public class InternalTestDataService {
         return resources.get(index % resources.size());
     }
 
+    private void markSingleResourceUsed(InternalTestResource resource, String batchNo, String targetType, Long targetId) {
+        List<InternalTestResource> resources = new ArrayList<InternalTestResource>();
+        resources.add(resource);
+        internalTestResourceService.markResourcesUsed(resources, batchNo, targetType, targetId);
+    }
+
     private List<InternalTestResource> filterResources(List<InternalTestResource> resources, String usageType, String mediaType, String styleCode) {
         List<InternalTestResource> filtered = new ArrayList<InternalTestResource>();
         for (InternalTestResource resource : resources) {
@@ -494,9 +604,74 @@ public class InternalTestDataService {
                     && !styleCode.equals(resource.getStyleCode())) {
                 continue;
             }
+            if (resource.getUsedFlag() != null && resource.getUsedFlag() == 1) {
+                continue;
+            }
             filtered.add(resource);
         }
         return filtered;
+    }
+
+    private User loadInternalUser(Long userId) {
+        User user = userRepository.findOne(userId);
+        if (user == null) {
+            throw new SysException(ResponseCode.FAIL_NOT);
+        }
+        if (!InternalTestDataFlag.internalTest.value.equals(user.getDataFlag())) {
+            throw new SysException(ResponseCode.FAIL_PARA, "只能操作内测用户");
+        }
+        return user;
+    }
+
+    private void updateInternalUserContact(User user, InternalTestGenerateQo qo) {
+        if (CommonUtils.isNull(qo.getWx()) || CommonUtils.isNull(qo.getMobile())) {
+            throw new SysException(ResponseCode.FAIL_PARA, "微信号和联系电话不能为空");
+        }
+        user.setWx(qo.getWx());
+        user.setMobile(qo.getMobile());
+        userRepository.save(user);
+    }
+
+    private List<InternalTestResource> loadAvailableWorkGroup(String groupNo) {
+        if (CommonUtils.isNull(groupNo)) {
+            throw new SysException(ResponseCode.FAIL_PARA);
+        }
+        List<String> groupNos = new ArrayList<String>();
+        groupNos.add(groupNo);
+        List<InternalTestResource> resources = internalTestResourceRepository.findByGroupNoInAndStatus(groupNos, InternalTestResourceStatus.enabled.value);
+        if (CollectionUtils.isEmpty(resources)) {
+            throw new SysException(ResponseCode.FAIL_PARA, "作品组资源不足");
+        }
+        sortResourceGroup(resources);
+        String mediaType = resources.get(0).getMediaType();
+        for (InternalTestResource resource : resources) {
+            if (!InternalTestResourceUsageType.work.value.equals(resource.getUsageType())) {
+                throw new SysException(ResponseCode.FAIL_PARA, "作品组用途错误");
+            }
+            if (resource.getUsedFlag() != null && resource.getUsedFlag() == 1) {
+                throw new SysException(ResponseCode.FAIL_PARA, "作品组资源已占用");
+            }
+            if (!mediaType.equals(resource.getMediaType())) {
+                throw new SysException(ResponseCode.FAIL_PARA, "同一作品组不能同时包含图片和视频");
+            }
+        }
+        return resources;
+    }
+
+    private void sortResourceGroup(List<InternalTestResource> resources) {
+        Collections.sort(resources, new Comparator<InternalTestResource>() {
+            @Override
+            public int compare(InternalTestResource left, InternalTestResource right) {
+                int leftSort = left.getGroupSortNo() == null ? 0 : left.getGroupSortNo();
+                int rightSort = right.getGroupSortNo() == null ? 0 : right.getGroupSortNo();
+                if (leftSort != rightSort) {
+                    return leftSort - rightSort;
+                }
+                Long leftId = left.getId() == null ? 0L : left.getId();
+                Long rightId = right.getId() == null ? 0L : right.getId();
+                return leftId.compareTo(rightId);
+            }
+        });
     }
 
     private Specification<User> userSpec(final String batchNo) {
@@ -564,6 +739,24 @@ public class InternalTestDataService {
             return "约模特";
         }
         return "发布约拍";
+    }
+
+    private Date resolvePatdate(String patdate, Date defaultValue) {
+        if (CommonUtils.isNull(patdate)) {
+            return defaultValue;
+        }
+        try {
+            return new SimpleDateFormat("yyyy-MM-dd").parse(patdate);
+        } catch (ParseException e) {
+            throw new SysException(ResponseCode.FAIL_PARA, "约拍日期格式错误");
+        }
+    }
+
+    private String resolveYpatStyle(InternalTestGenerateQo qo) {
+        if (!CollectionUtils.isEmpty(qo.getStyleCodes())) {
+            return String.join(",", qo.getStyleCodes());
+        }
+        return defaultString(qo.getStyleCode(), "0");
     }
 
     private String resolveYpatStatus(String status) {

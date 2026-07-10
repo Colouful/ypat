@@ -78,6 +78,21 @@ public class InternalTestController {
         return ResponseApiBody.success(dataService.generate(qo));
     }
 
+    @PostMapping("/generate/users")
+    public ResponseApiBody generateUsers(@RequestBody InternalTestGenerateQo qo) {
+        return ResponseApiBody.success(dataService.generateUsers(qo));
+    }
+
+    @PostMapping("/generate/works")
+    public ResponseApiBody generateWorks(@RequestBody InternalTestGenerateQo qo) {
+        return ResponseApiBody.success(dataService.generateWorks(qo));
+    }
+
+    @PostMapping("/generate/ypats")
+    public ResponseApiBody generateYpats(@RequestBody InternalTestGenerateQo qo) {
+        return ResponseApiBody.success(dataService.generateYpats(qo));
+    }
+
     @GetMapping("/batches")
     public ResponseApiBody batches(InternalTestGenerateQo qo) {
         return ResponseApiBody.success(dataService.listBatches(qo));

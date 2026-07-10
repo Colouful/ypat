@@ -40,6 +40,16 @@ public interface InternalTestResourceRepository extends JpaRepository<InternalTe
             + "where r.usedBatchNo = :batchNo")
     int releaseByUsedBatchNo(@Param("batchNo") String batchNo, @Param("updatedAt") Date updatedAt);
 
+    @Modifying
+    @Query("update InternalTestResource r set r.usedFlag = 0, r.usedBatchNo = null, "
+            + "r.usedTargetType = null, r.usedTargetId = null, r.usedAt = null, r.updatedAt = :updatedAt "
+            + "where (:batchNo is null or r.usedBatchNo = :batchNo) and r.usedTargetType = :targetType "
+            + "and r.usedTargetId in :targetIds")
+    int releaseByUsedTargets(@Param("batchNo") String batchNo,
+                             @Param("targetType") String targetType,
+                             @Param("targetIds") List<Long> targetIds,
+                             @Param("updatedAt") Date updatedAt);
+
     @Query(value = "select r.group_no from t_internal_test_resource r "
             + "join (select group_no, count(*) total_count from t_internal_test_resource "
             + "where group_no is not null group by group_no) all_g on all_g.group_no = r.group_no "

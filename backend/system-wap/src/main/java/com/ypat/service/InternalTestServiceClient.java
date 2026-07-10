@@ -67,6 +67,15 @@ public interface InternalTestServiceClient {
     @PostMapping("/service/internal-test/generate")
     String generate(@RequestBody InternalTestGenerateQo qo);
 
+    @PostMapping("/service/internal-test/generate/users")
+    String generateUsers(@RequestBody InternalTestGenerateQo qo);
+
+    @PostMapping("/service/internal-test/generate/works")
+    String generateWorks(@RequestBody InternalTestGenerateQo qo);
+
+    @PostMapping("/service/internal-test/generate/ypats")
+    String generateYpats(@RequestBody InternalTestGenerateQo qo);
+
     @GetMapping("/service/internal-test/batches")
     String batches(@RequestParam(value = "batchNo", required = false) String batchNo);
 

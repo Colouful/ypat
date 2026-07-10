@@ -132,6 +132,32 @@ public class AdminInternalTestControllerSourceTest {
     }
 
     @Test
+    public void threeLayersExposeSplitGenerationRoutes() throws Exception {
+        String controller = readSource(
+                "src/main/java/com/ypat/controller/AdminInternalTestController.java",
+                "backend/system-wap/src/main/java/com/ypat/controller/AdminInternalTestController.java");
+        String client = readSource(
+                "src/main/java/com/ypat/service/InternalTestServiceClient.java",
+                "backend/system-wap/src/main/java/com/ypat/service/InternalTestServiceClient.java");
+        String restapi = readSource(
+                "../system-restapi/src/main/java/com/ypat/controller/InternalTestController.java",
+                "backend/system-restapi/src/main/java/com/ypat/controller/InternalTestController.java");
+
+        assertThreeLayerPostRoute(controller, client, restapi, "generate/users");
+        assertThreeLayerPostRoute(controller, client, restapi, "generate/works");
+        assertThreeLayerPostRoute(controller, client, restapi, "generate/ypats");
+        assertTrue(controller.contains("internalTestServiceClient.generateUsers(qo)"));
+        assertTrue(controller.contains("internalTestServiceClient.generateWorks(qo)"));
+        assertTrue(controller.contains("internalTestServiceClient.generateYpats(qo)"));
+        assertTrue(client.contains("String generateUsers(@RequestBody InternalTestGenerateQo qo)"));
+        assertTrue(client.contains("String generateWorks(@RequestBody InternalTestGenerateQo qo)"));
+        assertTrue(client.contains("String generateYpats(@RequestBody InternalTestGenerateQo qo)"));
+        assertTrue(restapi.contains("dataService.generateUsers(qo)"));
+        assertTrue(restapi.contains("dataService.generateWorks(qo)"));
+        assertTrue(restapi.contains("dataService.generateYpats(qo)"));
+    }
+
+    @Test
     public void parseResponseResReturnsExpectedDataAndPropagatesBusinessErrors() throws Exception {
         AdminInternalTestController controller = new AdminInternalTestController();
 

@@ -188,6 +188,13 @@ public class InternalTestResourceService {
         return internalTestResourceRepository.releaseByUsedBatchNo(batchNo, new Date());
     }
 
+    public int releaseResourcesByTargets(String batchNo, String targetType, List<Long> targetIds) {
+        if (CommonUtils.isNull(targetType) || CommonUtils.isNull(targetIds)) {
+            return 0;
+        }
+        return internalTestResourceRepository.releaseByUsedTargets(batchNo, targetType, targetIds, new Date());
+    }
+
     public InternalTestResourceQo save(InternalTestResourceQo qo) {
         validateSaveQo(qo);
         Date now = new Date();

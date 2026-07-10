@@ -31,6 +31,9 @@ public interface YpatInfoRepository extends JpaRepository<YpatInfo, Long>, JpaSp
     @Query("update YpatInfo y set y.status = :status, y.reason = :reason where y.dataFlag = 'internal_test' and y.user.id in :userIds and (:batchNo is null or y.internalBatchNo = :batchNo)")
     int updateInternalTestYpatStatusByUserIds(@Param("userIds") List<Long> userIds, @Param("batchNo") String batchNo, @Param("status") String status, @Param("reason") String reason);
 
+    @Query("select y.id from YpatInfo y where y.dataFlag = 'internal_test' and y.user.id in :userIds and (:batchNo is null or y.internalBatchNo = :batchNo)")
+    List<Long> findInternalTestYpatIdsByUserIds(@Param("userIds") List<Long> userIds, @Param("batchNo") String batchNo);
+
     @Query("select y.internalBatchNo, count(y), min(y.pubdate) from YpatInfo y where y.dataFlag = 'internal_test' and y.internalBatchNo is not null and (:batchNo is null or y.internalBatchNo = :batchNo) group by y.internalBatchNo")
     List<Object[]> aggregateInternalTestBatches(@Param("batchNo") String batchNo);
 }
