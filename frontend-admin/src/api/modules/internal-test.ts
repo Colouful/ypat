@@ -11,12 +11,24 @@ export interface InternalTestResource {
   usageType?: string
   styleCode?: string
   url?: string
+  province?: string
   title?: string
   description?: string
   profession?: string
   city?: string
+  area?: string
   status?: string
   sortNo?: number
+  groupNo?: string
+  groupTitle?: string
+  groupSortNo?: number
+  usedFlag?: number
+  usedBatchNo?: string
+  usedTargetType?: string
+  usedTargetId?: number
+  usedAt?: string
+  urls?: string[]
+  groupSize?: number
   remark?: string
   createdAt?: string
   updatedAt?: string
@@ -27,15 +39,22 @@ export interface InternalTestResourceQuery extends PageQuery {
   usageType?: string
   styleCode?: string
   profession?: string
+  province?: string
   city?: string
+  area?: string
   status?: string
+  usedFlag?: number
+  groupNo?: string
   keyword?: string
 }
 
 export interface InternalTestGeneratePayload {
+  actionType?: string
   mode?: string
   userCount?: number
+  userId?: number
   userIds?: number[]
+  groupNos?: string[]
   nicknamePrefix?: string
   gender?: string
   profess?: string
@@ -46,10 +65,29 @@ export interface InternalTestGeneratePayload {
   contentType?: string
   templateType?: string
   publishStatus?: string
+  wx?: string
+  mobile?: string
+  styleCodes?: string[]
+  patdate?: string
+  patslice?: string
+  describ?: string
+  target?: string
   avatarResourceIds?: number[]
   ypatResourceIds?: number[]
   workResourceIds?: number[]
   batchNo?: string
+}
+
+export interface InternalTestResourceGroup {
+  groupNo: string
+  groupTitle?: string
+  mediaType?: string
+  resources: InternalTestResource[]
+}
+
+export interface InternalTestUserActionPayload {
+  days?: number
+  reason?: string
 }
 
 export interface InternalTestUserQuery extends PageQuery {
@@ -96,6 +134,16 @@ export function createInternalResource(data: InternalTestResource): Promise<ApiR
   return post<InternalTestResource>('/admin/internal-test/resources', data)
 }
 
+export function batchCreateInternalResources(data: InternalTestResource): Promise<ApiResult<unknown>> {
+  return post('/admin/internal-test/resources/batch', data)
+}
+
+export function getInternalResourceGroups(
+  params: InternalTestResourceQuery,
+): Promise<ApiResult<PageResult<InternalTestResourceGroup>>> {
+  return get<PageResult<InternalTestResourceGroup>>('/admin/internal-test/resource-groups', params as Record<string, unknown>)
+}
+
 export function updateInternalResource(data: InternalTestResource): Promise<ApiResult<InternalTestResource>> {
   return post<InternalTestResource>('/admin/internal-test/resources/update', data)
 }
@@ -116,6 +164,34 @@ export function createInternalUsers(data: InternalTestGeneratePayload): Promise<
 
 export function generateInternalData(data: InternalTestGeneratePayload): Promise<ApiResult<InternalTestBatch>> {
   return post<InternalTestBatch>('/admin/internal-test/generate', data)
+}
+
+export function generateInternalUsers(data: InternalTestGeneratePayload): Promise<ApiResult<InternalTestBatch>> {
+  return post<InternalTestBatch>('/admin/internal-test/generate/users', data)
+}
+
+export function generateInternalWorks(data: InternalTestGeneratePayload): Promise<ApiResult<InternalTestBatch>> {
+  return post<InternalTestBatch>('/admin/internal-test/generate/works', data)
+}
+
+export function generateInternalYpats(data: InternalTestGeneratePayload): Promise<ApiResult<InternalTestBatch>> {
+  return post<InternalTestBatch>('/admin/internal-test/generate/ypats', data)
+}
+
+export function searchInternalUsers(params: InternalTestUserQuery): Promise<ApiResult<PageResult<InternalTestUser>>> {
+  return get<PageResult<InternalTestUser>>('/admin/internal-test/users/search', params as Record<string, unknown>)
+}
+
+export function grantInternalUserMember(userId: number, data: InternalTestUserActionPayload): Promise<ApiResult<boolean>> {
+  return post<boolean>(`/admin/internal-test/users/${userId}/grant-member`, data)
+}
+
+export function verifyInternalUser(userId: number, data: InternalTestUserActionPayload): Promise<ApiResult<boolean>> {
+  return post<boolean>(`/admin/internal-test/users/${userId}/verify`, data)
+}
+
+export function markInternalUserDepositPaid(userId: number, data: InternalTestUserActionPayload): Promise<ApiResult<boolean>> {
+  return post<boolean>(`/admin/internal-test/users/${userId}/deposit-paid`, data)
 }
 
 export function getInternalBatches(

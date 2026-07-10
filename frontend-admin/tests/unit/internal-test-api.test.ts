@@ -73,4 +73,49 @@ describe('内测数据 API', () => {
     await api.cleanupInternalData({ batchNo: 'IT202607060001' })
     expect(postMock).toHaveBeenCalledWith('/admin/internal-test/cleanup', { batchNo: 'IT202607060001' })
   })
+
+  it('应使用内测工作台懒人版路由', async () => {
+    const api = await import('@/api/modules/internal-test')
+
+    await api.batchCreateInternalResources({ mediaType: 'image', usageType: 'work', urls: ['https://example.com/1.jpg'] })
+    expect(postMock).toHaveBeenCalledWith('/admin/internal-test/resources/batch', {
+      mediaType: 'image',
+      usageType: 'work',
+      urls: ['https://example.com/1.jpg'],
+    })
+
+    await api.getInternalResourceGroups({ page: 0, size: 10, usageType: 'work', usedFlag: 0 })
+    expect(getMock).toHaveBeenCalledWith('/admin/internal-test/resource-groups', {
+      page: 0,
+      size: 10,
+      usageType: 'work',
+      usedFlag: 0,
+    })
+
+    await api.generateInternalUsers({ actionType: 'create_users', userCount: 2 })
+    expect(postMock).toHaveBeenCalledWith('/admin/internal-test/generate/users', { actionType: 'create_users', userCount: 2 })
+
+    await api.generateInternalWorks({ actionType: 'create_works', userId: 1, groupNos: ['ITG1'] })
+    expect(postMock).toHaveBeenCalledWith('/admin/internal-test/generate/works', { actionType: 'create_works', userId: 1, groupNos: ['ITG1'] })
+
+    await api.generateInternalYpats({ actionType: 'create_ypats', userId: 1, wx: 'wx-test', mobile: '13800138000' })
+    expect(postMock).toHaveBeenCalledWith('/admin/internal-test/generate/ypats', {
+      actionType: 'create_ypats',
+      userId: 1,
+      wx: 'wx-test',
+      mobile: '13800138000',
+    })
+
+    await api.searchInternalUsers({ keyword: '内测', page: 0, size: 20 })
+    expect(getMock).toHaveBeenCalledWith('/admin/internal-test/users/search', { keyword: '内测', page: 0, size: 20 })
+
+    await api.grantInternalUserMember(1, { days: 365, reason: '内测数据一键会员' })
+    expect(postMock).toHaveBeenCalledWith('/admin/internal-test/users/1/grant-member', { days: 365, reason: '内测数据一键会员' })
+
+    await api.verifyInternalUser(1, { reason: '内测数据一键认证' })
+    expect(postMock).toHaveBeenCalledWith('/admin/internal-test/users/1/verify', { reason: '内测数据一键认证' })
+
+    await api.markInternalUserDepositPaid(1, { reason: '内测数据一键保证金' })
+    expect(postMock).toHaveBeenCalledWith('/admin/internal-test/users/1/deposit-paid', { reason: '内测数据一键保证金' })
+  })
 })

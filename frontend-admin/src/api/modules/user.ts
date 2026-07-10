@@ -52,6 +52,7 @@ export interface UserListQuery extends PageQuery {
   regisdate?: string
   gender?: string
   id?: number
+  dataFlag?: string
 }
 
 /**

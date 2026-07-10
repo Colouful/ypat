@@ -1,7 +1,9 @@
 import { describe, expect, it } from 'vitest'
 import {
+  InternalTestGenerateAction,
   InternalTestGenerateMode,
   InternalTestMediaType,
+  InternalTestResourceUsedFlag,
   InternalTestResourceStatus,
   InternalTestUsageType,
   YpatChargeWay,
@@ -80,5 +82,13 @@ describe('后台发布枚举', () => {
       '新建用户并生成',
       '给已有内测用户追加',
     ])
+  })
+
+  it('内测工作台枚举应包含生成动作和资源占用状态', () => {
+    expect(InternalTestGenerateAction.CREATE_USERS.value).toBe('create_users')
+    expect(InternalTestGenerateAction.CREATE_WORKS.value).toBe('create_works')
+    expect(InternalTestGenerateAction.CREATE_YPATS.value).toBe('create_ypats')
+    expect(InternalTestResourceUsedFlag.UNUSED.value).toBe(0)
+    expect(InternalTestResourceUsedFlag.USED.value).toBe(1)
   })
 })

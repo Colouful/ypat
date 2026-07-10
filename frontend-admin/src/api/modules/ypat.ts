@@ -68,6 +68,7 @@ export interface YpatListQuery extends PageQuery {
   patstyle?: string
   chargeway?: string
   workId?: string
+  dataFlag?: string
 }
 
 /** 发布作品表单 */

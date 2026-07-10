@@ -274,3 +274,20 @@ export const InternalTestGenerateMode = {
 } as const
 export const getInternalTestGenerateModeOptions = () =>
   Object.values(InternalTestGenerateMode).map((o) => ({ label: o.name, value: o.value }))
+
+/** 内测数据生成动作 */
+export const InternalTestGenerateAction = {
+  CREATE_USERS: { value: 'create_users', name: '新增用户' },
+  CREATE_WORKS: { value: 'create_works', name: '新增作品' },
+  CREATE_YPATS: { value: 'create_ypats', name: '新增约拍' },
+} as const
+export const getInternalTestGenerateActionOptions = () =>
+  Object.values(InternalTestGenerateAction).map((o) => ({ label: o.name, value: o.value }))
+
+/** 内测资源占用状态 */
+export const InternalTestResourceUsedFlag = {
+  UNUSED: { value: 0, name: '未占用', type: 'success' as const },
+  USED: { value: 1, name: '已占用', type: 'warning' as const },
+} as const
+export const getInternalTestResourceUsedFlagOptions = () =>
+  Object.values(InternalTestResourceUsedFlag).map((o) => ({ label: o.name, value: o.value }))

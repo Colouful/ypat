@@ -28,6 +28,8 @@ export interface WorkAdminInfo {
   profession?: string
   city?: string
   area?: string
+  dataFlag?: string
+  internalBatchNo?: string
   tags?: string[]
   medias?: Array<{ id: number; type: string; url: string }>
   user?: Record<string, unknown>
@@ -40,6 +42,7 @@ export interface WorkListQuery extends PageQuery {
   city?: string
   mediaType?: string
   tagIds?: string
+  dataFlag?: string
 }
 
 export function getWorkList(params: WorkListQuery): Promise<ApiResult<PageResult<WorkAdminInfo>>> {
