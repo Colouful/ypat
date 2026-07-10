@@ -64,6 +64,10 @@ const iconMap: Record<string, IconPart[]> = {
     { tag: 'rect', attrs: { width: 20, height: 16, x: 2, y: 4, rx: 2 } },
     { tag: 'path', attrs: { d: 'm22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7' } },
   ],
+  bell: [
+    { tag: 'path', attrs: { d: 'M10.3 21a1.9 1.9 0 0 0 3.4 0' } },
+    { tag: 'path', attrs: { d: 'M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9' } },
+  ],
   copy: [
     { tag: 'rect', attrs: { width: 14, height: 14, x: 8, y: 8, rx: 2, ry: 2 } },
     { tag: 'path', attrs: { d: 'M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2' } },

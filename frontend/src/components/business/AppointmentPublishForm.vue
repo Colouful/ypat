@@ -133,6 +133,7 @@ import { resolveWorkTagOptions, WORK_TAG_LIMIT } from '@/constants/work-tags'
 import { submit as submitYpat } from '@/api/modules/ypat'
 import { useMemberStore } from '@/stores/member'
 import { filePathToDataUrl } from '@/utils/file-base64'
+import { preloadMessageSubscribeTemplates, requestMessageSubscribe } from '@/utils/subscribe-message'
 import type { WorkTag } from '@/api/types/work'
 import type { MediaItem } from '@/api/types/media'
 
@@ -173,6 +174,7 @@ watch(() => props.target, (v) => {
 }, { immediate: true })
 
 onMounted(async () => {
+  void preloadMessageSubscribeTemplates()
   try {
     await memberStore.refreshSubmitYpatQuote()
   } catch {
@@ -264,6 +266,7 @@ async function onSubmit() {
   }
   submitting.value = true
   try {
+    await requestMessageSubscribe('publish')
     const pics: string[] = []
     for (const m of mediaItems.value) {
       if (m.type === 'IMAGE') {

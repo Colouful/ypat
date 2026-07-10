@@ -22,20 +22,42 @@
       </view>
 
       <template v-else>
+        <view class="notify-card">
+          <view class="notify-card__icon">
+            <KeepIcon name="bell" :size="36" color="#23C268" />
+          </view>
+          <view class="notify-card__body">
+            <text class="notify-card__title">消息提醒</text>
+            <text class="notify-card__desc">开启后可及时收到约拍申请、审核结果等微信通知。</text>
+          </view>
+          <button class="notify-card__btn" hover-class="none" @tap="enableSubscribe">开启</button>
+        </view>
+
+        <view class="message-stats">
+          <view class="message-stats__item message-stats__item--received">
+            <text class="message-stats__num">{{ receivedUnread }}</text>
+            <text class="message-stats__label">收到未读</text>
+          </view>
+          <view class="message-stats__item message-stats__item--sent">
+            <text class="message-stats__num">{{ sentUnread }}</text>
+            <text class="message-stats__label">申请未读</text>
+          </view>
+        </view>
+
         <view class="tabs">
-          <view :class="['tab', { active: tab === 'received' }]" @tap="switchTab('received')">收到的约拍</view>
-          <view :class="['tab', { active: tab === 'sent' }]" @tap="switchTab('sent')">申请的约拍</view>
+          <view :class="['tab', { active: tab === 'received' }]" @tap="switchTab('received')">收到的约拍<text v-if="receivedUnread" class="tab__badge">{{ receivedUnread > 99 ? '99+' : receivedUnread }}</text></view>
+          <view :class="['tab', { active: tab === 'sent' }]" @tap="switchTab('sent')">申请的约拍<text v-if="sentUnread" class="tab__badge tab__badge--sent">{{ sentUnread > 99 ? '99+' : sentUnread }}</text></view>
         </view>
 
         <KeepState v-if="loading && items.length === 0" type="loading" title="加载中..." />
         <KeepState v-else-if="items.length === 0" type="empty" title="暂无消息" description="去首页看看新的约拍机会。" button-text="去广场" @action="goHome" />
-      <view v-else>
+        <view v-else>
           <view v-for="item in items" :key="item.id" class="message-card" @tap="openDetail(item)">
             <image class="message-card__avatar" :src="item.imgpath || '/static/default-avatar.png'" mode="aspectFill" />
             <view class="message-card__body">
               <view class="message-card__head">
                 <text class="message-card__name">{{ item.nickname || '用户' }}</text>
-                <text class="message-card__tag">{{ tab === 'received' ? '收到' : '申请' }}</text>
+                <text :class="['message-card__tag', tab === 'sent' ? 'message-card__tag--sent' : '']">{{ tab === 'received' ? '收到' : '申请' }}</text>
               </view>
               <text class="message-card__content">{{ item.content || '约拍动态' }}</text>
               <view class="message-card__meta">
@@ -67,6 +89,7 @@ import KeepTabBar from '@/components/business/KeepTabBar.vue'
 import { goRootTab } from '@/utils/tab-navigation'
 import type { MessInfo } from '@/api/types'
 import { resolveMessageNavigation } from '@/utils/message-navigation'
+import { preloadMessageSubscribeTemplates, requestMessageSubscribe } from '@/utils/subscribe-message'
 
 const appStore = useAppStore()
 const userStore = useUserStore()
@@ -76,6 +99,8 @@ const loading = ref(false)
 const items = ref<MessInfo[]>([])
 const page = ref(0)
 const hasMore = ref(true)
+const receivedUnread = ref(0)
+const sentUnread = ref(0)
 
 async function load(refresh = false): Promise<void> {
   const userid = userStore.userInfo?.id
@@ -102,6 +127,26 @@ async function load(refresh = false): Promise<void> {
   }
 }
 
+async function refreshUnreadBreakdown(): Promise<void> {
+  const userid = userStore.userInfo?.id
+  if (!userid) {
+    receivedUnread.value = 0
+    sentUnread.value = 0
+    return
+  }
+  try {
+    const [received, sent] = await Promise.all([
+      messageApi.getRecUnreadCount('1', userid),
+      messageApi.getSendUnreadCount('4', userid),
+    ])
+    receivedUnread.value = Number(received.data || 0)
+    sentUnread.value = Number(sent.data || 0)
+  } catch {
+    receivedUnread.value = 0
+    sentUnread.value = 0
+  }
+}
+
 function switchTab(value: 'received' | 'sent'): void {
   tab.value = value
   items.value = []
@@ -123,6 +168,14 @@ async function openDetail(item: MessInfo): Promise<void> {
   }
 }
 
+async function enableSubscribe(): Promise<void> {
+  const result = await requestMessageSubscribe('message')
+  uni.showToast({
+    title: result.accepted.length > 0 ? '已开启提醒' : '未开启提醒',
+    icon: 'none',
+  })
+}
+
 function goHome(): void {
   goRootTab('/pages/home/index')
 }
@@ -133,12 +186,14 @@ function goLogin(): void {
 
 onShow(() => {
   if (userStore.isLoggedIn) {
+    void preloadMessageSubscribeTemplates()
     userStore.refreshUnreadCount()
+    refreshUnreadBreakdown()
     load(true)
   }
 })
 onPullDownRefresh(async () => {
-  await load(true)
+  await Promise.all([load(true), userStore.refreshUnreadCount(), refreshUnreadBreakdown()])
   uni.stopPullDownRefresh()
 })
 onReachBottom(() => load())
@@ -197,6 +252,108 @@ onReachBottom(() => load())
   box-shadow: $shadow-keep-card;
 }
 
+.notify-card {
+  display: flex;
+  align-items: center;
+  gap: 18rpx;
+  margin-bottom: 20rpx;
+  padding: 24rpx;
+  border: 2rpx solid rgba(35, 194, 104, 0.16);
+  border-radius: $radius-keep-card;
+  background: #fff;
+  box-shadow: $shadow-keep-card;
+}
+
+.notify-card__icon {
+  @include flex-center;
+  width: 72rpx;
+  height: 72rpx;
+  flex: none;
+  border-radius: 24rpx;
+  background: $color-primary-soft;
+}
+
+.notify-card__body {
+  min-width: 0;
+  flex: 1;
+}
+
+.notify-card__title,
+.notify-card__desc {
+  display: block;
+}
+
+.notify-card__title {
+  color: $color-text-primary;
+  font-size: 29rpx;
+  font-weight: 900;
+}
+
+.notify-card__desc {
+  margin-top: 6rpx;
+  color: $color-text-secondary;
+  font-size: 23rpx;
+  font-weight: 700;
+  line-height: 1.45;
+}
+
+.notify-card__btn {
+  width: 112rpx;
+  height: 58rpx;
+  flex: none;
+  border-radius: $radius-round;
+  color: #fff;
+  background: $color-primary;
+  font-size: 24rpx;
+  font-weight: 900;
+  line-height: 58rpx;
+}
+
+.notify-card__btn::after {
+  border: 0;
+}
+
+.message-stats {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18rpx;
+  margin-bottom: 22rpx;
+}
+
+.message-stats__item {
+  padding: 22rpx 24rpx;
+  border-radius: 24rpx;
+  background: #fff;
+  box-shadow: $shadow-keep-card;
+}
+
+.message-stats__item--received {
+  border-left: 8rpx solid $color-primary;
+}
+
+.message-stats__item--sent {
+  border-left: 8rpx solid #FF9F1C;
+}
+
+.message-stats__num,
+.message-stats__label {
+  display: block;
+}
+
+.message-stats__num {
+  color: $color-text-primary;
+  font-size: 38rpx;
+  font-weight: 900;
+  line-height: 1.15;
+}
+
+.message-stats__label {
+  margin-top: 6rpx;
+  color: $color-text-secondary;
+  font-size: 23rpx;
+  font-weight: 800;
+}
+
 .tabs {
   display: flex;
   gap: 18rpx;
@@ -204,12 +361,29 @@ onReachBottom(() => load())
 }
 
 .tab {
+  position: relative;
   @include keep-chip(false);
   background: #fff;
 }
 
 .tab.active {
   @include keep-chip(true);
+}
+
+.tab__badge {
+  min-width: 28rpx;
+  margin-left: 8rpx;
+  padding: 0 8rpx;
+  border-radius: $radius-round;
+  color: #fff;
+  background: $color-primary;
+  font-size: 20rpx;
+  font-weight: 900;
+  line-height: 28rpx;
+}
+
+.tab__badge--sent {
+  background: #FF9F1C;
 }
 
 .message-card {
@@ -256,6 +430,11 @@ onReachBottom(() => load())
   background: $color-primary-light;
   font-size: 22rpx;
   font-weight: 900;
+}
+
+.message-card__tag--sent {
+  color: #B75A00;
+  background: rgba(255, 159, 28, 0.16);
 }
 
 .message-card__content {

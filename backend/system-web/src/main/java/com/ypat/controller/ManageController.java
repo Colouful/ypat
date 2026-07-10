@@ -3,6 +3,7 @@ package com.ypat.controller;
 import com.ypat.*;
 import com.ypat.comm.Const;
 import com.ypat.enums.MessType;
+import com.ypat.enums.MessagePushEventType;
 import com.ypat.enums.UserStatus;
 import com.ypat.enums.YesNo;
 import com.ypat.enums.YpatStatus;
@@ -118,12 +119,19 @@ public class ManageController {
     @ResponseBody
     public String audit(Long id, String flag, String recomflag, String reason, String messflag){
         String res = ypatServiceClient.audit(id, flag, recomflag, reason);
+        String page = "";
+        String touserOpenid = null;
+        Long recperid = null;
+        String pushResponse = null;
         try {
             String accessToken = wxMessClient.getAccessToken();
             if(accessToken != null) {
-                String page = "";
                 String ypatJson = ypatServiceClient.get(id, null);
                 YpatInfoQo ypatInfoQo = GsonUtils.fromJson(ypatJson, YpatInfoQo.class);
+                if (ypatInfoQo != null && ypatInfoQo.getUserQo() != null) {
+                    recperid = ypatInfoQo.getUserQo().getId();
+                    touserOpenid = ypatInfoQo.getUserQo().getOpenid();
+                }
                 Map<String,String> contentMap = new HashMap<>();
                 contentMap.put("time", DateFormatUtils.format(new Date(),"yyyy-MM-dd HH:mm:ss"));
                 String content = ypatInfoQo.getDescrib();
@@ -150,7 +158,8 @@ public class ManageController {
                     }
                 }
                 //微信消息推送
-                wxMessClient.sendMsg(accessToken, ypatInfoQo.getUserQo().getOpenid(), MessType.audit, page, contentMap);
+                pushResponse = wxMessClient.sendMsg(accessToken, touserOpenid, MessType.audit, page, contentMap);
+                recordWechatPush(MessType.audit, id, null, recperid, touserOpenid, page, pushResponse, null);
 
                 //短信推送
                 if(YpatStatus.shtg.value.equals(flag) && YesNo.yes.value.equals(messflag)) {
@@ -162,8 +171,54 @@ public class ManageController {
             }
         } catch (Exception e) {
             logger.error("消息推送失败：", e);
+            recordWechatPush(MessType.audit, id, null, recperid, touserOpenid, page, pushResponse, e);
         }
         return res;
+    }
+
+    private void recordWechatPush(MessType messType, Long ypatid, Long sendperid, Long recperid,
+                                  String touserOpenid, String page, String responseBody, Exception error) {
+        try {
+            MessagePushLogQo qo = new MessagePushLogQo();
+            qo.setEventType(MessagePushEventType.WECHAT_SUBSCRIBE_SENT.value);
+            qo.setBusinessType(messType == null ? null : messType.value);
+            qo.setYpatid(ypatid);
+            qo.setSendperid(sendperid);
+            qo.setRecperid(recperid);
+            qo.setTouserOpenid(touserOpenid);
+            qo.setTemplateId(templateId(messType));
+            qo.setPageUrl(page);
+            qo.setResponseBody(responseBody);
+            qo.setSuccess(error == null && isWechatSuccess(responseBody) ? YesNo.yes.value : YesNo.no.value);
+            qo.setWechatErrcode(error == null && isWechatSuccess(responseBody) ? "0" : null);
+            qo.setWechatErrmsg(error == null ? null : error.getMessage());
+            qo.setRemark("微信订阅消息发送");
+            messServiceClient.recordPushLog(qo);
+        } catch (Exception e) {
+            logger.error("微信订阅推送日志记录失败：", e);
+        }
+    }
+
+    private String templateId(MessType messType) {
+        if (messType == null) {
+            return null;
+        }
+        switch (messType) {
+            case send:
+                return Const.TEMP_0;
+            case oauth:
+                return Const.TEMP_1;
+            case audit:
+                return Const.TEMP_2;
+            case order:
+                return Const.TEMP_3;
+            default:
+                return null;
+        }
+    }
+
+    private boolean isWechatSuccess(String responseBody) {
+        return responseBody != null && responseBody.contains("\"errcode\":0");
     }
 
     @PostMapping("/upRecom")
@@ -232,12 +287,17 @@ public class ManageController {
     @ResponseBody
     public String userAudit(Long id, String flag) {
         String res = oauthServiceClient.audit(id, flag);
+        String page = "";
+        String touserOpenid = null;
+        String pushResponse = null;
         try {
             String accessToken = wxMessClient.getAccessToken();
             if(accessToken != null) {
-                String page = "";
                 String userJson = userServiceClient.get(id);
                 UserQo userQo = GsonUtils.fromJson(userJson, UserQo.class);
+                if (userQo != null) {
+                    touserOpenid = userQo.getOpenid();
+                }
                 Map<String,String> contentMap = new HashMap<>();
                 contentMap.put("type", "实名认证");
                 if(UserStatus.shtg.value.equals(flag)) {
@@ -249,10 +309,12 @@ public class ManageController {
                     contentMap.put("result",UserStatus.shbtg.name);
                     contentMap.put("note","填写信息有误，请认证填写哦~");
                 }
-                wxMessClient.sendMsg(accessToken, userQo.getOpenid(), MessType.oauth, page, contentMap);
+                pushResponse = wxMessClient.sendMsg(accessToken, touserOpenid, MessType.oauth, page, contentMap);
+                recordWechatPush(MessType.oauth, null, null, id, touserOpenid, page, pushResponse, null);
             }
         } catch (Exception e) {
             logger.error("消息推送失败：", e);
+            recordWechatPush(MessType.oauth, null, null, id, touserOpenid, page, pushResponse, e);
         }
         return res;
     }

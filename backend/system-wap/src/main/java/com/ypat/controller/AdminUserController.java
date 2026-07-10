@@ -5,9 +5,14 @@ import com.ypat.ResponseApiBody;
 import com.ypat.ResponseCode;
 import com.ypat.SysException;
 import com.ypat.UserQo;
+import com.ypat.comm.Const;
+import com.ypat.enums.MessType;
+import com.ypat.enums.UserStatus;
+import com.ypat.service.MessagePushLogRecorder;
 import com.ypat.service.OauthServiceClient;
 import com.ypat.service.UserServiceClient;
 import com.ypat.third.baidu.ai.GsonUtils;
+import com.ypat.third.wxmess.WxMessClient;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonParser;
 import org.apache.commons.lang.StringUtils;
@@ -42,6 +47,10 @@ public class AdminUserController {
 
     @Autowired
     private OauthServiceClient oauthServiceClient;
+    @Autowired(required = false)
+    private WxMessClient wxMessClient;
+    @Autowired(required = false)
+    private MessagePushLogRecorder messagePushLogRecorder;
 
     /**
      * 实名认证用户列表（分页）。
@@ -153,11 +162,55 @@ public class AdminUserController {
 
         String result = oauthServiceClient.audit(id, flag);
         JsonElement resData = JsonParser.parseString(result);
+        pushOauthAuditMessage(id, flag);
 
         Map<String, Object> res = new HashMap<>(4);
         res.put("success", true);
         res.put("data", resData);
 
         return ResponseApiBody.success(res);
+    }
+
+    private void pushOauthAuditMessage(Long id, String flag) {
+        String page = "";
+        String touserOpenid = null;
+        String pushResponse = null;
+        try {
+            if (wxMessClient == null) {
+                return;
+            }
+            String accessToken = wxMessClient.getAccessToken();
+            if (accessToken == null) {
+                return;
+            }
+            String userJson = userServiceClient.get(id);
+            UserQo userQo = GsonUtils.fromJson(userJson, UserQo.class);
+            if (userQo == null) {
+                return;
+            }
+            touserOpenid = userQo.getOpenid();
+            Map<String, String> contentMap = new HashMap<>();
+            contentMap.put("type", "实名认证");
+            if (UserStatus.shtg.value.equals(flag)) {
+                page = Const.PAGE_REALNAME_TG;
+                contentMap.put("result", UserStatus.shtg.name);
+                contentMap.put("note", "赶紧找到心仪的小伙伴拍起来吧~");
+            } else {
+                page = Const.PAGE_REALNAME_BTG;
+                contentMap.put("result", UserStatus.shbtg.name);
+                contentMap.put("note", "填写信息有误，请重新认证哦~");
+            }
+            pushResponse = wxMessClient.sendMsg(accessToken, touserOpenid, MessType.oauth, page, contentMap);
+            recordWechatPush(id, touserOpenid, page, pushResponse, null);
+        } catch (Exception e) {
+            logger.error("实名审核消息推送失败：", e);
+            recordWechatPush(id, touserOpenid, page, pushResponse, e);
+        }
+    }
+
+    private void recordWechatPush(Long recperid, String touserOpenid, String page, String responseBody, Exception error) {
+        if (messagePushLogRecorder != null) {
+            messagePushLogRecorder.recordWechat(MessType.oauth, null, null, recperid, touserOpenid, page, responseBody, error);
+        }
     }
 }

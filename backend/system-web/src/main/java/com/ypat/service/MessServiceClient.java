@@ -1,6 +1,7 @@
 package com.ypat.service;
 
 import com.ypat.MessInfoQo;
+import com.ypat.MessagePushLogQo;
 import org.springframework.cloud.netflix.feign.FeignClient;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -15,5 +16,8 @@ public interface MessServiceClient {
 
     @PostMapping("/service/mess/findPage")
     String findPage(@RequestBody MessInfoQo messInfoQo);
+
+    @PostMapping("/service/message-push-log/record")
+    void recordPushLog(@RequestBody MessagePushLogQo qo);
 
 }

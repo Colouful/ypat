@@ -30,7 +30,7 @@
       </view>
 
       <button v-if="!contactRevealed" class="action" :loading="revealing" @tap="handleViewContact">
-        查看联系方式（消耗 1 PPD）
+        查看联系方式（消耗 {{ VIEW_CONTACT_PPD }} 拍拍豆）
       </button>
     </template>
   </view>
@@ -82,6 +82,7 @@ async function loadDetail(): Promise<void> {
   loading.value = true
   try {
     message.value = (await messageApi.getMessageDetail(messageId.value, userStore.userInfo.id)).data
+    void userStore.refreshUnreadCount()
   } catch (err) {
     error.value = err instanceof Error ? err.message : '消息加载失败'
   } finally {
@@ -125,6 +126,7 @@ async function revealContact(): Promise<void> {
     contactInfo.value = result.data
     contactRevealed.value = true
     await userStore.updateUserInfo()
+    await userStore.refreshUnreadCount()
   } catch (err) {
     contactInfo.value = null
     contactRevealed.value = false

@@ -6,6 +6,7 @@ import com.ypat.SysException;
 import com.ypat.comm.Const;
 import com.ypat.comm.ImageConst;
 import com.ypat.enums.MessType;
+import com.ypat.service.MessagePushLogRecorder;
 import com.ypat.service.OauthServiceClient;
 import com.ypat.storage.Base64ImagePayload;
 import com.ypat.storage.StorageBizPath;
@@ -53,6 +54,8 @@ public class OauthController {
     private Idmatch idmatch;
     @Autowired
     private WxMessClient wxMessClient;
+    @Autowired
+    private MessagePushLogRecorder messagePushLogRecorder;
 
     @PostMapping("/oauth/ocr")
     public String ocr(String cardfront) {
@@ -114,17 +117,20 @@ public class OauthController {
         qo.setName(oauthQo.getName());
         oauthServiceClient.add(qo);
         //推送消息
+        String page = "";
+        String pushResponse = null;
         try {
             String accessToken = wxMessClient.getAccessToken();
             if(accessToken != null) {
-                String page = "";
                 Map<String,String> contentMap = new HashMap<>();
                 contentMap.put("type", "实名待审批");
                 contentMap.put("per",  "去拍");
-                wxMessClient.sendMsg(accessToken, Const.SYS_ADMIN, MessType.order, page, contentMap);
+                pushResponse = wxMessClient.sendMsg(accessToken, Const.SYS_ADMIN, MessType.order, page, contentMap);
+                messagePushLogRecorder.recordWechat(MessType.order, null, qo.getUserid(), null, Const.SYS_ADMIN, page, pushResponse, null);
             }
         } catch (Exception e) {
             logger.error("消息推送失败：", e);
+            messagePushLogRecorder.recordWechat(MessType.order, null, qo.getUserid(), null, Const.SYS_ADMIN, page, pushResponse, e);
         }
         return GsonUtils.toJson(qo);
     }

@@ -50,6 +50,8 @@ public class UserService {
     private UserOrigRepository userOrigRepository;
     @Autowired
     private InviteService inviteService;
+    @Autowired
+    private MessagePushLogService messagePushLogService;
 
     /**
      *
@@ -432,6 +434,7 @@ public class UserService {
                 messInfoNew.setType(MessType.view.value);
                 messInfoNew.setContent(MessType.view.name);
                 messInfoRepository.save(messInfoNew);
+                recordInAppCreated(messInfoNew);
             }
 
             //增加收支记录
@@ -450,6 +453,32 @@ public class UserService {
         userQo.setName(userView.getName());
         userQo.setWx(userView.getWx());
         return userQo;
+    }
+
+    private void recordInAppCreated(MessInfo messInfo) {
+        try {
+            if (messInfo == null) {
+                return;
+            }
+            MessagePushLogQo qo = new MessagePushLogQo();
+            qo.setEventType(MessagePushEventType.IN_APP_CREATED.value);
+            qo.setBusinessType(messInfo.getType());
+            qo.setMessageId(messInfo.getId());
+            if (messInfo.getYpatInfo() != null) {
+                qo.setYpatid(messInfo.getYpatInfo().getId());
+            }
+            if (messInfo.getSendper() != null) {
+                qo.setSendperid(messInfo.getSendper().getId());
+            }
+            if (messInfo.getRecper() != null) {
+                qo.setRecperid(messInfo.getRecper().getId());
+            }
+            qo.setSuccess(YesNo.yes.value);
+            qo.setRemark("站内消息创建");
+            messagePushLogService.record(qo);
+        } catch (Exception e) {
+            logger.error("站内消息创建日志记录失败：", e);
+        }
     }
 
 

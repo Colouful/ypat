@@ -8,6 +8,7 @@ import com.ypat.comm.Const;
 import com.ypat.comm.ImageConst;
 import com.ypat.enums.MessType;
 import com.ypat.enums.YpatStatus;
+import com.ypat.service.MessagePushLogRecorder;
 import com.ypat.storage.Base64ImagePayload;
 import com.ypat.service.YpatServiceClient;
 import com.ypat.storage.StorageBizPath;
@@ -47,6 +48,8 @@ public class YpatInfoController {
     private WxMessClient wxMessClient;
     @Autowired
     private ImageMarkUtil imageMarkUtil;
+    @Autowired
+    private MessagePushLogRecorder messagePushLogRecorder;
 
     @GetMapping("/ypat/get")
     public String get(@NotEmpty Long id) {
@@ -119,17 +122,20 @@ public class YpatInfoController {
         ypatInfoQo.setPics(picsList);
         ypatServiceClient.submit(ypatInfoQo);
         //推送消息
+        String page = "";
+        String pushResponse = null;
         try {
             String accessToken = wxMessClient.getAccessToken();
             if(accessToken != null) {
-                String page = "";
                 Map<String,String> contentMap = new HashMap<>();
                 contentMap.put("type", "发布待审批");
                 contentMap.put("per",  "去拍");
-                wxMessClient.sendMsg(accessToken, Const.SYS_ADMIN, MessType.order, page, contentMap);
+                pushResponse = wxMessClient.sendMsg(accessToken, Const.SYS_ADMIN, MessType.order, page, contentMap);
+                messagePushLogRecorder.recordWechat(MessType.order, null, ypatInfoQo.getUserid(), null, Const.SYS_ADMIN, page, pushResponse, null);
             }
         } catch (Exception e) {
             logger.error("消息推送失败：", e);
+            messagePushLogRecorder.recordWechat(MessType.order, null, ypatInfoQo.getUserid(), null, Const.SYS_ADMIN, page, pushResponse, e);
         }
         return ResponseApiBody.success(null);
     }
