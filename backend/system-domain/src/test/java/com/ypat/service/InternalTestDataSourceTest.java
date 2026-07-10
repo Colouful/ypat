@@ -228,7 +228,9 @@ public class InternalTestDataSourceTest {
         assertResourceColumnMigration(sql, "used_at",
                 "ALTER TABLE `t_internal_test_resource` ADD COLUMN `used_at` DATETIME DEFAULT NULL");
         assertResourceIndexMigration(sql, "idx_internal_resource_available_group",
-                "ALTER TABLE `t_internal_test_resource` ADD INDEX `idx_internal_resource_available_group`");
+                "ALTER TABLE `t_internal_test_resource` ADD INDEX `idx_internal_resource_available_group` (`usage_type`, `status`, `used_flag`, `group_no`, `sort_no`, `id`)");
+        assertResourceIndexMigration(sql, "idx_internal_resource_group_no",
+                "ALTER TABLE `t_internal_test_resource` ADD INDEX `idx_internal_resource_group_no` (`group_no`, `id`)");
     }
 
     @Test
@@ -315,6 +317,10 @@ public class InternalTestDataSourceTest {
         assertTrue(repo.contains("Long countAvailableGroups("));
         assertTrue(repo.contains("List<InternalTestResource> findAvailableSingleResources("));
         assertTrue(repo.contains("Long countAvailableSingleResources("));
+        assertFalse(repo.contains("coalesce(r.used_flag"));
+        assertFalse(repo.contains("select count(*) from t_internal_test_resource all_r"));
+        assertTrue(repo.contains("r.used_flag = 0"));
+        assertTrue(repo.contains("join (select group_no, count(*) total_count"));
 
         String listAvailableGroups = methodBody(service,
                 "public Map<String, Object> listAvailableGroups(InternalTestResourceQo qo)",
@@ -449,12 +455,6 @@ public class InternalTestDataSourceTest {
         assertTrue(block.contains("TABLE_NAME = 't_internal_test_resource'"));
         assertTrue(block.contains("INDEX_NAME = '" + indexName + "'"));
         assertTrue(block.contains(ddlFragment));
-        assertTrue(block.contains("usage_type"));
-        assertTrue(block.contains("status"));
-        assertTrue(block.contains("used_flag"));
-        assertTrue(block.contains("group_no"));
-        assertTrue(block.contains("sort_no"));
-        assertTrue(block.contains("id"));
         assertTrue(block.contains("PREPARE stmt FROM @ddl;"));
         assertTrue(block.contains("EXECUTE stmt;"));
         assertTrue(block.contains("DEALLOCATE PREPARE stmt;"));

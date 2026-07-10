@@ -41,7 +41,9 @@ public interface InternalTestResourceRepository extends JpaRepository<InternalTe
     int releaseByUsedBatchNo(@Param("batchNo") String batchNo, @Param("updatedAt") Date updatedAt);
 
     @Query(value = "select r.group_no from t_internal_test_resource r "
-            + "where r.usage_type = 'work' and r.status = 'enabled' and coalesce(r.used_flag, 0) = 0 "
+            + "join (select group_no, count(*) total_count from t_internal_test_resource "
+            + "where group_no is not null group by group_no) all_g on all_g.group_no = r.group_no "
+            + "where r.usage_type = 'work' and r.status = 'enabled' and r.used_flag = 0 "
             + "and r.group_no is not null "
             + "and (:mediaType is null or r.media_type = :mediaType) "
             + "and (:styleCode is null or r.style_code = :styleCode) "
@@ -54,9 +56,8 @@ public interface InternalTestResourceRepository extends JpaRepository<InternalTe
             + "or r.description like concat('%', :keyword, '%') "
             + "or r.url like concat('%', :keyword, '%') "
             + "or r.remark like concat('%', :keyword, '%')) "
-            + "group by r.group_no "
-            + "having count(*) = (select count(*) from t_internal_test_resource all_r "
-            + "where all_r.group_no = r.group_no) "
+            + "group by r.group_no, all_g.total_count "
+            + "having count(*) = all_g.total_count "
             + "order by min(coalesce(r.sort_no, 0)), min(r.id) desc limit :offset, :limit",
             nativeQuery = true)
     List<String> findAvailableGroupNos(@Param("mediaType") String mediaType,
@@ -71,7 +72,9 @@ public interface InternalTestResourceRepository extends JpaRepository<InternalTe
                                        @Param("limit") int limit);
 
     @Query(value = "select count(*) from (select r.group_no from t_internal_test_resource r "
-            + "where r.usage_type = 'work' and r.status = 'enabled' and coalesce(r.used_flag, 0) = 0 "
+            + "join (select group_no, count(*) total_count from t_internal_test_resource "
+            + "where group_no is not null group by group_no) all_g on all_g.group_no = r.group_no "
+            + "where r.usage_type = 'work' and r.status = 'enabled' and r.used_flag = 0 "
             + "and r.group_no is not null "
             + "and (:mediaType is null or r.media_type = :mediaType) "
             + "and (:styleCode is null or r.style_code = :styleCode) "
@@ -84,9 +87,8 @@ public interface InternalTestResourceRepository extends JpaRepository<InternalTe
             + "or r.description like concat('%', :keyword, '%') "
             + "or r.url like concat('%', :keyword, '%') "
             + "or r.remark like concat('%', :keyword, '%')) "
-            + "group by r.group_no "
-            + "having count(*) = (select count(*) from t_internal_test_resource all_r "
-            + "where all_r.group_no = r.group_no)) available_groups",
+            + "group by r.group_no, all_g.total_count "
+            + "having count(*) = all_g.total_count) available_groups",
             nativeQuery = true)
     Long countAvailableGroups(@Param("mediaType") String mediaType,
                               @Param("styleCode") String styleCode,
@@ -98,7 +100,7 @@ public interface InternalTestResourceRepository extends JpaRepository<InternalTe
                               @Param("keyword") String keyword);
 
     @Query(value = "select r.* from t_internal_test_resource r "
-            + "where r.usage_type = 'work' and r.status = 'enabled' and coalesce(r.used_flag, 0) = 0 "
+            + "where r.usage_type = 'work' and r.status = 'enabled' and r.used_flag = 0 "
             + "and r.group_no is null and :groupNo is null "
             + "and (:mediaType is null or r.media_type = :mediaType) "
             + "and (:styleCode is null or r.style_code = :styleCode) "
@@ -124,7 +126,7 @@ public interface InternalTestResourceRepository extends JpaRepository<InternalTe
                                                             @Param("limit") int limit);
 
     @Query(value = "select count(*) from t_internal_test_resource r "
-            + "where r.usage_type = 'work' and r.status = 'enabled' and coalesce(r.used_flag, 0) = 0 "
+            + "where r.usage_type = 'work' and r.status = 'enabled' and r.used_flag = 0 "
             + "and r.group_no is null and :groupNo is null "
             + "and (:mediaType is null or r.media_type = :mediaType) "
             + "and (:styleCode is null or r.style_code = :styleCode) "
