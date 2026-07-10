@@ -32,10 +32,6 @@ const isAudited = computed(() => {
   return status === AuditFlag.PASS || status === AuditFlag.REJECT
 })
 
-// 图片预览
-const previewVisible = ref(false)
-const previewSrc = ref('')
-
 /** 加载详情 */
 async function loadDetail(): Promise<void> {
   if (!props.user) return
@@ -58,12 +54,6 @@ async function loadDetail(): Promise<void> {
   } finally {
     detailLoading.value = false
   }
-}
-
-/** 预览图片 */
-function handlePreview(url: string): void {
-  previewSrc.value = url
-  previewVisible.value = true
 }
 
 /** 关闭弹窗 */
@@ -105,7 +95,6 @@ watch(
             :key="index"
             class="image-item"
             :aria-label="getPhotoLabel(index)"
-            @click="handlePreview(pic)"
           >
             <div class="image-label">{{ getPhotoLabel(index) }}</div>
             <el-image
@@ -211,7 +200,6 @@ watch(
 }
 
 .image-item {
-  cursor: pointer;
   border-radius: $radius-sm;
   overflow: hidden;
   border: 1px solid $border-lighter;

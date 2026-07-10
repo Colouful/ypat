@@ -1,5 +1,7 @@
 import { flushPromises, mount } from '@vue/test-utils'
 import ElementPlus from 'element-plus'
+import { readFileSync } from 'node:fs'
+import { resolve } from 'node:path'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import UserAuditDialog from '../UserAuditDialog.vue'
 
@@ -16,6 +18,8 @@ vi.mock('@/api/modules/user', async (importOriginal) => {
 })
 
 describe('UserAuditDialog', () => {
+  const source = readFileSync(resolve(__dirname, '../UserAuditDialog.vue'), 'utf-8')
+
   beforeEach(() => {
     getUserDetailMock.mockResolvedValue({
       data: {
@@ -51,10 +55,32 @@ describe('UserAuditDialog', () => {
     await flushPromises()
 
     const text = wrapper.text()
+    const items = wrapper.findAll('.image-item')
+    const labels = wrapper.findAll('.image-label')
+    const images = wrapper.findAllComponents({ name: 'ElImage' })
+
     expect(text).toContain('身份证正面')
     expect(text).toContain('身份证反面')
     expect(text).toContain('手持身份证')
+    expect(items.map((item) => item.attributes('aria-label'))).toEqual([
+      '身份证正面',
+      '身份证反面',
+      '手持身份证',
+    ])
+    expect(labels).toHaveLength(3)
+    expect(images).toHaveLength(3)
+    images.forEach((image, index) => {
+      expect(image.props('previewSrcList')).toEqual(['front.jpg', 'back.jpg', 'hand.jpg'])
+      expect(image.props('initialIndex')).toBe(index)
+    })
     expect(text).toContain('审核通过')
     expect(text).toContain('审核不通过')
+  })
+
+  it('不在图片项外层绑定无效预览点击', () => {
+    expect(source).not.toContain('@click="handlePreview(pic)"')
+    expect(source).not.toContain('previewVisible')
+    expect(source).not.toContain('previewSrc')
+    expect(source).not.toContain('function handlePreview')
   })
 })
