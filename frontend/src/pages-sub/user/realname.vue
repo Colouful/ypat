@@ -71,6 +71,7 @@ const backPath = ref('')
 const handPath = ref('')
 const form = reactive({ name: '', certcode: '' })
 let pollingCancelled = false
+let pendingOutTradeNo = ''
 
 const status = computed(() => authInfo.value?.status || userStore.userInfo?.status || '0')
 const canSubmitWithoutPay = computed(() => status.value === '3' || status.value === '4')
@@ -145,6 +146,8 @@ async function submit(): Promise<void> {
     return
   }
   if (needsPayment.value) {
+    const resumed = await resumePendingRealnamePayment()
+    if (resumed) return
     await confirmAndPay()
     return
   }
@@ -159,6 +162,7 @@ async function confirmAndPay(): Promise<void> {
   pollingCancelled = false
   try {
     const order = await createRealnameOrder()
+    pendingOutTradeNo = order.out_trade_no
     await invokeWechatPayment({
       timeStamp: order.timeStamp,
       nonceStr: order.nonceStr,
@@ -171,14 +175,21 @@ async function confirmAndPay(): Promise<void> {
     const paid = await waitForRealnamePayment(order.out_trade_no)
     uni.hideLoading()
     if (!paid) {
+      await refreshRealnameState()
+      if (canSubmitWithoutPay.value) {
+        pendingOutTradeNo = ''
+        await submitAfterPaymentConfirmed()
+        return
+      }
       uni.showToast({ title: '支付确认中，请稍后重试', icon: 'none' })
       return
     }
 
-    await userStore.updateUserInfo()
-    await loadDetail()
+    pendingOutTradeNo = ''
+    await refreshRealnameState()
     await submitAfterPaymentConfirmed()
   } catch (error) {
+    pendingOutTradeNo = ''
     uni.hideLoading()
     const message = error instanceof Error ? error.message : '支付失败'
     if (message.toLowerCase().includes('cancel')) {
@@ -189,6 +200,45 @@ async function confirmAndPay(): Promise<void> {
   } finally {
     paying.value = false
   }
+}
+
+async function resumePendingRealnamePayment(): Promise<boolean> {
+  if (!pendingOutTradeNo) return false
+
+  paying.value = true
+  pollingCancelled = false
+  try {
+    uni.showLoading({ title: '服务端确认中...' })
+    const paid = await waitForRealnamePayment(pendingOutTradeNo)
+    uni.hideLoading()
+    if (paid) {
+      pendingOutTradeNo = ''
+      await refreshRealnameState()
+      await submitAfterPaymentConfirmed()
+      return true
+    }
+
+    await refreshRealnameState()
+    if (canSubmitWithoutPay.value) {
+      pendingOutTradeNo = ''
+      await submitAfterPaymentConfirmed()
+      return true
+    }
+
+    uni.showToast({ title: '支付确认中，请稍后重试', icon: 'none' })
+    return true
+  } catch (error) {
+    uni.hideLoading()
+    uni.showToast({ title: error instanceof Error ? error.message : '支付确认失败', icon: 'none' })
+    return true
+  } finally {
+    paying.value = false
+  }
+}
+
+async function refreshRealnameState(): Promise<void> {
+  await userStore.updateUserInfo()
+  await loadDetail()
 }
 
 function confirmRealnamePayment(): Promise<boolean> {
@@ -252,7 +302,7 @@ async function waitForRealnamePayment(outTradeNo: string): Promise<boolean> {
 }
 
 function isPaidRealnameOrder(order: OrderInfo): boolean {
-  return order.type === oauthApi.REALNAME_ORDER_TYPE && (order.status === '1' || order.result_code === 'SUCCESS')
+  return order.type === oauthApi.REALNAME_ORDER_TYPE && order.status === '1'
 }
 
 function delay(ms: number): Promise<void> {
@@ -285,6 +335,7 @@ function clearForm(): void {
   frontPath.value = ''
   backPath.value = ''
   handPath.value = ''
+  pendingOutTradeNo = ''
 }
 
 onLoad(loadDetail)
