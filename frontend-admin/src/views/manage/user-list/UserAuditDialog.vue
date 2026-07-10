@@ -21,6 +21,11 @@ function getUserId(user?: OauthQo | null): number | undefined {
   return user?.userid ?? user?.id
 }
 
+function getPhotoLabel(index: number): string {
+  const labels = ['身份证正面', '身份证反面', '手持身份证']
+  return labels[index] ?? `证件照片${index + 1}`
+}
+
 // 是否已审核（已审核状态隐藏审核按钮）
 const isAudited = computed(() => {
   const status = detail.value?.status
@@ -99,8 +104,10 @@ watch(
             v-for="(pic, index) in detail.pics"
             :key="index"
             class="image-item"
+            :aria-label="getPhotoLabel(index)"
             @click="handlePreview(pic)"
           >
+            <div class="image-label">{{ getPhotoLabel(index) }}</div>
             <el-image
               :src="pic"
               fit="cover"
@@ -214,6 +221,16 @@ watch(
     border-color: $color-primary;
     box-shadow: $shadow-base;
   }
+}
+
+.image-label {
+  width: 120px;
+  padding: $spacing-xs;
+  color: $text-regular;
+  font-size: $font-size-sm;
+  text-align: center;
+  background-color: $bg-page;
+  border-bottom: 1px solid $border-lighter;
 }
 
 .image-error,
