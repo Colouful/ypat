@@ -34,6 +34,7 @@ import java.util.*;
 @Transactional(rollbackFor = Exception.class)
 public class UserService {
     private static Logger logger = LoggerFactory.getLogger(UserService.class);
+    private static final int REALNAME_PHOTO_COUNT = 3;
     @Autowired
     private UserRepository userRepository;
     @Autowired
@@ -79,8 +80,16 @@ public class UserService {
         if(old==null){
             throw new SysException(ResponseCode.FAIL_NOT);
         }
-        if(old.getRealnameflag().equals(YesNo.yes.value)){
+        if(YesNo.yes.value.equals(old.getRealnameflag())){
             throw new SysException(1007,"已经实名");
+        }
+        List<String> pics = oauthQo.getPics();
+        if(pics == null || pics.size() != REALNAME_PHOTO_COUNT){
+            throw new SysException(ResponseCode.FAIL_REALNAME);
+        }
+        boolean canSubmit = UserStatus.zfcg.value.equals(old.getStatus()) || UserStatus.shbtg.value.equals(old.getStatus());
+        if(!canSubmit){
+            throw new SysException(ResponseCode.FAIL_NOREAL);
         }
         //保存信息
         old.setName(oauthQo.getName());
@@ -100,7 +109,6 @@ public class UserService {
             }
         }
         //保存证件信息
-        List<String> pics = oauthQo.getPics();
         if(pics!=null){
             List<UserImg> userImgs = new ArrayList<>();
             for (int i = 0,j=1; i < pics.size(); i++) {
