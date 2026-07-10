@@ -33,14 +33,20 @@ public class UserServiceRealnameSecuritySourceTest {
 
     @Test
     public void realnameSubmitRequiresThreePhotosAndPaidOrRejectedStatus() throws Exception {
-        String source = read("backend/system-domain/src/main/java/com/ypat/service/UserService.java");
+        String userService = read("backend/system-domain/src/main/java/com/ypat/service/UserService.java");
+        String userRepository = read("backend/system-domain/src/main/java/com/ypat/repository/UserRepository.java");
 
-        assertTrue(source.contains("REALNAME_PHOTO_COUNT = 3"));
-        assertTrue(source.contains("pics == null || pics.size() != REALNAME_PHOTO_COUNT"));
-        assertTrue(source.contains("UserStatus.zfcg.value.equals(old.getStatus())"));
-        assertTrue(source.contains("UserStatus.shbtg.value.equals(old.getStatus())"));
-        assertTrue(source.contains("throw new SysException(ResponseCode.FAIL_NOREAL)"));
-        assertTrue(source.contains("old.setStatus(UserStatus.ytj.value)"));
+        assertTrue(userService.contains("REALNAME_PHOTO_COUNT = 3"));
+        assertTrue(userService.contains("userRepository.findByIdForUpdate(oauthQo.getUserid())"));
+        assertTrue(userService.contains("pics == null || pics.size() != REALNAME_PHOTO_COUNT"));
+        assertTrue(userService.contains("UserStatus.zfcg.value.equals(old.getStatus())"));
+        assertTrue(userService.contains("UserStatus.shbtg.value.equals(old.getStatus())"));
+        assertTrue(userService.contains("throw new SysException(ResponseCode.FAIL_NOREAL)"));
+        assertTrue(userService.contains("old.setStatus(UserStatus.ytj.value)"));
+        assertTrue(userRepository.contains("import javax.persistence.LockModeType;"));
+        assertTrue(userRepository.contains("import org.springframework.data.jpa.repository.Lock;"));
+        assertTrue(userRepository.contains("@Lock(LockModeType.PESSIMISTIC_WRITE)"));
+        assertTrue(userRepository.contains("User findByIdForUpdate(@Param(\"id\") Long id)"));
     }
 
     @Test
@@ -55,6 +61,7 @@ public class UserServiceRealnameSecuritySourceTest {
             assertEquals(1007, e.getCode());
         }
 
+        assertTrue(capture.lockedLookupCalled);
         assertNull(capture.savedUser);
         assertEquals(0, capture.deletedImages.size());
         assertEquals(0, capture.savedImages.size());
@@ -72,6 +79,7 @@ public class UserServiceRealnameSecuritySourceTest {
             assertEquals(ResponseCode.FAIL_NOREAL.getCode(), e.getCode());
         }
 
+        assertTrue(capture.lockedLookupCalled);
         assertNull(capture.savedUser);
         assertEquals(0, capture.deletedImages.size());
         assertEquals(0, capture.savedImages.size());
@@ -87,6 +95,7 @@ public class UserServiceRealnameSecuritySourceTest {
 
         service.oauth(oauthQo("new-front", "new-back", "new-hand"));
 
+        assertTrue(capture.lockedLookupCalled);
         assertEquals("张三", capture.savedUser.getName());
         assertEquals("110101199001011234", capture.savedUser.getCertcode());
         assertEquals(UserStatus.ytj.value, capture.savedUser.getStatus());
@@ -107,6 +116,7 @@ public class UserServiceRealnameSecuritySourceTest {
 
         service.oauth(oauthQo("retry-front", "retry-back", "retry-hand"));
 
+        assertTrue(capture.lockedLookupCalled);
         assertEquals(UserStatus.ytj.value, capture.savedUser.getStatus());
         assertEquals(3, capture.savedImages.size());
     }
@@ -123,6 +133,7 @@ public class UserServiceRealnameSecuritySourceTest {
             assertEquals(ResponseCode.FAIL_REALNAME.getCode(), e.getCode());
         }
 
+        assertTrue(capture.lockedLookupCalled);
         assertNull(capture.savedUser);
         assertEquals(0, capture.deletedImages.size());
         assertEquals(0, capture.savedImages.size());
@@ -141,6 +152,10 @@ public class UserServiceRealnameSecuritySourceTest {
         ReflectionTestUtils.setField(service, "userRepository", proxy(UserRepository.class, new InvocationHandler() {
             @Override
             public Object invoke(Object proxy, Method method, Object[] args) {
+                if ("findByIdForUpdate".equals(method.getName())) {
+                    capture.lockedLookupCalled = true;
+                    return user;
+                }
                 if ("findById".equals(method.getName())) return user;
                 if ("save".equals(method.getName())) {
                     capture.savedUser = (User) args[0];
@@ -224,6 +239,7 @@ public class UserServiceRealnameSecuritySourceTest {
     }
 
     private static class Capture {
+        boolean lockedLookupCalled;
         User savedUser;
         List<UserImg> deletedImages = new ArrayList<>();
         List<UserImg> savedImages = new ArrayList<>();
