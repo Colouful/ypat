@@ -110,10 +110,17 @@ describe('API contracts', () => {
   })
 
   it('feedback add uses typed form endpoint', async () => {
-    await feedbackApi.addFeedback({ content: '这里是一条有效反馈内容', contact: '13800138000' })
-    expect(requestMocks.post).toHaveBeenCalledWith('/feedback/add', {
+    await feedbackApi.addFeedback({
+      type: 'function',
       content: '这里是一条有效反馈内容',
       contact: '13800138000',
+      pics: 'https://example.com/a.jpg',
+    })
+    expect(requestMocks.post).toHaveBeenCalledWith('/feedback/add', {
+      type: 'function',
+      content: '这里是一条有效反馈内容',
+      contact: '13800138000',
+      pics: 'https://example.com/a.jpg',
     })
   })
 })

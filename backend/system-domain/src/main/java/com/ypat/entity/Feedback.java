@@ -16,11 +16,23 @@ public class Feedback implements java.io.Serializable {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
     private Long userid;
+    @Column(length = 32)
+    private String type;
     @Column(length = 500)
     private String content;
     @Column(length = 100)
     private String contact;
+    @Column(length = 1000)
+    private String pics;
     private String status;
+    @Column(name = "handle_reason", length = 500)
+    private String handleReason;
+    @Column(name = "handled_by")
+    private Long handledBy;
+    @Column(name = "handled_at")
+    @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+    @Temporal(TemporalType.TIMESTAMP)
+    private Date handledAt;
     @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     @Temporal(TemporalType.TIMESTAMP)
     private Date credate;
@@ -44,6 +56,14 @@ public class Feedback implements java.io.Serializable {
         this.userid = userid;
     }
 
+    public String getType() {
+        return type;
+    }
+
+    public void setType(String type) {
+        this.type = type;
+    }
+
     public String getContent() {
         return content;
     }
@@ -60,12 +80,44 @@ public class Feedback implements java.io.Serializable {
         this.contact = contact;
     }
 
+    public String getPics() {
+        return pics;
+    }
+
+    public void setPics(String pics) {
+        this.pics = pics;
+    }
+
     public String getStatus() {
         return status;
     }
 
     public void setStatus(String status) {
         this.status = status;
+    }
+
+    public String getHandleReason() {
+        return handleReason;
+    }
+
+    public void setHandleReason(String handleReason) {
+        this.handleReason = handleReason;
+    }
+
+    public Long getHandledBy() {
+        return handledBy;
+    }
+
+    public void setHandledBy(Long handledBy) {
+        this.handledBy = handledBy;
+    }
+
+    public Date getHandledAt() {
+        return handledAt;
+    }
+
+    public void setHandledAt(Date handledAt) {
+        this.handledAt = handledAt;
     }
 
     public Date getCredate() {
