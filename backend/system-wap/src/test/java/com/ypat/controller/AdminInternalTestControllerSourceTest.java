@@ -158,6 +158,36 @@ public class AdminInternalTestControllerSourceTest {
     }
 
     @Test
+    public void threeLayersExposeInternalUserActionRoutes() throws Exception {
+        String controller = readSource(
+                "src/main/java/com/ypat/controller/AdminInternalTestController.java",
+                "backend/system-wap/src/main/java/com/ypat/controller/AdminInternalTestController.java");
+        String client = readSource(
+                "src/main/java/com/ypat/service/InternalTestServiceClient.java",
+                "backend/system-wap/src/main/java/com/ypat/service/InternalTestServiceClient.java");
+        String restapi = readSource(
+                "../system-restapi/src/main/java/com/ypat/controller/InternalTestController.java",
+                "backend/system-restapi/src/main/java/com/ypat/controller/InternalTestController.java");
+
+        assertTrue(controller.contains("@PostMapping(\"/users/{userId}/grant-member\")"));
+        assertTrue(controller.contains("@PostMapping(\"/users/{userId}/verify\")"));
+        assertTrue(controller.contains("@PostMapping(\"/users/{userId}/deposit-paid\")"));
+        assertTrue(controller.contains("internalTestServiceClient.grantMember(userId, qo)"));
+        assertTrue(controller.contains("internalTestServiceClient.verifyUser(userId, qo)"));
+        assertTrue(controller.contains("internalTestServiceClient.depositPaid(userId, qo)"));
+        assertTrue(client.contains("@PostMapping(\"/service/internal-test/users/{userId}/grant-member\")"));
+        assertTrue(client.contains("@PostMapping(\"/service/internal-test/users/{userId}/verify\")"));
+        assertTrue(client.contains("@PostMapping(\"/service/internal-test/users/{userId}/deposit-paid\")"));
+        assertTrue(restapi.contains("InternalTestUserActionService"));
+        assertTrue(restapi.contains("@PostMapping(\"/users/{userId}/grant-member\")"));
+        assertTrue(restapi.contains("@PostMapping(\"/users/{userId}/verify\")"));
+        assertTrue(restapi.contains("@PostMapping(\"/users/{userId}/deposit-paid\")"));
+        assertTrue(restapi.contains("actionResult(userActionService.grantMember(qo))"));
+        assertTrue(restapi.contains("actionResult(userActionService.verifyUser(qo))"));
+        assertTrue(restapi.contains("actionResult(userActionService.markDepositPaid(qo))"));
+    }
+
+    @Test
     public void parseResponseResReturnsExpectedDataAndPropagatesBusinessErrors() throws Exception {
         AdminInternalTestController controller = new AdminInternalTestController();
 

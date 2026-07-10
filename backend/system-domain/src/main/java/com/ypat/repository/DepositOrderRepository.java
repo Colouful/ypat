@@ -17,6 +17,10 @@ public interface DepositOrderRepository extends JpaRepository<DepositOrder, Long
 
     DepositOrder findByOutTradeNo(@Param("outTradeNo") String outTradeNo);
 
+    DepositOrder findByUserIdAndChannelAndStatus(@Param("userId") Long userId,
+                                                 @Param("channel") String channel,
+                                                 @Param("status") String status);
+
     Page<DepositOrder> findByUserIdOrderByCreatedAtDesc(@Param("userId") Long userId, Pageable pageable);
 
     Page<DepositOrder> findByUserIdAndStatusOrderByCreatedAtDesc(@Param("userId") Long userId,

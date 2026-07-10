@@ -93,6 +93,40 @@ public class DepositService {
         return CopyUtil.copy(depositOrderRepository.save(order), DepositOrderQo.class);
     }
 
+    public DepositOrderQo createInternalTestPaidOrder(Long userId) {
+        if (userId == null) throw new SysException(ResponseCode.FAIL_PARA);
+
+        DepositOrder existing = depositOrderRepository.findByUserIdAndChannelAndStatus(
+                userId,
+                "INTERNAL_TEST",
+                PaymentStatus.PAID.value
+        );
+        if (existing != null) {
+            return CopyUtil.copy(existing, DepositOrderQo.class);
+        }
+
+        DepositConfig config = loadConfig();
+        Date now = new Date();
+        DepositOrder order = new DepositOrder();
+        order.setOutTradeNo("ITD" + new SimpleDateFormat("yyyyMMddHHmmss").format(now) + userId);
+        order.setUserId(userId);
+        order.setAmountFen(effectiveAmountFen(config));
+        order.setChannel("INTERNAL_TEST");
+        order.setStatus(PaymentStatus.PAID.value);
+        order.setTransactionId("INTERNAL_TEST");
+        order.setPaidAt(now);
+        order.setCreatedAt(now);
+        order.setUpdatedAt(now);
+        order.setVersion(0);
+        order = depositOrderRepository.save(order);
+
+        User user = userRepository.findById(userId);
+        if (user == null) throw new SysException(ResponseCode.FAIL_NOT);
+        user.setCreditflag("1");
+        userRepository.save(user);
+        return CopyUtil.copy(order, DepositOrderQo.class);
+    }
+
     public boolean markPaid(String outTradeNo, String txId, Date paidAt) {
         Date now = paidAt == null ? new Date() : paidAt;
         int updated = depositOrderRepository.markPaidIfPending(outTradeNo, txId, now, now);

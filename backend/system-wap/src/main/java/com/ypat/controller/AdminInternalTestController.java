@@ -5,6 +5,7 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.ypat.InternalTestGenerateQo;
 import com.ypat.InternalTestResourceQo;
+import com.ypat.InternalTestUserActionQo;
 import com.ypat.ResponseApiBody;
 import com.ypat.ResponseCode;
 import com.ypat.SysException;
@@ -12,6 +13,7 @@ import com.ypat.service.InternalTestServiceClient;
 import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -128,6 +130,30 @@ public class AdminInternalTestController {
         return ResponseApiBody.success(parseResponseRes(json));
     }
 
+    @PostMapping("/users/{userId}/grant-member")
+    public ResponseApiBody grantMember(@PathVariable("userId") Long userId,
+                                       @RequestBody(required = false) InternalTestUserActionQo qo) {
+        qo = userActionQo(userId, qo);
+        String json = internalTestServiceClient.grantMember(userId, qo);
+        return ResponseApiBody.success(parseResponseRes(json));
+    }
+
+    @PostMapping("/users/{userId}/verify")
+    public ResponseApiBody verifyUser(@PathVariable("userId") Long userId,
+                                      @RequestBody(required = false) InternalTestUserActionQo qo) {
+        qo = userActionQo(userId, qo);
+        String json = internalTestServiceClient.verifyUser(userId, qo);
+        return ResponseApiBody.success(parseResponseRes(json));
+    }
+
+    @PostMapping("/users/{userId}/deposit-paid")
+    public ResponseApiBody depositPaid(@PathVariable("userId") Long userId,
+                                       @RequestBody(required = false) InternalTestUserActionQo qo) {
+        qo = userActionQo(userId, qo);
+        String json = internalTestServiceClient.depositPaid(userId, qo);
+        return ResponseApiBody.success(parseResponseRes(json));
+    }
+
     @PostMapping("/generate")
     public ResponseApiBody generate(@RequestBody InternalTestGenerateQo qo) {
         String json = internalTestServiceClient.generate(qo);
@@ -174,6 +200,14 @@ public class AdminInternalTestController {
             return DEFAULT_SIZE;
         }
         return Math.min(size, MAX_SIZE);
+    }
+
+    private InternalTestUserActionQo userActionQo(Long userId, InternalTestUserActionQo qo) {
+        if (qo == null) {
+            qo = new InternalTestUserActionQo();
+        }
+        qo.setUserId(userId);
+        return qo;
     }
 
     private JsonElement parseResponseRes(String json) {

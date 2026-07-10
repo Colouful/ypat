@@ -525,6 +525,28 @@ public class InternalTestDataSourceTest {
         assertTrue(generate.contains("users.size()"));
     }
 
+    @Test
+    public void internalUserActionsRequireInternalFlagAndUseRealBusinessServices() throws Exception {
+        String service = read("backend/system-domain/src/main/java/com/ypat/service/InternalTestUserActionService.java");
+        String deposit = read("backend/system-domain/src/main/java/com/ypat/service/DepositService.java");
+        String depositRepo = read("backend/system-domain/src/main/java/com/ypat/repository/DepositOrderRepository.java");
+
+        assertTrue(service.contains("grantMember"));
+        assertTrue(service.contains("verifyUser"));
+        assertTrue(service.contains("markDepositPaid"));
+        assertTrue(service.contains("InternalTestDataFlag.internalTest.value.equals"));
+        assertTrue(service.contains("memberService.adminGrant"));
+        assertTrue(service.contains("depositService.createInternalTestPaidOrder"));
+        assertTrue(service.contains("user.setRealnameflag"));
+        assertTrue(service.contains("user.setCreditflag"));
+        assertTrue(service.contains("只能操作内测用户"));
+        assertTrue(deposit.contains("createInternalTestPaidOrder"));
+        assertTrue(deposit.contains("INTERNAL_TEST"));
+        assertTrue(deposit.contains("findByUserIdAndChannelAndStatus"));
+        assertTrue(deposit.contains("user.setCreditflag(\"1\")"));
+        assertTrue(depositRepo.contains("DepositOrder findByUserIdAndChannelAndStatus"));
+    }
+
     private void assertResourceColumnMigration(String sql, String columnName, String ddlFragment) {
         String block = migrationBlock(sql, "t_internal_test_resource", columnName);
 

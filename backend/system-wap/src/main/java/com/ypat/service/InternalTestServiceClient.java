@@ -2,8 +2,10 @@ package com.ypat.service;
 
 import com.ypat.InternalTestGenerateQo;
 import com.ypat.InternalTestResourceQo;
+import com.ypat.InternalTestUserActionQo;
 import org.springframework.cloud.netflix.feign.FeignClient;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -63,6 +65,15 @@ public interface InternalTestServiceClient {
 
     @PostMapping("/service/internal-test/users/create")
     String createUsers(@RequestBody InternalTestGenerateQo qo);
+
+    @PostMapping("/service/internal-test/users/{userId}/grant-member")
+    String grantMember(@PathVariable("userId") Long userId, @RequestBody InternalTestUserActionQo qo);
+
+    @PostMapping("/service/internal-test/users/{userId}/verify")
+    String verifyUser(@PathVariable("userId") Long userId, @RequestBody InternalTestUserActionQo qo);
+
+    @PostMapping("/service/internal-test/users/{userId}/deposit-paid")
+    String depositPaid(@PathVariable("userId") Long userId, @RequestBody InternalTestUserActionQo qo);
 
     @PostMapping("/service/internal-test/generate")
     String generate(@RequestBody InternalTestGenerateQo qo);
