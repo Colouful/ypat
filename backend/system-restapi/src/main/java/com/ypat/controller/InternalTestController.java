@@ -39,6 +39,16 @@ public class InternalTestController {
         return ResponseApiBody.success(resourceService.save(qo));
     }
 
+    @PostMapping("/resources/batch")
+    public ResponseApiBody batchResources(@RequestBody InternalTestResourceQo qo) {
+        return ResponseApiBody.success(resourceService.batchSave(qo));
+    }
+
+    @GetMapping("/resource-groups")
+    public ResponseApiBody resourceGroups(InternalTestResourceQo qo) {
+        return ResponseApiBody.success(resourceService.listAvailableGroups(qo));
+    }
+
     @PostMapping("/resources/update")
     public ResponseApiBody updateResource(@RequestBody InternalTestResourceQo qo) {
         return ResponseApiBody.success(resourceService.save(qo));

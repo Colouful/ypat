@@ -16,14 +16,36 @@ public interface InternalTestServiceClient {
                      @RequestParam(value = "usageType", required = false) String usageType,
                      @RequestParam(value = "styleCode", required = false) String styleCode,
                      @RequestParam(value = "profession", required = false) String profession,
+                     @RequestParam(value = "province", required = false) String province,
                      @RequestParam(value = "city", required = false) String city,
+                     @RequestParam(value = "area", required = false) String area,
                      @RequestParam(value = "status", required = false) String status,
+                     @RequestParam(value = "usedFlag", required = false) Integer usedFlag,
+                     @RequestParam(value = "groupNo", required = false) String groupNo,
                      @RequestParam(value = "keyword", required = false) String keyword,
                      @RequestParam("page") Integer page,
                      @RequestParam("size") Integer size);
 
     @PostMapping("/service/internal-test/resources")
     String saveResource(@RequestBody InternalTestResourceQo qo);
+
+    @PostMapping("/service/internal-test/resources/batch")
+    String batchResources(@RequestBody InternalTestResourceQo qo);
+
+    @GetMapping("/service/internal-test/resource-groups")
+    String resourceGroups(@RequestParam(value = "mediaType", required = false) String mediaType,
+                          @RequestParam(value = "usageType", required = false) String usageType,
+                          @RequestParam(value = "styleCode", required = false) String styleCode,
+                          @RequestParam(value = "profession", required = false) String profession,
+                          @RequestParam(value = "province", required = false) String province,
+                          @RequestParam(value = "city", required = false) String city,
+                          @RequestParam(value = "area", required = false) String area,
+                          @RequestParam(value = "status", required = false) String status,
+                          @RequestParam(value = "usedFlag", required = false) Integer usedFlag,
+                          @RequestParam(value = "groupNo", required = false) String groupNo,
+                          @RequestParam(value = "keyword", required = false) String keyword,
+                          @RequestParam(value = "page", required = false) Integer page,
+                          @RequestParam(value = "size", required = false) Integer size);
 
     @PostMapping("/service/internal-test/resources/update")
     String updateResource(@RequestBody InternalTestResourceQo qo);

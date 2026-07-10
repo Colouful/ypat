@@ -10,4 +10,10 @@ import java.util.List;
 @Repository
 public interface InternalTestResourceRepository extends JpaRepository<InternalTestResource, Long>, JpaSpecificationExecutor<InternalTestResource> {
     List<InternalTestResource> findByIdInAndStatus(List<Long> ids, String status);
+
+    InternalTestResource findByUrl(String url);
+
+    List<InternalTestResource> findByGroupNoInAndStatus(List<String> groupNos, String status);
+
+    List<InternalTestResource> findByUsedBatchNo(String usedBatchNo);
 }

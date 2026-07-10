@@ -100,6 +100,38 @@ public class AdminInternalTestControllerSourceTest {
     }
 
     @Test
+    public void wapControllerExposesLazyWorkbenchResourceRoutesAndFilters() throws Exception {
+        String controller = readSource(
+                "src/main/java/com/ypat/controller/AdminInternalTestController.java",
+                "backend/system-wap/src/main/java/com/ypat/controller/AdminInternalTestController.java");
+        String client = readSource(
+                "src/main/java/com/ypat/service/InternalTestServiceClient.java",
+                "backend/system-wap/src/main/java/com/ypat/service/InternalTestServiceClient.java");
+        String restapi = readSource(
+                "../system-restapi/src/main/java/com/ypat/controller/InternalTestController.java",
+                "backend/system-restapi/src/main/java/com/ypat/controller/InternalTestController.java");
+
+        assertTrue(controller.contains("@PostMapping(\"/resources/batch\")"));
+        assertTrue(controller.contains("@GetMapping(\"/resource-groups\")"));
+        assertTrue(controller.contains("internalTestServiceClient.batchResources(qo)"));
+        assertTrue(controller.contains("internalTestServiceClient.resourceGroups("));
+        assertTrue(controller.contains("qo.getProvince()"));
+        assertTrue(controller.contains("qo.getArea()"));
+        assertTrue(controller.contains("qo.getUsedFlag()"));
+        assertTrue(controller.contains("qo.getGroupNo()"));
+        assertTrue(client.contains("@PostMapping(\"/service/internal-test/resources/batch\")"));
+        assertTrue(client.contains("@GetMapping(\"/service/internal-test/resource-groups\")"));
+        assertTrue(client.contains("@RequestParam(value = \"province\", required = false) String province"));
+        assertTrue(client.contains("@RequestParam(value = \"area\", required = false) String area"));
+        assertTrue(client.contains("@RequestParam(value = \"usedFlag\", required = false) Integer usedFlag"));
+        assertTrue(client.contains("@RequestParam(value = \"groupNo\", required = false) String groupNo"));
+        assertTrue(restapi.contains("@PostMapping(\"/resources/batch\")"));
+        assertTrue(restapi.contains("@GetMapping(\"/resource-groups\")"));
+        assertTrue(restapi.contains("resourceService.batchSave(qo)"));
+        assertTrue(restapi.contains("resourceService.listAvailableGroups(qo)"));
+    }
+
+    @Test
     public void parseResponseResReturnsExpectedDataAndPropagatesBusinessErrors() throws Exception {
         AdminInternalTestController controller = new AdminInternalTestController();
 

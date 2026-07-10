@@ -26,8 +26,11 @@ import javax.persistence.criteria.Root;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 @Service
 @Transactional(rollbackFor = Exception.class)
@@ -55,6 +58,118 @@ public class InternalTestResourceService {
         result.put("totalPages", resourcePage.getTotalPages());
         result.put("totalElements", resourcePage.getTotalElements());
         return result;
+    }
+
+    public Map<String, Object> batchSave(InternalTestResourceQo qo) {
+        validateBatchQo(qo);
+        List<String> urls = normalizeUrls(qo.getUrls());
+        List<List<String>> groups = splitWorkGroups(urls, qo);
+        List<InternalTestResourceQo> saved = new ArrayList<InternalTestResourceQo>();
+        int duplicateCount = countInputDuplicateUrls(qo.getUrls());
+        Date now = new Date();
+        int groupIndex = 0;
+
+        for (List<String> group : groups) {
+            String groupNo = InternalTestResourceUsageType.work.value.equals(qo.getUsageType())
+                    ? buildGroupNo(groupIndex++)
+                    : null;
+            int sort = 0;
+            for (String url : group) {
+                if (existsByUrl(url)) {
+                    duplicateCount++;
+                    continue;
+                }
+                InternalTestResource resource = CopyUtil.copy(qo, InternalTestResource.class);
+                resource.setId(null);
+                resource.setUrl(url);
+                resource.setGroupNo(groupNo);
+                resource.setGroupSortNo(sort++);
+                resource.setUsedFlag(0);
+                resource.setStatus(defaultStatus(qo.getStatus()));
+                if (resource.getSortNo() == null) {
+                    resource.setSortNo(0);
+                }
+                resource.setCreatedAt(now);
+                resource.setUpdatedAt(now);
+                saved.add(CopyUtil.copy(internalTestResourceRepository.save(resource), InternalTestResourceQo.class));
+            }
+        }
+
+        Map<String, Object> result = new HashMap<String, Object>();
+        result.put("content", saved);
+        result.put("createdCount", saved.size());
+        result.put("duplicateCount", duplicateCount);
+        return result;
+    }
+
+    @SuppressWarnings("unchecked")
+    public Map<String, Object> listAvailableGroups(InternalTestResourceQo qo) {
+        if (qo == null) {
+            qo = new InternalTestResourceQo();
+        }
+        qo.setUsageType(InternalTestResourceUsageType.work.value);
+        qo.setStatus(InternalTestResourceStatus.enabled.value);
+        qo.setUsedFlag(0);
+
+        Map<String, Object> page = page(qo);
+        Map<String, List<InternalTestResourceQo>> groups = new LinkedHashMap<String, List<InternalTestResourceQo>>();
+        List<InternalTestResourceQo> resources = (List<InternalTestResourceQo>) page.get("content");
+        for (InternalTestResourceQo item : resources) {
+            String groupNo = CommonUtils.isNotNull(item.getGroupNo()) ? item.getGroupNo() : "single-" + item.getId();
+            if (!groups.containsKey(groupNo)) {
+                groups.put(groupNo, new ArrayList<InternalTestResourceQo>());
+            }
+            groups.get(groupNo).add(item);
+        }
+
+        Map<String, Object> result = new LinkedHashMap<String, Object>();
+        result.put("content", new ArrayList<List<InternalTestResourceQo>>(groups.values()));
+        result.put("totalPages", 1);
+        result.put("totalElements", groups.size());
+        return result;
+    }
+
+    public void markResourcesUsed(List<InternalTestResource> resources, String batchNo, String targetType, Long targetId) {
+        if (CommonUtils.isNull(resources)) {
+            return;
+        }
+        Date now = new Date();
+        for (InternalTestResource resource : resources) {
+            if (resource == null) {
+                continue;
+            }
+            if (Integer.valueOf(1).equals(resource.getUsedFlag())) {
+                throw new SysException(ResponseCode.FAIL_PARA, "资源已被占用");
+            }
+            resource.setUsedFlag(1);
+            resource.setUsedBatchNo(batchNo);
+            resource.setUsedTargetType(targetType);
+            resource.setUsedTargetId(targetId);
+            resource.setUsedAt(now);
+            resource.setUpdatedAt(now);
+            internalTestResourceRepository.save(resource);
+        }
+    }
+
+    public int releaseResourcesByBatch(String batchNo) {
+        if (CommonUtils.isNull(batchNo)) {
+            return 0;
+        }
+        List<InternalTestResource> resources = internalTestResourceRepository.findByUsedBatchNo(batchNo);
+        if (CommonUtils.isNull(resources)) {
+            return 0;
+        }
+        Date now = new Date();
+        for (InternalTestResource resource : resources) {
+            resource.setUsedFlag(0);
+            resource.setUsedBatchNo(null);
+            resource.setUsedTargetType(null);
+            resource.setUsedTargetId(null);
+            resource.setUsedAt(null);
+            resource.setUpdatedAt(now);
+            internalTestResourceRepository.save(resource);
+        }
+        return resources.size();
     }
 
     public InternalTestResourceQo save(InternalTestResourceQo qo) {
@@ -112,11 +227,23 @@ public class InternalTestResourceService {
                 if (CommonUtils.isNotNull(qo.getProfession())) {
                     predicates.add(cb.equal(root.get("profession"), qo.getProfession()));
                 }
+                if (CommonUtils.isNotNull(qo.getProvince())) {
+                    predicates.add(cb.equal(root.get("province"), qo.getProvince()));
+                }
                 if (CommonUtils.isNotNull(qo.getCity())) {
                     predicates.add(cb.equal(root.get("city"), qo.getCity()));
                 }
+                if (CommonUtils.isNotNull(qo.getArea())) {
+                    predicates.add(cb.equal(root.get("area"), qo.getArea()));
+                }
                 if (CommonUtils.isNotNull(qo.getStatus())) {
                     predicates.add(cb.equal(root.get("status"), qo.getStatus()));
+                }
+                if (qo.getUsedFlag() != null) {
+                    predicates.add(cb.equal(root.get("usedFlag"), qo.getUsedFlag()));
+                }
+                if (CommonUtils.isNotNull(qo.getGroupNo())) {
+                    predicates.add(cb.equal(root.get("groupNo"), qo.getGroupNo()));
                 }
                 if (CommonUtils.isNotNull(qo.getKeyword())) {
                     String keyword = "%" + qo.getKeyword().trim() + "%";
@@ -133,15 +260,100 @@ public class InternalTestResourceService {
         };
     }
 
+    private void validateBatchQo(InternalTestResourceQo qo) {
+        if (qo == null || CommonUtils.isNull(qo.getUrls())) {
+            throw new SysException(ResponseCode.FAIL_PARA, "请输入资源URL");
+        }
+        validateResourceTypeQo(qo);
+        if (CommonUtils.isNotNull(qo.getStatus()) && !InternalTestResourceStatus.isValid(qo.getStatus())) {
+            throw new SysException(ResponseCode.FAIL_PARA);
+        }
+    }
+
+    private List<String> normalizeUrls(List<String> urls) {
+        List<String> result = new ArrayList<String>();
+        Set<String> seen = new HashSet<String>();
+        for (String raw : urls) {
+            if (CommonUtils.isNull(raw)) {
+                continue;
+            }
+            String url = raw.trim();
+            if (url.length() == 0 || seen.contains(url)) {
+                continue;
+            }
+            seen.add(url);
+            result.add(url);
+        }
+        if (result.isEmpty()) {
+            throw new SysException(ResponseCode.FAIL_PARA, "请输入资源URL");
+        }
+        return result;
+    }
+
+    List<List<String>> splitWorkGroups(List<String> urls, InternalTestResourceQo qo) {
+        List<List<String>> groups = new ArrayList<List<String>>();
+        if (!InternalTestResourceUsageType.work.value.equals(qo.getUsageType())) {
+            for (String url : urls) {
+                List<String> single = new ArrayList<String>();
+                single.add(url);
+                groups.add(single);
+            }
+            return groups;
+        }
+
+        int groupSize = qo.getGroupSize() == null || qo.getGroupSize() < 1 ? 6 : qo.getGroupSize();
+        for (int start = 0; start < urls.size(); start += groupSize) {
+            groups.add(urls.subList(start, Math.min(urls.size(), start + groupSize)));
+        }
+        return groups;
+    }
+
+    private String buildGroupNo(int index) {
+        return "ITG" + new java.text.SimpleDateFormat("yyyyMMddHHmmss").format(new Date())
+                + String.format("%03d", index);
+    }
+
+    private boolean existsByUrl(String url) {
+        return internalTestResourceRepository.findByUrl(url) != null;
+    }
+
+    private String defaultStatus(String status) {
+        return CommonUtils.isNotNull(status) ? status : InternalTestResourceStatus.enabled.value;
+    }
+
+    private int countInputDuplicateUrls(List<String> urls) {
+        int duplicateCount = 0;
+        Set<String> seen = new HashSet<String>();
+        for (String raw : urls) {
+            if (CommonUtils.isNull(raw)) {
+                continue;
+            }
+            String url = raw.trim();
+            if (url.length() == 0) {
+                continue;
+            }
+            if (seen.contains(url)) {
+                duplicateCount++;
+            } else {
+                seen.add(url);
+            }
+        }
+        return duplicateCount;
+    }
+
     private void validateSaveQo(InternalTestResourceQo qo) {
         if (qo == null || CommonUtils.isNull(qo.getUrl())) {
             throw new SysException(ResponseCode.FAIL_PARA);
         }
-        if (!InternalTestResourceMediaType.isValid(qo.getMediaType())
-                || !InternalTestResourceUsageType.isValid(qo.getUsageType())) {
+        validateResourceTypeQo(qo);
+        if (CommonUtils.isNotNull(qo.getStatus()) && !InternalTestResourceStatus.isValid(qo.getStatus())) {
             throw new SysException(ResponseCode.FAIL_PARA);
         }
-        if (CommonUtils.isNotNull(qo.getStatus()) && !InternalTestResourceStatus.isValid(qo.getStatus())) {
+    }
+
+    private void validateResourceTypeQo(InternalTestResourceQo qo) {
+        if (!InternalTestResourceMediaType.isValid(qo.getMediaType())
+                || !InternalTestResourceUsageType.isValid(qo.getUsageType())) {
             throw new SysException(ResponseCode.FAIL_PARA);
         }
     }

@@ -272,6 +272,31 @@ public class InternalTestDataSourceTest {
         assertColumnName(InternalTestResource.class, "usedAt", "used_at");
     }
 
+    @Test
+    public void resourceServiceSupportsBatchImportGroupsUsageReleaseAndFilters() throws Exception {
+        String service = read("backend/system-domain/src/main/java/com/ypat/service/InternalTestResourceService.java");
+        String repo = read("backend/system-domain/src/main/java/com/ypat/repository/InternalTestResourceRepository.java");
+
+        assertTrue(service.contains("public Map<String, Object> batchSave(InternalTestResourceQo qo)"));
+        assertTrue(service.contains("public Map<String, Object> listAvailableGroups(InternalTestResourceQo qo)"));
+        assertTrue(service.contains("public void markResourcesUsed(List<InternalTestResource> resources"));
+        assertTrue(service.contains("public int releaseResourcesByBatch(String batchNo)"));
+        assertTrue(service.contains("splitWorkGroups"));
+        assertTrue(service.contains("validateBatchQo"));
+        assertTrue(service.contains("normalizeUrls"));
+        assertTrue(service.contains("buildGroupNo"));
+        assertTrue(service.contains("existsByUrl"));
+        assertTrue(service.contains("defaultStatus"));
+        assertTrue(service.contains("usedFlag"));
+        assertTrue(service.contains("root.get(\"province\")"));
+        assertTrue(service.contains("root.get(\"area\")"));
+        assertTrue(service.contains("root.get(\"usedFlag\")"));
+        assertTrue(service.contains("root.get(\"groupNo\")"));
+        assertTrue(repo.contains("InternalTestResource findByUrl(String url);"));
+        assertTrue(repo.contains("List<InternalTestResource> findByGroupNoInAndStatus(List<String> groupNos, String status);"));
+        assertTrue(repo.contains("List<InternalTestResource> findByUsedBatchNo(String usedBatchNo);"));
+    }
+
     private void assertResourceColumnMigration(String sql, String columnName, String ddlFragment) {
         String block = migrationBlock(sql, "t_internal_test_resource", columnName);
 

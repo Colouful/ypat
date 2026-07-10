@@ -46,8 +46,12 @@ public class AdminInternalTestController {
                 qo.getUsageType(),
                 qo.getStyleCode(),
                 qo.getProfession(),
+                qo.getProvince(),
                 qo.getCity(),
+                qo.getArea(),
                 qo.getStatus(),
+                qo.getUsedFlag(),
+                qo.getGroupNo(),
                 qo.getKeyword(),
                 qo.getPage(),
                 qo.getSize());
@@ -57,6 +61,37 @@ public class AdminInternalTestController {
     @PostMapping("/resources")
     public ResponseApiBody saveResource(@RequestBody InternalTestResourceQo qo) {
         String json = internalTestServiceClient.saveResource(qo);
+        return ResponseApiBody.success(parseResponseRes(json));
+    }
+
+    @PostMapping("/resources/batch")
+    public ResponseApiBody batchResources(@RequestBody InternalTestResourceQo qo) {
+        String json = internalTestServiceClient.batchResources(qo);
+        return ResponseApiBody.success(parseResponseRes(json));
+    }
+
+    @GetMapping("/resource-groups")
+    public ResponseApiBody resourceGroups(InternalTestResourceQo qo) {
+        if (qo == null) {
+            qo = new InternalTestResourceQo();
+        }
+        qo.setPage(normalizePage(qo.getPage()));
+        qo.setSize(normalizeSize(qo.getSize()));
+
+        String json = internalTestServiceClient.resourceGroups(
+                qo.getMediaType(),
+                qo.getUsageType(),
+                qo.getStyleCode(),
+                qo.getProfession(),
+                qo.getProvince(),
+                qo.getCity(),
+                qo.getArea(),
+                qo.getStatus(),
+                qo.getUsedFlag(),
+                qo.getGroupNo(),
+                qo.getKeyword(),
+                qo.getPage(),
+                qo.getSize());
         return ResponseApiBody.success(parseResponseRes(json));
     }
 
