@@ -180,6 +180,71 @@ public class InternalTestDataSourceTest {
         assertTrue(workRepo.contains("w.dataFlag = 'internal_test'"));
     }
 
+    @Test
+    public void lazyWorkbenchMigrationAddsResourceGroupUsageAndRegionFields() throws Exception {
+        String sql = read("docs/sql/pending/V_admin_internal_test_data.sql");
+
+        assertTrue(sql.contains("ADD COLUMN `province`"));
+        assertTrue(sql.contains("ADD COLUMN `area`"));
+        assertTrue(sql.contains("ADD COLUMN `group_no`"));
+        assertTrue(sql.contains("ADD COLUMN `group_title`"));
+        assertTrue(sql.contains("ADD COLUMN `group_sort_no`"));
+        assertTrue(sql.contains("ADD COLUMN `used_flag`"));
+        assertTrue(sql.contains("ADD COLUMN `used_batch_no`"));
+        assertTrue(sql.contains("ADD COLUMN `used_target_type`"));
+        assertTrue(sql.contains("ADD COLUMN `used_target_id`"));
+        assertTrue(sql.contains("ADD COLUMN `used_at`"));
+    }
+
+    @Test
+    public void lazyWorkbenchDtosExposeBatchImportGenerationAndUserActionFields() throws Exception {
+        String resourceQo = read("backend/system-object/src/main/java/com/ypat/InternalTestResourceQo.java");
+        String generateQo = read("backend/system-object/src/main/java/com/ypat/InternalTestGenerateQo.java");
+        String actionQo = read("backend/system-object/src/main/java/com/ypat/InternalTestUserActionQo.java");
+        String entity = read("backend/system-domain/src/main/java/com/ypat/entity/InternalTestResource.java");
+
+        assertTrue(resourceQo.contains("private java.util.List<String> urls;"));
+        assertTrue(resourceQo.contains("private String province;"));
+        assertTrue(resourceQo.contains("private String area;"));
+        assertTrue(resourceQo.contains("private String groupNo;"));
+        assertTrue(resourceQo.contains("private String groupTitle;"));
+        assertTrue(resourceQo.contains("private Integer groupSize;"));
+        assertTrue(resourceQo.contains("private Integer groupSortNo;"));
+        assertTrue(resourceQo.contains("private Integer usedFlag;"));
+        assertTrue(resourceQo.contains("private String usedBatchNo;"));
+        assertTrue(resourceQo.contains("private String usedTargetType;"));
+        assertTrue(resourceQo.contains("private Long usedTargetId;"));
+        assertTrue(resourceQo.contains("private java.util.Date usedAt;"));
+        assertTrue(generateQo.contains("private String actionType;"));
+        assertTrue(generateQo.contains("private Long userId;"));
+        assertTrue(generateQo.contains("private java.util.List<String> groupNos;"));
+        assertTrue(generateQo.contains("private String wx;"));
+        assertTrue(generateQo.contains("private String mobile;"));
+        assertTrue(generateQo.contains("private java.util.List<String> styleCodes;"));
+        assertTrue(generateQo.contains("private String patdate;"));
+        assertTrue(generateQo.contains("private String patslice;"));
+        assertTrue(generateQo.contains("private String describ;"));
+        assertTrue(generateQo.contains("private String target;"));
+        assertTrue(actionQo.contains("private Long userId;"));
+        assertTrue(actionQo.contains("private Integer days;"));
+        assertTrue(actionQo.contains("private String reason;"));
+        assertTrue(entity.contains("private java.util.List<String> urls;"));
+        assertTrue(entity.contains("private String province;"));
+        assertTrue(entity.contains("private String area;"));
+        assertTrue(entity.contains("private String groupNo;"));
+        assertTrue(entity.contains("private String groupTitle;"));
+        assertTrue(entity.contains("private Integer groupSize;"));
+        assertTrue(entity.contains("private Integer groupSortNo;"));
+        assertTrue(entity.contains("private Integer usedFlag;"));
+        assertTrue(entity.contains("private String usedBatchNo;"));
+        assertTrue(entity.contains("private String usedTargetType;"));
+        assertTrue(entity.contains("private Long usedTargetId;"));
+        assertTrue(entity.contains("private java.util.Date usedAt;"));
+        assertTrue(entity.contains("@Column(name = \"group_no\")"));
+        assertTrue(entity.contains("@Column(name = \"used_flag\")"));
+        assertTrue(entity.contains("@Column(name = \"used_target_id\")"));
+    }
+
     private void assertEntityMarkers(String path) throws Exception {
         String source = read(path);
 
