@@ -177,6 +177,9 @@ services:
     environment:
       TZ: Asia/Shanghai
       SPRING_PROFILES_ACTIVE: pre
+      SPRING_DATASOURCE_URL: "jdbc:mysql://mysql:3306/ypat?characterEncoding=utf8&useSSL=false"
+      SPRING_DATASOURCE_USERNAME: "${YPAT_DB_USERNAME:?YPAT_DB_USERNAME is required}"
+      SPRING_DATASOURCE_PASSWORD: "${YPAT_DB_PASSWORD:?YPAT_DB_PASSWORD is required}"
       SPRING_REDIS_HOST: redis
       SPRING_REDIS_PORT: "6379"
       SPRING_REDIS_PASSWORD: "${YPAT_LOCAL_REDIS_PASSWORD}"
@@ -190,6 +193,24 @@ services:
       YPAT_COS_BUCKET: "${YPAT_COS_BUCKET:-}"
       YPAT_COS_PUBLIC_BASE_URL: "${YPAT_COS_PUBLIC_BASE_URL:-}"
       YPAT_COS_ENV_PREFIX: "${YPAT_COS_ENV_PREFIX:-pre}"
+      YPAT_WX_APP_ID: "${YPAT_WX_APP_ID:?YPAT_WX_APP_ID is required}"
+      YPAT_WX_APP_SECRET: "${YPAT_WX_APP_SECRET:-}"
+      YPAT_WX_PAY_MODE: "${YPAT_WX_PAY_MODE:-PUBLIC_KEY}"
+      YPAT_WX_H5_APP_ID: "${YPAT_WX_H5_APP_ID:-${YPAT_WX_APP_ID}}"
+      YPAT_WX_MCH_ID: "${YPAT_WX_MCH_ID:?YPAT_WX_MCH_ID is required}"
+      YPAT_WX_MCH_SERIAL_NO: "${YPAT_WX_MCH_SERIAL_NO:?YPAT_WX_MCH_SERIAL_NO is required}"
+      YPAT_WX_MCH_PRIVATE_KEY_PATH: "${YPAT_WX_MCH_PRIVATE_KEY_PATH:-/run/secrets/wechat-pay/apiclient_key.pem}"
+      YPAT_WX_API_V3_KEY: "${YPAT_WX_API_V3_KEY:?YPAT_WX_API_V3_KEY is required}"
+      YPAT_WX_PAY_PUBLIC_KEY_ID: "${YPAT_WX_PAY_PUBLIC_KEY_ID:?YPAT_WX_PAY_PUBLIC_KEY_ID is required}"
+      YPAT_WX_PAY_PUBLIC_KEY_PATH: "${YPAT_WX_PAY_PUBLIC_KEY_PATH:-/run/secrets/wechat-pay/pub_key.pem}"
+      YPAT_WX_NOTIFY_URL: "${YPAT_WX_NOTIFY_URL:-https://panghu.work/api/payment/wechat/notify}"
+      YPAT_WX_H5_SCENE_INFO: "${YPAT_WX_H5_SCENE_INFO:-}"
+      YPAT_BD_IDCARD_AK: "${YPAT_BD_IDCARD_AK:-}"
+      YPAT_BD_IDCARD_SK: "${YPAT_BD_IDCARD_SK:-}"
+      YPAT_BD_IDMATCH_AK: "${YPAT_BD_IDMATCH_AK:-}"
+      YPAT_BD_IDMATCH_SK: "${YPAT_BD_IDMATCH_SK:-}"
+      YPAT_BD_APP_KEY: "${YPAT_BD_APP_KEY:-}"
+      YPAT_BD_APP_SECRET: "${YPAT_BD_APP_SECRET:-}"
       YPAT_LOG_DIR: /logs
       # 2026-07-03: EnvironmentConfigurationValidator 在 staging profile 强制要求
       # 这些变量从 .env 注入,缺一启动就 abort
@@ -202,6 +223,8 @@ services:
       YPAT_SSO_JWT_SIGNING_KEY: "${YPAT_SSO_JWT_SIGNING_KEY:-yPat-sso-dev-signing-key-please-rotate-in-prod-32bytes}"
       YPAT_LOCAL_MYSQL_ROOT_PASSWORD: "${YPAT_LOCAL_MYSQL_ROOT_PASSWORD}"
       YPAT_LOCAL_REDIS_PASSWORD: "${YPAT_LOCAL_REDIS_PASSWORD}"
+    volumes:
+      - "${YPAT_WX_PAY_SECRET_DIR:-./docker/secrets/wechat-pay}:/run/secrets/wechat-pay:ro"
     depends_on:
       redis:
         condition: service_healthy
@@ -244,6 +267,8 @@ services:
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: "http://eureka:8761/eureka/"
       EUREKA_INSTANCE_PREFER_IP_ADDRESS: "true"
       YPAT_FDFS_PUBLIC_BASE_URL: "${YPAT_FDFS_PUBLIC_BASE_URL:-https://panghu.work/files}"
+      YPAT_WEB_BD_OCR_AK: "${YPAT_WEB_BD_OCR_AK:-}"
+      YPAT_WEB_BD_OCR_SK: "${YPAT_WEB_BD_OCR_SK:-}"
       YPAT_LOG_DIR: /logs
       # 2026-07-03: EnvironmentConfigurationValidator 在 staging profile 强制要求
       YPAT_MYSQL_URL: "jdbc:mysql://mysql:3306/ypat?characterEncoding=utf8&useSSL=false"
