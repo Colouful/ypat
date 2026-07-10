@@ -2,10 +2,12 @@
 import { ref, reactive, computed, onMounted } from 'vue'
 import { getYpatList, type YpatListQuery, type YpatInfo } from '@/api/modules/ypat'
 import {
+  InternalTestDataFlag,
   getYpatTargetOptions,
   getYpatPatstyleOptions,
   getYpatChargeWayOptions,
   getYpatPatstyleText,
+  getInternalTestDataFlagOptions,
 } from '@/constants/enums'
 
 const query = reactive<YpatListQuery>({
@@ -16,6 +18,7 @@ const query = reactive<YpatListQuery>({
   patstyle: '',
   chargeway: '',
   workId: '',
+  dataFlag: '',
   page: 0,
   size: 10,
 })
@@ -76,6 +79,16 @@ onMounted(fetchList)
         <el-form-item label="收费方式"><el-select v-model="query.chargeway" clearable placeholder="全部"><el-option v-for="o in getYpatChargeWayOptions()" :key="o.value" :label="o.label" :value="o.value"/></el-select></el-form-item>
         <el-form-item label="城市"><el-input v-model="query.city" placeholder="请输入"/></el-form-item>
         <el-form-item label="作品ID"><el-input v-model="query.workId" placeholder="请输入关联作品ID"/></el-form-item>
+        <el-form-item label="内测数据">
+          <el-select v-model="query.dataFlag" clearable placeholder="全部" style="width: 140px">
+            <el-option
+              v-for="option in getInternalTestDataFlagOptions()"
+              :key="option.value"
+              :label="option.label"
+              :value="option.value"
+            />
+          </el-select>
+        </el-form-item>
         <el-form-item><el-button type="primary" @click="search">查询</el-button></el-form-item>
       </el-form>
     </div>
@@ -116,6 +129,12 @@ onMounted(fetchList)
       </el-table-column>
       <el-table-column prop="pubdate" label="发布时间" min-width="160">
         <template #default="{ row }">{{ formatEmpty(row.pubdate) }}</template>
+      </el-table-column>
+      <el-table-column label="内测数据" width="100" align="center">
+        <template #default="{ row }">
+          <el-tag v-if="row.dataFlag === InternalTestDataFlag.INTERNAL_TEST.value" type="warning" size="small">是</el-tag>
+          <span v-else>否</span>
+        </template>
       </el-table-column>
       <el-table-column prop="pattimes" label="拍摄次数" width="100" align="center">
         <template #default="{ row }">{{ formatEmpty(row.pattimes) }}</template>

@@ -33,4 +33,20 @@ describe('internal test workbench source contracts', () => {
     expect(page).toContain('联系电话')
     expect(page).not.toContain('模板类型')
   })
+
+  it('用户作品约拍列表展示内测数据列和筛选，用户列表展示内测专属按钮', () => {
+    const user = source('src/views/query/user-list/index.vue')
+    const ypat = source('src/views/query/ypat-list/index.vue')
+    const work = source('src/views/manage/work-list/index.vue')
+
+    for (const page of [user, ypat, work]) {
+      expect(page).toContain('dataFlag')
+      expect(page).toContain('内测数据')
+      expect(page).toContain('InternalTestDataFlag')
+    }
+    expect(user).toContain('grantInternalUserMember')
+    expect(user).toContain('verifyInternalUser')
+    expect(user).toContain('markInternalUserDepositPaid')
+    expect(user).toContain('row.dataFlag === InternalTestDataFlag.INTERNAL_TEST.value')
+  })
 })

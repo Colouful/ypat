@@ -1,8 +1,19 @@
 <script setup lang="ts">
 import { ref, reactive, computed, onMounted } from 'vue'
+import { ElMessage, ElMessageBox } from 'element-plus'
 import { getUserList, type UserListQuery, type OauthQo } from '@/api/modules/user'
+import {
+  grantInternalUserMember,
+  markInternalUserDepositPaid,
+  verifyInternalUser,
+} from '@/api/modules/internal-test'
 import StatusTag from '@/components/common/StatusTag.vue'
-import { getGenderOptions, getUserStatusOptions } from '@/constants/enums'
+import {
+  InternalTestDataFlag,
+  getGenderOptions,
+  getInternalTestDataFlagOptions,
+  getUserStatusOptions,
+} from '@/constants/enums'
 
 const query = reactive<UserListQuery>({
   status: '',
@@ -10,6 +21,7 @@ const query = reactive<UserListQuery>({
   mobile: '',
   gender: '',
   regisdate: '',
+  dataFlag: '',
   page: 0,
   size: 10,
 })
@@ -36,6 +48,7 @@ function reset() {
   query.mobile = ''
   query.gender = ''
   query.regisdate = ''
+  query.dataFlag = ''
   query.page = 0
   fetchList()
 }
@@ -61,9 +74,38 @@ function getFlagText(value?: string): string {
 function getStatusText(row: OauthQo): string {
   return row.statusTxt || '-'
 }
+function isInternalUser(row: OauthQo): boolean {
+  return row.dataFlag === InternalTestDataFlag.INTERNAL_TEST.value
+}
 function openDetail(row: OauthQo): void {
   currentUser.value = row
   detailVisible.value = true
+}
+async function runInternalUserAction(row: OauthQo, action: 'member' | 'verify' | 'deposit'): Promise<void> {
+  const userId = getUserId(row)
+  if (!userId || !isInternalUser(row)) return
+
+  const titleMap = {
+    member: '一键设置会员',
+    verify: '一键认证',
+    deposit: '一键设置保证金',
+  }
+  await ElMessageBox.confirm(`确认对内测用户 #${userId} 执行${titleMap[action]}吗？本操作仅影响内测数据。`, '内测操作确认', {
+    type: 'warning',
+    confirmButtonText: '确认执行',
+    cancelButtonText: '取消',
+  })
+  if (action === 'member') {
+    await grantInternalUserMember(userId, { days: 365, reason: '内测数据一键会员' })
+  }
+  if (action === 'verify') {
+    await verifyInternalUser(userId, { reason: '内测数据一键认证' })
+  }
+  if (action === 'deposit') {
+    await markInternalUserDepositPaid(userId, { reason: '内测数据一键保证金' })
+  }
+  ElMessage.success('操作成功')
+  await fetchList()
 }
 onMounted(fetchList)
 </script>
@@ -109,6 +151,16 @@ onMounted(fetchList)
             placeholder="选择日期"
             style="width: 160px"
           />
+        </el-form-item>
+        <el-form-item label="内测数据">
+          <el-select v-model="query.dataFlag" clearable placeholder="全部" style="width: 140px">
+            <el-option
+              v-for="option in getInternalTestDataFlagOptions()"
+              :key="option.value"
+              :label="option.label"
+              :value="option.value"
+            />
+          </el-select>
         </el-form-item>
         <el-form-item>
           <el-button type="primary" :icon="'Search'" @click="search">查询</el-button>
@@ -167,16 +219,51 @@ onMounted(fetchList)
       <el-table-column prop="regisdate" label="注册时间" min-width="170" show-overflow-tooltip>
         <template #default="{ row }">{{ formatEmpty(row.regisdate) }}</template>
       </el-table-column>
+      <el-table-column label="内测数据" width="100" align="center">
+        <template #default="{ row }">
+          <el-tag v-if="row.dataFlag === InternalTestDataFlag.INTERNAL_TEST.value" type="warning" size="small">
+            是
+          </el-tag>
+          <span v-else>否</span>
+        </template>
+      </el-table-column>
       <el-table-column label="状态" width="120" align="center" fixed="right">
         <template #default="{ row }">
           <StatusTag v-if="row.status" :status="row.status" />
           <span v-else>{{ getStatusText(row as OauthQo) }}</span>
         </template>
       </el-table-column>
-      <el-table-column label="操作" width="90" align="center" fixed="right">
+      <el-table-column label="操作" width="220" align="center" fixed="right">
         <template #default="{ row }">
           <el-button type="primary" link size="small" @click="openDetail(row as OauthQo)">
             详情
+          </el-button>
+          <el-button
+            v-if="isInternalUser(row as OauthQo)"
+            type="success"
+            link
+            size="small"
+            @click="runInternalUserAction(row as OauthQo, 'member')"
+          >
+            会员
+          </el-button>
+          <el-button
+            v-if="isInternalUser(row as OauthQo)"
+            type="warning"
+            link
+            size="small"
+            @click="runInternalUserAction(row as OauthQo, 'verify')"
+          >
+            认证
+          </el-button>
+          <el-button
+            v-if="isInternalUser(row as OauthQo)"
+            type="danger"
+            link
+            size="small"
+            @click="runInternalUserAction(row as OauthQo, 'deposit')"
+          >
+            保证金
           </el-button>
         </template>
       </el-table-column>

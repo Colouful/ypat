@@ -4,7 +4,7 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import WorkAuditDialog from './WorkAuditDialog.vue'
 import WorkDetailDrawer from './WorkDetailDrawer.vue'
 import { getWorkList, offlineWork, type WorkAdminInfo, type WorkListQuery } from '@/api/modules/work'
-import { WorkStatus, getWorkStatusOptions } from '@/constants/enums'
+import { InternalTestDataFlag, WorkStatus, getInternalTestDataFlagOptions, getWorkStatusOptions } from '@/constants/enums'
 
 const mediaTypeOptions = [
   { label: '图片', value: '1' },
@@ -18,6 +18,7 @@ const queryParams = reactive<WorkListQuery>({
   city: '',
   mediaType: '',
   tagIds: '',
+  dataFlag: '',
   page: 0,
   size: 10,
 })
@@ -105,6 +106,7 @@ function handleReset(): void {
   queryParams.city = ''
   queryParams.mediaType = ''
   queryParams.tagIds = ''
+  queryParams.dataFlag = ''
   queryParams.page = 0
   fetchList()
 }
@@ -201,6 +203,16 @@ onMounted(() => {
         <el-form-item label="标签ID">
           <el-input v-model="queryParams.tagIds" placeholder="多个ID用英文逗号分隔" clearable />
         </el-form-item>
+        <el-form-item label="内测数据">
+          <el-select v-model="queryParams.dataFlag" clearable placeholder="全部" style="width: 140px">
+            <el-option
+              v-for="option in getInternalTestDataFlagOptions()"
+              :key="option.value"
+              :label="option.label"
+              :value="option.value"
+            />
+          </el-select>
+        </el-form-item>
         <el-form-item>
           <el-button type="primary" @click="handleSearch">查询</el-button>
           <el-button @click="handleReset">重置</el-button>
@@ -279,6 +291,12 @@ onMounted(() => {
         </template>
       </el-table-column>
       <el-table-column prop="publishTime" label="发布时间" width="170" align="center" />
+      <el-table-column label="内测数据" width="100" align="center">
+        <template #default="{ row }">
+          <el-tag v-if="row.dataFlag === InternalTestDataFlag.INTERNAL_TEST.value" type="warning" size="small">是</el-tag>
+          <span v-else>否</span>
+        </template>
+      </el-table-column>
       <el-table-column label="操作" width="200" align="center" fixed="right">
         <template #default="{ row }">
           <el-button type="primary" link size="small" @click="openDetail(row as WorkAdminInfo)">
