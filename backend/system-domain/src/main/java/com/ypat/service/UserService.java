@@ -76,7 +76,7 @@ public class UserService {
      * @param oauthQo
      */
     public void oauth(OauthQo oauthQo){
-        User old = get(oauthQo.getUserid());
+        User old = userRepository.findByIdForUpdate(oauthQo.getUserid());
         if(old==null){
             throw new SysException(ResponseCode.FAIL_NOT);
         }
