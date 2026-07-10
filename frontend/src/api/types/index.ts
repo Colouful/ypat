@@ -231,9 +231,13 @@ export interface MessListParams extends PageParams {
 
 // ===== 意见反馈 =====
 
+export type FeedbackType = 'function' | 'experience' | 'account' | 'payment' | 'content' | 'other'
+
 export interface FeedbackAddParams {
+  type: FeedbackType
   content: string
   contact?: string
+  pics?: string
 }
 
 // ===== 商品与支付 =====
