@@ -558,10 +558,23 @@ public class UserService {
                     Date endDay = TimeUtil.getEndDay(queryQo.getRegisdate());
                     predicatesList.add(criteriaBuilder.between(root.get("regisdate"), startDay, endDay));
                 }
+                applyDataFlagPredicate(predicatesList, criteriaBuilder, root, queryQo.getDataFlag());
                 query.where(predicatesList.toArray(new Predicate[predicatesList.size()]));
                 return query.getRestriction();
             }
         }, pageable);
+    }
+
+    private void applyDataFlagPredicate(List<Predicate> predicatesList, CriteriaBuilder criteriaBuilder, Root<User> root, String dataFlag) {
+        if (StringUtils.isEmpty(dataFlag)) return;
+        if (InternalTestDataFlag.internalTest.value.equals(dataFlag)) {
+            predicatesList.add(criteriaBuilder.equal(root.get("dataFlag"), InternalTestDataFlag.internalTest.value));
+        } else if (InternalTestDataFlag.real.value.equals(dataFlag)) {
+            predicatesList.add(criteriaBuilder.or(
+                    criteriaBuilder.isNull(root.get("dataFlag")),
+                    criteriaBuilder.notEqual(root.get("dataFlag"), InternalTestDataFlag.internalTest.value)
+            ));
+        }
     }
 
 }

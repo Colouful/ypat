@@ -85,6 +85,7 @@ public class AdminYpatController {
             @RequestParam(value = "chargeway", required = false) String chargeway,
             @RequestParam(value = "city", required = false) String city,
             @RequestParam(value = "workId", required = false) String workId,
+            @RequestParam(value = "dataFlag", required = false) String dataFlag,
             @RequestParam(value = "page", required = false, defaultValue = "0") Integer page,
             @RequestParam(value = "size", required = false, defaultValue = "10") Integer size) {
 
@@ -117,6 +118,9 @@ public class AdminYpatController {
         }
         if (StringUtils.isNotBlank(workId)) {
             qo.setWorkId(workId);
+        }
+        if (StringUtils.isNotBlank(dataFlag)) {
+            qo.setDataFlag(dataFlag);
         }
 
         String json = ypatServiceClient.findPage(qo);

@@ -20,6 +20,7 @@ import com.ypat.entity.WorkMedia;
 import com.ypat.entity.WorkTag;
 import com.ypat.entity.WorkTagRel;
 import com.ypat.entity.YpatInfo;
+import com.ypat.enums.InternalTestDataFlag;
 import com.ypat.enums.MessType;
 import com.ypat.enums.RecordType;
 import com.ypat.enums.UserProfess;
@@ -50,9 +51,11 @@ import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import javax.persistence.criteria.CriteriaBuilder;
 import javax.persistence.criteria.Join;
 import javax.persistence.criteria.JoinType;
 import javax.persistence.criteria.Predicate;
+import javax.persistence.criteria.Root;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
@@ -306,6 +309,7 @@ public class WorkService {
         final String gender = qo.getGender();
         final String profession = qo.getProfession();
         final String tagIds = qo.getTagIds();
+        final String dataFlag = qo.getDataFlag();
         final Long viewerId = StringUtils.isNotBlank(qo.getViewerUserId())
             ? Long.parseLong(qo.getViewerUserId()) : null;
 
@@ -329,6 +333,7 @@ public class WorkService {
             if (StringUtils.isNotBlank(tagIds)) {
                 // 标签筛选：IN 子查询（简化为查询后再过滤）
             }
+            applyDataFlagPredicate(ps, cb, root, dataFlag);
             // category 映射
             if (StringUtils.isNotBlank(category)) {
                 if ("模特".equals(category)) {
@@ -431,6 +436,7 @@ public class WorkService {
         final String nickname = qo.getNickname();
         final String mobile = qo.getMobile();
         final String tagIds = qo.getTagIds();
+        final String dataFlag = qo.getDataFlag();
         final List<Long> filterTagIds = parseTagIds(tagIds);
         final List<Long> matchingWorkIds = new ArrayList<>();
         if (StringUtils.isNotBlank(tagIds)) {
@@ -455,6 +461,7 @@ public class WorkService {
             if (StringUtils.isNotBlank(city)) ps.add(cb.equal(root.get("city"), city));
             if (StringUtils.isNotBlank(mediaType)) ps.add(cb.equal(root.get("mediaType"), mediaType));
             if (StringUtils.isNotBlank(tagIds)) ps.add(root.get("id").in(matchingWorkIds));
+            applyDataFlagPredicate(ps, cb, root, dataFlag);
             if (StringUtils.isNotBlank(nickname) || StringUtils.isNotBlank(mobile)) {
                 Join<Object, Object> userJoin = root.join("user", JoinType.LEFT);
                 if (StringUtils.isNotBlank(nickname)) ps.add(cb.like(userJoin.<String>get("nickname"), "%" + nickname + "%"));
@@ -475,6 +482,18 @@ public class WorkService {
         res.put("totalElements", result.getTotalElements());
         res.put("totalPages", result.getTotalPages());
         return res;
+    }
+
+    private void applyDataFlagPredicate(List<Predicate> predicatesList, CriteriaBuilder criteriaBuilder, Root<Work> root, String dataFlag) {
+        if (StringUtils.isBlank(dataFlag)) return;
+        if (InternalTestDataFlag.internalTest.value.equals(dataFlag)) {
+            predicatesList.add(criteriaBuilder.equal(root.get("dataFlag"), InternalTestDataFlag.internalTest.value));
+        } else if (InternalTestDataFlag.real.value.equals(dataFlag)) {
+            predicatesList.add(criteriaBuilder.or(
+                    criteriaBuilder.isNull(root.get("dataFlag")),
+                    criteriaBuilder.notEqual(root.get("dataFlag"), InternalTestDataFlag.internalTest.value)
+            ));
+        }
     }
 
     public Map<String, Object> adminDetail(Long workId) {

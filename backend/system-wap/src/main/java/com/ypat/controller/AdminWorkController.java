@@ -41,6 +41,7 @@ public class AdminWorkController {
             @RequestParam(value = "category", required = false) String category,
             @RequestParam(value = "gender", required = false) String gender,
             @RequestParam(value = "profession", required = false) String profession,
+            @RequestParam(value = "dataFlag", required = false) String dataFlag,
             @RequestParam(value = "page", required = false, defaultValue = "0") Integer page,
             @RequestParam(value = "size", required = false, defaultValue = "10") Integer size) {
 
@@ -56,6 +57,7 @@ public class AdminWorkController {
         if (StringUtils.isNotBlank(category)) qo.setCategory(category);
         if (StringUtils.isNotBlank(gender)) qo.setGender(gender);
         if (StringUtils.isNotBlank(profession)) qo.setProfession(profession);
+        if (StringUtils.isNotBlank(dataFlag)) qo.setDataFlag(dataFlag);
 
         String json = workServiceClient.adminList(qo);
         return ResponseApiBody.success(parseResponseRes(json));

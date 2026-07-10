@@ -8,6 +8,7 @@ import com.ypat.UserQo;
 import com.ypat.YpatInfoQo;
 import com.ypat.entity.*;
 import com.ypat.entity.Record;
+import com.ypat.enums.InternalTestDataFlag;
 import com.ypat.enums.RecordType;
 import com.ypat.enums.UserImgType;
 import com.ypat.enums.YesNo;
@@ -443,10 +444,23 @@ public class YpatInfoService {
                 if(CommonUtils.isNotNull(queryQo.getRecomflag())){
                     predicatesList.add(criteriaBuilder.equal(root.get("recomflag"), queryQo.getRecomflag()));
                 }
+                applyDataFlagPredicate(predicatesList, criteriaBuilder, root, queryQo.getDataFlag());
                 query.where(predicatesList.toArray(new Predicate[predicatesList.size()]));
                 return query.getRestriction();
             }
         }, pageable);
+    }
+
+    private void applyDataFlagPredicate(List<Predicate> predicatesList, CriteriaBuilder criteriaBuilder, Root<YpatInfo> root, String dataFlag) {
+        if (CommonUtils.isNull(dataFlag)) return;
+        if (InternalTestDataFlag.internalTest.value.equals(dataFlag)) {
+            predicatesList.add(criteriaBuilder.equal(root.get("dataFlag"), InternalTestDataFlag.internalTest.value));
+        } else if (InternalTestDataFlag.real.value.equals(dataFlag)) {
+            predicatesList.add(criteriaBuilder.or(
+                    criteriaBuilder.isNull(root.get("dataFlag")),
+                    criteriaBuilder.notEqual(root.get("dataFlag"), InternalTestDataFlag.internalTest.value)
+            ));
+        }
     }
 
     Long parseWorkIdFilter(YpatInfoQo queryQo) {

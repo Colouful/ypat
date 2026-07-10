@@ -110,6 +110,23 @@ public class InternalTestDataSourceTest {
     }
 
     @Test
+    public void businessListsSupportInternalTestDataFlagFilter() throws Exception {
+        String userService = read("backend/system-domain/src/main/java/com/ypat/service/UserService.java");
+        String ypatService = read("backend/system-domain/src/main/java/com/ypat/service/YpatInfoService.java");
+        String workService = read("backend/system-domain/src/main/java/com/ypat/service/WorkService.java");
+        String adminUser = read("backend/system-wap/src/main/java/com/ypat/controller/AdminUserController.java");
+        String adminYpat = read("backend/system-wap/src/main/java/com/ypat/controller/AdminYpatController.java");
+        String adminWork = read("backend/system-wap/src/main/java/com/ypat/controller/AdminWorkController.java");
+
+        assertTrue(userService.contains("applyDataFlagPredicate"));
+        assertTrue(ypatService.contains("applyDataFlagPredicate"));
+        assertTrue(workService.contains("applyDataFlagPredicate"));
+        assertTrue(adminUser.contains("@RequestParam(value = \"dataFlag\""));
+        assertTrue(adminYpat.contains("@RequestParam(value = \"dataFlag\""));
+        assertTrue(adminWork.contains("@RequestParam(value = \"dataFlag\""));
+    }
+
+    @Test
     public void internalTestEnumsExposeContractValues() throws Exception {
         assertEnumValues("../system-object/src/main/java/com/ypat/enums/InternalTestDataFlag.java",
                 "real", "internal_test");

@@ -70,6 +70,7 @@ public class AdminUserController {
             @RequestParam(value = "regisdate", required = false) String regisdate,
             @RequestParam(value = "gender", required = false) String gender,
             @RequestParam(value = "id", required = false) Long id,
+            @RequestParam(value = "dataFlag", required = false) String dataFlag,
             @RequestParam(value = "page", required = false, defaultValue = "0") Integer page,
             @RequestParam(value = "size", required = false, defaultValue = "10") Integer size) {
 
@@ -105,6 +106,9 @@ public class AdminUserController {
         }
         if (id != null) {
             userQo.setId(id);
+        }
+        if (StringUtils.isNotBlank(dataFlag)) {
+            userQo.setDataFlag(dataFlag);
         }
 
         String json = userServiceClient.findPage(userQo);
