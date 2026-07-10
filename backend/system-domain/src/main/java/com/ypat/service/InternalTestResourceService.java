@@ -102,7 +102,6 @@ public class InternalTestResourceService {
         return result;
     }
 
-    @SuppressWarnings("unchecked")
     public Map<String, Object> listAvailableGroups(InternalTestResourceQo qo) {
         if (qo == null) {
             qo = new InternalTestResourceQo();
@@ -111,10 +110,16 @@ public class InternalTestResourceService {
         qo.setStatus(InternalTestResourceStatus.enabled.value);
         qo.setUsedFlag(0);
 
-        Map<String, Object> page = page(qo);
+        int page = qo.getPage() == null || qo.getPage() < 0 ? 0 : qo.getPage();
+        int size = qo.getSize() == null || qo.getSize() <= 0 ? 20 : qo.getSize();
+        List<InternalTestResource> resources = internalTestResourceRepository.findAll(buildSpecification(qo),
+                new Sort(Sort.Direction.ASC, "groupNo")
+                        .and(new Sort(Sort.Direction.ASC, "groupSortNo"))
+                        .and(new Sort(Sort.Direction.ASC, "sortNo"))
+                        .and(new Sort(Sort.Direction.DESC, "id")));
         Map<String, List<InternalTestResourceQo>> groups = new LinkedHashMap<String, List<InternalTestResourceQo>>();
-        List<InternalTestResourceQo> resources = (List<InternalTestResourceQo>) page.get("content");
-        for (InternalTestResourceQo item : resources) {
+        for (InternalTestResource resource : resources) {
+            InternalTestResourceQo item = CopyUtil.copy(resource, InternalTestResourceQo.class);
             String groupNo = CommonUtils.isNotNull(item.getGroupNo()) ? item.getGroupNo() : "single-" + item.getId();
             if (!groups.containsKey(groupNo)) {
                 groups.put(groupNo, new ArrayList<InternalTestResourceQo>());
@@ -122,9 +127,10 @@ public class InternalTestResourceService {
             groups.get(groupNo).add(item);
         }
 
+        List<List<InternalTestResourceQo>> pageGroups = pageGroups(groups, page, size);
         Map<String, Object> result = new LinkedHashMap<String, Object>();
-        result.put("content", new ArrayList<List<InternalTestResourceQo>>(groups.values()));
-        result.put("totalPages", 1);
+        result.put("content", pageGroups);
+        result.put("totalPages", calculateTotalPages(groups.size(), size));
         result.put("totalElements", groups.size());
         return result;
     }
@@ -319,6 +325,23 @@ public class InternalTestResourceService {
 
     private String defaultStatus(String status) {
         return CommonUtils.isNotNull(status) ? status : InternalTestResourceStatus.enabled.value;
+    }
+
+    private List<List<InternalTestResourceQo>> pageGroups(Map<String, List<InternalTestResourceQo>> groups, int page, int size) {
+        List<List<InternalTestResourceQo>> allGroups = new ArrayList<List<InternalTestResourceQo>>(groups.values());
+        int start = page * size;
+        if (start >= allGroups.size()) {
+            return new ArrayList<List<InternalTestResourceQo>>();
+        }
+        int end = Math.min(start + size, allGroups.size());
+        return new ArrayList<List<InternalTestResourceQo>>(allGroups.subList(start, end));
+    }
+
+    private int calculateTotalPages(int totalElements, int size) {
+        if (totalElements == 0) {
+            return 0;
+        }
+        return (totalElements + size - 1) / size;
     }
 
     private int countInputDuplicateUrls(List<String> urls) {

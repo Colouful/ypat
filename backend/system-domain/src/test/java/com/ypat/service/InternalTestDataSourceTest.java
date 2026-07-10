@@ -295,6 +295,15 @@ public class InternalTestDataSourceTest {
         assertTrue(repo.contains("InternalTestResource findByUrl(String url);"));
         assertTrue(repo.contains("List<InternalTestResource> findByGroupNoInAndStatus(List<String> groupNos, String status);"));
         assertTrue(repo.contains("List<InternalTestResource> findByUsedBatchNo(String usedBatchNo);"));
+
+        String listAvailableGroups = methodBody(service,
+                "public Map<String, Object> listAvailableGroups(InternalTestResourceQo qo)",
+                "public void markResourcesUsed(List<InternalTestResource> resources");
+        assertFalse(listAvailableGroups.contains("page(qo)"));
+        assertFalse(listAvailableGroups.contains("result.put(\"totalPages\", 1)"));
+        assertTrue(listAvailableGroups.contains("findAll(buildSpecification(qo)"));
+        assertTrue(listAvailableGroups.contains("pageGroups"));
+        assertTrue(listAvailableGroups.contains("calculateTotalPages"));
     }
 
     private void assertResourceColumnMigration(String sql, String columnName, String ddlFragment) {
@@ -324,6 +333,14 @@ public class InternalTestDataSourceTest {
         String block = sql.substring(start, end + "DEALLOCATE PREPARE stmt;".length());
         assertTrue(block.contains("TABLE_NAME = '" + tableName + "'"));
         return block;
+    }
+
+    private String methodBody(String source, String startMarker, String endMarker) {
+        int start = source.indexOf(startMarker);
+        int end = source.indexOf(endMarker, start);
+        assertTrue("missing method start marker: " + startMarker, start >= 0);
+        assertTrue("missing method end marker: " + endMarker, end > start);
+        return source.substring(start, end);
     }
 
     private void assertReadableWritable(Class<?> type, String fieldName, Class<?> fieldType) throws Exception {
