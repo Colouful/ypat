@@ -99,6 +99,32 @@ mvn -Pdev spring-boot:run
 
 各模块的 `dev` Profile 资源位于 `src/main/resources/dev/`，**不会被 staging/production 镜像读到**（见 `docs/release/SECRET_MANAGEMENT.md`）。
 
+### 5.1 Docker 热更新模式
+
+如果只想让后端在 Docker（容器化运行环境）内随源码变化自动编译和重启，可以叠加 `docker-compose.hot.yml`。它只替换 `system-restapi`、`system-wap`、`system-web` 三个 Java（后端运行语言）服务，MySQL（数据库）、Redis（缓存）、Eureka（服务发现）仍沿用普通 `docker-compose.yml`。
+
+```bash
+# 在仓库根目录
+docker compose -p ypat-workspace \
+  -f docker-compose.yml \
+  -f docker-compose.hot.yml \
+  up -d mysql redis eureka restapi wap system-web
+
+# 查看热更新日志
+docker compose -p ypat-workspace \
+  -f docker-compose.yml \
+  -f docker-compose.hot.yml \
+  logs -f restapi wap system-web
+```
+
+热更新容器通过 `backend/dev/hot-run.sh` 启动 Maven（构建工具） `spring-boot:run`（开发运行命令），并轮询 `src/main` 与 `pom.xml` 变化；检测到变化后执行对应模块的 `compile`（编译命令），`spring-boot-devtools`（开发热重启工具）会在 classpath（类路径）更新后重启应用。三个服务共用 `backend_maven_cache` Maven（构建工具）缓存卷，并用共享锁避免多个容器同时编译互相覆盖 `target`（构建目录）。
+
+回到普通 jar（可执行包）镜像模式：
+
+```bash
+docker compose -p ypat-workspace up -d --build --force-recreate restapi wap system-web
+```
+
 ## 6. 启动前端
 
 ### 6.1 H5

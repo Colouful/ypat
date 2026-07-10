@@ -44,6 +44,10 @@ public class WechatPaymentService {
         return result;
     }
 
+    public WechatNotifyPayload queryOrder(String outTradeNo) {
+        return client.queryOrder(outTradeNo);
+    }
+
     public static class WechatPaymentCommand {
         private String businessType;
         private String channel;

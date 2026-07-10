@@ -1,0 +1,55 @@
+# 本地后端热更新覆盖配置。
+# 用法：
+#   docker compose -p ypat-workspace -f docker-compose.yml -f docker-compose.hot.yml up -d mysql redis eureka restapi wap system-web
+#
+# 保持普通 docker-compose.yml 稳定，只把三个 Java 业务服务替换成
+# Maven spring-boot:run 开发运行容器。
+
+x-backend-hot: &backend-hot
+  build: !reset null
+  image: maven:3.8-eclipse-temurin-8
+  working_dir: /workspace
+  volumes:
+    - ./backend:/workspace
+    - backend_maven_cache:/root/.m2
+  stdin_open: true
+  tty: true
+
+services:
+  restapi:
+    <<: *backend-hot
+    command: ["sh", "/workspace/dev/hot-run.sh", "system-restapi"]
+    ports:
+      - "127.0.0.1:${YPAT_LOCAL_RESTAPI_PORT:-9081}:9081"
+    healthcheck:
+      test: ["CMD-SHELL", "bash -ec ': > /dev/tcp/localhost/9081'"]
+      interval: 10s
+      timeout: 5s
+      retries: 24
+      start_period: 60s
+
+  wap:
+    <<: *backend-hot
+    command: ["sh", "/workspace/dev/hot-run.sh", "system-wap"]
+    healthcheck:
+      test: ["CMD-SHELL", "bash -ec ': > /dev/tcp/localhost/8081'"]
+      interval: 10s
+      timeout: 5s
+      retries: 24
+      start_period: 60s
+
+  system-web:
+    <<: *backend-hot
+    command: ["sh", "/workspace/dev/hot-run.sh", "system-web"]
+    depends_on:
+      wap:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "bash -ec ': > /dev/tcp/localhost/8082'"]
+      interval: 10s
+      timeout: 5s
+      retries: 24
+      start_period: 60s
+
+volumes:
+  backend_maven_cache:

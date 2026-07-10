@@ -15,6 +15,7 @@ import com.wechat.pay.java.service.payments.h5.model.SceneInfo;
 import com.wechat.pay.java.service.payments.jsapi.JsapiServiceExtension;
 import com.wechat.pay.java.service.payments.jsapi.model.Payer;
 import com.wechat.pay.java.service.payments.jsapi.model.PrepayWithRequestPaymentResponse;
+import com.wechat.pay.java.service.payments.jsapi.model.QueryOrderByOutTradeNoRequest;
 import com.wechat.pay.java.service.payments.model.Transaction;
 import com.wechat.pay.java.service.payments.model.TransactionAmount;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -148,6 +149,23 @@ public class WechatPayV3Client {
         return toNotifyPayload(tx);
     }
 
+    public WechatNotifyPayload queryOrder(String outTradeNo) {
+        config.assertConfigured();
+        if (!WechatPayV3Config.hasText(outTradeNo)) {
+            throw new SysException(ResponseCode.FAIL_PARA);
+        }
+        QueryOrderByOutTradeNoRequest request = new QueryOrderByOutTradeNoRequest();
+        request.setMchid(config.mchId());
+        request.setOutTradeNo(outTradeNo);
+        Transaction tx;
+        try {
+            tx = gateway.queryOrderByOutTradeNo(config.sdkConfig(), request);
+        } catch (RuntimeException ex) {
+            throw mapWechatPayException(ex);
+        }
+        return toNotifyPayload(tx);
+    }
+
     private WechatNotifyPayload toNotifyPayload(Transaction tx) {
         if (tx == null) throw new SysException(ResponseCode.FAIL_PAY);
         WechatNotifyPayload payload = new WechatNotifyPayload();
@@ -205,6 +223,8 @@ public class WechatPayV3Client {
                 com.wechat.pay.java.service.payments.h5.model.PrepayRequest request);
 
         Transaction parseNotify(NotificationParser parser, RequestParam requestParam);
+
+        Transaction queryOrderByOutTradeNo(Config config, QueryOrderByOutTradeNoRequest request);
     }
 
     private static class SdkGateway implements Gateway {
@@ -223,6 +243,11 @@ public class WechatPayV3Client {
         @Override
         public Transaction parseNotify(NotificationParser parser, RequestParam requestParam) {
             return parser.parse(requestParam, Transaction.class);
+        }
+
+        @Override
+        public Transaction queryOrderByOutTradeNo(Config config, QueryOrderByOutTradeNoRequest request) {
+            return new JsapiServiceExtension.Builder().config(config).build().queryOrderByOutTradeNo(request);
         }
     }
 

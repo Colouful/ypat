@@ -11,8 +11,10 @@ import com.wechat.pay.java.core.Config;
 import com.wechat.pay.java.core.notification.NotificationParser;
 import com.wechat.pay.java.core.notification.RequestParam;
 import com.wechat.pay.java.service.payments.h5.model.PrepayResponse;
+import com.wechat.pay.java.service.payments.jsapi.model.QueryOrderByOutTradeNoRequest;
 import com.wechat.pay.java.service.payments.jsapi.model.PrepayWithRequestPaymentResponse;
 import com.wechat.pay.java.service.payments.model.Transaction;
+import com.wechat.pay.java.service.payments.model.TransactionAmount;
 import org.junit.Test;
 
 import java.io.File;
@@ -80,6 +82,23 @@ public class WechatPaymentServiceTest {
             assertTrue(!ex.getMsg().contains("signature"));
             assertTrue(!ex.getMsg().contains("HttpRequest"));
         }
+    }
+
+    @Test
+    public void queryOrderMapsWechatSuccessTransaction() {
+        FakeGateway gateway = new FakeGateway();
+        gateway.queryTradeState = Transaction.TradeStateEnum.SUCCESS;
+        WechatPaymentService service = new WechatPaymentService(new WechatPayV3Client(config(), gateway));
+
+        WechatNotifyPayload payload = service.queryOrder("D202607080001");
+
+        assertEquals("1900000001", gateway.lastQueryRequest.getMchid());
+        assertEquals("D202607080001", gateway.lastQueryRequest.getOutTradeNo());
+        assertEquals("D202607080001", payload.getOutTradeNo());
+        assertEquals("wx-transaction-id", payload.getTransactionId());
+        assertEquals("SUCCESS", payload.getTradeState());
+        assertEquals(Integer.valueOf(1), payload.getAmountFen());
+        assertEquals("2026-07-09T20:48:45+08:00", payload.getSuccessTime());
     }
 
     @Test
@@ -178,7 +197,9 @@ public class WechatPaymentServiceTest {
     private static class FakeGateway implements WechatPayV3Client.Gateway {
         com.wechat.pay.java.service.payments.jsapi.model.PrepayRequest lastMiniappRequest;
         com.wechat.pay.java.service.payments.h5.model.PrepayRequest lastH5Request;
+        QueryOrderByOutTradeNoRequest lastQueryRequest;
         boolean failWithNoAuth;
+        Transaction.TradeStateEnum queryTradeState;
 
         @Override
         public PrepayWithRequestPaymentResponse prepayMiniapp(Config config,
@@ -211,6 +232,20 @@ public class WechatPaymentServiceTest {
         @Override
         public Transaction parseNotify(NotificationParser parser, RequestParam requestParam) {
             return null;
+        }
+
+        @Override
+        public Transaction queryOrderByOutTradeNo(Config config, QueryOrderByOutTradeNoRequest request) {
+            lastQueryRequest = request;
+            Transaction tx = new Transaction();
+            tx.setOutTradeNo(request.getOutTradeNo());
+            tx.setTransactionId("wx-transaction-id");
+            tx.setTradeState(queryTradeState);
+            tx.setSuccessTime("2026-07-09T20:48:45+08:00");
+            TransactionAmount amount = new TransactionAmount();
+            amount.setTotal(1);
+            tx.setAmount(amount);
+            return tx;
         }
     }
 }

@@ -9,6 +9,8 @@ import com.ypat.SysException;
 import com.ypat.UserQo;
 import com.ypat.enums.PaymentBusinessType;
 import com.ypat.enums.PaymentChannel;
+import com.ypat.enums.PaymentStatus;
+import com.ypat.payment.WechatPaymentReconcileService;
 import com.ypat.payment.WechatPaymentService;
 import com.ypat.service.DepositServiceClient;
 import com.ypat.service.PaymentOrderServiceClient;
@@ -34,6 +36,8 @@ public class DepositController {
     private UserServiceClient userServiceClient;
     @Autowired
     private WechatPaymentService wechatPaymentService;
+    @Autowired
+    private WechatPaymentReconcileService wechatPaymentReconcileService;
 
     @GetMapping("/deposit/config")
     public DepositConfigQo config() {
@@ -74,6 +78,10 @@ public class DepositController {
     public DepositOrderQo status(@RequestParam("out_trade_no") String outTradeNo) {
         DepositOrderQo qo = depositServiceClient.getOrder(outTradeNo, requireUserId());
         if (qo == null) throw new SysException(ResponseCode.FAIL_NOT);
+        if (PaymentStatus.PENDING.value.equals(qo.getStatus())
+                && wechatPaymentReconcileService.syncPaidIfWechatSuccess(outTradeNo)) {
+            qo = depositServiceClient.getOrder(outTradeNo, requireUserId());
+        }
         return qo;
     }
 

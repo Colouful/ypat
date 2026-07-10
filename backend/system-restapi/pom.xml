@@ -63,6 +63,13 @@
             <version>4.10</version>
         </dependency>
 
+        <!--热启工具-->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-devtools</artifactId>
+            <optional>true</optional>
+        </dependency>
+
         <!-- 跟踪服务 -->
         <!--<dependency>-->
             <!--<groupId>org.springframework.cloud</groupId>-->
@@ -94,6 +101,9 @@
             <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
+                <configuration>
+                    <fork>true</fork>
+                </configuration>
                 <executions>
                     <execution>
                         <goals>
