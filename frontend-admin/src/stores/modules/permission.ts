@@ -14,6 +14,7 @@ import ManageUserList from '@/views/manage/user-list/index.vue'
 import ManageProductList from '@/views/manage/product-list/index.vue'
 import ManageWorkList from '@/views/manage/work-list/index.vue'
 import ManageWorkComplainList from '@/views/manage/work-complain-list/index.vue'
+import ManageFeedbackList from '@/views/manage/feedback-list/index.vue'
 import ArticleList from '@/views/article/list/index.vue'
 import BannerList from '@/views/banner/list/index.vue'
 import YpatEdit from '@/views/ypat/edit/index.vue'
@@ -43,6 +44,7 @@ const viewModules: Record<string, Component> = {
   'manage/product-list/index': ManageProductList,
   'manage/work-list/index': ManageWorkList,
   'manage/work-complain-list/index': ManageWorkComplainList,
+  'manage/feedback-list/index': ManageFeedbackList,
   'article/list/index': ArticleList,
   'banner/list/index': BannerList,
   'ypat/edit/index': YpatEdit,
