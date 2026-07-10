@@ -92,6 +92,7 @@ export interface InternalTestUserActionPayload {
 
 export interface InternalTestUserQuery extends PageQuery {
   batchNo?: string
+  keyword?: string
   city?: string
   area?: string
   profess?: string
