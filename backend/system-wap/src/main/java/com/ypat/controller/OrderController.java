@@ -30,6 +30,7 @@ import java.util.Map;
 @RestController
 public class OrderController {
     private static final Logger logger = LoggerFactory.getLogger(OrderController.class);
+    private static final int REALNAME_AUDIT_FEE_FEN = 2900;
     @Autowired private OrderServiceClient orderServiceClient;
     @Autowired private ProductServiceClient productServiceClient;
     @Autowired private WXPayClient wxPayClient;
@@ -71,6 +72,8 @@ public class OrderController {
             if (product == null || product.getOldval() == null || product.getOldval() < 1) throw new SysException(ResponseCode.FAIL_NOT);
             if (!isProductUpStatus(product.getStatus())) throw new SysException(ResponseCode.FAIL_VAL);
             orderQo.setTotal_fee(product.getOldval());
+        } else if (OrderType.REAL.value.equals(orderQo.getType())) {
+            orderQo.setTotal_fee(REALNAME_AUDIT_FEE_FEN);
         } else if (orderQo.getTotal_fee() == null || orderQo.getTotal_fee() < 1) {
             throw new SysException(ResponseCode.FAIL_PARA);
         }
