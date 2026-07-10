@@ -180,7 +180,7 @@ onMounted(fetchConfig)
   display: flex;
   align-items: baseline;
   gap: $spacing-xs;
-  margin: $spacing-lg 0 $spacing-md;
+  margin: $spacing-lg 0 $spacing-base;
   color: #d97706;
 }
 
@@ -197,7 +197,7 @@ onMounted(fetchConfig)
 
 .preview-share {
   margin-top: $spacing-lg;
-  padding: $spacing-sm $spacing-md;
+  padding: $spacing-sm $spacing-base;
   color: $text-regular;
   background: #fff;
   border: 1px dashed $color-primary;

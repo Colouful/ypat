@@ -64,12 +64,12 @@ with_compile_lock() {
 
 compile_module() {
   echo "[hot-run] 编译 ${MODULE}"
-  with_compile_lock mvn -pl "$MODULE" -am compile $MAVEN_ARGS
+  with_compile_lock mvn -pl "$MODULE" -am install $MAVEN_ARGS
 }
 
 start_module() {
   echo "[hot-run] 使用 spring-boot:run 启动 ${MODULE}"
-  mvn -pl "$MODULE" -am spring-boot:run $MAVEN_ARGS &
+  (cd "$MODULE" && mvn spring-boot:run $MAVEN_ARGS) &
   APP_PID="$!"
 }
 

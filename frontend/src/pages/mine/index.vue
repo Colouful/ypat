@@ -458,12 +458,12 @@ onPullDownRefresh(async () => {
 }
 
 .mine-top__checkin--done {
-  color: $color-text-tertiary;
+  color: $color-text-helper;
   background: #f4f5f6;
 }
 
 .mine-top__checkin-text {
-  color: $color-text-tertiary;
+  color: $color-text-helper;
   font-size: 24rpx;
   font-weight: 800;
   white-space: nowrap;
