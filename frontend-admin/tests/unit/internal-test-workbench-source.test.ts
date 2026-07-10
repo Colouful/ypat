@@ -1,0 +1,22 @@
+import { readFileSync } from 'node:fs'
+import { resolve } from 'node:path'
+import { describe, expect, it } from 'vitest'
+
+function source(path: string): string {
+  return readFileSync(resolve(process.cwd(), path), 'utf-8')
+}
+
+describe('internal test workbench source contracts', () => {
+  it('资源管理页支持批量 URL、作品组、占用筛选和三级城市', () => {
+    const page = source('src/views/internal-test/resource/index.vue')
+
+    expect(page).toContain('batchCreateInternalResources')
+    expect(page).toContain('urlsText')
+    expect(page).toContain('groupSize')
+    expect(page).toContain('usedFlag')
+    expect(page).toContain('regionCascaderOptions')
+    expect(page).toContain('一行一个 URL')
+    expect(page).toContain('作品组')
+    expect(page).toContain('占用状态')
+  })
+})

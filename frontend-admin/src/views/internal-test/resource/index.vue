@@ -2,7 +2,7 @@
 import { computed, onMounted, reactive, ref } from 'vue'
 import { ElMessage, ElMessageBox, type FormInstance, type FormRules } from 'element-plus'
 import {
-  createInternalResource,
+  batchCreateInternalResources,
   getInternalResources,
   updateInternalResource,
   updateInternalResourceStatus,
@@ -12,6 +12,8 @@ import {
 import {
   InternalTestMediaType,
   InternalTestResourceStatus,
+  InternalTestUsageType,
+  getInternalTestResourceUsedFlagOptions,
   getInternalTestResourceStatusOptions,
   getInternalTestUsageTypeOptions,
   getProfessDisplayName,
@@ -19,8 +21,9 @@ import {
   getWorkTagStyleOptions,
   resolveWorkTagStyleName,
 } from '@/constants/enums'
+import { regionCascaderOptions, toRegionFields, type RegionPath } from '@/utils/region'
 
-type ResourceForm = Omit<InternalTestResource, 'id'> & { id?: number }
+type ResourceForm = Omit<InternalTestResource, 'id'> & { id?: number; urlsText: string }
 
 const mediaTabs = [
   { label: '图片', value: InternalTestMediaType.IMAGE.value },
@@ -33,8 +36,11 @@ const query = reactive<InternalTestResourceQuery>({
   usageType: '',
   styleCode: '',
   profession: '',
+  province: '',
   city: '',
+  area: '',
   status: '',
+  usedFlag: undefined,
   keyword: '',
   page: 0,
   size: 10,
@@ -48,13 +54,41 @@ const saving = ref(false)
 const formRef = ref<FormInstance>()
 const currentPage = computed(() => (query.page ?? 0) + 1)
 let requestSeq = 0
+const regionCascaderProps = {
+  value: 'label',
+  label: 'label',
+  children: 'children',
+  emitPath: true,
+  checkStrictly: true,
+} as const
 
 const form = reactive<ResourceForm>(createEmptyForm())
 
 const rules: FormRules<ResourceForm> = {
   usageType: [{ required: true, message: '请选择用途', trigger: 'change' }],
   url: [{ required: true, message: '请输入资源 URL', trigger: 'blur' }],
+  urlsText: [{ required: true, message: '请输入资源 URL', trigger: 'blur' }],
 }
+
+const queryRegionPath = computed<RegionPath>({
+  get: () => [query.province, query.city, query.area].filter(Boolean) as RegionPath,
+  set: (path) => {
+    const fields = toRegionFields(path)
+    query.province = fields.province
+    query.city = fields.city
+    query.area = fields.area
+  },
+})
+
+const formRegionPath = computed<RegionPath>({
+  get: () => [form.province, form.city, form.area].filter(Boolean) as RegionPath,
+  set: (path) => {
+    const fields = toRegionFields(path)
+    form.province = fields.province
+    form.city = fields.city
+    form.area = fields.area
+  },
+})
 
 function createEmptyForm(): ResourceForm {
   return {
@@ -63,12 +97,16 @@ function createEmptyForm(): ResourceForm {
     usageType: '',
     styleCode: '',
     url: '',
+    urlsText: '',
     title: '',
     description: '',
     profession: '',
+    province: '',
     city: '',
+    area: '',
     status: InternalTestResourceStatus.ENABLED.value,
     sortNo: 0,
+    groupSize: 6,
     remark: '',
   }
 }
@@ -110,8 +148,11 @@ function reset(): void {
   query.usageType = ''
   query.styleCode = ''
   query.profession = ''
+  query.province = ''
   query.city = ''
+  query.area = ''
   query.status = ''
+  query.usedFlag = undefined
   query.keyword = ''
   query.page = 0
   fetchList()
@@ -143,12 +184,20 @@ function openEdit(row: InternalTestResource): void {
     usageType: row.usageType || '',
     styleCode: row.styleCode || '',
     url: row.url || '',
+    urlsText: row.url || '',
     title: row.title || '',
     description: row.description || '',
     profession: row.profession || '',
+    province: row.province || '',
     city: row.city || '',
+    area: row.area || '',
     status: row.status || InternalTestResourceStatus.ENABLED.value,
     sortNo: row.sortNo ?? 0,
+    groupNo: row.groupNo || '',
+    groupTitle: row.groupTitle || '',
+    groupSortNo: row.groupSortNo,
+    groupSize: row.groupSize || 6,
+    usedFlag: row.usedFlag,
     remark: row.remark || '',
   })
   formRef.value?.clearValidate()
@@ -161,8 +210,9 @@ async function saveResource(): Promise<void> {
 
   saving.value = true
   try {
+    const { urlsText, ...resourceForm } = form
     const payload: InternalTestResource = {
-      ...form,
+      ...resourceForm,
       mediaType: form.mediaType || activeMediaType.value,
       status: form.status || InternalTestResourceStatus.ENABLED.value,
       sortNo: form.sortNo ?? 0,
@@ -171,8 +221,16 @@ async function saveResource(): Promise<void> {
       await updateInternalResource(payload)
       ElMessage.success('资源更新成功')
     } else {
-      await createInternalResource(payload)
-      ElMessage.success('资源创建成功')
+      const urls = urlsText
+        .split('\n')
+        .map((item) => item.trim())
+        .filter(Boolean)
+      await batchCreateInternalResources({
+        ...payload,
+        urls,
+        groupSize: form.usageType === InternalTestUsageType.WORK.value ? form.groupSize : undefined,
+      })
+      ElMessage.success('资源批量创建成功')
     }
     dialogVisible.value = false
     fetchList()
@@ -262,12 +320,29 @@ onMounted(fetchList)
           </el-select>
         </el-form-item>
         <el-form-item label="城市">
-          <el-input v-model="query.city" clearable placeholder="请输入城市" />
+          <el-cascader
+            v-model="queryRegionPath"
+            :options="regionCascaderOptions"
+            :props="regionCascaderProps"
+            clearable
+            filterable
+            placeholder="请选择省 / 市 / 区"
+          />
         </el-form-item>
         <el-form-item label="状态">
           <el-select v-model="query.status" clearable placeholder="全部" style="width: 140px">
             <el-option
               v-for="option in getInternalTestResourceStatusOptions()"
+              :key="option.value"
+              :label="option.label"
+              :value="option.value"
+            />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="占用状态">
+          <el-select v-model="query.usedFlag" clearable placeholder="全部" style="width: 140px">
+            <el-option
+              v-for="option in getInternalTestResourceUsedFlagOptions()"
               :key="option.value"
               :label="option.label"
               :value="option.value"
@@ -314,6 +389,14 @@ onMounted(fetchList)
         <template #default="{ row }">{{ professText(row.profession) }}</template>
       </el-table-column>
       <el-table-column prop="city" label="城市" width="110" show-overflow-tooltip />
+      <el-table-column prop="groupNo" label="作品组" min-width="130" show-overflow-tooltip />
+      <el-table-column label="占用状态" width="100" align="center">
+        <template #default="{ row }">
+          <el-tag :type="row.usedFlag === 1 ? 'warning' : 'success'" size="small">
+            {{ row.usedFlag === 1 ? '已占用' : '未占用' }}
+          </el-tag>
+        </template>
+      </el-table-column>
       <el-table-column label="状态" width="90" align="center">
         <template #default="{ row }">
           <el-tag :type="statusInfo(row.status).type" size="small">
@@ -378,8 +461,14 @@ onMounted(fetchList)
             />
           </el-select>
         </el-form-item>
-        <el-form-item label="资源 URL" prop="url">
-          <el-input v-model="form.url" placeholder="请输入已上传资源 URL" />
+        <el-form-item v-if="!form.id" label="资源 URL" prop="urlsText">
+          <el-input v-model="form.urlsText" type="textarea" :rows="8" placeholder="一行一个 URL" />
+        </el-form-item>
+        <el-form-item v-else label="资源 URL" prop="url">
+          <el-input v-model="form.url" :disabled="form.usedFlag === 1" placeholder="请输入已上传资源 URL" />
+        </el-form-item>
+        <el-form-item v-if="form.usageType === InternalTestUsageType.WORK.value && !form.id" label="每组资源数">
+          <el-input-number v-model="form.groupSize" :min="1" :max="20" controls-position="right" />
         </el-form-item>
         <el-form-item label="标题">
           <el-input v-model="form.title" maxlength="100" show-word-limit />
@@ -408,7 +497,14 @@ onMounted(fetchList)
           </el-select>
         </el-form-item>
         <el-form-item label="城市">
-          <el-input v-model="form.city" placeholder="请输入城市" />
+          <el-cascader
+            v-model="formRegionPath"
+            :options="regionCascaderOptions"
+            :props="regionCascaderProps"
+            clearable
+            filterable
+            placeholder="请选择省 / 市 / 区"
+          />
         </el-form-item>
         <el-form-item label="状态">
           <el-select v-model="form.status" style="width: 100%">
