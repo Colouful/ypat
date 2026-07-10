@@ -22,4 +22,25 @@ describe('realname page legacy paid flow source', () => {
     expect(source).not.toContain('pics: [frontPath.value, backPath.value]')
     expect(source).not.toContain("order.result_code === 'SUCCESS'")
   })
+
+  it('rechecks a pending payment order before creating another realname order', () => {
+    const submitBody = source.slice(source.indexOf('async function submit()'), source.indexOf('async function confirmAndPay()'))
+    expect(submitBody).toMatch(
+      /if \(needsPayment\.value\)[\s\S]*const resumed = await resumePendingRealnamePayment\(\)[\s\S]*if \(resumed\) return[\s\S]*await confirmAndPay\(\)/,
+    )
+  })
+
+  it('refreshes realname state on pending payment timeout without clearing the pending order first', () => {
+    const confirmBody = source.slice(source.indexOf('async function confirmAndPay()'), source.indexOf('function confirmRealnamePayment()'))
+    const pendingBranchStart = confirmBody.indexOf('if (!paid)')
+    const pendingBranchEnd = confirmBody.indexOf("uni.showToast({ title: '支付确认中，请稍后重试'")
+    const pendingBranch = confirmBody.slice(pendingBranchStart, pendingBranchEnd)
+    const stillPendingPath = pendingBranch.slice(pendingBranch.lastIndexOf('return') + 'return'.length)
+
+    expect(pendingBranchStart).toBeGreaterThan(-1)
+    expect(pendingBranchEnd).toBeGreaterThan(pendingBranchStart)
+    expect(pendingBranch).toContain('await refreshRealnameState()')
+    expect(pendingBranch).toContain('if (canSubmitWithoutPay.value)')
+    expect(stillPendingPath).not.toContain("pendingOutTradeNo = ''")
+  })
 })
