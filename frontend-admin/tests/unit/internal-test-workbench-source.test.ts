@@ -19,4 +19,18 @@ describe('internal test workbench source contracts', () => {
     expect(page).toContain('作品组')
     expect(page).toContain('占用状态')
   })
+
+  it('生成页提供新增用户、新增作品、新增约拍三类动作和内测用户搜索', () => {
+    const page = source('src/views/internal-test/generator/index.vue')
+
+    expect(page).toContain('InternalTestGenerateAction')
+    expect(page).toContain('generateInternalUsers')
+    expect(page).toContain('generateInternalWorks')
+    expect(page).toContain('generateInternalYpats')
+    expect(page).toContain('searchInternalUsers')
+    expect(page).toContain('getInternalResourceGroups')
+    expect(page).toContain('微信号')
+    expect(page).toContain('联系电话')
+    expect(page).not.toContain('模板类型')
+  })
 })

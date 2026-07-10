@@ -3,36 +3,33 @@ import { computed, onMounted, reactive, ref } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import {
   cleanupInternalData,
-  generateInternalData,
+  generateInternalUsers,
+  generateInternalWorks,
+  generateInternalYpats,
   getInternalBatches,
-  getInternalResources,
+  getInternalResourceGroups,
+  searchInternalUsers,
   type InternalTestBatch,
   type InternalTestGeneratePayload,
-  type InternalTestResource,
+  type InternalTestResourceGroup,
+  type InternalTestUser,
 } from '@/api/modules/internal-test'
 import {
   Gender,
-  InternalTestGenerateMode,
+  InternalTestGenerateAction,
   InternalTestMediaType,
   InternalTestResourceStatus,
+  InternalTestResourceUsedFlag,
   InternalTestUsageType,
+  YpatTarget,
   getGenderOptions,
-  getInternalTestGenerateModeOptions,
+  getInternalTestGenerateActionOptions,
   getProfessOptions,
   getWorkTagStyleOptions,
+  getYpatTargetOptions,
 } from '@/constants/enums'
 import { regionCascaderOptions, toRegionFields, type RegionPath } from '@/utils/region'
 
-const contentTypeOptions = [
-  { label: '约拍', value: 'ypat' },
-  { label: '作品', value: 'work' },
-  { label: '约拍和作品', value: 'both' },
-]
-const templateTypeOptions = [
-  { label: '发布约拍', value: 'publish_ypat' },
-  { label: '约摄影师', value: 'appointment_photographer' },
-  { label: '约模特', value: 'appointment_model' },
-]
 const publishStatusOptions = [
   { label: '待审核', value: '1' },
   { label: '审核通过', value: '2' },
@@ -50,41 +47,42 @@ const regionCascaderProps = {
 } as const
 
 const form = reactive({
-  mode: InternalTestGenerateMode.CREATE_AND_GENERATE.value,
+  actionType: InternalTestGenerateAction.CREATE_USERS.value as string,
   userCount: 5,
-  userIdsText: '',
-  nicknamePrefix: '内测用户',
+  userId: undefined as number | undefined,
+  nicknamePrefix: '',
   gender: Gender.FEMALE.value,
   profess: '',
   province: '',
   city: '',
   area: '',
-  styleCode: '',
-  contentType: 'both',
-  templateType: 'publish_ypat',
+  styleCodes: [] as string[],
   publishStatus: '1',
+  groupNos: [] as string[],
+  patdate: '',
+  patslice: '',
+  describ: '',
+  target: YpatTarget.PHOTOGRAPHER.value,
+  wx: '',
+  mobile: '',
 })
 
-const avatarResources = ref<InternalTestResource[]>([])
-const ypatResources = ref<InternalTestResource[]>([])
-const workResources = ref<InternalTestResource[]>([])
-const selectedAvatarResources = ref<InternalTestResource[]>([])
-const selectedYpatResources = ref<InternalTestResource[]>([])
-const selectedWorkResources = ref<InternalTestResource[]>([])
 const batches = ref<InternalTestBatch[]>([])
+const userOptions = ref<InternalTestUser[]>([])
+const workGroups = ref<InternalTestResourceGroup[]>([])
 const activeWorkMediaType = ref(InternalTestMediaType.IMAGE.value)
+const userSearching = ref(false)
 const resourceLoading = ref(false)
 const batchLoading = ref(false)
 const submitting = ref(false)
 const cleaningBatchNo = ref('')
 const batchQuery = reactive({ batchNo: '', page: 0, size: 20 })
-let resourceRequestSeq = 0
 
-const isCreateMode = computed(() => form.mode === InternalTestGenerateMode.CREATE_AND_GENERATE.value)
-const needsYpat = computed(() => form.contentType === 'ypat' || form.contentType === 'both')
-const needsWork = computed(() => form.contentType === 'work' || form.contentType === 'both')
+const isCreateUsers = computed(() => form.actionType === InternalTestGenerateAction.CREATE_USERS.value)
+const isCreateWorks = computed(() => form.actionType === InternalTestGenerateAction.CREATE_WORKS.value)
+const isCreateYpats = computed(() => form.actionType === InternalTestGenerateAction.CREATE_YPATS.value)
 const regionPath = computed<RegionPath>({
-  get: () => [form.province, form.city, form.area].filter(Boolean),
+  get: () => [form.province, form.city, form.area].filter(Boolean) as RegionPath,
   set: (path) => {
     const fields = toRegionFields(path)
     form.province = fields.province
@@ -93,93 +91,31 @@ const regionPath = computed<RegionPath>({
   },
 })
 
-function selectedIds(resources: InternalTestResource[]): number[] {
-  return resources.map((item) => item.id).filter((id): id is number => typeof id === 'number')
-}
-
-function parseUserIds(): number[] {
-  return parseUserIdInput().ids
-}
-
-function parseUserIdInput(): { ids: number[]; invalidTokens: string[] } {
-  const ids: number[] = []
-  const invalidTokens: string[] = []
-  for (const raw of form.userIdsText.split(',')) {
-    const token = raw.trim()
-    if (!token) continue
-    const value = Number(token)
-    if (Number.isInteger(value) && value > 0) {
-      ids.push(value)
-    } else {
-      invalidTokens.push(token)
-    }
+async function remoteSearchUsers(keyword: string): Promise<void> {
+  userSearching.value = true
+  try {
+    const res = await searchInternalUsers({ keyword, page: 0, size: 20 })
+    userOptions.value = res.data.content || []
+  } finally {
+    userSearching.value = false
   }
-  return { ids, invalidTokens }
 }
 
-function normalizeTemplateType(value: string): string {
-  if (value === 'appointment_photographer') return 'photographer'
-  if (value === 'appointment_model') return 'model'
-  return value
-}
-
-type ResourceLoadScope = 'all' | 'style' | 'work'
-
-async function loadResources(scope: ResourceLoadScope = 'all'): Promise<void> {
-  const seq = ++resourceRequestSeq
+async function loadWorkGroups(): Promise<void> {
   resourceLoading.value = true
   try {
-    const requests: Array<Promise<void>> = []
-    if (scope === 'all') {
-      requests.push(
-        getInternalResources({
-          mediaType: InternalTestMediaType.IMAGE.value,
-          usageType: InternalTestUsageType.AVATAR.value,
-          status: InternalTestResourceStatus.ENABLED.value,
-          page: 0,
-          size: 50,
-        }).then((res) => {
-          if (seq !== resourceRequestSeq) return
-          avatarResources.value = res.data.content || []
-          selectedAvatarResources.value = []
-        }),
-      )
-    }
-    if (scope === 'all' || scope === 'style') {
-      requests.push(
-        getInternalResources({
-          mediaType: InternalTestMediaType.IMAGE.value,
-          usageType: InternalTestUsageType.YPAT.value,
-          styleCode: form.styleCode,
-          status: InternalTestResourceStatus.ENABLED.value,
-          page: 0,
-          size: 50,
-        }).then((res) => {
-          if (seq !== resourceRequestSeq) return
-          ypatResources.value = res.data.content || []
-          selectedYpatResources.value = []
-        }),
-      )
-    }
-    requests.push(
-      getInternalResources({
-        mediaType: activeWorkMediaType.value,
-        usageType: InternalTestUsageType.WORK.value,
-        styleCode: form.styleCode,
-        status: InternalTestResourceStatus.ENABLED.value,
-        page: 0,
-        size: 50,
-      }).then((res) => {
-        if (seq !== resourceRequestSeq) return
-        workResources.value = res.data.content || []
-        selectedWorkResources.value = []
-      }),
-    )
-    await Promise.all(requests)
+    const res = await getInternalResourceGroups({
+      mediaType: activeWorkMediaType.value,
+      usageType: InternalTestUsageType.WORK.value,
+      styleCode: form.styleCodes[0],
+      usedFlag: InternalTestResourceUsedFlag.UNUSED.value,
+      status: InternalTestResourceStatus.ENABLED.value,
+      page: 0,
+      size: 50,
+    })
+    workGroups.value = res.data.content || []
   } finally {
-    if (seq === resourceRequestSeq) {
-      resourceLoading.value = false
-    }
+    resourceLoading.value = false
   }
 }
 
@@ -194,48 +130,42 @@ async function loadBatches(): Promise<void> {
 }
 
 function validateBeforeSubmit(): string | null {
-  if (isCreateMode.value && (!form.userCount || form.userCount < 1 || form.userCount > 50)) {
-    return '新建用户数量必须在 1 到 50 之间'
+  if (isCreateUsers.value && (!form.userCount || form.userCount < 1 || form.userCount > 50)) {
+    return '新增用户数量必须在 1 到 50 之间'
   }
-  if (!isCreateMode.value) {
-    const parsed = parseUserIdInput()
-    if (parsed.invalidTokens.length > 0) {
-      return `用户 ID 格式错误：${parsed.invalidTokens.join('、')}`
-    }
-    if (parsed.ids.length === 0) {
-      return '请输入至少一个已有内测用户 ID'
-    }
-  }
-  if (!form.city) return '请选择城市'
-  if (!form.profess) return '请选择职业'
-  if (!form.styleCode) return '请选择风格'
-  if (!form.contentType) return '请选择内容类型'
-  if (!form.templateType) return '请选择模板类型'
-  if (!form.publishStatus) return '请选择发布状态'
-  if (selectedAvatarResources.value.length === 0) return '请选择头像资源'
-  if (needsYpat.value && selectedYpatResources.value.length === 0) return '请选择约拍资源'
-  if (needsWork.value && selectedWorkResources.value.length === 0) return '请选择作品资源'
+  if (isCreateWorks.value && !form.userId) return '请选择内测用户'
+  if (isCreateWorks.value && form.groupNos.length === 0) return '请选择作品组'
+  if (isCreateYpats.value && !form.userId) return '请选择内测用户'
+  if (isCreateYpats.value && !form.patdate) return '请选择约拍时间'
+  if (isCreateYpats.value && !form.city) return '请选择约拍地点'
+  if (isCreateYpats.value && !form.describ.trim()) return '请输入约拍要求'
+  if (isCreateYpats.value && !form.wx.trim()) return '请输入微信号'
+  if (isCreateYpats.value && !form.mobile.trim()) return '请输入联系电话'
+  if (isCreateYpats.value && form.styleCodes.length === 0) return '请选择风格'
   return null
 }
 
 function buildPayload(): InternalTestGeneratePayload {
   return {
-    mode: form.mode,
-    userCount: isCreateMode.value ? form.userCount : undefined,
-    userIds: isCreateMode.value ? undefined : parseUserIds(),
-    nicknamePrefix: form.nicknamePrefix,
+    actionType: form.actionType,
+    userCount: isCreateUsers.value ? form.userCount : undefined,
+    userId: form.userId,
+    nicknamePrefix: form.nicknamePrefix || undefined,
     gender: form.gender,
     profess: form.profess,
     province: form.province,
     city: form.city,
     area: form.area,
-    styleCode: form.styleCode,
-    contentType: form.contentType,
-    templateType: normalizeTemplateType(form.templateType),
+    styleCodes: form.styleCodes,
+    styleCode: form.styleCodes[0],
     publishStatus: form.publishStatus,
-    avatarResourceIds: selectedIds(selectedAvatarResources.value),
-    ypatResourceIds: selectedIds(selectedYpatResources.value),
-    workResourceIds: selectedIds(selectedWorkResources.value),
+    groupNos: form.groupNos,
+    patdate: form.patdate,
+    patslice: form.patslice,
+    describ: form.describ,
+    target: form.target,
+    wx: form.wx,
+    mobile: form.mobile,
   }
 }
 
@@ -252,10 +182,15 @@ async function submitGenerate(): Promise<void> {
   })
   submitting.value = true
   try {
-    const res = await generateInternalData(buildPayload())
+    const payload = buildPayload()
+    const res = isCreateUsers.value
+      ? await generateInternalUsers(payload)
+      : isCreateWorks.value
+        ? await generateInternalWorks(payload)
+        : await generateInternalYpats(payload)
     ElMessage.success(`生成成功，批次号：${res.data.batchNo}`)
     batchQuery.batchNo = res.data.batchNo
-    loadBatches()
+    await loadBatches()
   } finally {
     submitting.value = false
   }
@@ -272,32 +207,32 @@ async function cleanupBatch(batchNo: string): Promise<void> {
     cleaningBatchNo.value = batchNo
     await cleanupInternalData({ batchNo })
     ElMessage.success('清理已提交')
-    loadBatches()
+    await loadBatches()
   } finally {
     cleaningBatchNo.value = ''
   }
 }
 
-function resourceTitle(row: InternalTestResource): string {
-  return row.title || row.url || '-'
-}
-
 function styleChanged(): void {
-  ypatResources.value = []
-  workResources.value = []
-  selectedYpatResources.value = []
-  selectedWorkResources.value = []
-  loadResources('style')
+  form.groupNos = []
+  if (isCreateWorks.value) {
+    loadWorkGroups()
+  }
 }
 
 function workMediaChanged(): void {
-  workResources.value = []
-  selectedWorkResources.value = []
-  loadResources('work')
+  form.groupNos = []
+  loadWorkGroups()
+}
+
+function actionChanged(): void {
+  if (isCreateWorks.value) {
+    loadWorkGroups()
+  }
 }
 
 onMounted(() => {
-  loadResources()
+  loadWorkGroups()
   loadBatches()
 })
 </script>
@@ -307,23 +242,38 @@ onMounted(() => {
     <section class="section-block">
       <div class="section-title">生成配置</div>
       <el-form :model="form" label-width="110px" class="config-form">
-        <el-form-item label="生成模式">
-          <el-select v-model="form.mode" style="width: 240px">
+        <el-form-item label="生成动作">
+          <el-select v-model="form.actionType" style="width: 240px" @change="actionChanged">
             <el-option
-              v-for="option in getInternalTestGenerateModeOptions()"
+              v-for="option in getInternalTestGenerateActionOptions()"
               :key="option.value"
               :label="option.label"
               :value="option.value"
             />
           </el-select>
         </el-form-item>
-        <el-form-item v-if="isCreateMode" label="用户数量">
+        <el-form-item v-if="isCreateUsers" label="用户数量">
           <el-input-number v-model="form.userCount" :min="1" :max="50" controls-position="right" />
         </el-form-item>
-        <el-form-item v-else label="内测用户 ID">
-          <el-input v-model="form.userIdsText" placeholder="多个 ID 用英文逗号分隔" />
+        <el-form-item v-if="!isCreateUsers" label="内测用户">
+          <el-select
+            v-model="form.userId"
+            filterable
+            remote
+            :remote-method="remoteSearchUsers"
+            :loading="userSearching"
+            placeholder="搜索用户ID、昵称或手机号"
+            style="width: 260px"
+          >
+            <el-option
+              v-for="user in userOptions"
+              :key="user.id"
+              :label="`${user.nickname || '-'} / ${user.mobile || '-'} / ${user.id}`"
+              :value="user.id"
+            />
+          </el-select>
         </el-form-item>
-        <el-form-item label="城市">
+        <el-form-item v-if="isCreateUsers" label="城市">
           <el-cascader
             v-model="regionPath"
             :options="regionCascaderOptions"
@@ -334,8 +284,19 @@ onMounted(() => {
             style="width: 240px"
           />
         </el-form-item>
-        <el-form-item label="职业">
-          <el-select v-model="form.profess" placeholder="请选择职业" style="width: 240px">
+        <el-form-item v-if="isCreateYpats" label="地点">
+          <el-cascader
+            v-model="regionPath"
+            :options="regionCascaderOptions"
+            :props="regionCascaderProps"
+            clearable
+            filterable
+            placeholder="请选择省 / 市 / 区"
+            style="width: 240px"
+          />
+        </el-form-item>
+        <el-form-item v-if="isCreateUsers" label="职业">
+          <el-select v-model="form.profess" clearable placeholder="请选择职业" style="width: 240px">
             <el-option
               v-for="option in getProfessOptions()"
               :key="option.value"
@@ -344,7 +305,7 @@ onMounted(() => {
             />
           </el-select>
         </el-form-item>
-        <el-form-item label="性别">
+        <el-form-item v-if="isCreateUsers" label="性别">
           <el-select v-model="form.gender" clearable placeholder="请选择性别" style="width: 240px">
             <el-option
               v-for="option in getGenderOptions()"
@@ -354,11 +315,18 @@ onMounted(() => {
             />
           </el-select>
         </el-form-item>
-        <el-form-item label="昵称前缀">
-          <el-input v-model="form.nicknamePrefix" placeholder="请输入昵称前缀" />
+        <el-form-item v-if="isCreateUsers" label="昵称前缀">
+          <el-input v-model="form.nicknamePrefix" placeholder="可为空" />
         </el-form-item>
-        <el-form-item label="风格">
-          <el-select v-model="form.styleCode" placeholder="请选择风格" style="width: 240px" @change="styleChanged">
+        <el-form-item v-if="isCreateWorks || isCreateYpats" label="风格">
+          <el-select
+            v-model="form.styleCodes"
+            multiple
+            clearable
+            placeholder="请选择风格"
+            style="width: 260px"
+            @change="styleChanged"
+          >
             <el-option
               v-for="option in getWorkTagStyleOptions()"
               :key="option.value"
@@ -367,20 +335,39 @@ onMounted(() => {
             />
           </el-select>
         </el-form-item>
-        <el-form-item label="内容类型">
-          <el-select v-model="form.contentType" style="width: 240px">
+        <el-form-item v-if="isCreateWorks" label="作品媒体">
+          <el-radio-group v-model="activeWorkMediaType" size="small" @change="workMediaChanged">
+            <el-radio-button v-for="tab in workMediaTabs" :key="tab.value" :label="tab.value">
+              {{ tab.label }}
+            </el-radio-button>
+          </el-radio-group>
+        </el-form-item>
+        <el-form-item v-if="isCreateWorks" label="作品组">
+          <el-select v-model="form.groupNos" multiple filterable placeholder="请选择未占用作品组" style="width: 320px">
             <el-option
-              v-for="option in contentTypeOptions"
-              :key="option.value"
-              :label="option.label"
-              :value="option.value"
+              v-for="group in workGroups"
+              :key="group.groupNo"
+              :label="`${group.groupTitle || group.groupNo}（${group.resources?.length || 0}个资源）`"
+              :value="group.groupNo"
             />
           </el-select>
         </el-form-item>
-        <el-form-item label="模板类型">
-          <el-select v-model="form.templateType" style="width: 240px">
+        <el-form-item v-if="isCreateYpats" label="时间">
+          <el-date-picker v-model="form.patdate" type="date" value-format="YYYY-MM-DD" placeholder="请选择约拍日期" />
+        </el-form-item>
+        <el-form-item v-if="isCreateYpats" label="要求">
+          <el-input v-model="form.describ" type="textarea" :rows="3" maxlength="200" show-word-limit />
+        </el-form-item>
+        <el-form-item v-if="isCreateYpats" label="微信号">
+          <el-input v-model="form.wx" maxlength="40" />
+        </el-form-item>
+        <el-form-item v-if="isCreateYpats" label="联系电话">
+          <el-input v-model="form.mobile" maxlength="11" />
+        </el-form-item>
+        <el-form-item v-if="isCreateYpats" label="约拍对象">
+          <el-select v-model="form.target" style="width: 240px">
             <el-option
-              v-for="option in templateTypeOptions"
+              v-for="option in getYpatTargetOptions()"
               :key="option.value"
               :label="option.label"
               :value="option.value"
@@ -399,76 +386,9 @@ onMounted(() => {
         </el-form-item>
         <el-form-item>
           <el-button type="primary" :loading="submitting" @click="submitGenerate">生成内测数据</el-button>
-          <el-button :loading="resourceLoading" @click="() => loadResources()">刷新资源</el-button>
+          <el-button v-if="isCreateWorks" :loading="resourceLoading" @click="loadWorkGroups">刷新作品组</el-button>
         </el-form-item>
       </el-form>
-    </section>
-
-    <section class="section-block">
-      <div class="section-title">资源选择</div>
-      <div class="resource-grid">
-        <div class="resource-panel">
-          <div class="panel-title">头像资源</div>
-          <el-table
-            v-loading="resourceLoading"
-            :data="avatarResources"
-            border
-            height="260"
-            @selection-change="selectedAvatarResources = $event"
-          >
-            <el-table-column type="selection" width="44" />
-            <el-table-column label="标题" min-width="140" show-overflow-tooltip>
-              <template #default="{ row }">{{ resourceTitle(row as InternalTestResource) }}</template>
-            </el-table-column>
-            <el-table-column prop="city" label="城市" width="90" show-overflow-tooltip />
-          </el-table>
-        </div>
-
-        <div class="resource-panel">
-          <div class="panel-title">约拍资源</div>
-          <el-table
-            v-loading="resourceLoading"
-            :data="ypatResources"
-            border
-            height="260"
-            @selection-change="selectedYpatResources = $event"
-          >
-            <el-table-column type="selection" width="44" />
-            <el-table-column label="标题" min-width="140" show-overflow-tooltip>
-              <template #default="{ row }">{{ resourceTitle(row as InternalTestResource) }}</template>
-            </el-table-column>
-            <el-table-column prop="city" label="城市" width="90" show-overflow-tooltip />
-          </el-table>
-        </div>
-
-        <div class="resource-panel">
-          <div class="panel-title work-title">
-            <span>作品资源</span>
-            <el-radio-group v-model="activeWorkMediaType" size="small" @change="workMediaChanged">
-              <el-radio-button
-                v-for="tab in workMediaTabs"
-                :key="tab.value"
-                :label="tab.value"
-              >
-                {{ tab.label }}
-              </el-radio-button>
-            </el-radio-group>
-          </div>
-          <el-table
-            v-loading="resourceLoading"
-            :data="workResources"
-            border
-            height="260"
-            @selection-change="selectedWorkResources = $event"
-          >
-            <el-table-column type="selection" width="44" />
-            <el-table-column label="标题" min-width="140" show-overflow-tooltip>
-              <template #default="{ row }">{{ resourceTitle(row as InternalTestResource) }}</template>
-            </el-table-column>
-            <el-table-column prop="city" label="城市" width="90" show-overflow-tooltip />
-          </el-table>
-        </div>
-      </div>
     </section>
 
     <section class="section-block">
