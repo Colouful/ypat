@@ -39,12 +39,14 @@ public class FeedbackControllerTest {
 
     @Test
     public void addUsesAuthenticatedUserAndSanitizesInput() {
-        String result = controller.add("  这里是一段合法反馈<script>  ", "  13800138000  ");
+        String result = controller.add("function", "  这里是一段合法反馈<script>  ", "  13800138000  ", "https://example.com/a.jpg");
 
         assertEquals("{\"code\":\"200\"}", result);
         assertEquals(Long.valueOf(42), feedbackServiceClient.feedbackQo.getUserid());
+        assertEquals("function", feedbackServiceClient.feedbackQo.getType());
         assertEquals("这里是一段合法反馈＜script＞", feedbackServiceClient.feedbackQo.getContent());
         assertEquals("13800138000", feedbackServiceClient.feedbackQo.getContact());
+        assertEquals("https://example.com/a.jpg", feedbackServiceClient.feedbackQo.getPics());
         assertEquals("1", redisClient.values.get("feedback:add:42"));
         assertEquals(Long.valueOf(60), redisClient.ttls.get("feedback:add:42"));
     }
@@ -52,30 +54,35 @@ public class FeedbackControllerTest {
     @Test(expected = SysException.class)
     public void addRejectsAnonymousUser() {
         SecurityContextHolder.clearContext();
-        controller.add("这里是一段合法反馈内容", "");
+        controller.add("other", "这里是一段合法反馈内容", "", "");
     }
 
     @Test(expected = SysException.class)
     public void addRejectsShortContent() {
-        controller.add("太短", "");
+        controller.add("other", "太短", "", "");
     }
 
     @Test(expected = SysException.class)
     public void addRejectsLongContact() {
-        controller.add("这里是一段合法反馈内容", repeat("1", 101));
+        controller.add("other", "这里是一段合法反馈内容", repeat("1", 101), "");
+    }
+
+    @Test(expected = SysException.class)
+    public void addRejectsTooManyPics() {
+        controller.add("function", "这里是一段合法反馈内容", "", "a.jpg,b.jpg,c.jpg,d.jpg");
     }
 
     @Test(expected = SysException.class)
     public void addRejectsFrequentSubmission() {
         redisClient.values.put("feedback:add:42", "1");
-        controller.add("这里是一段合法反馈内容", "");
+        controller.add("other", "这里是一段合法反馈内容", "", "");
     }
 
     @Test
     public void addAllowsSubmissionWhenRedisIsUnavailable() {
         redisClient.fail = true;
 
-        String result = controller.add("这里是一段合法反馈内容", "");
+        String result = controller.add("other", "这里是一段合法反馈内容", "", "");
 
         assertEquals("{\"code\":\"200\"}", result);
         assertEquals(Long.valueOf(42), feedbackServiceClient.feedbackQo.getUserid());
@@ -106,6 +113,21 @@ public class FeedbackControllerTest {
         public String add(FeedbackQo feedbackQo) {
             this.feedbackQo = feedbackQo;
             return "{\"code\":\"200\"}";
+        }
+
+        @Override
+        public String adminList(Integer page, Integer size, String status, String type, Long userId) {
+            return "{\"code\":200,\"res\":{\"content\":[],\"totalElements\":0,\"totalPages\":0}}";
+        }
+
+        @Override
+        public String adminDetail(Long id) {
+            return "{\"code\":200,\"res\":{\"id\":" + id + "}}";
+        }
+
+        @Override
+        public String adminHandle(FeedbackQo feedbackQo) {
+            return "{\"code\":200,\"res\":\"处理完成\"}";
         }
     }
 

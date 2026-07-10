@@ -5,7 +5,8 @@ public enum StorageBizPath {
     YPAT("ypat"),
     WORK("work"),
     AVATAR("avatar"),
-    REALNAME("realname");
+    REALNAME("realname"),
+    FEEDBACK("feedback");
 
     private final String path;
 
