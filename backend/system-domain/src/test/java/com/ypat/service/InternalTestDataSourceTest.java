@@ -35,6 +35,7 @@ import java.util.Map;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -336,6 +337,7 @@ public class InternalTestDataSourceTest {
     public void resourceServiceSupportsBatchImportGroupsUsageReleaseAndFilters() throws Exception {
         String service = read("backend/system-domain/src/main/java/com/ypat/service/InternalTestResourceService.java");
         String repo = read("backend/system-domain/src/main/java/com/ypat/repository/InternalTestResourceRepository.java");
+        String frontend = read("frontend-admin/src/api/modules/internal-test.ts");
 
         assertTrue(service.contains("public Map<String, Object> batchSave(InternalTestResourceQo qo)"));
         assertTrue(service.contains("public Map<String, Object> listAvailableGroups(InternalTestResourceQo qo)"));
@@ -358,14 +360,18 @@ public class InternalTestDataSourceTest {
         assertTrue(repo.contains("List<InternalTestResource> findByUsedBatchNo(String usedBatchNo);"));
         assertTrue(repo.contains("int markResourcesUsedIfAvailable("));
         assertTrue(repo.contains("int releaseByUsedBatchNo("));
-        assertTrue(repo.contains("List<String> findAvailableGroupNos("));
-        assertTrue(repo.contains("Long countAvailableGroups("));
-        assertTrue(repo.contains("List<InternalTestResource> findAvailableSingleResources("));
-        assertTrue(repo.contains("Long countAvailableSingleResources("));
+        assertAvailableResourceRepositoryMethod(repo, "findAvailableGroupNos");
+        assertAvailableResourceRepositoryMethod(repo, "countAvailableGroups");
+        assertAvailableResourceRepositoryMethod(repo, "findAvailableSingleResources");
+        assertAvailableResourceRepositoryMethod(repo, "countAvailableSingleResources");
         assertFalse(repo.contains("coalesce(r.used_flag"));
         assertFalse(repo.contains("select count(*) from t_internal_test_resource all_r"));
-        assertTrue(repo.contains("r.used_flag = 0"));
         assertTrue(repo.contains("join (select group_no, count(*) total_count"));
+
+        String resourceGroupType = methodBody(frontend,
+                "export interface InternalTestResourceGroup {",
+                "export interface InternalTestUserActionPayload {");
+        assertTrue(resourceGroupType.contains("usedFlag?: number"));
 
         String listAvailableGroups = methodBody(service,
                 "public Map<String, Object> listAvailableGroups(InternalTestResourceQo qo)",
@@ -380,6 +386,9 @@ public class InternalTestDataSourceTest {
         assertTrue(listAvailableGroups.contains("findByGroupNoIn"));
         assertTrue(listAvailableGroups.contains("isCompleteAvailableGroup"));
         assertTrue(listAvailableGroups.contains("calculateTotalPages"));
+        assertFalse(listAvailableGroups.contains("qo.setUsedFlag(0)"));
+        assertTrue(listAvailableGroups.contains("Integer usedFlag = qo.getUsedFlag()"));
+        assertTrue(listAvailableGroups.contains("group.put(\"usedFlag\""));
 
         String markResourcesUsed = methodBody(service,
                 "public void markResourcesUsed(List<InternalTestResource> resources",
@@ -454,8 +463,6 @@ public class InternalTestDataSourceTest {
         );
         RepositoryState state = new RepositoryState();
         state.groupNosPage = Arrays.asList("G1", "G2");
-        state.availableGroupCount = 1L;
-        state.availableSingleCount = 1L;
         state.singleResourcesPage = Collections.singletonList(resource(5L, null, "enabled", 0));
         ReflectionTestUtils.setField(service, "internalTestResourceRepository",
                 repositoryProxy(candidates, allGrouped, state));
@@ -463,6 +470,7 @@ public class InternalTestDataSourceTest {
         InternalTestResourceQo qo = new InternalTestResourceQo();
         qo.setPage(0);
         qo.setSize(10);
+        qo.setUsedFlag(0);
 
         Map<String, Object> result = service.listAvailableGroups(qo);
         List<Map<String, Object>> content = (List<Map<String, Object>>) result.get("content");
@@ -471,14 +479,99 @@ public class InternalTestDataSourceTest {
         assertFalse(containsGroupView(content, "G1"));
         assertTrue(containsGroupView(content, "G2"));
         assertEquals(2, groupViewSize(content, "G2"));
+        assertEquals(Integer.valueOf(0), groupViewUsedFlag(content, "G2"));
         assertTrue(containsGroupView(content, "single-5"));
         assertEquals(2, ((Number) result.get("totalElements")).intValue());
         assertEquals(1, ((Number) result.get("totalPages")).intValue());
         assertEquals(1, state.groupNoPageCallCount);
+        assertEquals(Integer.valueOf(0), state.findGroupNosUsedFlag);
+        assertEquals(Integer.valueOf(0), state.countGroupsUsedFlag);
+        assertEquals(Integer.valueOf(0), state.findSinglesUsedFlag);
+        assertEquals(Integer.valueOf(0), state.countSinglesUsedFlag);
 
         String source = read("backend/system-domain/src/main/java/com/ypat/service/InternalTestDataService.java");
         assertTrue(source.contains("groupNo.startsWith(\"single-\")"));
         assertTrue(source.contains("internalTestResourceRepository.findOne(resourceId)"));
+    }
+
+    @SuppressWarnings("unchecked")
+    @Test
+    public void listAvailableGroupsReturnsCompleteUsedGroupsWhenRequested() {
+        InternalTestResourceService service = new InternalTestResourceService();
+        List<InternalTestResource> allGrouped = Arrays.asList(
+                resource(6L, "G3", "enabled", 1),
+                resource(7L, "G3", "enabled", 1),
+                resource(8L, "G4", "enabled", 0)
+        );
+        RepositoryState state = new RepositoryState();
+        state.groupNosPage = Arrays.asList("G3", "G4");
+        state.singleResourcesPage = Arrays.asList(
+                resource(9L, null, "enabled", 1),
+                resource(10L, null, "enabled", 0)
+        );
+        ReflectionTestUtils.setField(service, "internalTestResourceRepository",
+                repositoryProxy(Collections.<InternalTestResource>emptyList(), allGrouped, state));
+
+        InternalTestResourceQo qo = new InternalTestResourceQo();
+        qo.setPage(0);
+        qo.setSize(10);
+        qo.setUsedFlag(1);
+
+        Map<String, Object> result = service.listAvailableGroups(qo);
+        List<Map<String, Object>> content = (List<Map<String, Object>>) result.get("content");
+
+        assertEquals(2, content.size());
+        assertTrue(containsGroupView(content, "G3"));
+        assertEquals(2, groupViewSize(content, "G3"));
+        assertEquals(Integer.valueOf(1), groupViewUsedFlag(content, "G3"));
+        assertTrue(containsGroupView(content, "single-9"));
+        assertFalse(containsGroupView(content, "G4"));
+        assertFalse(containsGroupView(content, "single-10"));
+        assertEquals(Integer.valueOf(1), state.findGroupNosUsedFlag);
+        assertEquals(Integer.valueOf(1), state.countGroupsUsedFlag);
+        assertEquals(Integer.valueOf(1), state.findSinglesUsedFlag);
+        assertEquals(Integer.valueOf(1), state.countSinglesUsedFlag);
+    }
+
+    @SuppressWarnings("unchecked")
+    @Test
+    public void listAvailableGroupsDoesNotFilterUsageWhenUsedFlagIsNull() {
+        InternalTestResourceService service = new InternalTestResourceService();
+        List<InternalTestResource> allGrouped = Arrays.asList(
+                resource(11L, "G5", "enabled", 0),
+                resource(12L, "G5", "enabled", 0),
+                resource(13L, "G6", "enabled", 1),
+                resource(14L, "G6", "enabled", 1)
+        );
+        RepositoryState state = new RepositoryState();
+        state.groupNosPage = Arrays.asList("G5", "G6");
+        state.singleResourcesPage = Arrays.asList(
+                resource(15L, null, "enabled", 0),
+                resource(16L, null, "enabled", 1)
+        );
+        ReflectionTestUtils.setField(service, "internalTestResourceRepository",
+                repositoryProxy(Collections.<InternalTestResource>emptyList(), allGrouped, state));
+
+        InternalTestResourceQo qo = new InternalTestResourceQo();
+        qo.setPage(0);
+        qo.setSize(10);
+
+        Map<String, Object> result = service.listAvailableGroups(qo);
+        List<Map<String, Object>> content = (List<Map<String, Object>>) result.get("content");
+
+        assertEquals(4, content.size());
+        assertEquals(Integer.valueOf(0), groupViewUsedFlag(content, "G5"));
+        assertEquals(Integer.valueOf(1), groupViewUsedFlag(content, "G6"));
+        assertTrue(containsGroupView(content, "single-15"));
+        assertTrue(containsGroupView(content, "single-16"));
+        assertEquals(1, state.groupNoPageCallCount);
+        assertEquals(1, state.countGroupsCallCount);
+        assertEquals(1, state.singlePageCallCount);
+        assertEquals(1, state.countSinglesCallCount);
+        assertNull(state.findGroupNosUsedFlag);
+        assertNull(state.countGroupsUsedFlag);
+        assertNull(state.findSinglesUsedFlag);
+        assertNull(state.countSinglesUsedFlag);
     }
 
     @Test
@@ -756,6 +849,23 @@ public class InternalTestDataSourceTest {
         return source.substring(start, end);
     }
 
+    private void assertAvailableResourceRepositoryMethod(String source, String methodName) {
+        int methodIndex = source.indexOf(methodName + "(");
+        assertTrue("missing repository method: " + methodName, methodIndex >= 0);
+        int queryIndex = source.lastIndexOf("@Query(", methodIndex);
+        int methodEnd = source.indexOf(";", methodIndex);
+        assertTrue("missing query for repository method: " + methodName, queryIndex >= 0);
+        assertTrue("missing repository method end: " + methodName, methodEnd > methodIndex);
+
+        String block = source.substring(queryIndex, methodEnd + 1);
+        assertTrue(methodName + " must filter usedFlag",
+                block.contains("(:usedFlag is null or r.used_flag = :usedFlag)"));
+        assertTrue(methodName + " must declare usedFlag",
+                block.contains("@Param(\"usedFlag\") Integer usedFlag"));
+        assertTrue(methodName + " must place usedFlag after keyword",
+                block.indexOf("@Param(\"usedFlag\")") > block.indexOf("@Param(\"keyword\")"));
+    }
+
     private InternalTestResource resource(Long id, String groupNo, String status, Integer usedFlag) {
         InternalTestResource resource = new InternalTestResource();
         resource.setId(id);
@@ -797,6 +907,15 @@ public class InternalTestDataSourceTest {
         return 0;
     }
 
+    private Integer groupViewUsedFlag(List<Map<String, Object>> groups, String groupNo) {
+        for (Map<String, Object> group : groups) {
+            if (groupNo.equals(group.get("groupNo"))) {
+                return (Integer) group.get("usedFlag");
+            }
+        }
+        return null;
+    }
+
     @SuppressWarnings("unchecked")
     private InternalTestResourceRepository repositoryProxy(final List<InternalTestResource> candidates,
                                                           final List<InternalTestResource> allGrouped,
@@ -824,16 +943,27 @@ public class InternalTestDataSourceTest {
                         }
                         if ("findAvailableGroupNos".equals(method.getName())) {
                             state.groupNoPageCallCount++;
-                            return state.groupNosPage;
+                            state.findGroupNosUsedFlag = (Integer) args[8];
+                            return page(filterGroupNosByUsedFlag(allGrouped, state.groupNosPage,
+                                    state.findGroupNosUsedFlag), (Integer) args[9], (Integer) args[10]);
                         }
                         if ("countAvailableGroups".equals(method.getName())) {
-                            return state.availableGroupCount;
+                            state.countGroupsCallCount++;
+                            state.countGroupsUsedFlag = (Integer) args[8];
+                            return Long.valueOf(filterGroupNosByUsedFlag(allGrouped, state.groupNosPage,
+                                    state.countGroupsUsedFlag).size());
                         }
                         if ("findAvailableSingleResources".equals(method.getName())) {
-                            return state.singleResourcesPage;
+                            state.singlePageCallCount++;
+                            state.findSinglesUsedFlag = (Integer) args[8];
+                            return page(filterResourcesByUsedFlag(state.singleResourcesPage,
+                                    state.findSinglesUsedFlag), (Integer) args[9], (Integer) args[10]);
                         }
                         if ("countAvailableSingleResources".equals(method.getName())) {
-                            return state.availableSingleCount;
+                            state.countSinglesCallCount++;
+                            state.countSinglesUsedFlag = (Integer) args[8];
+                            return Long.valueOf(filterResourcesByUsedFlag(state.singleResourcesPage,
+                                    state.countSinglesUsedFlag).size());
                         }
                         if ("markResourcesUsedIfAvailable".equals(method.getName())) {
                             state.markUsedCallCount++;
@@ -861,6 +991,52 @@ public class InternalTestDataSourceTest {
             }
         }
         return result;
+    }
+
+    private List<String> filterGroupNosByUsedFlag(List<InternalTestResource> resources,
+                                                   List<String> groupNos,
+                                                   Integer usedFlag) {
+        List<String> result = new ArrayList<String>();
+        for (String groupNo : groupNos) {
+            boolean found = false;
+            boolean matches = true;
+            for (InternalTestResource resource : resources) {
+                if (groupNo.equals(resource.getGroupNo())) {
+                    found = true;
+                    if (!matchesUsedFlag(resource, usedFlag)) {
+                        matches = false;
+                    }
+                }
+            }
+            if (found && matches) {
+                result.add(groupNo);
+            }
+        }
+        return result;
+    }
+
+    private List<InternalTestResource> filterResourcesByUsedFlag(List<InternalTestResource> resources,
+                                                                  Integer usedFlag) {
+        List<InternalTestResource> result = new ArrayList<InternalTestResource>();
+        for (InternalTestResource resource : resources) {
+            if (matchesUsedFlag(resource, usedFlag)) {
+                result.add(resource);
+            }
+        }
+        return result;
+    }
+
+    private boolean matchesUsedFlag(InternalTestResource resource, Integer usedFlag) {
+        return resource != null
+                && "work".equals(resource.getUsageType())
+                && "enabled".equals(resource.getStatus())
+                && (usedFlag == null || usedFlag.equals(resource.getUsedFlag()));
+    }
+
+    private <T> List<T> page(List<T> values, int offset, int limit) {
+        int fromIndex = Math.min(offset, values.size());
+        int toIndex = Math.min(fromIndex + limit, values.size());
+        return new ArrayList<T>(values.subList(fromIndex, toIndex));
     }
 
     private Object objectMethod(Object proxy, Method method, Object[] args) {
@@ -894,10 +1070,15 @@ public class InternalTestDataSourceTest {
         private int markUsedCallCount;
         private int markUsedAffectedRows;
         private int groupNoPageCallCount;
+        private int countGroupsCallCount;
+        private int singlePageCallCount;
+        private int countSinglesCallCount;
         private List<String> groupNosPage = Collections.emptyList();
         private List<InternalTestResource> singleResourcesPage = Collections.emptyList();
-        private Long availableGroupCount = 0L;
-        private Long availableSingleCount = 0L;
+        private Integer findGroupNosUsedFlag;
+        private Integer countGroupsUsedFlag;
+        private Integer findSinglesUsedFlag;
+        private Integer countSinglesUsedFlag;
         private InternalTestResource findOneResource;
     }
 

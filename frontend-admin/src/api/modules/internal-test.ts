@@ -83,6 +83,7 @@ export interface InternalTestResourceGroup {
   groupNo: string
   groupTitle?: string
   mediaType?: string
+  usedFlag?: number
   resources: InternalTestResource[]
 }
 
