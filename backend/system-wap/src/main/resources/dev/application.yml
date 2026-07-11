@@ -59,7 +59,7 @@ system:
     # 本地开发上传到远程 FastDFS，返回可直接预览的 HTTPS 公网地址。
     fdfs_path: ${YPAT_FDFS_PUBLIC_BASE_URL:https://fastdfs.panghu.work/}
     storage:
-      provider: ${YPAT_STORAGE_PROVIDER:fastdfs}
+      provider: ${YPAT_STORAGE_PROVIDER:cos}
       env_prefix: ${YPAT_COS_ENV_PREFIX:dev}
 
 

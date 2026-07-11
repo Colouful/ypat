@@ -4,7 +4,7 @@
       <view class="mine-top">
         <view class="mine-top__left">
           <view class="mine-top__icon" @tap="goCenter">
-            <KeepIcon name="menu" :size="42" />
+            <KeepIcon class="mine-top__action-icon mine-top__action-icon--menu" name="menu" :size="42" />
           </view>
           <view
             v-if="showCheckinEntry"
@@ -12,7 +12,12 @@
             :class="{ 'mine-top__checkin--done': checkinToday?.checkedIn }"
             @tap="openCheckinConfirm"
           >
-            <KeepIcon name="calendar-check" :size="34" :color="checkinToday?.checkedIn ? '#9CA3AF' : '#17A857'" />
+            <KeepIcon
+              class="mine-top__action-icon mine-top__action-icon--checkin"
+              name="calendar-check"
+              :size="34"
+              :color="checkinToday?.checkedIn ? '#9CA3AF' : '#17A857'"
+            />
             <text v-if="checkinToday?.checkedIn" class="mine-top__checkin-text">已签到</text>
           </view>
         </view>
@@ -455,6 +460,24 @@ onPullDownRefresh(async () => {
   color: $color-primary;
   background: #fff;
   box-shadow: $shadow-keep-card;
+}
+
+.mine-top__action-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  line-height: 0;
+}
+
+.mine-top__action-icon--menu {
+  width: 42rpx;
+  height: 42rpx;
+}
+
+.mine-top__action-icon--checkin {
+  width: 34rpx;
+  height: 34rpx;
 }
 
 .mine-top__checkin--done {

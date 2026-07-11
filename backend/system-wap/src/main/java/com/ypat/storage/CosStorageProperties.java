@@ -6,7 +6,7 @@ import org.springframework.stereotype.Component;
 @Component
 @ConfigurationProperties(prefix = "system.third.storage")
 public class CosStorageProperties {
-    private String provider = "fastdfs";
+    private String provider = "cos";
     private String secretId;
     private String secretKey;
     private String region;
@@ -15,7 +15,7 @@ public class CosStorageProperties {
     private String envPrefix = "dev";
 
     public String normalizedProvider() {
-        return isBlank(provider) ? "fastdfs" : provider.trim().toLowerCase();
+        return isBlank(provider) ? "cos" : provider.trim().toLowerCase();
     }
 
     public boolean isCosEnabled() {

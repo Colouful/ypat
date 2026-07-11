@@ -33,7 +33,7 @@ system:
   third:
     fdfs_path: ${YPAT_FDFS_PUBLIC_BASE_URL:https://panghu.work/files}
     storage:
-      provider: ${YPAT_STORAGE_PROVIDER:fastdfs}
+      provider: ${YPAT_STORAGE_PROVIDER:cos}
       env_prefix: ${YPAT_COS_ENV_PREFIX:pre}
 
 

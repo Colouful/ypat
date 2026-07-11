@@ -28,7 +28,7 @@ public class StorageConfigurationSourceTest {
     public void sysConfExposesCosEnvironmentVariables() throws Exception {
         String source = read("backend/system-wap/src/main/resources/conf/sys_conf.properties");
 
-        assertTrue(source.contains("system.third.storage.provider = ${YPAT_STORAGE_PROVIDER:fastdfs}"));
+        assertTrue(source.contains("system.third.storage.provider = ${YPAT_STORAGE_PROVIDER:cos}"));
         assertTrue(source.contains("system.third.storage.secret_id = ${YPAT_COS_SECRET_ID:}"));
         assertTrue(source.contains("system.third.storage.secret_key = ${YPAT_COS_SECRET_KEY:}"));
         assertTrue(source.contains("system.third.storage.region = ${YPAT_COS_REGION:}"));
@@ -49,7 +49,7 @@ public class StorageConfigurationSourceTest {
         String wapService = serviceBlock(source, "wap");
         String restapiService = serviceBlock(source, "restapi");
 
-        assertTrue(wapService.contains("YPAT_STORAGE_PROVIDER: \"${YPAT_STORAGE_PROVIDER:-fastdfs}\""));
+        assertTrue(wapService.contains("YPAT_STORAGE_PROVIDER: \"${YPAT_STORAGE_PROVIDER:-cos}\""));
         assertTrue(wapService.contains("YPAT_COS_SECRET_ID: \"${YPAT_COS_SECRET_ID:-}\""));
         assertTrue(wapService.contains("YPAT_COS_SECRET_KEY: \"${YPAT_COS_SECRET_KEY:-}\""));
         assertTrue(wapService.contains("YPAT_COS_REGION: \"${YPAT_COS_REGION:-ap-guangzhou}\""));
