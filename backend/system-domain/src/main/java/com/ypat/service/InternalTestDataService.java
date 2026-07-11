@@ -58,6 +58,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -75,6 +76,7 @@ public class InternalTestDataService {
     private static final String CLEANUP_REASON = "内测数据软清理";
     private static final int CHUNK_SIZE = 500;
     private static final int STYLE_LIMIT = 5;
+    private static final int YPAT_RESOURCE_LIMIT = 9;
 
     @Autowired
     private UserRepository userRepository;
@@ -110,14 +112,11 @@ public class InternalTestDataService {
         validateWorkGeneration(qo);
         User user = loadInternalUser(qo.getUserId());
         String batchNo = CommonUtils.isNotNull(qo.getBatchNo()) ? qo.getBatchNo() : buildBatchNo();
-        int workCount = 0;
-        for (String groupNo : qo.getGroupNos()) {
-            List<InternalTestResource> group = loadAvailableWorkGroup(groupNo);
-            Work work = createWorkFromGroup(user, group, qo, batchNo);
-            internalTestResourceService.markResourcesUsed(group, batchNo, "work", work.getId());
-            workCount++;
-        }
-        return buildBatch(batchNo, 0, 0, workCount);
+        String groupNo = qo.getGroupNos().get(0);
+        List<InternalTestResource> group = loadAvailableWorkGroup(groupNo);
+        Work work = createWorkFromGroup(user, group, qo, batchNo);
+        internalTestResourceService.markResourcesUsed(group, batchNo, "work", work.getId());
+        return buildBatch(batchNo, 0, 0, 1);
     }
 
     public InternalTestBatchQo generateYpats(InternalTestGenerateQo qo) {
@@ -125,17 +124,10 @@ public class InternalTestDataService {
         User user = loadInternalUser(qo.getUserId());
         updateInternalUserContact(user, qo);
         String batchNo = CommonUtils.isNotNull(qo.getBatchNo()) ? qo.getBatchNo() : buildBatchNo();
-        List<InternalTestResource> resources = ensureResources(
-                qo.getYpatResourceIds(),
-                InternalTestResourceUsageType.ypat.value,
-                InternalTestResourceMediaType.image.value,
-                qo.getStyleCode(),
-                1);
-        InternalTestResource resource = pick(resources, 0);
-        YpatInfo ypat = createYpat(user, resource, qo, batchNo);
-        List<InternalTestResource> usedResources = new ArrayList<InternalTestResource>();
-        usedResources.add(resource);
-        internalTestResourceService.markResourcesUsed(usedResources, batchNo, "ypat", ypat.getId());
+        List<InternalTestResource> resources = loadSelectedYpatResources(qo.getYpatResourceIds());
+        YpatInfo ypat = createYpat(user, resources.get(0), qo, batchNo);
+        saveYpatImages(ypat, resources);
+        internalTestResourceService.markResourcesUsed(resources, batchNo, "ypat", ypat.getId());
         return buildBatch(batchNo, 0, 1, 0);
     }
 
@@ -163,6 +155,7 @@ public class InternalTestDataService {
             for (int i = 0; i < users.size(); i++) {
                 InternalTestResource resource = ypatResources.get(i);
                 YpatInfo ypat = createYpat(users.get(i), resource, qo, batchNo);
+                saveYpatImages(ypat, Collections.singletonList(resource));
                 markSingleResourceUsed(resource, batchNo, "ypat", ypat.getId());
                 ypatCount++;
             }
@@ -450,14 +443,17 @@ public class InternalTestDataService {
         ypat.setIsNationwide(0);
         ypat.setDataFlag(InternalTestDataFlag.internalTest.value);
         ypat.setInternalBatchNo(batchNo);
-        ypat = ypatInfoRepository.save(ypat);
+        return ypatInfoRepository.save(ypat);
+    }
 
-        YpatImg img = new YpatImg();
-        img.setYpatid(ypat.getId());
-        img.setType("0");
-        img.setImgpath(resource.getUrl());
-        ypatImgRepository.save(img);
-        return ypat;
+    private void saveYpatImages(YpatInfo ypat, List<InternalTestResource> resources) {
+        for (InternalTestResource resource : resources) {
+            YpatImg img = new YpatImg();
+            img.setYpatid(ypat.getId());
+            img.setType("0");
+            img.setImgpath(resource.getUrl());
+            ypatImgRepository.save(img);
+        }
     }
 
     private Work createWork(User user, InternalTestResource resource, InternalTestGenerateQo qo, String batchNo) {
@@ -544,6 +540,9 @@ public class InternalTestDataService {
     private void validateWorkGeneration(InternalTestGenerateQo qo) {
         if (qo == null || qo.getUserId() == null || CollectionUtils.isEmpty(qo.getGroupNos())) {
             throw new SysException(ResponseCode.FAIL_PARA);
+        }
+        if (qo.getGroupNos().size() != 1) {
+            throw new SysException(ResponseCode.FAIL_PARA, "一次只能选择一个作品组");
         }
         if (CollectionUtils.isEmpty(qo.getStyleCodes())) {
             throw new SysException(ResponseCode.FAIL_PARA, "作品风格不能为空");
@@ -702,6 +701,15 @@ public class InternalTestDataService {
         if (qo == null || qo.getUserId() == null) {
             throw new SysException(ResponseCode.FAIL_PARA, "请选择内测用户");
         }
+        if (CollectionUtils.isEmpty(qo.getYpatResourceIds())) {
+            throw new SysException(ResponseCode.FAIL_PARA, "约拍图片不能为空");
+        }
+        if (qo.getYpatResourceIds().size() > YPAT_RESOURCE_LIMIT) {
+            throw new SysException(ResponseCode.FAIL_PARA, "约拍图片最多选择9张");
+        }
+        if (new HashSet<Long>(qo.getYpatResourceIds()).size() != qo.getYpatResourceIds().size()) {
+            throw new SysException(ResponseCode.FAIL_PARA, "约拍图片不能重复");
+        }
         if (CommonUtils.isNull(qo.getPatdate()) || CommonUtils.isNull(qo.getPatslice())) {
             throw new SysException(ResponseCode.FAIL_PARA, "约拍日期和时间段不能为空");
         }
@@ -732,6 +740,39 @@ public class InternalTestDataService {
             throw new SysException(ResponseCode.FAIL_PARA, "约拍对象参数错误");
         }
         resolvePatdate(qo.getPatdate(), new Date());
+    }
+
+    private List<InternalTestResource> loadSelectedYpatResources(List<Long> resourceIds) {
+        if (resourceIds.contains(null)) {
+            throw new SysException(ResponseCode.FAIL_PARA, "约拍资源不存在，请重新选择");
+        }
+        List<InternalTestResource> foundResources = internalTestResourceRepository.findAll(resourceIds);
+        Map<Long, InternalTestResource> resourceById = new HashMap<Long, InternalTestResource>();
+        for (InternalTestResource resource : foundResources) {
+            resourceById.put(resource.getId(), resource);
+        }
+
+        List<InternalTestResource> resources = new ArrayList<InternalTestResource>();
+        for (Long resourceId : resourceIds) {
+            InternalTestResource resource = resourceById.get(resourceId);
+            if (resource == null) {
+                throw new SysException(ResponseCode.FAIL_PARA, "约拍资源不存在，请重新选择");
+            }
+            if (!InternalTestResourceStatus.enabled.value.equals(resource.getStatus())) {
+                throw new SysException(ResponseCode.FAIL_PARA, "约拍资源未启用，请重新选择");
+            }
+            if (Integer.valueOf(1).equals(resource.getUsedFlag())) {
+                throw new SysException(ResponseCode.FAIL_PARA, "约拍资源已被占用，请重新选择");
+            }
+            if (!InternalTestResourceUsageType.ypat.value.equals(resource.getUsageType())) {
+                throw new SysException(ResponseCode.FAIL_PARA, "约拍资源用途错误");
+            }
+            if (!InternalTestResourceMediaType.image.value.equals(resource.getMediaType())) {
+                throw new SysException(ResponseCode.FAIL_PARA, "约拍资源包含视频");
+            }
+            resources.add(resource);
+        }
+        return resources;
     }
 
     private boolean isValidYpatStyle(String styleCode) {
