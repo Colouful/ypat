@@ -51,6 +51,78 @@ describe('internal test workbench source contracts', () => {
     expect(page).toContain("formatDate(row.createdAt ?? null) || '-'")
   })
 
+  it('资源选择弹窗独立查询并按作品与约拍规则维护临时选择', () => {
+    const dialog = source('src/views/internal-test/generator/ResourcePickerDialog.vue')
+
+    expect(dialog).toContain('getInternalResourceGroups')
+    expect(dialog).toContain('getInternalResources')
+    expect(dialog).toContain('<el-tabs')
+    expect(dialog).toContain('type="selection"')
+    expect(dialog).toContain('@select="handleYpatSelect"')
+    expect(dialog).toContain('@select-all="handleYpatSelectAll"')
+    expect(dialog).toContain(':select-on-indeterminate="false"')
+    expect(dialog).toContain('replaceWorkGroupSelection')
+    expect(dialog).toContain('toggleYpatResourceSelection')
+    expect(dialog).toContain('row-key="groupNo"')
+    expect(dialog).toContain('row-key="id"')
+    expect(dialog).toContain('await nextTick()')
+    expect(dialog).not.toContain('selection-change')
+    expect(dialog).toContain('当前约拍仅支持图片资源')
+    expect(dialog).toContain('detailVisible')
+    expect(dialog).toContain('<el-pagination')
+    expect(dialog).toContain('const query = reactive<InternalTestResourceQuery>')
+    expect(dialog).not.toContain('props.styleCodes')
+
+    const selectableBody = dialog.slice(
+      dialog.indexOf('function isYpatSelectable'),
+      dialog.indexOf('async function synchronizeCurrentPageSelection'),
+    )
+    expect(selectableBody).toContain('const selected = temporaryYpatResources.value.some')
+    expect(selectableBody).toContain('return selected || temporaryYpatResources.value.length < YPAT_RESOURCE_LIMIT')
+
+    const fetchBody = dialog.slice(
+      dialog.indexOf('async function fetchResources'),
+      dialog.indexOf('function resetPageAndFetch'),
+    )
+    const workRequest = fetchBody.slice(0, fetchBody.indexOf('} else {'))
+    expect(workRequest).not.toContain('province:')
+    expect(workRequest).not.toContain('city:')
+    expect(workRequest).not.toContain('area:')
+    expect(fetchBody).toContain('province: query.province')
+    expect(fetchBody).toContain('city: query.city')
+    expect(fetchBody).toContain('area: query.area')
+
+    const resetBody = dialog.slice(
+      dialog.indexOf('function resetQueryFilters'),
+      dialog.indexOf('function clearResourcePage'),
+    )
+    expect(resetBody).toContain("query.keyword = ''")
+    expect(resetBody).toContain("query.styleCode = ''")
+    expect(resetBody).toContain('query.usedFlag = InternalTestResourceUsedFlag.UNUSED.value')
+    expect(resetBody).toContain('activeMediaType.value = InternalTestMediaType.IMAGE.value')
+    expect(resetBody).toContain('return mediaChanged')
+    expect(dialog).toContain('watch(activeMediaType')
+    expect(dialog).toContain("watch([() => props.visible, () => props.mode]")
+    expect(dialog).not.toContain('@tab-change=')
+    const visibilityWatch = dialog.slice(
+      dialog.indexOf("watch([() => props.visible, () => props.mode]"),
+      dialog.indexOf('</script>'),
+    )
+    expect(visibilityWatch).toContain('requestSequence += 1')
+    expect(visibilityWatch).toContain('loading.value = false')
+    expect(visibilityWatch).toContain('if (!mediaChanged) void fetchResources()')
+    expect(dialog).toContain('width="min(960px, calc(100vw - 32px))"')
+    expect(dialog).toContain('width="min(760px, calc(100vw - 32px))"')
+
+    const cancelBody = dialog.slice(
+      dialog.indexOf('function cancel()'),
+      dialog.indexOf('function confirm()'),
+    )
+    expect(cancelBody).toContain("emit('update:visible', false)")
+    expect(cancelBody).not.toContain("emit('confirmWork'")
+    expect(cancelBody).not.toContain("emit('confirmYpat'")
+  })
+
   it('作品组使用资源标题展示并在新增时保存组标题', () => {
     const generator = source('src/views/internal-test/generator/index.vue')
     const resource = source('src/views/internal-test/resource/index.vue')
