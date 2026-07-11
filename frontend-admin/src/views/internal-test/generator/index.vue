@@ -7,20 +7,16 @@ import {
   generateInternalWorks,
   generateInternalYpats,
   getInternalBatches,
-  getInternalResourceGroups,
   searchInternalUsers,
   type InternalTestBatch,
   type InternalTestGeneratePayload,
+  type InternalTestResource,
   type InternalTestResourceGroup,
   type InternalTestUser,
 } from '@/api/modules/internal-test'
 import {
   Gender,
   InternalTestGenerateAction,
-  InternalTestMediaType,
-  InternalTestResourceStatus,
-  InternalTestResourceUsedFlag,
-  InternalTestUsageType,
   YpatTarget,
   getGenderOptions,
   getInternalTestGenerateActionOptions,
@@ -31,14 +27,11 @@ import {
 } from '@/constants/enums'
 import { formatDate } from '@/utils/format'
 import { regionCascaderOptions, toRegionFields, type RegionPath } from '@/utils/region'
+import ResourcePickerDialog from './ResourcePickerDialog.vue'
 
 const publishStatusOptions = [
   { label: '待审核', value: '1' },
   { label: '审核通过', value: '2' },
-]
-const workMediaTabs = [
-  { label: '图片', value: InternalTestMediaType.IMAGE.value },
-  { label: '视频', value: InternalTestMediaType.VIDEO.value },
 ]
 const regionCascaderProps = {
   value: 'label',
@@ -60,7 +53,6 @@ const form = reactive({
   area: '',
   styleCodes: [] as string[],
   publishStatus: '2',
-  groupNos: [] as string[],
   patdate: '',
   patslice: '',
   describ: '',
@@ -71,11 +63,12 @@ const form = reactive({
 
 const batches = ref<InternalTestBatch[]>([])
 const userOptions = ref<InternalTestUser[]>([])
-const workGroups = ref<InternalTestResourceGroup[]>([])
-const activeWorkMediaType = ref(InternalTestMediaType.IMAGE.value)
+const resourcePickerVisible = ref(false)
+const resourcePickerMode = ref<'work' | 'ypat'>('work')
+const selectedWorkGroup = ref<InternalTestResourceGroup>()
+const selectedYpatResources = ref<InternalTestResource[]>([])
 const patTimeRange = ref<string[]>([])
 const userSearching = ref(false)
-const resourceLoading = ref(false)
 const batchLoading = ref(false)
 const submitting = ref(false)
 const cleaningBatchNo = ref('')
@@ -86,6 +79,18 @@ const isCreateUsers = computed(() => form.actionType === InternalTestGenerateAct
 const isCreateWorks = computed(() => form.actionType === InternalTestGenerateAction.CREATE_WORKS.value)
 const isCreateYpats = computed(() => form.actionType === InternalTestGenerateAction.CREATE_YPATS.value)
 const styleOptions = computed(() => (isCreateYpats.value ? getYpatPatstyleOptions() : getWorkTagStyleOptions()))
+const selectedYpatPreviewResources = computed(() => selectedYpatResources.value
+  .filter((resource): resource is InternalTestResource & { url: string } => (
+    typeof resource.url === 'string' && resource.url.trim().length > 0
+  ))
+  .slice(0, 3))
+const hiddenSelectedYpatResourceCount = computed(() => Math.max(
+  0,
+  selectedYpatResources.value.length - selectedYpatPreviewResources.value.length,
+))
+const validSelectedYpatResourceIds = computed(() => selectedYpatResources.value
+  .map((resource) => resource.id)
+  .filter((id): id is number => typeof id === 'number' && Number.isInteger(id) && id > 0))
 const regionPath = computed<RegionPath>({
   get: () => [form.province, form.city, form.area].filter(Boolean) as RegionPath,
   set: (path) => {
@@ -106,28 +111,23 @@ async function remoteSearchUsers(keyword: string): Promise<void> {
   }
 }
 
-async function loadWorkGroups(): Promise<void> {
-  resourceLoading.value = true
-  try {
-    const res = await getInternalResourceGroups({
-      mediaType: activeWorkMediaType.value,
-      usageType: InternalTestUsageType.WORK.value,
-      styleCode: form.styleCodes[0],
-      usedFlag: InternalTestResourceUsedFlag.UNUSED.value,
-      status: InternalTestResourceStatus.ENABLED.value,
-      page: 0,
-      size: 50,
-    })
-    workGroups.value = res.data.content || []
-  } finally {
-    resourceLoading.value = false
-  }
-}
-
 function workGroupLabel(group: InternalTestResourceGroup): string {
   return group.groupTitle?.trim()
     || group.resources?.[0]?.title?.trim()
     || '未命名作品组'
+}
+
+function openResourcePicker(mode: 'work' | 'ypat'): void {
+  resourcePickerMode.value = mode
+  resourcePickerVisible.value = true
+}
+
+function confirmWorkGroup(group: InternalTestResourceGroup | undefined): void {
+  selectedWorkGroup.value = group
+}
+
+function confirmYpatResources(resources: InternalTestResource[]): void {
+  selectedYpatResources.value = resources
 }
 
 async function loadBatches(): Promise<void> {
@@ -145,8 +145,13 @@ function validateBeforeSubmit(): string | null {
     return '新增用户数量必须在 1 到 50 之间'
   }
   if (isCreateWorks.value && !form.userId) return '请选择内测用户'
-  if (isCreateWorks.value && form.groupNos.length === 0) return '请选择作品组'
+  if (isCreateWorks.value && !selectedWorkGroup.value) return '请选择作品组'
   if (isCreateYpats.value && !form.userId) return '请选择内测用户'
+  if (isCreateYpats.value && selectedYpatResources.value.length === 0) return '请选择约拍图片'
+  if (
+    isCreateYpats.value
+    && validSelectedYpatResourceIds.value.length !== selectedYpatResources.value.length
+  ) return '约拍图片数据异常，请重新选择'
   if (isCreateYpats.value && !form.patdate) return '请选择约拍日期'
   if (isCreateYpats.value && patTimeRange.value.length !== 2) return '请选择约拍时间段'
   if (isCreateYpats.value && (!form.province || !form.city || !form.area)) return '约拍地点请选择到区县'
@@ -172,7 +177,11 @@ function buildPayload(): InternalTestGeneratePayload {
     styleCodes: form.styleCodes,
     styleCode: form.styleCodes[0],
     publishStatus: form.publishStatus,
-    groupNos: form.groupNos,
+    groupNos: isCreateWorks.value && selectedWorkGroup.value ? [selectedWorkGroup.value.groupNo] : undefined,
+    ypatResourceIds: isCreateYpats.value
+      && validSelectedYpatResourceIds.value.length === selectedYpatResources.value.length
+      ? validSelectedYpatResourceIds.value
+      : undefined,
     patdate: form.patdate,
     patslice: isCreateYpats.value ? patTimeRange.value.join('-') : undefined,
     describ: form.describ,
@@ -249,27 +258,11 @@ async function cleanupAllInternalData(): Promise<void> {
   }
 }
 
-function styleChanged(): void {
-  form.groupNos = []
-  if (isCreateWorks.value) {
-    loadWorkGroups()
-  }
-}
-
-function workMediaChanged(): void {
-  form.groupNos = []
-  loadWorkGroups()
-}
-
 function actionChanged(): void {
   form.styleCodes = []
-  if (isCreateWorks.value) {
-    loadWorkGroups()
-  }
 }
 
 onMounted(() => {
-  loadWorkGroups()
   loadBatches()
 })
 </script>
@@ -363,7 +356,6 @@ onMounted(() => {
             clearable
             placeholder="请选择风格"
             style="width: 260px"
-            @change="styleChanged"
           >
             <el-option
               v-for="option in styleOptions"
@@ -373,22 +365,37 @@ onMounted(() => {
             />
           </el-select>
         </el-form-item>
-        <el-form-item v-if="isCreateWorks" label="作品媒体">
-          <el-radio-group v-model="activeWorkMediaType" size="small" @change="workMediaChanged">
-            <el-radio-button v-for="tab in workMediaTabs" :key="tab.value" :label="tab.value">
-              {{ tab.label }}
-            </el-radio-button>
-          </el-radio-group>
-        </el-form-item>
         <el-form-item v-if="isCreateWorks" label="作品组">
-          <el-select v-model="form.groupNos" multiple filterable placeholder="请选择未占用作品组" style="width: 320px">
-            <el-option
-              v-for="group in workGroups"
-              :key="group.groupNo"
-              :label="`${workGroupLabel(group)}（${group.resources?.length || 0}个资源）`"
-              :value="group.groupNo"
-            />
-          </el-select>
+          <div class="resource-selection-control">
+            <el-button type="primary" plain @click="openResourcePicker('work')">选择作品组</el-button>
+            <div v-if="selectedWorkGroup" class="selected-resource-summary">
+              <span class="selection-title">{{ workGroupLabel(selectedWorkGroup) }}</span>
+              <span>{{ selectedWorkGroup.resources?.length || 0 }} 个资源</span>
+              <el-button type="danger" link @click="selectedWorkGroup = undefined">清空</el-button>
+            </div>
+          </div>
+        </el-form-item>
+        <el-form-item v-if="isCreateYpats" label="约拍图片">
+          <div class="resource-selection-control">
+            <el-button type="primary" plain @click="openResourcePicker('ypat')">选择约拍图片</el-button>
+            <div v-if="selectedYpatResources.length" class="selected-resource-summary">
+              <span>已选 {{ selectedYpatResources.length }} 张</span>
+              <div
+                v-if="selectedYpatPreviewResources.length || hiddenSelectedYpatResourceCount > 0"
+                class="resource-thumbnails"
+              >
+                <el-image
+                  v-for="resource in selectedYpatPreviewResources"
+                  :key="resource.id || resource.url"
+                  :src="resource.url"
+                  fit="cover"
+                  class="resource-thumbnail"
+                />
+                <span v-if="hiddenSelectedYpatResourceCount > 0">+{{ hiddenSelectedYpatResourceCount }}</span>
+              </div>
+              <el-button type="danger" link @click="selectedYpatResources = []">清空</el-button>
+            </div>
+          </div>
         </el-form-item>
         <el-form-item v-if="isCreateYpats" label="日期">
           <el-date-picker v-model="form.patdate" type="date" value-format="YYYY-MM-DD" placeholder="请选择约拍日期" />
@@ -434,7 +441,6 @@ onMounted(() => {
         </el-form-item>
         <el-form-item>
           <el-button type="primary" :loading="submitting" @click="submitGenerate">生成内测数据</el-button>
-          <el-button v-if="isCreateWorks" :loading="resourceLoading" @click="loadWorkGroups">刷新作品组</el-button>
         </el-form-item>
       </el-form>
     </section>
@@ -478,6 +484,15 @@ onMounted(() => {
         </el-table-column>
       </el-table>
     </section>
+
+    <ResourcePickerDialog
+      v-model:visible="resourcePickerVisible"
+      :mode="resourcePickerMode"
+      :selected-work-group="selectedWorkGroup"
+      :selected-ypat-resources="selectedYpatResources"
+      @confirm-work="confirmWorkGroup"
+      @confirm-ypat="confirmYpatResources"
+    ></ResourcePickerDialog>
   </div>
 </template>
 
@@ -506,19 +521,7 @@ onMounted(() => {
   column-gap: $spacing-lg;
 }
 
-.resource-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-  gap: $spacing-base;
-}
-
-.resource-panel {
-  min-width: 0;
-}
-
-.panel-title,
-.batch-header,
-.work-title {
+.batch-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -526,10 +529,37 @@ onMounted(() => {
   flex-wrap: wrap;
 }
 
-.panel-title {
-  min-height: 32px;
-  margin-bottom: $spacing-sm;
-  font-weight: 600;
+.resource-selection-control,
+.selected-resource-summary,
+.resource-thumbnails {
+  display: flex;
+  align-items: center;
+  gap: $spacing-sm;
+  flex-wrap: wrap;
+}
+
+.resource-selection-control {
+  min-height: 48px;
+  width: 100%;
+}
+
+.selected-resource-summary {
+  min-width: 0;
+  color: $text-secondary;
+}
+
+.selection-title {
+  max-width: 220px;
+  overflow: hidden;
+  color: $text-primary;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.resource-thumbnail {
+  width: 48px;
+  height: 48px;
+  border-radius: 4px;
 }
 
 .batch-filter {

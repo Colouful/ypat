@@ -108,12 +108,19 @@ describe('内测数据 API', () => {
     await api.generateInternalWorks({ actionType: 'create_works', userId: 1, groupNos: ['ITG1'] })
     expect(postMock).toHaveBeenCalledWith('/admin/internal-test/generate/works', { actionType: 'create_works', userId: 1, groupNos: ['ITG1'] })
 
-    await api.generateInternalYpats({ actionType: 'create_ypats', userId: 1, wx: 'wx-test', mobile: '13800138000' })
+    await api.generateInternalYpats({
+      actionType: 'create_ypats',
+      userId: 1,
+      wx: 'wx-test',
+      mobile: '13800138000',
+      ypatResourceIds: [101, 102],
+    })
     expect(postMock).toHaveBeenCalledWith('/admin/internal-test/generate/ypats', {
       actionType: 'create_ypats',
       userId: 1,
       wx: 'wx-test',
       mobile: '13800138000',
+      ypatResourceIds: [101, 102],
     })
 
     await api.searchInternalUsers({ keyword: '内测', page: 0, size: 20 })
