@@ -216,6 +216,9 @@ async function saveResource(): Promise<void> {
       mediaType: form.mediaType || activeMediaType.value,
       status: form.status || InternalTestResourceStatus.ENABLED.value,
       sortNo: form.sortNo ?? 0,
+      groupTitle: form.usageType === InternalTestUsageType.WORK.value
+        ? form.title?.trim() || undefined
+        : undefined,
     }
     if (payload.id) {
       await updateInternalResource(payload)

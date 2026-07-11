@@ -51,6 +51,18 @@ describe('internal test workbench source contracts', () => {
     expect(page).toContain("formatDate(row.createdAt ?? null) || '-'")
   })
 
+  it('作品组使用资源标题展示并在新增时保存组标题', () => {
+    const generator = source('src/views/internal-test/generator/index.vue')
+    const resource = source('src/views/internal-test/resource/index.vue')
+
+    expect(generator).toContain('function workGroupLabel(group: InternalTestResourceGroup)')
+    expect(generator).toContain('group.resources?.[0]?.title?.trim()')
+    expect(generator).toContain('workGroupLabel(group)')
+    expect(generator).not.toContain('group.groupTitle || group.groupNo')
+    expect(resource).toContain('form.usageType === InternalTestUsageType.WORK.value')
+    expect(resource).toContain('? form.title?.trim() || undefined')
+  })
+
   it('生成页提供有明确风险提示的一键清除全部内测数据', () => {
     const page = source('src/views/internal-test/generator/index.vue')
 

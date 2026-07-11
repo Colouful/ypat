@@ -124,6 +124,12 @@ async function loadWorkGroups(): Promise<void> {
   }
 }
 
+function workGroupLabel(group: InternalTestResourceGroup): string {
+  return group.groupTitle?.trim()
+    || group.resources?.[0]?.title?.trim()
+    || '未命名作品组'
+}
+
 async function loadBatches(): Promise<void> {
   batchLoading.value = true
   try {
@@ -379,7 +385,7 @@ onMounted(() => {
             <el-option
               v-for="group in workGroups"
               :key="group.groupNo"
-              :label="`${group.groupTitle || group.groupNo}（${group.resources?.length || 0}个资源）`"
+              :label="`${workGroupLabel(group)}（${group.resources?.length || 0}个资源）`"
               :value="group.groupNo"
             />
           </el-select>
