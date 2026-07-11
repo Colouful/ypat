@@ -185,7 +185,7 @@ DEALLOCATE PREPARE stmt;
 
 SET @ddl := (
   SELECT IF(COUNT(*) = 0,
-    'ALTER TABLE `t_internal_test_resource` ADD INDEX `idx_internal_resource_available_group` (`usage_type`, `status`, `used_flag`, `group_no`, `sort_no`, `id`)',
+    'ALTER TABLE `t_internal_test_resource` ADD INDEX `idx_internal_resource_available_group` (`usage_type`, `status`, `used_flag`, `group_no`(254), `sort_no`, `id`)',
     'SELECT ''skip t_internal_test_resource.idx_internal_resource_available_group'''
   )
   FROM information_schema.STATISTICS

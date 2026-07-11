@@ -269,7 +269,7 @@ public class InternalTestDataSourceTest {
         assertResourceColumnMigration(sql, "used_at",
                 "ALTER TABLE `t_internal_test_resource` ADD COLUMN `used_at` DATETIME DEFAULT NULL");
         assertResourceIndexMigration(sql, "idx_internal_resource_available_group",
-                "ALTER TABLE `t_internal_test_resource` ADD INDEX `idx_internal_resource_available_group` (`usage_type`, `status`, `used_flag`, `group_no`, `sort_no`, `id`)");
+                "ALTER TABLE `t_internal_test_resource` ADD INDEX `idx_internal_resource_available_group` (`usage_type`, `status`, `used_flag`, `group_no`(254), `sort_no`, `id`)");
         assertResourceIndexMigration(sql, "idx_internal_resource_group_no",
                 "ALTER TABLE `t_internal_test_resource` ADD INDEX `idx_internal_resource_group_no` (`group_no`, `id`)");
     }
