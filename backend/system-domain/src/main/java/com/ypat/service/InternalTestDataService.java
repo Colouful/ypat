@@ -387,11 +387,11 @@ public class InternalTestDataService {
                 InternalTestResourceUsageType.avatar.value,
                 InternalTestResourceMediaType.image.value,
                 null,
-                qo.getUserCount());
+                0);
 
         List<User> users = new ArrayList<User>();
         for (int i = 0; i < qo.getUserCount(); i++) {
-            InternalTestResource avatar = pick(avatarResources, i);
+            InternalTestResource avatar = i < avatarResources.size() ? avatarResources.get(i) : null;
             User user = new User();
             user.setGender(defaultString(qo.getGender(), UserGender.nv.value));
             user.setNickname(defaultString(qo.getNicknamePrefix(), "内测用户") + (i + 1));
@@ -399,7 +399,9 @@ public class InternalTestDataService {
             user.setMobile(buildUniqueMobile(i));
             user.setName(user.getNickname());
             user.setPpd(1000);
-            user.setAvatarurl(avatar.getUrl());
+            if (avatar != null) {
+                user.setAvatarurl(avatar.getUrl());
+            }
             user.setRealnameflag(YesNo.yes.value);
             user.setCreditflag(YesNo.yes.value);
             user.setPubtimes(0);
@@ -413,8 +415,10 @@ public class InternalTestDataService {
             user.setDataFlag(InternalTestDataFlag.internalTest.value);
             user.setInternalBatchNo(batchNo);
             user = userRepository.save(user);
-            saveUserAvatar(user, avatar);
-            markSingleResourceUsed(avatar, batchNo, "user", user.getId());
+            if (avatar != null) {
+                saveUserAvatar(user, avatar);
+                markSingleResourceUsed(avatar, batchNo, "user", user.getId());
+            }
             users.add(user);
         }
         return new CreateUsersResult(batchNo, users);
@@ -596,10 +600,10 @@ public class InternalTestDataService {
                 }
             });
         }
-        if (CollectionUtils.isEmpty(resources) || resources.size() < minCount) {
+        if ((CollectionUtils.isEmpty(resources) ? 0 : resources.size()) < minCount) {
             throw new SysException(ResponseCode.FAIL_PARA, "启用资源不足：" + usageType);
         }
-        return resources;
+        return CollectionUtils.isEmpty(resources) ? Collections.<InternalTestResource>emptyList() : resources;
     }
 
     private List<User> loadInternalUsers(List<Long> userIds) {

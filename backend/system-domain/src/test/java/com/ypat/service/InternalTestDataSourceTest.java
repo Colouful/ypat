@@ -1,11 +1,15 @@
 package com.ypat.service;
 
 import com.ypat.InternalTestGenerateQo;
+import com.ypat.InternalTestBatchQo;
 import com.ypat.InternalTestResourceQo;
 import com.ypat.InternalTestUserActionQo;
 import com.ypat.SysException;
 import com.ypat.entity.InternalTestResource;
+import com.ypat.entity.User;
 import com.ypat.repository.InternalTestResourceRepository;
+import com.ypat.repository.UserImgRepository;
+import com.ypat.repository.UserRepository;
 import org.junit.Test;
 import org.springframework.data.domain.Sort;
 import org.springframework.test.util.ReflectionTestUtils;
@@ -584,6 +588,67 @@ public class InternalTestDataSourceTest {
     }
 
     @Test
+    public void createUsersAllowsEmptyAvatarResourcePool() {
+        InternalTestDataService service = new InternalTestDataService();
+        final List<User> savedUsers = new ArrayList<User>();
+        final int[] savedAvatarCount = {0};
+
+        ReflectionTestUtils.setField(service, "internalTestResourceRepository",
+                repositoryProxy(Collections.<InternalTestResource>emptyList(),
+                        Collections.<InternalTestResource>emptyList(),
+                        new RepositoryState()));
+        ReflectionTestUtils.setField(service, "userRepository", repositoryProxy(UserRepository.class,
+                new InvocationHandler() {
+                    @Override
+                    public Object invoke(Object proxy, Method method, Object[] args) {
+                        if (method.getDeclaringClass().equals(Object.class)) {
+                            return objectMethod(proxy, method, args);
+                        }
+                        if ("save".equals(method.getName()) && args[0] instanceof User) {
+                            User user = (User) args[0];
+                            user.setId((long) savedUsers.size() + 1L);
+                            savedUsers.add(user);
+                            return user;
+                        }
+                        return defaultValue(method.getReturnType());
+                    }
+                }));
+        ReflectionTestUtils.setField(service, "userImgRepository", repositoryProxy(UserImgRepository.class,
+                new InvocationHandler() {
+                    @Override
+                    public Object invoke(Object proxy, Method method, Object[] args) {
+                        if (method.getDeclaringClass().equals(Object.class)) {
+                            return objectMethod(proxy, method, args);
+                        }
+                        if ("save".equals(method.getName())) {
+                            savedAvatarCount[0]++;
+                            return args[0];
+                        }
+                        return defaultValue(method.getReturnType());
+                    }
+                }));
+
+        InternalTestGenerateQo qo = new InternalTestGenerateQo();
+        qo.setUserCount(3);
+        qo.setNicknamePrefix("F-");
+        qo.setGender("1");
+        qo.setProfess("0");
+        qo.setProvince("北京市");
+        qo.setCity("北京市");
+        qo.setArea("东城区");
+
+        InternalTestBatchQo batch = service.createUsers(qo);
+
+        assertEquals(3, batch.getUserCount().intValue());
+        assertEquals(3, savedUsers.size());
+        assertEquals(0, savedAvatarCount[0]);
+        for (User user : savedUsers) {
+            assertEquals("internal_test", user.getDataFlag());
+            assertTrue(user.getAvatarurl() == null);
+        }
+    }
+
+    @Test
     public void internalUserSearchIsPagedAndRestrictedToInternalUsers() throws Exception {
         String service = read("backend/system-domain/src/main/java/com/ypat/service/InternalTestDataService.java");
         String generateQo = read("backend/system-object/src/main/java/com/ypat/InternalTestGenerateQo.java");
@@ -781,6 +846,11 @@ public class InternalTestDataSourceTest {
                         return defaultValue(method.getReturnType());
                     }
                 });
+    }
+
+    @SuppressWarnings("unchecked")
+    private <T> T repositoryProxy(Class<T> repositoryType, InvocationHandler handler) {
+        return (T) Proxy.newProxyInstance(repositoryType.getClassLoader(), new Class[]{repositoryType}, handler);
     }
 
     private List<InternalTestResource> filterByGroupNos(List<InternalTestResource> resources, List<String> groupNos) {

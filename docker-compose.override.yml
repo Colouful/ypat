@@ -1,0 +1,13 @@
+# Local development override.
+# Docker Compose loads this file automatically with docker-compose.yml.
+# restapi/wap use host-built jars so local backend restarts do not run mvn in Docker.
+services:
+  restapi:
+    build:
+      context: ./backend/system-restapi
+      dockerfile: Dockerfile.local
+
+  wap:
+    build:
+      context: ./backend/system-wap
+      dockerfile: Dockerfile.local

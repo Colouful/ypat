@@ -70,6 +70,13 @@ describe('内测数据 API', () => {
       batchNo: 'IT202607060001',
     })
 
+    await api.getInternalBatches({ page: 0, size: 20, batchNo: '   ' })
+    expect(getMock).toHaveBeenCalledWith('/admin/internal-test/batches', {
+      page: 0,
+      size: 20,
+      batchNo: undefined,
+    })
+
     await api.cleanupInternalData({ batchNo: 'IT202607060001' })
     expect(postMock).toHaveBeenCalledWith('/admin/internal-test/cleanup', { batchNo: 'IT202607060001' })
 

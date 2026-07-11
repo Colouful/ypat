@@ -1,0 +1,6 @@
+*
+!Dockerfile.local
+!.dockerignore
+!target
+target/*
+!target/system-restapi-1.0-SNAPSHOT.jar

@@ -1,0 +1,11 @@
+# Local development image.
+# Context: backend/system-wap
+# Build the jar on the host first:
+#   cd backend && mvn -pl system-wap -am package -DskipTests -B
+
+FROM eclipse-temurin:8-jre
+WORKDIR /app
+RUN mkdir -p /tmp/ypat-logs
+COPY target/system-wap-1.0-SNAPSHOT.jar app.jar
+EXPOSE 8081
+ENTRYPOINT ["java", "-Djava.security.egd=file:/dev/./urandom", "-jar", "app.jar"]

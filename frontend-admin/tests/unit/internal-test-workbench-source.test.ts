@@ -44,6 +44,13 @@ describe('internal test workbench source contracts', () => {
     expect(page).not.toContain('模板类型')
   })
 
+  it('生成页将批次创建时间格式化后展示', () => {
+    const page = source('src/views/internal-test/generator/index.vue')
+
+    expect(page).toContain("import { formatDate } from '@/utils/format'")
+    expect(page).toContain("formatDate(row.createdAt ?? null) || '-'")
+  })
+
   it('生成页提供有明确风险提示的一键清除全部内测数据', () => {
     const page = source('src/views/internal-test/generator/index.vue')
 

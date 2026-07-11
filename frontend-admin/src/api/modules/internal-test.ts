@@ -113,7 +113,7 @@ export interface InternalTestBatch {
   releasedResourceCount?: number
   status?: string
   errors?: string[]
-  createdAt?: string
+  createdAt?: string | number
 }
 
 export interface InternalTestUser {
@@ -201,7 +201,10 @@ export function markInternalUserDepositPaid(userId: number, data: InternalTestUs
 export function getInternalBatches(
   params?: InternalTestBatchQuery,
 ): Promise<ApiResult<PageResult<InternalTestBatch>>> {
-  return get<PageResult<InternalTestBatch>>('/admin/internal-test/batches', params as Record<string, unknown>)
+  const query = params
+    ? { ...params, batchNo: params.batchNo?.trim() || undefined }
+    : undefined
+  return get<PageResult<InternalTestBatch>>('/admin/internal-test/batches', query as Record<string, unknown>)
 }
 
 export function cleanupInternalData(data: InternalTestGeneratePayload): Promise<ApiResult<InternalTestBatch>> {

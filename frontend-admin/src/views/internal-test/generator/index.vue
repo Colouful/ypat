@@ -29,6 +29,7 @@ import {
   getYpatPatstyleOptions,
   getYpatTargetOptions,
 } from '@/constants/enums'
+import { formatDate } from '@/utils/format'
 import { regionCascaderOptions, toRegionFields, type RegionPath } from '@/utils/region'
 
 const publishStatusOptions = [
@@ -451,7 +452,11 @@ onMounted(() => {
         <el-table-column prop="ypatCount" label="约拍数" width="100" align="center" />
         <el-table-column prop="workCount" label="作品数" width="100" align="center" />
         <el-table-column prop="status" label="状态" width="110" align="center" />
-        <el-table-column prop="createdAt" label="创建时间" min-width="160" show-overflow-tooltip />
+        <el-table-column prop="createdAt" label="创建时间" min-width="180" show-overflow-tooltip>
+          <template #default="{ row }">
+            {{ formatDate(row.createdAt ?? null) || '-' }}
+          </template>
+        </el-table-column>
         <el-table-column label="操作" width="110" align="center" fixed="right">
           <template #default="{ row }">
             <el-button

@@ -1,259 +1,247 @@
-# YPAT（爱去拍）- 摄影约拍服务平台
+# YPAT（爱去拍）摄影约拍平台
 
-## 项目简介
+YPAT（爱去拍）是面向摄影师、模特、妆造师、修图师等摄影行业从业者的约拍撮合平台，覆盖约拍发布、约拍申请、实名认证、消息通知、微信支付、后台审核等核心流程。
 
-YPAT（爱去拍）是一个面向摄影师、模特、妆造师、修图师等摄影行业从业者的约拍撮合平台，提供发布约拍、申请约拍、实名认证、消息通知、支付充值等核心功能。
+本文档是仓库根入口，只保留当前开发最常用的信息。更细的环境变量、部署、回滚、事故处理、数据库迁移等内容见 [DEPLOY_ENVS.md](DEPLOY_ENVS.md) 和 `docs/` 目录。
 
-## 项目结构
+## 当前状态
 
-```
-ypat/
-├── README.md           # 项目说明文档
-├── backend/            # 后端服务（Spring Cloud）
-│   ├── system-wap/     # 移动端API服务
-│   ├── system-web/     # 管理后台服务
-│   ├── system-restapi/ # REST API服务
-│   ├── system-sso/     # 单点登录服务
-│   ├── system-domain/  # 领域层（实体、服务）
-│   ├── system-object/  # 数据传输对象
-│   └── system-security/# 安全认证模块
-├── backend-base/       # 基础设施服务
-│   ├── base-eureka/    # 注册中心
-│   ├── base-config/    # 配置中心
-│   ├── base-zipkin/    # 链路追踪
-│   ├── base-hystrix/   # 熔断监控
-│   └── base-turbine/   # 熔断聚合
-└── frontend/           # 前端项目（UniApp）
-    ├── src/            # 源代码
-    ├── package.json    # 依赖配置
-    └── vite.config.ts  # Vite配置
+| 环境 | 状态 | 入口 |
+| --- | --- | --- |
+| development（本地开发环境） | 常态使用 | [docs/development/LOCAL_DEVELOPMENT.md](docs/development/LOCAL_DEVELOPMENT.md) |
+| staging（预发环境） | 已部署 | [docs/release/STAGING_DEPLOYMENT.md](docs/release/STAGING_DEPLOYMENT.md) |
+| production（生产环境） | 尚未建立 | [docs/release/PRODUCTION_LAUNCH_TODO.md](docs/release/PRODUCTION_LAUNCH_TODO.md) |
+
+> production（生产环境）仍是上线待办状态。不要把模板文档、示例域名或本地 Docker（容器化运行环境）当成生产已部署事实。
+
+## 仓库结构
+
+```text
+ypat-workspace/
+├── backend/                    # Spring Cloud（Java 微服务）业务后端
+│   ├── system-wap/             # 小程序 / H5 业务 API
+│   ├── system-restapi/         # REST API（通用接口服务）
+│   ├── system-web/             # 管理后台后端
+│   ├── system-sso/             # SSO（单点登录）服务
+│   ├── system-domain/          # 领域层
+│   ├── system-object/          # DTO（数据传输对象）
+│   └── system-security/        # 安全认证模块
+├── backend-base/               # 基础服务：Eureka / Config / Hystrix / Turbine / Zipkin
+├── frontend/                   # 新版 UniApp（跨端前端框架）小程序 / H5
+├── frontend-admin/             # 新版管理后台前端
+├── frontend-website/           # 官网 / 展示站
+├── 91pai-master/               # 旧版小程序，仅作兼容和参考
+├── docker-compose.yml          # 本地 development Docker Compose（容器编排）
+├── docker-compose.override.yml # 本地后端 jar 快速重启覆盖配置
+├── docker-compose.staging.yml  # staging（预发环境）
+├── docker-compose.production.yml # production（生产模板）
+├── scripts/                    # 本地启动、部署、检查脚本
+└── docs/                       # 开发、部署、架构、迁移、发布文档
 ```
 
 ## 技术栈
 
 ### 后端
-- **框架**: Spring Boot + Spring Cloud
-- **语言**: Java 8+
-- **ORM**: JPA/Hibernate
-- **数据库**: MySQL
-- **缓存**: Redis
-- **文件存储**: FastDFS
-- **消息推送**: 微信模板消息
-- **支付**: 微信支付
-- **AI**: 百度AI（OCR识别）
+
+- Java 8
+- Spring Boot 1.5.x + Spring Cloud Edgware
+- Maven（Java 构建工具）
+- MySQL、Redis
+- Eureka（服务发现）
+- FastDFS / Tencent COS（对象存储，按环境配置）
+- 微信登录、微信支付、消息通知
 
 ### 前端
-- **框架**: UniApp (Vue 3 + TypeScript)
-- **构建工具**: Vite
-- **目标平台**: 微信小程序、H5、APP
 
-## 核心功能
+- `frontend/`：UniApp（跨端前端框架）+ Vue 3 + TypeScript + Vite
+- `frontend-admin/`：Vue 3 + TypeScript + Vite
+- 包管理统一使用 pnpm（高性能包管理器），不要混用 npm/yarn
 
-### 用户模块
-- 微信/百度授权登录
-- 实名认证（身份证OCR）
-- 用户资料管理
-- 拍拍豆虚拟货币系统
+### 本地运行
 
-### 约拍模块
-- 发布约拍（含图片水印）
-- 申请约拍
-- 收藏约拍
-- 约拍审核机制
-
-### 消息模块
-- 约拍消息通知
-- 审核结果通知
-- 微信模板消息推送
-
-### 支付模块
-- 微信支付充值
-- 拍拍豆消费记录
-- 账单管理
-
-### 内容模块
-- 文章管理
-- Banner管理
-- 约拍列表展示
+- Docker Desktop（本地容器运行环境）
+- Docker Compose（容器编排工具）
+- 微信开发者工具（调试 `mp-weixin` 微信小程序）
 
 ## 快速开始
 
-### 环境要求
-- JDK 8+
-- Maven 3.6+
-- MySQL 5.7+
-- Redis 5.0+
-- Node.js 16+
-- npm/yarn/pnpm
+### 1. 准备环境变量
 
-### 后端启动
 ```bash
-# 1. 创建数据库
-mysql -u root -p
-CREATE DATABASE ypat DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-
-# 2. 修改配置文件
-# 编辑 backend-base/base-config/src/main/resources/application.yml
-# 配置数据库连接、Redis连接、微信小程序配置等
-
-# 3. 启动基础服务
-cd backend-base
-mvn spring-boot:run -pl base-eureka
-mvn spring-boot:run -pl base-config
-
-# 4. 启动业务服务
-cd backend
-mvn spring-boot:run -pl system-sso
-mvn spring-boot:run -pl system-wap
+cd /Users/lizhenwei/workspace/vueworkspace/ypat-workspace
+cp .env.example .env
 ```
 
-### 前端启动
+按实际本地环境修改 `.env`。真实密钥、微信支付证书、数据库密码不能提交到 Git（版本控制系统）。
+
+环境变量权威说明见 [docs/config/ENVIRONMENT_VARIABLES.md](docs/config/ENVIRONMENT_VARIABLES.md)。
+
+### 2. 首次启动本地 Docker 后端环境
+
+```bash
+cd /Users/lizhenwei/workspace/vueworkspace/ypat-workspace
+
+# 本地 override 会让 restapi / wap 直接复制 target jar，因此首次启动前先打包
+cd backend
+mvn -pl system-restapi,system-wap -am package -DskipTests -B
+cd ..
+
+docker compose up -d
+docker compose ps
+```
+
+默认会启动：
+
+- `mysql`
+- `redis`
+- `eureka`
+- `restapi`
+- `wap`
+- `system-web`
+- `admin-web`
+- `nginx`
+
+本地端口、健康检查、FastDFS（文件存储）等完整说明见 [docs/development/LOCAL_DEVELOPMENT.md](docs/development/LOCAL_DEVELOPMENT.md)。
+
+### 3. 修改后端代码后的最快重启方式
+
+本地后端已支持“本机 Maven 打 jar，Docker 只复制 jar 并重启对应服务”的轻量流程。
+首次 `docker compose up -d` 成功后，日常改代码只需要跑下面的脚本。
+
+```bash
+cd /Users/lizhenwei/workspace/vueworkspace/ypat-workspace
+
+# 只改了 backend/system-restapi/
+scripts/restart-docker-backend.sh restapi
+
+# 只改了 backend/system-wap/
+scripts/restart-docker-backend.sh wap
+
+# 改了公共模块，或不确定影响哪个服务
+scripts/restart-docker-backend.sh all
+```
+
+判断规则：
+
+- 改 `backend/system-restapi/`：重启 `restapi`
+- 改 `backend/system-wap/`：重启 `wap`
+- 改 `backend/system-domain/`、`system-object/`、`system-security/`、`system-sso/`：重启 `all`
+
+详细说明见 [docs/deploy/LOCAL_BUILD_AND_DOCKER.md](docs/deploy/LOCAL_BUILD_AND_DOCKER.md)。
+
+### 4. 启动新版小程序 / H5
+
 ```bash
 cd frontend
+pnpm install --frozen-lockfile
 
-# 安装依赖
-npm install
+# H5（浏览器调试）
+pnpm run dev:h5
 
-# 开发模式（微信小程序）
-npm run dev:mp-weixin
-
-# 开发模式（H5）
-npm run dev:h5
-
-# 构建微信小程序
-npm run build:mp-weixin
-
-# 构建H5
-npm run build:h5
+# 微信小程序
+pnpm run dev:mp-weixin
 ```
 
-## API接口文档
+微信小程序产物位于 `frontend/dist/dev/mp-weixin`，用微信开发者工具导入该目录。
 
-### 用户相关
-| 接口 | 方法 | 说明 |
-|------|------|------|
-| `/user/code` | GET | 微信授权code换取session |
-| `/user/login` | POST | 用户登录 |
-| `/user/token` | GET | 获取/刷新Token |
-| `/user/get` | GET | 获取用户信息 |
-| `/user/upd` | POST | 修改用户信息 |
+### 5. 启动管理后台前端
 
-### 约拍相关
-| 接口 | 方法 | 说明 |
-|------|------|------|
-| `/ypat/get` | GET | 获取约拍详情 |
-| `/ypat/submit` | POST | 提交约拍申请 |
-| `/ypat/tc/list` | GET | 推荐约拍列表 |
-| `/my/ypat/rec/add` | POST | 发起约拍申请 |
-| `/my/ypat/sc/add` | POST | 收藏约拍 |
-
-### 支付相关
-| 接口 | 方法 | 说明 |
-|------|------|------|
-| `/order/create` | POST | 创建支付订单 |
-| `/wxpay/notify` | POST | 微信支付回调 |
-| `/bill/findPage` | POST | 账单列表 |
-
-### 实名认证
-| 接口 | 方法 | 说明 |
-|------|------|------|
-| `/oauth/ocr` | POST | 身份证OCR识别 |
-| `/oauth/add` | POST | 提交实名认证 |
-| `/oauth/audit` | POST | 审核实名认证 |
-
-## 数据库表
-
-| 表名 | 说明 |
-|------|------|
-| t_user | 用户表 |
-| t_ypat_info | 约拍信息表 |
-| t_mess_info | 消息表 |
-| t_order | 订单表 |
-| t_bill | 账单表 |
-| t_record | 积分记录表 |
-| t_product | 产品表 |
-| t_article | 文章表 |
-| t_banner | Banner表 |
-| t_ypat_img | 约拍图片表 |
-| t_user_img | 用户图片表 |
-| t_user_ypat | 用户约拍关联表 |
-| t_user_orig | 用户来源表 |
-| t_pub_event | 公众号事件表 |
-
-## 业务流程
-
-### 发布约拍流程
-```
-用户填写约拍信息 → 上传图片（自动加水印） → 提交审核 
-→ 扣除拍拍豆（3个） → 管理员审核 → 微信通知用户
-```
-
-### 申请约拍流程
-```
-用户浏览约拍列表 → 选择感兴趣的约拍 → 发起申请
-→ 扣除拍拍豆（1个） → 微信通知发布者
-```
-
-### 充值流程
-```
-选择充值金额 → 创建订单 → 微信支付 → 支付回调 
-→ 拍拍豆到账
-```
-
-## 部署说明
-
-### Docker部署（推荐）
 ```bash
-# 构建后端镜像
-docker build -t ypat-backend ./backend
-
-# 启动服务
-docker-compose up -d
+cd frontend-admin
+pnpm install --frozen-lockfile
+pnpm run dev
 ```
 
-### 传统部署
+## 常用命令
+
+### 后端
+
 ```bash
-# 打包后端
+# 打包 restapi
 cd backend
-mvn clean package -DskipTests
+mvn -pl system-restapi -am package -DskipTests -B
 
-# 部署到服务器
-scp target/*.jar user@server:/opt/ypat/
+# 打包 wap
+cd backend
+mvn -pl system-wap -am package -DskipTests -B
+
+# 同时打包 restapi + wap
+cd backend
+mvn -pl system-restapi,system-wap -am package -DskipTests -B
 ```
 
-## 开发规范
+### 前端
 
-### 代码规范
-- 后端遵循阿里巴巴Java开发手册
-- 前端遵循Vue官方风格指南
-- 使用ESLint + Prettier格式化代码
+```bash
+# 新版 UniApp 前端
+cd frontend
+pnpm run type-check
+pnpm run lint
+pnpm run test
+pnpm run build:mp-weixin
 
-### Git规范
-- 分支命名: `feature/xxx`, `fix/xxx`, `hotfix/xxx`
-- 提交信息: `feat: 新增功能`, `fix: 修复bug`, `docs: 更新文档`
+# 管理后台前端
+cd frontend-admin
+pnpm run type-check
+pnpm run lint:check
+pnpm run test
+pnpm run build
+```
 
-## 贡献指南
+### Docker
 
-1. Fork 本仓库
-2. 创建功能分支 (`git checkout -b feature/xxx`)
-3. 提交更改 (`git commit -m 'feat: 新增xxx功能'`)
-4. 推送到分支 (`git push origin feature/xxx`)
-5. 创建 Pull Request
+```bash
+# 查看本地容器
+docker compose ps
 
-## 许可证
+# 查看后端日志
+docker compose logs -f restapi wap
 
-MIT License
+# 重启指定服务，不动依赖服务
+docker compose up -d --build --no-deps wap
+```
 
-## 联系方式
+## 核心业务模块
 
-- 项目地址: https://github.com/Colouful/ypat
-- 问题反馈: Issues
+- 用户：微信登录、资料管理、实名认证、会员状态
+- 约拍：发布、列表、详情、申请、收藏、审核
+- 支付：微信支付、保证金 / 拍拍豆、订单回调、账单流水
+- 内容：Banner（轮播图）、文章、活动配置
+- 后台：实名审核、用户管理、约拍审核、配置管理
 
-## 更新日志
+具体接口、表结构和迁移进度以代码、数据库迁移脚本、`docs/migration/` 和 `docs/release/` 为准，不在根 README 重复维护。
 
-### v1.0.0 (2024-01-01)
-- 初始版本发布
-- 用户模块（登录、注册、实名认证）
-- 约拍模块（发布、申请、收藏）
-- 支付模块（微信支付、拍拍豆）
-- 消息模块（微信模板消息）
+## 重要文档
+
+| 主题 | 文档 |
+| --- | --- |
+| 本地开发 | [docs/development/LOCAL_DEVELOPMENT.md](docs/development/LOCAL_DEVELOPMENT.md) |
+| 本地后端快速重启 | [docs/deploy/LOCAL_BUILD_AND_DOCKER.md](docs/deploy/LOCAL_BUILD_AND_DOCKER.md) |
+| 环境变量 | [docs/config/ENVIRONMENT_VARIABLES.md](docs/config/ENVIRONMENT_VARIABLES.md) |
+| 环境 / 部署导航 | [DEPLOY_ENVS.md](DEPLOY_ENVS.md) |
+| staging 部署 | [docs/release/STAGING_DEPLOYMENT.md](docs/release/STAGING_DEPLOYMENT.md) |
+| staging 回滚 | [docs/release/STAGING_ROLLBACK.md](docs/release/STAGING_ROLLBACK.md) |
+| production 上线待办 | [docs/release/PRODUCTION_LAUNCH_TODO.md](docs/release/PRODUCTION_LAUNCH_TODO.md) |
+| 密钥管理 | [docs/release/SECRET_MANAGEMENT.md](docs/release/SECRET_MANAGEMENT.md) |
+| 数据库迁移 | [docs/release/DATABASE_MIGRATION.md](docs/release/DATABASE_MIGRATION.md) |
+| 事故复盘 | [docs/deploy/LESSONS.md](docs/deploy/LESSONS.md) |
+| Java / Spring 升级 ADR | [docs/architecture/ADR-JAVA-SPRING-UPGRADE.md](docs/architecture/ADR-JAVA-SPRING-UPGRADE.md) |
+
+## 开发注意事项
+
+1. 本地开发优先使用 `docker-compose.yml` + `.env`，不要连接 staging / production 数据库。
+2. 后端运行必须按 Java 8 约束处理，详见 [docs/architecture/ADR-JAVA-SPRING-UPGRADE.md](docs/architecture/ADR-JAVA-SPRING-UPGRADE.md)。
+3. 前端统一使用 pnpm（高性能包管理器）。
+4. 真实密钥、证书、私有域名、数据库密码不能提交。
+5. 旧版 `91pai-master/` 只作为兼容参考，优先维护新版 `frontend/`。
+
+## 提交流程建议
+
+提交前按改动范围做最小必要验证：
+
+- 后端代码：执行对应模块 Maven（Java 构建工具）打包或测试
+- 新版小程序：执行 `pnpm run type-check`、`pnpm run lint`、相关测试或目标构建
+- 管理后台：执行 `pnpm run type-check`、`pnpm run lint:check`、相关测试或目标构建
+- Docker 配置：执行 `docker compose config --quiet`
+
+不要把本地 `.env`、证书、构建产物、调试日志提交到仓库。
