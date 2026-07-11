@@ -17,6 +17,7 @@ function createWork(overrides: Partial<WorkDetail> = {}): WorkDetail {
     user: { id: 2 },
     isLiked: false,
     isFavorited: false,
+    isApplied: false,
     isOwner: false,
     ...overrides,
   }
@@ -59,5 +60,27 @@ describe('WorkActionBar', () => {
     await buttons[0].trigger('tap')
 
     expect(wrapper.emitted('like')).toHaveLength(1)
+  })
+
+  it('emits apply only when the work has not been applied to', async () => {
+    const wrapper = mount(WorkActionBar, {
+      props: { work: createWork() },
+    })
+
+    await wrapper.find('.work-action-bar__primary').trigger('tap')
+
+    expect(wrapper.emitted('apply')).toHaveLength(1)
+  })
+
+  it('shows a disabled applied state without emitting apply', async () => {
+    const wrapper = mount(WorkActionBar, {
+      props: { work: createWork({ isApplied: true }) },
+    })
+
+    const primary = wrapper.find('.work-action-bar__primary')
+    expect(primary.text()).toBe('已约拍')
+    expect(primary.classes()).toContain('work-action-bar__primary--disabled')
+    await primary.trigger('tap')
+    expect(wrapper.emitted('apply')).toBeUndefined()
   })
 })

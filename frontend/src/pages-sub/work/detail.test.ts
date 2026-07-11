@@ -16,4 +16,10 @@ describe('work detail action feedback contract', () => {
   it('keeps share action as a visible user hint', () => {
     expect(source).toContain("uni.showToast({ title: '点击右上角分享给好友', icon: 'none' })")
   })
+
+  it('refreshes work detail when returning from the apply page', () => {
+    expect(source).toContain("import { onShareAppMessage, onShow } from '@dcloudio/uni-app'")
+    expect(source).toContain('onShow(() => {')
+    expect(source).toContain('if (id.value) void load()')
+  })
 })

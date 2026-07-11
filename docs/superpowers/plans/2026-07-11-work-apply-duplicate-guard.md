@@ -18,6 +18,8 @@
 - Modify（修改）: `frontend/src/api/modules/work.ts`，标准化作品详情约拍状态。
 - Modify（修改）: `frontend/src/components/business/__tests__/work-action-bar.test.ts`，覆盖未约拍和已约拍操作栏行为。
 - Modify（修改）: `frontend/src/components/business/WorkActionBar.vue`，展示不可点击的“已约拍”状态。
+- Modify（修改）: `frontend/src/pages-sub/work/detail.test.ts`，覆盖返回详情后的状态刷新。
+- Modify（修改）: `frontend/src/pages-sub/work/detail.vue`，页面再次显示时刷新作品详情。
 - Modify（修改）: `frontend/src/pages-sub/work/apply.test.ts`，增加提交锁时序回归测试。
 - Modify（修改）: `frontend/src/pages-sub/work/apply.vue`，在余额刷新前设置提交锁。
 
@@ -27,7 +29,7 @@
 - Modify（修改）: `backend/system-wap/src/test/java/com/ypat/controller/WorkQuickApplySourceTest.java`
 - Modify（修改）: `backend/system-domain/src/main/java/com/ypat/service/WorkService.java:286`
 
-- [ ] **Step 1（步骤 1）: 写失败测试**
+- [x] **Step 1（步骤 1）: 写失败测试**
 
 在 `workDetailReturnsMiniappCompatibleStateFields`（作品详情返回小程序兼容状态字段测试）末尾增加：
 
@@ -36,7 +38,7 @@ assertTrue(source.contains("messInfoRepository.countSendByWorkId(MessType.send.v
 assertTrue(source.contains("res.put(\"isApplied\", applied)"));
 ```
 
-- [ ] **Step 2（步骤 2）: 运行轻量断言确认失败**
+- [x] **Step 2（步骤 2）: 运行轻量断言确认失败**
 
 Run（运行）:
 
@@ -46,7 +48,7 @@ node -e "const fs=require('fs');const s=fs.readFileSync('backend/system-domain/s
 
 Expected（预期）: 退出码为 1，因为响应尚未包含 `isApplied`（是否已约拍）。不运行 Maven（Java 构建工具），避免触发构建或依赖下载。
 
-- [ ] **Step 3（步骤 3）: 实现最小后端逻辑**
+- [x] **Step 3（步骤 3）: 实现最小后端逻辑**
 
 在 `WorkService.getDetail`（作品详情领域方法）的当前用户状态区域加入：
 
@@ -61,7 +63,7 @@ res.put("isApplied", applied);
 
 保持 `likeflag`（点赞标记）、`colflag`（收藏标记）和 `isOwner`（是否作者）原有逻辑不变。
 
-- [ ] **Step 4（步骤 4）: 运行轻量断言确认通过**
+- [x] **Step 4（步骤 4）: 运行轻量断言确认通过**
 
 Run（运行）:
 
@@ -71,7 +73,7 @@ node -e "const fs=require('fs');const s=fs.readFileSync('backend/system-domain/s
 
 Expected（预期）: 无输出，退出码为 0。
 
-- [ ] **Step 5（步骤 5）: 检查差异格式**
+- [x] **Step 5（步骤 5）: 检查差异格式**
 
 Run（运行）:
 
@@ -88,8 +90,10 @@ Expected（预期）: 无输出，退出码为 0。
 - Modify（修改）: `frontend/src/api/modules/work.ts:100`
 - Modify（修改）: `frontend/src/components/business/__tests__/work-action-bar.test.ts`
 - Modify（修改）: `frontend/src/components/business/WorkActionBar.vue:29`
+- Modify（修改）: `frontend/src/pages-sub/work/detail.test.ts`
+- Modify（修改）: `frontend/src/pages-sub/work/detail.vue:29`
 
-- [ ] **Step 1（步骤 1）: 写失败测试**
+- [x] **Step 1（步骤 1）: 写失败测试**
 
 在 `createWork`（创建测试作品）默认值中增加：
 
@@ -123,7 +127,7 @@ it('shows a disabled applied state without emitting apply', async () => {
 })
 ```
 
-- [ ] **Step 2（步骤 2）: 运行测试确认失败**
+- [x] **Step 2（步骤 2）: 运行测试确认失败**
 
 Run（运行）:
 
@@ -133,7 +137,7 @@ cd frontend && npx vitest run src/components/business/__tests__/work-action-bar.
 
 Expected（预期）: 第二个新增测试失败，因为组件仍显示“立即约拍”并触发 `apply`（申请）事件。
 
-- [ ] **Step 3（步骤 3）: 扩展类型和适配**
+- [x] **Step 3（步骤 3）: 扩展类型和适配**
 
 在 `WorkDetail`（作品详情类型）中加入：
 
@@ -147,7 +151,7 @@ isApplied: boolean
 isApplied: isOn(raw.isApplied) || isOn(raw.applyflag) || isOn(raw.applied),
 ```
 
-- [ ] **Step 4（步骤 4）: 实现操作栏状态**
+- [x] **Step 4（步骤 4）: 实现操作栏状态**
 
 将主按钮区域调整为：
 
@@ -172,7 +176,7 @@ isApplied: isOn(raw.isApplied) || isOn(raw.applyflag) || isOn(raw.applied),
 }
 ```
 
-- [ ] **Step 5（步骤 5）: 运行相关测试确认通过**
+- [x] **Step 5（步骤 5）: 运行相关测试确认通过**
 
 Run（运行）:
 
@@ -182,13 +186,47 @@ cd frontend && npx vitest run src/components/business/__tests__/work-action-bar.
 
 Expected（预期）: 5 个测试全部通过。
 
+- [x] **Step 6（步骤 6）: 写返回详情刷新失败测试**
+
+在 `detail.test.ts`（作品详情测试）中断言页面导入并注册 `onShow`（显示钩子），且仅在作品编号存在时调用 `load`（加载函数）。
+
+- [x] **Step 7（步骤 7）: 运行详情测试确认失败**
+
+Run（运行）:
+
+```bash
+cd frontend && npx vitest run src/pages-sub/work/detail.test.ts
+```
+
+Expected（预期）: 新增测试失败，因为页面当前只在 `onMounted`（挂载钩子）加载详情。
+
+- [x] **Step 8（步骤 8）: 实现返回详情刷新**
+
+在作品详情页导入 `onShow`（显示钩子），并增加：
+
+```ts
+onShow(() => {
+  if (id.value) void load()
+})
+```
+
+- [x] **Step 9（步骤 9）: 运行详情测试确认通过**
+
+Run（运行）:
+
+```bash
+cd frontend && npx vitest run src/pages-sub/work/detail.test.ts
+```
+
+Expected（预期）: 3 个测试全部通过。
+
 ### Task 3（任务 3）: 申请页从点击开始锁定提交
 
 **Files（文件）:**
 - Modify（修改）: `frontend/src/pages-sub/work/apply.test.ts`
 - Modify（修改）: `frontend/src/pages-sub/work/apply.vue:199`
 
-- [ ] **Step 1（步骤 1）: 写失败测试**
+- [x] **Step 1（步骤 1）: 写失败测试**
 
 在 `apply.test.ts`（申请页测试）增加：
 
@@ -204,7 +242,7 @@ it('locks submission before refreshing the balance', () => {
 })
 ```
 
-- [ ] **Step 2（步骤 2）: 运行测试确认失败**
+- [x] **Step 2（步骤 2）: 运行测试确认失败**
 
 Run（运行）:
 
@@ -214,7 +252,7 @@ cd frontend && npx vitest run src/pages-sub/work/apply.test.ts
 
 Expected（预期）: 新增测试失败，因为 `submitting.value = true` 当前位于余额刷新之后。
 
-- [ ] **Step 3（步骤 3）: 调整提交时序**
+- [x] **Step 3（步骤 3）: 调整提交时序**
 
 将 `submitApply`（提交申请函数）开头和余额判断调整为：
 
@@ -233,7 +271,7 @@ async function submitApply(): Promise<void> {
 
 保留函数末尾现有 `catch`（异常捕获）和 `finally`（最终处理），由 `finally`（最终处理）统一恢复 `submitting.value = false`。
 
-- [ ] **Step 4（步骤 4）: 运行申请页测试确认通过**
+- [x] **Step 4（步骤 4）: 运行申请页测试确认通过**
 
 Run（运行）:
 
@@ -248,17 +286,17 @@ Expected（预期）: 4 个测试全部通过。
 **Files（文件）:**
 - Verify（验证）: 上述所有修改文件
 
-- [ ] **Step 1（步骤 1）: 运行前端相关测试**
+- [x] **Step 1（步骤 1）: 运行前端相关测试**
 
 Run（运行）:
 
 ```bash
-cd frontend && npx vitest run src/components/business/__tests__/work-action-bar.test.ts src/pages-sub/work/apply.test.ts
+cd frontend && npx vitest run src/components/business/__tests__/work-action-bar.test.ts src/pages-sub/work/apply.test.ts src/pages-sub/work/detail.test.ts
 ```
 
-Expected（预期）: 2 个测试文件、9 个测试全部通过。
+Expected（预期）: 3 个测试文件、12 个测试全部通过。
 
-- [ ] **Step 2（步骤 2）: 运行后端源码契约断言**
+- [x] **Step 2（步骤 2）: 运行后端源码契约断言**
 
 Run（运行）:
 
@@ -268,22 +306,22 @@ node -e "const fs=require('fs');const service=fs.readFileSync('backend/system-do
 
 Expected（预期）: 无输出，退出码为 0。
 
-- [ ] **Step 3（步骤 3）: 运行差异格式检查**
+- [x] **Step 3（步骤 3）: 运行差异格式检查**
 
 Run（运行）:
 
 ```bash
-git diff --check -- backend/system-domain/src/main/java/com/ypat/service/WorkService.java backend/system-wap/src/test/java/com/ypat/controller/WorkQuickApplySourceTest.java frontend/src/api/types/work.ts frontend/src/api/modules/work.ts frontend/src/components/business/__tests__/work-action-bar.test.ts frontend/src/components/business/WorkActionBar.vue frontend/src/pages-sub/work/apply.test.ts frontend/src/pages-sub/work/apply.vue
+git diff --check -- backend/system-domain/src/main/java/com/ypat/service/WorkService.java backend/system-wap/src/test/java/com/ypat/controller/WorkQuickApplySourceTest.java frontend/src/api/types/work.ts frontend/src/api/modules/work.ts frontend/src/components/business/__tests__/work-action-bar.test.ts frontend/src/components/business/WorkActionBar.vue frontend/src/pages-sub/work/detail.test.ts frontend/src/pages-sub/work/detail.vue frontend/src/pages-sub/work/apply.test.ts frontend/src/pages-sub/work/apply.vue
 ```
 
 Expected（预期）: 无输出，退出码为 0。
 
-- [ ] **Step 4（步骤 4）: 审查最终差异**
+- [x] **Step 4（步骤 4）: 审查最终差异**
 
 Run（运行）:
 
 ```bash
-git diff -- backend/system-domain/src/main/java/com/ypat/service/WorkService.java backend/system-wap/src/test/java/com/ypat/controller/WorkQuickApplySourceTest.java frontend/src/api/types/work.ts frontend/src/api/modules/work.ts frontend/src/components/business/__tests__/work-action-bar.test.ts frontend/src/components/business/WorkActionBar.vue frontend/src/pages-sub/work/apply.test.ts frontend/src/pages-sub/work/apply.vue
+git diff -- backend/system-domain/src/main/java/com/ypat/service/WorkService.java backend/system-wap/src/test/java/com/ypat/controller/WorkQuickApplySourceTest.java frontend/src/api/types/work.ts frontend/src/api/modules/work.ts frontend/src/components/business/__tests__/work-action-bar.test.ts frontend/src/components/business/WorkActionBar.vue frontend/src/pages-sub/work/detail.test.ts frontend/src/pages-sub/work/detail.vue frontend/src/pages-sub/work/apply.test.ts frontend/src/pages-sub/work/apply.vue
 ```
 
 Expected（预期）: 只包含 `isApplied`（是否已约拍）数据链路、操作栏禁用状态、提交锁时序及其测试，不包含需求外改动。

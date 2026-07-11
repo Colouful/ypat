@@ -26,7 +26,7 @@
 
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
-import { onShareAppMessage } from '@dcloudio/uni-app'
+import { onShareAppMessage, onShow } from '@dcloudio/uni-app'
 import KeepPageNav from '@/components/business/KeepPageNav.vue'
 import WorkDetailContent from '@/components/business/WorkDetailContent.vue'
 import WorkActionBar from '@/components/business/WorkActionBar.vue'
@@ -48,6 +48,10 @@ onMounted(() => {
   }
   id.value = Number(idStr)
   load()
+})
+
+onShow(() => {
+  if (id.value) void load()
 })
 
 async function load() {

@@ -27,4 +27,14 @@ describe('work apply page bean cost contract', () => {
     expect(source).toContain("uni.navigateTo({ url: '/pages-sub/user/recharge' })")
     expect(source.indexOf('const latestPpd = await refreshPpdBalance()')).toBeLessThan(source.indexOf("await requestMessageSubscribe('apply')"))
   })
+
+  it('locks submission before refreshing the balance', () => {
+    const submitStart = source.indexOf('async function submitApply()')
+    const submitEnd = source.indexOf('function buildYpatApplyContent()', submitStart)
+    const submitSource = source.slice(submitStart, submitEnd)
+
+    expect(submitSource.indexOf('submitting.value = true')).toBeLessThan(
+      submitSource.indexOf('await refreshPpdBalance()'),
+    )
+  })
 })

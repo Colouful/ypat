@@ -67,6 +67,8 @@ public class WorkQuickApplySourceTest {
         assertTrue(source.contains("res.put(\"likeflag\", liked ? \"1\" : \"0\")"));
         assertTrue(source.contains("res.put(\"colflag\", favorited ? \"1\" : \"0\")"));
         assertTrue(source.contains("res.put(\"favoriteflag\", favorited ? \"1\" : \"0\")"));
+        assertTrue(source.contains("messInfoRepository.countSendByWorkId(MessType.send.value, viewerId, workId)"));
+        assertTrue(source.contains("res.put(\"isApplied\", applied)"));
     }
 
     private String readSource(String modulePath, String repoPath, String message) throws IOException {

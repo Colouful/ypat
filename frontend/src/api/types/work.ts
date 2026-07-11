@@ -75,6 +75,7 @@ export interface WorkDetail {
   user: WorkUser
   isLiked: boolean
   isFavorited: boolean
+  isApplied: boolean
   isOwner: boolean
   likeflag?: string
   liked?: boolean

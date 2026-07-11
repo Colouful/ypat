@@ -116,6 +116,7 @@ function normalizeWorkDetail(data: WorkDetail | null | undefined): WorkDetail {
     },
     isLiked: isOn(raw.isLiked) || isOn(raw.likeflag) || isOn(raw.liked),
     isFavorited: isOn(raw.isFavorited) || isOn(raw.colflag) || isOn(raw.favoriteflag) || isOn(raw.favoriteFlag) || isOn(raw.favorited),
+    isApplied: isOn(raw.isApplied) || isOn(raw.applyflag) || isOn(raw.applied),
     isOwner: isOn(raw.isOwner) || isOn(raw.ownerFlag),
   } as WorkDetail
 }

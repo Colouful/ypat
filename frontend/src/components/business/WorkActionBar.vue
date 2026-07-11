@@ -26,8 +26,11 @@
       </view>
       <text class="work-action-bar__label">分享</text>
     </view>
-    <view v-if="!work.isOwner" class="work-action-bar__primary" @tap="onApply">
+    <view v-if="!work.isOwner && !work.isApplied" class="work-action-bar__primary" @tap="onApply">
       <text>立即约拍</text>
+    </view>
+    <view v-else-if="!work.isOwner" class="work-action-bar__primary work-action-bar__primary--disabled">
+      <text>已约拍</text>
     </view>
     <view v-else-if="mode === 'my'" class="work-action-bar__primary work-action-bar__primary--offline" @tap="onOffline">
       <text>下架作品</text>
@@ -142,6 +145,10 @@ function onOffline() { emit('offline') }
     font-weight: 600;
     box-shadow: 0 12rpx 24rpx rgba(35, 194, 104, 0.28);
     &--offline {
+      background: $color-text-helper;
+      box-shadow: none;
+    }
+    &--disabled {
       background: $color-text-helper;
       box-shadow: none;
     }

@@ -286,8 +286,14 @@ public class WorkService {
         // 当前用户状态
         boolean liked = viewerId != null && workLikeRepository.existsByWorkIdAndUserId(workId, viewerId);
         boolean favorited = viewerId != null && workFavoriteRepository.existsByWorkIdAndUserId(workId, viewerId);
+        boolean applied = false;
+        if (viewerId != null) {
+            Long appliedCount = messInfoRepository.countSendByWorkId(MessType.send.value, viewerId, workId);
+            applied = appliedCount != null && appliedCount > 0;
+        }
         res.put("isLiked", liked);
         res.put("isFavorited", favorited);
+        res.put("isApplied", applied);
         res.put("liked", liked);
         res.put("favorited", favorited);
         res.put("likeflag", liked ? "1" : "0");

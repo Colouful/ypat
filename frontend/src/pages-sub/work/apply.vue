@@ -198,13 +198,13 @@ function showRechargeGuide(balance = currentPpd.value): void {
 
 async function submitApply(): Promise<void> {
   if (submitDisabled.value || (!workId.value && !ypatId.value)) return
-  const latestPpd = await refreshPpdBalance()
-  if (latestPpd < applyCost) {
-    showRechargeGuide(latestPpd)
-    return
-  }
   submitting.value = true
   try {
+    const latestPpd = await refreshPpdBalance()
+    if (latestPpd < applyCost) {
+      showRechargeGuide(latestPpd)
+      return
+    }
     await requestMessageSubscribe('apply')
     if (ypatId.value) {
       const currentUserId = userStore.userInfo?.id
