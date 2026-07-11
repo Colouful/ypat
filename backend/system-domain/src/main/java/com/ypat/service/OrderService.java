@@ -2,9 +2,16 @@ package com.ypat.service;
 
 import com.ypat.OrderQo;
 import com.ypat.entity.Order;
+import com.ypat.entity.Product;
+import com.ypat.entity.Record;
+import com.ypat.entity.User;
 import com.ypat.enums.OrderType;
+import com.ypat.enums.RecordType;
 import com.ypat.enums.YesNo;
 import com.ypat.repository.OrderRepository;
+import com.ypat.repository.ProductRepository;
+import com.ypat.repository.RecordRepository;
+import com.ypat.repository.UserRepository;
 import com.ypat.util.CommonUtils;
 import com.ypat.util.CopyUtil;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -29,6 +36,12 @@ public class OrderService {
 
     @Autowired
     private OrderRepository orderRepository;
+    @Autowired
+    private ProductRepository productRepository;
+    @Autowired
+    private UserRepository userRepository;
+    @Autowired
+    private RecordRepository recordRepository;
 
     public void save(Order order){
         //创建订单时所有未支付的订单
@@ -39,6 +52,15 @@ public class OrderService {
         //如果是拍拍豆
         if(order.getType().equals(OrderType.PPD.value)){
 
+        }
+        order.setCredate(new Date());
+        order.setStatus(YesNo.no.value);
+        orderRepository.save(order);
+    }
+
+    public void savePpdPaymentOrder(Order order) {
+        if (order == null || !OrderType.PPD.value.equals(order.getType())) {
+            throw new com.ypat.SysException(com.ypat.ResponseCode.FAIL_PARA);
         }
         order.setCredate(new Date());
         order.setStatus(YesNo.no.value);
@@ -56,6 +78,38 @@ public class OrderService {
 
     public int countByUseridAndType(Long userid, String type) {
         return orderRepository.countByUseridAndTypeAndStatus(userid, type, YesNo.yes.value);
+    }
+
+    public boolean markPpdPaid(String outTradeNo) {
+        Order order = orderRepository.findByOut_trade_no(outTradeNo);
+        if (order == null) throw new com.ypat.SysException(com.ypat.ResponseCode.FAIL_NOT);
+        if (!OrderType.PPD.value.equals(order.getType())) {
+            throw new com.ypat.SysException(com.ypat.ResponseCode.FAIL_PARA);
+        }
+        if (YesNo.yes.value.equals(order.getStatus())) return false;
+
+        Product product = productRepository.findById(order.getProductid());
+        if (product == null || product.getCurrval() == null || product.getCurrval() <= 0) {
+            throw new com.ypat.SysException(com.ypat.ResponseCode.FAIL_NOT);
+        }
+        User user = userRepository.findByIdForUpdate(order.getUserid());
+        if (user == null) throw new com.ypat.SysException(com.ypat.ResponseCode.FAIL_NOT);
+
+        order.setStatus(YesNo.yes.value);
+        order.setReturn_code("SUCCESS");
+        order.setResult_code("SUCCESS");
+        orderRepository.save(order);
+
+        user.setPpd((user.getPpd() == null ? 0 : user.getPpd()) + product.getCurrval());
+        userRepository.save(user);
+
+        Record record = new Record();
+        record.setCredate(new Date());
+        record.setPpd(product.getCurrval());
+        record.setUserid(order.getUserid());
+        record.setType(RecordType.PAY.value);
+        recordRepository.save(record);
+        return true;
     }
 
     public Map<String, Object> findPage(OrderQo queryQo) {

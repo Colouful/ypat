@@ -115,8 +115,16 @@
         </button>
         <!-- #endif -->
 
+        <!-- #ifdef H5 -->
+        <button v-if="hasRechargeProducts" class="pay-btn" :disabled="!selected || paying" :loading="paying" @tap="pay">
+          {{ paying ? '处理中...' : `立即充值 ¥${selected ? formatPrice(selected.oldval) : '0.00'}` }}
+        </button>
+        <!-- #endif -->
+
         <!-- #ifndef MP-WEIXIN -->
-        <view v-if="hasRechargeProducts" class="unsupported">当前仅支持微信小程序支付</view>
+        <!-- #ifndef H5 -->
+        <view v-if="hasRechargeProducts" class="unsupported">当前平台暂不支持充值</view>
+        <!-- #endif -->
         <!-- #endif -->
       </view>
     </view>
@@ -130,6 +138,7 @@ import { onLoad, onShow, onUnload } from '@dcloudio/uni-app'
 import { useUserStore } from '@/stores/user'
 import * as paymentApi from '@/api/modules/payment'
 import * as checkinApi from '@/api/modules/checkin'
+import { getPaymentChannel, redirectToH5Pay, toMiniappPayParams } from '@/services/payment-channel'
 import { APPLY_PPD, PUBLISH_PPD, RECORD_TYPE_LABELS, RecordType, VIEW_CONTACT_PPD } from '@/constants/enums'
 import type { CheckinToday, OrderInfo, Product, RecordInfo } from '@/api/types'
 
@@ -465,7 +474,7 @@ async function waitForServerConfirmation(outTradeNo: string, attempts = 10): Pro
   for (let index = 0; index < attempts && !pollingCancelled; index += 1) {
     await new Promise((resolve) => setTimeout(resolve, 2000))
     try {
-      const result = await paymentApi.getOrderStatus(outTradeNo)
+      const result = await paymentApi.getPpdOrderStatus(outTradeNo)
       const order = result.data?.content?.[0]
       if (isPaid(order)) return 'paid'
       if (isFailed(order)) return 'failed'
@@ -490,7 +499,7 @@ function invokeWechatPayment(data: {
       timeStamp: data.timeStamp,
       nonceStr: data.nonceStr,
       package: data.package,
-      signType: data.signType as 'MD5' | 'HMAC-SHA256',
+      signType: data.signType as never,
       paySign: data.paySign,
       success: () => resolve(),
       fail: (error) => reject(new Error(error.errMsg || '支付失败')),
@@ -504,26 +513,19 @@ async function pay(): Promise<void> {
   paying.value = true
   pollingCancelled = false
   try {
-    const order = await paymentApi.createOrder({
-      type: '0',
-      productid: selected.value.id,
-      total_fee: selected.value.oldval,
-    })
+    const channel = getPaymentChannel()
+    const order = await paymentApi.createPpdOrder(selected.value.id, channel)
+    if (!order.data?.outTradeNo) throw new Error('下单失败')
 
-    if (!order.data?.package || !order.data.timeStamp || !order.data.nonceStr || !order.data.paySign || !order.data.out_trade_no) {
-      throw new Error('支付参数不完整')
+    if (channel === 'H5') {
+      redirectToH5Pay(order.data.h5Url)
+      return
     }
 
-    await invokeWechatPayment({
-      timeStamp: order.data.timeStamp,
-      nonceStr: order.data.nonceStr,
-      package: order.data.package,
-      signType: order.data.signType || 'HMAC-SHA256',
-      paySign: order.data.paySign,
-    })
+    await invokeWechatPayment(toMiniappPayParams(order.data))
 
     uni.showLoading({ title: '服务端确认中...' })
-    const state = await waitForServerConfirmation(order.data.out_trade_no)
+    const state = await waitForServerConfirmation(order.data.outTradeNo)
     uni.hideLoading()
 
     if (state === 'paid') {

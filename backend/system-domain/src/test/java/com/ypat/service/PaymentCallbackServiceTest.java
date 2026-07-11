@@ -49,13 +49,34 @@ public class PaymentCallbackServiceTest {
         assertEquals("D1", deposit.lastOutTradeNo);
     }
 
+    @Test
+    public void firstPpdNotificationCreditsRechargeOrder() {
+        FakePaymentOrderService payment = new FakePaymentOrderService(true, order("PPD", 990));
+        FakeOrderService orderService = new FakeOrderService();
+        PaymentCallbackService service = service(payment, new FakeDepositService(), new FakeMemberService(), orderService);
+
+        boolean first = service.markPaid("D1", "tx1", 990, new Date(), "event1", "digest1");
+
+        assertTrue(first);
+        assertEquals(1, orderService.markCount);
+        assertEquals("D1", orderService.lastOutTradeNo);
+    }
+
     private static PaymentCallbackService service(PaymentOrderService payment,
                                                   DepositService deposit,
                                                   MemberService member) {
+        return service(payment, deposit, member, new FakeOrderService());
+    }
+
+    private static PaymentCallbackService service(PaymentOrderService payment,
+                                                  DepositService deposit,
+                                                  MemberService member,
+                                                  OrderService orderService) {
         PaymentCallbackService service = new PaymentCallbackService();
         ReflectionTestUtils.setField(service, "paymentOrderService", payment);
         ReflectionTestUtils.setField(service, "depositService", deposit);
         ReflectionTestUtils.setField(service, "memberService", member);
+        ReflectionTestUtils.setField(service, "orderService", orderService);
         return service;
     }
 
@@ -105,6 +126,17 @@ public class PaymentCallbackServiceTest {
     private static class FakeMemberService extends MemberService {
         @Override
         public boolean markPaid(String outTradeNo, String wxTransactionId, Date paidAt) {
+            return true;
+        }
+    }
+
+    private static class FakeOrderService extends OrderService {
+        int markCount;
+        String lastOutTradeNo;
+
+        public boolean markPpdPaid(String outTradeNo) {
+            markCount++;
+            lastOutTradeNo = outTradeNo;
             return true;
         }
     }

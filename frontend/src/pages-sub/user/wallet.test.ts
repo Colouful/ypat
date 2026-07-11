@@ -20,6 +20,16 @@ describe('wallet page source contract', () => {
     expect(source).not.toContain("uni.navigateTo({ url: '/pages-sub/user/recharge' })")
   })
 
+  it('uses the unified payment v3 flow used by the deposit page', () => {
+    expect(source).toContain('getPaymentChannel')
+    expect(source).toContain('toMiniappPayParams')
+    expect(source).toContain('redirectToH5Pay')
+    expect(source).toContain('createPpdOrder')
+    expect(source).toContain('order.data.outTradeNo')
+    expect(source).not.toContain('paymentApi.createOrder({')
+    expect(source).not.toContain('total_fee: selected.value.oldval')
+  })
+
   it('renders recharge products as non-scrolling cards with amount, ppd and recommendation badge', () => {
     expect(source).toContain('recommendedProducts')
     expect(source).toContain('hasRechargeProducts')

@@ -20,6 +20,8 @@ public class PaymentCallbackService {
     private DepositService depositService;
     @Autowired
     private MemberService memberService;
+    @Autowired
+    private OrderService orderService;
 
     public boolean markPaid(String outTradeNo, String txId, Integer amountFen,
                             Date paidAt, String eventId, String digest) {
@@ -37,6 +39,8 @@ public class PaymentCallbackService {
             depositService.markPaid(businessNo, txId, paidAt);
         } else if (PaymentBusinessType.MEMBER.value.equals(payment.getBusinessType())) {
             memberService.markPaid(businessNo, txId, paidAt);
+        } else if (PaymentBusinessType.PPD.value.equals(payment.getBusinessType())) {
+            orderService.markPpdPaid(businessNo);
         } else {
             throw new SysException(ResponseCode.FAIL_PARA);
         }

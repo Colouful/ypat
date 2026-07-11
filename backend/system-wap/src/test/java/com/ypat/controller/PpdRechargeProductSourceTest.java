@@ -34,6 +34,19 @@ public class PpdRechargeProductSourceTest {
         assertTrue(orderController.contains("\"up\".equalsIgnoreCase(status)"));
     }
 
+    @Test
+    public void ppdRechargeUsesUnifiedWechatPaymentFlow() throws Exception {
+        String controller = read("src/main/java/com/ypat/controller/PpdController.java");
+
+        assertTrue(controller.contains("@PostMapping(\"/ppd/order/create\")"));
+        assertTrue(controller.contains("@GetMapping(\"/ppd/order/status\")"));
+        assertTrue(controller.contains("PaymentBusinessType.PPD.value"));
+        assertTrue(controller.contains("wechatPaymentService.create(command)"));
+        assertTrue(controller.contains("wechatPaymentReconcileService.syncPaidIfWechatSuccess(outTradeNo)"));
+        assertTrue(controller.contains("product.getOldval()"));
+        assertTrue(controller.contains("ppdOrderServiceClient.addPpdPayment(order)"));
+    }
+
     private String read(String path) throws Exception {
         return new String(Files.readAllBytes(Paths.get(path)), StandardCharsets.UTF_8);
     }

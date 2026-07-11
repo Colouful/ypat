@@ -7,6 +7,8 @@ import type {
   CreateOrderParams,
   CreateOrderResult,
   OrderInfo,
+  PaymentChannel,
+  PaymentCreateResult,
   Bill,
   BillListParams,
   RecordInfo,
@@ -19,6 +21,14 @@ export function getProductList(params: ProductListParams): Promise<ApiResult<Pag
 
 export function createOrder(data: CreateOrderParams): Promise<ApiResult<CreateOrderResult>> {
   return post('/order/create', data)
+}
+
+export function createPpdOrder(productId: number, channel: PaymentChannel): Promise<ApiResult<PaymentCreateResult>> {
+  return post('/ppd/order/create', { productId, channel })
+}
+
+export function getPpdOrderStatus(outTradeNo: string): Promise<ApiResult<PageResult<OrderInfo>>> {
+  return get('/ppd/order/status', { out_trade_no: outTradeNo })
 }
 
 export function getOrderStatus(outTradeNo: string): Promise<ApiResult<PageResult<OrderInfo>>> {
