@@ -32,7 +32,7 @@
 - Modify（修改）: `backend/system-object/src/main/java/com/ypat/YpatInfoQo.java`
 - Modify（修改）: `backend/system-domain/src/main/java/com/ypat/service/YpatInfoService.java`
 
-- [ ] **Step 1（步骤 1）: 写后端失败契约测试**
+- [x] **Step 1（步骤 1）: 写后端失败契约测试**
 
 创建 `YpatApplyFlowSourceTest.java`，读取 `YpatInfoQo.java` 和 `YpatInfoService.java`，断言包含：
 
@@ -46,7 +46,7 @@ assertTrue(serviceSource.contains("ypatInfoQo.setMsgflag(hasSent != null && hasS
 
 测试使用现有 `readSource`（读取源码）模式，不依赖运行数据库。
 
-- [ ] **Step 2（步骤 2）: 运行轻量断言确认失败**
+- [x] **Step 2（步骤 2）: 运行轻量断言确认失败**
 
 Run（运行）:
 
@@ -56,7 +56,7 @@ node -e "const fs=require('fs');const q=fs.readFileSync('backend/system-object/s
 
 Expected（预期）: 退出码为 1，因为详情契约尚未实现。
 
-- [ ] **Step 3（步骤 3）: 实现传输对象和详情状态**
+- [x] **Step 3（步骤 3）: 实现传输对象和详情状态**
 
 在 `YpatInfoQo`（约拍详情传输对象）增加：
 
@@ -86,7 +86,7 @@ if(userid != null) {
 }
 ```
 
-- [ ] **Step 4（步骤 4）: 运行轻量断言确认通过**
+- [x] **Step 4（步骤 4）: 运行轻量断言确认通过**
 
 Run（运行）:
 
@@ -103,7 +103,7 @@ Expected（预期）: 无输出，退出码为 0。
 - Modify（修改）: `backend/system-domain/src/main/java/com/ypat/service/MessInfoService.java`
 - Modify（修改）: `backend/system-domain/src/main/java/com/ypat/service/WorkService.java`
 
-- [ ] **Step 1（步骤 1）: 扩展失败契约测试**
+- [x] **Step 1（步骤 1）: 扩展失败契约测试**
 
 在 `YpatApplyFlowSourceTest`（约拍申请链路源码测试）增加：
 
@@ -114,7 +114,7 @@ assertTrue(messageServiceSource.contains("if (userid.equals(recper.getId()))"));
 assertTrue(workServiceSource.contains("userRepository.findByIdForUpdate(viewerId)"));
 ```
 
-- [ ] **Step 2（步骤 2）: 运行轻量断言确认失败**
+- [x] **Step 2（步骤 2）: 运行轻量断言确认失败**
 
 Run（运行）:
 
@@ -124,7 +124,7 @@ node -e "const fs=require('fs');const m=fs.readFileSync('backend/system-domain/s
 
 Expected（预期）: 退出码为 1，因为两个申请分支仍使用无锁查询。
 
-- [ ] **Step 3（步骤 3）: 实现普通约拍保护**
+- [x] **Step 3（步骤 3）: 实现普通约拍保护**
 
 将申请用户查询改为：
 
@@ -148,7 +148,7 @@ if(userid.equals(recper.getId())){
 
 现有重复查询必须位于上述写锁之后。
 
-- [ ] **Step 4（步骤 4）: 实现作品快捷约拍保护**
+- [x] **Step 4（步骤 4）: 实现作品快捷约拍保护**
 
 在 `WorkService.quickApply`（作品快捷约拍领域方法）中把：
 
@@ -162,7 +162,7 @@ User viewer = userRepository.findById(viewerId);
 User viewer = userRepository.findByIdForUpdate(viewerId);
 ```
 
-- [ ] **Step 5（步骤 5）: 运行后端轻量契约确认通过**
+- [x] **Step 5（步骤 5）: 运行后端轻量契约确认通过**
 
 Run（运行）:
 
@@ -181,7 +181,7 @@ Expected（预期）: 无输出，退出码为 0。
 - Create（创建）: `frontend/src/pages-sub/ypat/detail.test.ts`
 - Modify（修改）: `frontend/src/pages-sub/ypat/detail.vue`
 
-- [ ] **Step 1（步骤 1）: 写组件失败测试**
+- [x] **Step 1（步骤 1）: 写组件失败测试**
 
 在约拍详情组件测试增加：
 
@@ -203,7 +203,7 @@ it('顶层发布者编号缺失时使用 userQo.id', async () => {
 })
 ```
 
-- [ ] **Step 2（步骤 2）: 写页面刷新失败测试**
+- [x] **Step 2（步骤 2）: 写页面刷新失败测试**
 
 创建 `detail.test.ts`（约拍详情页面测试），断言页面包含组件引用、`onShow`（显示钩子）以及：
 
@@ -211,7 +211,7 @@ it('顶层发布者编号缺失时使用 userQo.id', async () => {
 detailView.value?.load()
 ```
 
-- [ ] **Step 3（步骤 3）: 运行测试确认失败**
+- [x] **Step 3（步骤 3）: 运行测试确认失败**
 
 Run（运行）:
 
@@ -221,7 +221,7 @@ cd frontend && npx vitest run src/components/business/__tests__/ypat-detail-view
 
 Expected（预期）: 已申请按钮、发布者兜底或页面刷新断言失败。
 
-- [ ] **Step 4（步骤 4）: 实现详情组件状态**
+- [x] **Step 4（步骤 4）: 实现详情组件状态**
 
 `YpatInfo`（约拍详情类型）调整为：
 
@@ -243,7 +243,7 @@ const applied = computed(() => detail.value?.msgflag === '1')
 defineExpose({ load })
 ```
 
-- [ ] **Step 5（步骤 5）: 实现详情页返回刷新**
+- [x] **Step 5（步骤 5）: 实现详情页返回刷新**
 
 页面模板和脚本增加：
 
@@ -259,7 +259,7 @@ onShow(() => {
 })
 ```
 
-- [ ] **Step 6（步骤 6）: 运行详情测试确认通过**
+- [x] **Step 6（步骤 6）: 运行详情测试确认通过**
 
 Run（运行）:
 
@@ -276,13 +276,13 @@ Expected（预期）: 两个测试文件全部通过。
 - Modify（修改）: `frontend/src/pages-sub/work/apply.test.ts`
 - Modify（修改）: `frontend/src/pages-sub/work/apply.vue`
 
-- [ ] **Step 1（步骤 1）: 写申请页失败测试**
+- [x] **Step 1（步骤 1）: 写申请页失败测试**
 
 增加源码契约断言：
 
 ```ts
 expect(source).toContain("const isAlreadyApplied = computed(() => ypatId.value ? ypat.value?.msgflag === '1' : work.value?.isApplied === true)")
-expect(source).toContain("isAlreadyApplied.value ? '已约拍' : '确认提交'")
+expect(source).toContain("isAlreadyApplied ? '已约拍' : '确认提交'")
 expect(source).toContain('const latestTarget = ypatId.value ? await loadYpat() : await loadWork()')
 expect(source.indexOf('const latestTarget =')).toBeLessThan(source.indexOf('await refreshPpdBalance()'))
 expect(source).toContain("uni.showToast({ title: '你已提交过该约拍', icon: 'none' })")
@@ -290,7 +290,7 @@ expect(source).not.toContain('sendperid: currentUserId')
 expect(source).not.toContain('recperid: publisherId')
 ```
 
-- [ ] **Step 2（步骤 2）: 运行申请页测试确认失败**
+- [x] **Step 2（步骤 2）: 运行申请页测试确认失败**
 
 Run（运行）:
 
@@ -300,7 +300,7 @@ cd frontend && npx vitest run src/pages-sub/work/apply.test.ts
 
 Expected（预期）: 新增状态检查和精简请求参数断言失败。
 
-- [ ] **Step 3（步骤 3）: 精简申请参数类型**
+- [x] **Step 3（步骤 3）: 精简申请参数类型**
 
 将 `YpatApplyParams`（约拍申请参数）改为：
 
@@ -311,7 +311,7 @@ export interface YpatApplyParams {
 }
 ```
 
-- [ ] **Step 4（步骤 4）: 实现申请页目标状态检查**
+- [x] **Step 4（步骤 4）: 实现申请页目标状态检查**
 
 让 `loadWork`（加载作品）和 `loadYpat`（加载约拍）返回加载结果；增加 `isAlreadyApplied`（是否已申请）计算值，并把它加入按钮禁用条件与按钮文本。
 
@@ -338,7 +338,7 @@ await ypatApi.applyYpat({
 })
 ```
 
-- [ ] **Step 5（步骤 5）: 运行申请页测试确认通过**
+- [x] **Step 5（步骤 5）: 运行申请页测试确认通过**
 
 Run（运行）:
 
@@ -353,7 +353,7 @@ Expected（预期）: 申请页相关测试全部通过。
 **Files（文件）:**
 - Verify（验证）: 上述所有修改文件
 
-- [ ] **Step 1（步骤 1）: 运行相关前端测试**
+- [x] **Step 1（步骤 1）: 运行相关前端测试**
 
 Run（运行）:
 
@@ -363,7 +363,7 @@ cd frontend && npx vitest run src/components/business/__tests__/ypat-detail-view
 
 Expected（预期）: 所有相关测试通过。
 
-- [ ] **Step 2（步骤 2）: 运行前端代码规范检查**
+- [x] **Step 2（步骤 2）: 运行前端代码规范检查**
 
 Run（运行）:
 
@@ -373,7 +373,7 @@ cd frontend && npx eslint src/api/types/index.ts src/components/business/YpatDet
 
 Expected（预期）: 无输出，退出码为 0。
 
-- [ ] **Step 3（步骤 3）: 运行后端源码契约断言**
+- [x] **Step 3（步骤 3）: 运行后端源码契约断言**
 
 Run（运行）:
 
@@ -383,7 +383,7 @@ node -e "const fs=require('fs');const q=fs.readFileSync('backend/system-object/s
 
 Expected（预期）: 无输出，退出码为 0。
 
-- [ ] **Step 4（步骤 4）: 运行本次差异格式检查**
+- [x] **Step 4（步骤 4）: 运行本次差异格式检查**
 
 Run（运行）:
 
@@ -393,7 +393,7 @@ git diff --check -- backend/system-object/src/main/java/com/ypat/YpatInfoQo.java
 
 Expected（预期）: 无输出，退出码为 0。
 
-- [ ] **Step 5（步骤 5）: 审查最终差异**
+- [x] **Step 5（步骤 5）: 审查最终差异**
 
 确认最终差异只包含发布者编号、申请状态、客户端身份参数移除、详情刷新、悲观锁和相关测试，不包含需求外改动。
 

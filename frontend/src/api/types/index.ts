@@ -141,10 +141,11 @@ export interface YpatInfo {
   pattimes?: number
   coltimes?: number
   userQo?: UserInfo | null
-  userid: number
+  userid?: number
   timeStr?: string
   pics: string[]
   colflag?: string
+  msgflag?: string
   recomflag?: string
   reason?: string
   chargewayTxt?: string
@@ -185,8 +186,6 @@ export interface YpatSubmitParams {
 }
 
 export interface YpatApplyParams {
-  sendperid: number
-  recperid: number
   ypatid: number
   content?: string
 }

@@ -466,4 +466,22 @@ describe('YpatDetailView', () => {
     expect(applyYpat).not.toHaveBeenCalled()
     expect(addFavorite).not.toHaveBeenCalled()
   })
+
+  it('已提交约拍时展示禁用状态且不再跳转', async () => {
+    const wrapper = await mountWithDetail(createDetail({ msgflag: '1' }))
+    const button = wrapper.find('.detail-actions__primary')
+
+    expect(button.text()).toBe('已约拍')
+    expect(button.attributes('disabled')).toBeDefined()
+    await button.trigger('tap')
+    expect(navigateTo).not.toHaveBeenCalled()
+  })
+
+  it('顶层发布者编号缺失时使用 userQo.id', async () => {
+    const wrapper = await mountWithDetail(createDetail({ userid: undefined }))
+
+    await wrapper.find('.author-card').trigger('tap')
+
+    expect(navigateTo).toHaveBeenCalledWith({ url: '/pages-sub/user/profile?id=201' })
+  })
 })

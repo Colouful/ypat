@@ -9,6 +9,7 @@ import com.ypat.YpatInfoQo;
 import com.ypat.entity.*;
 import com.ypat.entity.Record;
 import com.ypat.enums.InternalTestDataFlag;
+import com.ypat.enums.MessType;
 import com.ypat.enums.RecordType;
 import com.ypat.enums.UserImgType;
 import com.ypat.enums.YesNo;
@@ -43,6 +44,8 @@ public class YpatInfoService {
     private RecordRepository recordRepository;
     @Autowired
     private UserYpatRepository userYpatRepository;
+    @Autowired
+    private MessInfoRepository messInfoRepository;
     @Autowired
     private UserMemberRepository userMemberRepository;
     @Autowired
@@ -213,8 +216,10 @@ public class YpatInfoService {
             throw new SysException(ResponseCode.FAIL_NOT);
         }
         YpatInfoQo ypatInfoQo = CopyUtil.copy(ypatInfo, YpatInfoQo.class);
+        ypatInfoQo.setMsgflag(YesNo.no.value);
         User user = ypatInfo.getUser();
         if(user!=null){
+            ypatInfoQo.setUserid(user.getId());
             UserQo userQo = CopyUtil.copy(user, UserQo.class);
             userQo.setMobile("");
             userQo.setWx("");
@@ -251,12 +256,10 @@ public class YpatInfoService {
         ypatInfoQo.setTimeStr(TimeUtil.getTimeStr(timeMillis));
         //是否收藏标识
         if(userid!=null) {
-            int count = userYpatRepository.countByUseridAndYpatid(userid, ypatInfo.getId());
-            if(count>0){
-                ypatInfoQo.setColflag(YesNo.yes.value);
-            }else {
-                ypatInfoQo.setColflag(YesNo.no.value);
-            }
+            int favoriteCount = userYpatRepository.countByUseridAndYpatid(userid, ypatInfo.getId());
+            ypatInfoQo.setColflag(favoriteCount > 0 ? YesNo.yes.value : YesNo.no.value);
+            Long hasSent = messInfoRepository.countSend(MessType.send.value, userid, ypatInfo.getId());
+            ypatInfoQo.setMsgflag(hasSent != null && hasSent > 0 ? YesNo.yes.value : YesNo.no.value);
         }
         return ypatInfoQo;
     }

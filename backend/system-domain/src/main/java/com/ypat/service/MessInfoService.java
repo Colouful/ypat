@@ -48,9 +48,27 @@ public class MessInfoService {
     public void myRecAdd(MessInfoQo messInfoQo){
         Long userid = messInfoQo.getSendperid();
         Long ypatid = messInfoQo.getYpatid();
-        User user = userRepository.findById(userid);
+        if(userid == null){
+            throw new SysException(ResponseCode.FAIL_AUTH);
+        }
+        if(ypatid == null){
+            throw new SysException(ResponseCode.FAIL_PARA);
+        }
+        User user = userRepository.findByIdForUpdate(userid);
+        if(user == null){
+            throw new SysException(ResponseCode.FAIL_AUTH);
+        }
         YpatInfo ypatInfo = ypatInfoRepository.findById(ypatid);
+        if(ypatInfo == null){
+            throw new SysException(ResponseCode.FAIL_NOT);
+        }
         User recper = ypatInfo.getUser();
+        if(recper == null){
+            throw new SysException(ResponseCode.FAIL_NOT);
+        }
+        if(userid.equals(recper.getId())){
+            throw new SysException(ResponseCode.FAIL_VAL, "不能给自己约拍");
+        }
         //对方要求是否实名
         if(YesNo.yes.value.equals(ypatInfo.getRealnameflag())){
             if(!YesNo.yes.value.equals(user.getRealnameflag())){

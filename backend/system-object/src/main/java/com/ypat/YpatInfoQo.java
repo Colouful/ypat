@@ -341,6 +341,14 @@ public class YpatInfoQo extends PageQo implements java.io.Serializable {
         this.colflag = colflag;
     }
 
+    public String getMsgflag() {
+        return msgflag;
+    }
+
+    public void setMsgflag(String msgflag) {
+        this.msgflag = msgflag;
+    }
+
     public String getChargewayTxt() {
         return YpatChargeWay.getNameByCode(this.chargeway);
     }

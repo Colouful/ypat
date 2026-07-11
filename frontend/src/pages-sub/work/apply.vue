@@ -71,7 +71,7 @@
         hover-class="none"
         @tap="submitApply"
       >
-        确认提交
+        {{ isAlreadyApplied ? '已约拍' : '确认提交' }}
       </button>
     </view>
   </view>
@@ -106,6 +106,7 @@ const submitting = ref(false)
 const applyCost = APPLY_PPD
 const currentPpd = computed(() => Number(userStore.userInfo?.ppd || 0))
 const isBalanceInsufficient = computed(() => currentPpd.value < applyCost)
+const isAlreadyApplied = computed(() => ypatId.value ? ypat.value?.msgflag === '1' : work.value?.isApplied === true)
 const applyTarget = computed(() => {
   if (ypat.value) {
     return {
@@ -132,26 +133,29 @@ const authorMeta = computed(() => {
 })
 const submitDisabled = computed(() => (
   submitting.value
+  || isAlreadyApplied.value
   || reason.value.trim().length < 8
   || (!mobile.value.trim() && !wx.value.trim())
 ))
 
-async function loadWork(): Promise<void> {
-  if (!workId.value) return
+async function loadWork(): Promise<WorkDetail | null> {
+  if (!workId.value) return null
   try {
     work.value = (await getDetail(workId.value)).data || null
   } catch {
     work.value = null
   }
+  return work.value
 }
 
-async function loadYpat(): Promise<void> {
-  if (!ypatId.value) return
+async function loadYpat(): Promise<YpatInfo | null> {
+  if (!ypatId.value) return null
   try {
     ypat.value = (await ypatApi.getDetail(ypatId.value, userStore.userInfo?.id)).data || null
   } catch {
     ypat.value = null
   }
+  return ypat.value
 }
 
 function shouldShowSafety(): boolean {
@@ -200,6 +204,15 @@ async function submitApply(): Promise<void> {
   if (submitDisabled.value || (!workId.value && !ypatId.value)) return
   submitting.value = true
   try {
+    const latestTarget = ypatId.value ? await loadYpat() : await loadWork()
+    if (!latestTarget) {
+      uni.showToast({ title: '约拍信息加载失败', icon: 'none' })
+      return
+    }
+    if (isAlreadyApplied.value) {
+      uni.showToast({ title: '你已提交过该约拍', icon: 'none' })
+      return
+    }
     const latestPpd = await refreshPpdBalance()
     if (latestPpd < applyCost) {
       showRechargeGuide(latestPpd)
@@ -207,15 +220,7 @@ async function submitApply(): Promise<void> {
     }
     await requestMessageSubscribe('apply')
     if (ypatId.value) {
-      const currentUserId = userStore.userInfo?.id
-      const publisherId = ypat.value?.userid
-      if (!currentUserId || !publisherId) {
-        uni.showToast({ title: '约拍信息不完整', icon: 'none' })
-        return
-      }
       await ypatApi.applyYpat({
-        sendperid: currentUserId,
-        recperid: publisherId,
         ypatid: ypatId.value,
         content: buildYpatApplyContent(),
       })

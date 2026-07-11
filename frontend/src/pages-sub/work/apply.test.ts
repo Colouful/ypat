@@ -37,4 +37,17 @@ describe('work apply page bean cost contract', () => {
       submitSource.indexOf('await refreshPpdBalance()'),
     )
   })
+
+  it('blocks direct links after either ypat or work has already been applied to', () => {
+    expect(source).toContain("const isAlreadyApplied = computed(() => ypatId.value ? ypat.value?.msgflag === '1' : work.value?.isApplied === true)")
+    expect(source).toContain("isAlreadyApplied ? '已约拍' : '确认提交'")
+    expect(source).toContain("uni.showToast({ title: '你已提交过该约拍', icon: 'none' })")
+  })
+
+  it('refreshes target state before balance and lets the server resolve identities', () => {
+    expect(source).toContain('const latestTarget = ypatId.value ? await loadYpat() : await loadWork()')
+    expect(source.indexOf('const latestTarget =')).toBeLessThan(source.indexOf('await refreshPpdBalance()'))
+    expect(source).not.toContain('sendperid: currentUserId')
+    expect(source).not.toContain('recperid: publisherId')
+  })
 })

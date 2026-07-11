@@ -211,11 +211,11 @@
         </view>
         <button
           class="detail-actions__primary"
-          :disabled="actionLoading"
+          :disabled="actionLoading || applied"
           :loading="actionLoading"
           @tap="apply"
         >
-          立即约拍
+          {{ applied ? '已约拍' : '立即约拍' }}
         </button>
       </view>
     </template>
@@ -253,6 +253,8 @@ const cityText = computed(() => [detail.value?.city, detail.value?.area].filter(
 const styleTags = computed(() => (detail.value?.patstyleTxt || detail.value?.patstyle || '').split(/[,，\s]+/).filter(Boolean).slice(0, 6))
 const targetLabel = computed(() => detail.value ? TARGET_LABELS[detail.value.target] || '约拍' : '约拍')
 const authorName = computed(() => detail.value?.userQo?.nickname || '匿名用户')
+const publisherId = computed(() => Number(detail.value?.userid || detail.value?.userQo?.id || 0))
+const applied = computed(() => detail.value?.msgflag === '1')
 const authorSummary = computed(() => {
   const profession = detail.value?.userQo?.profess?.trim()
   return getProfessLabel(profession) || '摄影爱好者'
@@ -339,7 +341,7 @@ function copyShareLink(): void {
 }
 
 function goProfile(): void {
-  if (detail.value?.userid) uni.navigateTo({ url: `/pages-sub/user/profile?id=${detail.value.userid}` })
+  if (publisherId.value) uni.navigateTo({ url: `/pages-sub/user/profile?id=${publisherId.value}` })
 }
 
 function requireLogin(): boolean {
@@ -363,8 +365,8 @@ async function favorite(): Promise<void> {
 }
 
 function apply(): void {
-  if (!requireLogin() || !detail.value || actionLoading.value) return
-  if (detail.value.userid === userStore.userInfo!.id) {
+  if (!requireLogin() || !detail.value || actionLoading.value || applied.value) return
+  if (publisherId.value === userStore.userInfo!.id) {
     uni.showToast({ title: '不能报名自己发布的约拍', icon: 'none' })
     return
   }
@@ -372,6 +374,8 @@ function apply(): void {
 }
 
 watch(() => props.id, load, { immediate: true })
+
+defineExpose({ load })
 </script>
 
 <style scoped lang="scss">

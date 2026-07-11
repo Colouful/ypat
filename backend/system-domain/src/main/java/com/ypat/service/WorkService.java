@@ -716,7 +716,7 @@ public class WorkService {
         if (reason.length() < 6 || reason.length() > 120) {
             throw new SysException(ResponseCode.FAIL_PARA);
         }
-        User viewer = userRepository.findById(viewerId);
+        User viewer = userRepository.findByIdForUpdate(viewerId);
         if (viewer == null) throw new SysException(ResponseCode.FAIL_AUTH);
         if (StringUtils.isBlank(qo.getMobile()) && StringUtils.isBlank(qo.getWx())
                 && StringUtils.isBlank(viewer.getMobile()) && StringUtils.isBlank(viewer.getWx())) {
