@@ -288,7 +288,6 @@ onLoad((query) => {
 
 .option--compact {
   padding: 12rpx 22rpx;
-  font-size: 24rpx;
 }
 
 .option.active {

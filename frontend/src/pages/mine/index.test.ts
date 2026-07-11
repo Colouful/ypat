@@ -73,6 +73,21 @@ describe('mine navigation', () => {
     expect(source).toContain('checkinToday.value?.enabled === true')
   })
 
+  it('gives both top action icon hosts explicit centered dimensions', () => {
+    const source = readSource('pages/mine/index.vue')
+
+    expect(source).toContain('class="mine-top__action-icon mine-top__action-icon--menu"')
+    expect(source).toContain('class="mine-top__action-icon mine-top__action-icon--checkin"')
+    expect(source).toContain('.mine-top__action-icon {')
+    expect(source).toContain('display: flex;')
+    expect(source).toContain('align-items: center;')
+    expect(source).toContain('justify-content: center;')
+    expect(source).toContain('.mine-top__action-icon--menu {')
+    expect(source).toContain('width: 42rpx;')
+    expect(source).toContain('.mine-top__action-icon--checkin {')
+    expect(source).toContain('width: 34rpx;')
+  })
+
   it('loads checkin status and executes checkin through confirm modal', () => {
     const source = readSource('pages/mine/index.vue')
 
