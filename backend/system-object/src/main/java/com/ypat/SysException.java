@@ -19,10 +19,63 @@ public class SysException extends RuntimeException  {
     }
 
     public SysException(ResponseCode responseCode, String msg) {
-        super(responseCode.toString());
+        super(buildMessage(responseCode, msg));
         this.code = responseCode.getCode();
         this.msg = msg;
         this.responseCode = responseCode;
+    }
+
+    private static String buildMessage(ResponseCode responseCode, String msg) {
+        StringBuilder message = new StringBuilder();
+        message.append("{\"code\":")
+                .append(responseCode.getCode())
+                .append(",\"msg\":");
+        if (msg == null) {
+            message.append("null");
+        } else {
+            message.append('"').append(escapeJson(msg)).append('"');
+        }
+        return message.append('}').toString();
+    }
+
+    private static String escapeJson(String value) {
+        StringBuilder escaped = new StringBuilder(value.length());
+        String hexDigits = "0123456789ABCDEF";
+        for (int i = 0; i < value.length(); i++) {
+            char ch = value.charAt(i);
+            switch (ch) {
+                case '"':
+                    escaped.append("\\\"");
+                    break;
+                case '\\':
+                    escaped.append("\\\\");
+                    break;
+                case '\b':
+                    escaped.append("\\b");
+                    break;
+                case '\f':
+                    escaped.append("\\f");
+                    break;
+                case '\n':
+                    escaped.append("\\n");
+                    break;
+                case '\r':
+                    escaped.append("\\r");
+                    break;
+                case '\t':
+                    escaped.append("\\t");
+                    break;
+                default:
+                    if (ch <= 0x1F) {
+                        escaped.append("\\u00")
+                                .append(hexDigits.charAt((ch >> 4) & 0x0F))
+                                .append(hexDigits.charAt(ch & 0x0F));
+                    } else {
+                        escaped.append(ch);
+                    }
+            }
+        }
+        return escaped.toString();
     }
 
     public int getCode() {
