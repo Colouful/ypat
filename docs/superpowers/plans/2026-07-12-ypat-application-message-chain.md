@@ -250,7 +250,7 @@ git commit -m "fix: show submitted ypat applications"
 - Create（创建）: `frontend/src/pages/message/index.test.ts`
 - Modify（修改）: `frontend/src/pages/message/index.vue`
 
-- [ ] **Step 1（步骤 1）: 写消息页失败契约测试**
+- [x] **Step 1（步骤 1）: 写消息页失败契约测试**
 
 创建 `index.test.ts`（消息页面测试）：
 
@@ -284,7 +284,7 @@ describe('message ypat list contract', () => {
 })
 ```
 
-- [ ] **Step 2（步骤 2）: 运行消息页测试确认按预期失败**
+- [x] **Step 2（步骤 2）: 运行消息页测试确认按预期失败**
 
 Run（运行）:
 
@@ -294,7 +294,7 @@ cd frontend && /Users/lizhenwei/workspace/vueworkspace/ypat-workspace/frontend/n
 
 Expected（预期）: 消息页仍用 `getMySentList`（获取反馈消息列表）和单一 `MessInfo`（消息详情）数组。
 
-- [ ] **Step 3（步骤 3）: 分离收到消息和申请列表状态**
+- [x] **Step 3（步骤 3）: 分离收到消息和申请列表状态**
 
 将消息页状态调整为：
 
@@ -336,7 +336,7 @@ function updatePagination(result?: PageResult<unknown>): void {
 }
 ```
 
-- [ ] **Step 4（步骤 4）: 调整统计和刷新逻辑**
+- [x] **Step 4（步骤 4）: 调整统计和刷新逻辑**
 
 将 `refreshUnreadBreakdown`（刷新未读统计）改名为 `refreshMessageStats`（刷新消息统计），并请求：
 
@@ -360,7 +360,7 @@ function switchTab(value: 'received' | 'sent'): void {
 }
 ```
 
-- [ ] **Step 5（步骤 5）: 分开渲染两类卡片**
+- [x] **Step 5（步骤 5）: 分开渲染两类卡片**
 
 模板按 `tab`（当前标签）分支：
 
@@ -411,7 +411,7 @@ function openApplicationDetail(item: YpatInfo): void {
 }
 ```
 
-- [ ] **Step 6（步骤 6）: 运行消息页测试确认通过**
+- [x] **Step 6（步骤 6）: 运行消息页测试确认通过**
 
 Run（运行）:
 
@@ -421,7 +421,7 @@ cd frontend && /Users/lizhenwei/workspace/vueworkspace/ypat-workspace/frontend/n
 
 Expected（预期）: 三个测试文件全部通过。
 
-- [ ] **Step 7（步骤 7）: 提交消息页修复**
+- [x] **Step 7（步骤 7）: 提交消息页修复**
 
 ```bash
 git add frontend/src/pages/message/index.vue frontend/src/pages/message/index.test.ts

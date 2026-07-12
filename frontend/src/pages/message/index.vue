@@ -39,25 +39,25 @@
             <text class="message-stats__label">收到未读</text>
           </view>
           <view class="message-stats__item message-stats__item--sent">
-            <text class="message-stats__num">{{ sentUnread }}</text>
-            <text class="message-stats__label">申请未读</text>
+            <text class="message-stats__num">{{ applicationCount }}</text>
+            <text class="message-stats__label">申请总数</text>
           </view>
         </view>
 
         <view class="tabs">
           <view :class="['tab', { active: tab === 'received' }]" @tap="switchTab('received')">收到的约拍<text v-if="receivedUnread" class="tab__badge">{{ receivedUnread > 99 ? '99+' : receivedUnread }}</text></view>
-          <view :class="['tab', { active: tab === 'sent' }]" @tap="switchTab('sent')">申请的约拍<text v-if="sentUnread" class="tab__badge tab__badge--sent">{{ sentUnread > 99 ? '99+' : sentUnread }}</text></view>
+          <view :class="['tab', { active: tab === 'sent' }]" @tap="switchTab('sent')">申请的约拍<text v-if="applicationCount" class="tab__badge tab__badge--sent">{{ applicationCount > 99 ? '99+' : applicationCount }}</text></view>
         </view>
 
-        <KeepState v-if="loading && items.length === 0" type="loading" title="加载中..." />
-        <KeepState v-else-if="items.length === 0" type="empty" title="暂无消息" description="去首页看看新的约拍机会。" button-text="去广场" @action="goHome" />
-        <view v-else>
-          <view v-for="item in items" :key="item.id" class="message-card" @tap="openDetail(item)">
+        <KeepState v-if="loading && activeItemCount === 0" type="loading" title="加载中..." />
+        <KeepState v-else-if="activeItemCount === 0" type="empty" title="暂无消息" description="去首页看看新的约拍机会。" button-text="去广场" @action="goHome" />
+        <view v-else-if="tab === 'received'">
+          <view v-for="item in receivedItems" :key="item.id" class="message-card" @tap="openReceivedDetail(item)">
             <image class="message-card__avatar" :src="item.imgpath || '/static/default-avatar.png'" mode="aspectFill" />
             <view class="message-card__body">
               <view class="message-card__head">
                 <text class="message-card__name">{{ item.nickname || '用户' }}</text>
-                <text :class="['message-card__tag', tab === 'sent' ? 'message-card__tag--sent' : '']">{{ tab === 'received' ? '收到' : '申请' }}</text>
+                <text class="message-card__tag">收到</text>
               </view>
               <text class="message-card__content">{{ item.content || '约拍动态' }}</text>
               <view class="message-card__meta">
@@ -68,7 +68,24 @@
             <KeepIcon name="chevron-right" :size="34" color="#B3B8BE" />
           </view>
         </view>
-        <view v-if="items.length && !hasMore" class="load-end">没有更多了</view>
+        <view v-else>
+          <view v-for="item in applicationItems" :key="item.id" class="message-card" @tap="openApplicationDetail(item)">
+            <image class="message-card__avatar" :src="item.userQo?.imgpath || '/static/default-avatar.png'" mode="aspectFill" />
+            <view class="message-card__body">
+              <view class="message-card__head">
+                <text class="message-card__name">{{ item.userQo?.nickname || '匿名用户' }}</text>
+                <text class="message-card__tag message-card__tag--sent">申请</text>
+              </view>
+              <text class="message-card__content">{{ item.describ || '已提交约拍申请' }}</text>
+              <view class="message-card__meta">
+                <text>{{ [item.city, item.area].filter(Boolean).join(' · ') || '地点待沟通' }}</text>
+                <text>{{ item.timeStr || item.pubdate || '刚刚' }}</text>
+              </view>
+            </view>
+            <KeepIcon name="chevron-right" :size="34" color="#B3B8BE" />
+          </view>
+        </view>
+        <view v-if="activeItemCount && !hasMore" class="load-end">没有更多了</view>
       </template>
     </view>
 
@@ -87,7 +104,7 @@ import KeepIcon from '@/components/business/KeepIcon.vue'
 import KeepState from '@/components/business/KeepState.vue'
 import KeepTabBar from '@/components/business/KeepTabBar.vue'
 import { goRootTab } from '@/utils/tab-navigation'
-import type { MessInfo } from '@/api/types'
+import type { MessInfo, PageResult, YpatInfo } from '@/api/types'
 import { resolveMessageNavigation } from '@/utils/message-navigation'
 import {
   getSubscribeMessageToastTitle,
@@ -100,11 +117,21 @@ const userStore = useUserStore()
 const statusBarHeight = computed(() => appStore.statusBarHeight)
 const tab = ref<'received' | 'sent'>('received')
 const loading = ref(false)
-const items = ref<MessInfo[]>([])
+const receivedItems = ref<MessInfo[]>([])
+const applicationItems = ref<YpatInfo[]>([])
+const activeItemCount = computed(() => (
+  tab.value === 'received' ? receivedItems.value.length : applicationItems.value.length
+))
 const page = ref(0)
 const hasMore = ref(true)
 const receivedUnread = ref(0)
-const sentUnread = ref(0)
+const applicationCount = ref(0)
+
+function updatePagination(result?: PageResult<unknown>): void {
+  const current = result?.number ?? page.value
+  hasMore.value = current + 1 < (result?.totalPages || 0)
+  page.value = current + 1
+}
 
 async function load(refresh = false): Promise<void> {
   const userid = userStore.userInfo?.id
@@ -116,14 +143,18 @@ async function load(refresh = false): Promise<void> {
   loading.value = true
   try {
     const params = { userid, page: page.value, size: 20 }
-    const result = tab.value === 'received'
-      ? await ypatApi.getMyReceivedList(params)
-      : await ypatApi.getMySentList(params)
-    const content = result.data?.content || []
-    items.value = refresh ? content : items.value.concat(content)
-    const current = result.data?.number ?? page.value
-    hasMore.value = current + 1 < (result.data?.totalPages || 0)
-    page.value = current + 1
+    if (tab.value === 'received') {
+      const result = await ypatApi.getMyReceivedList(params)
+      const content = result.data?.content || []
+      receivedItems.value = refresh ? content : receivedItems.value.concat(content)
+      updatePagination(result.data)
+    } else {
+      const result = await ypatApi.getMyApplicationList(params)
+      const content = result.data?.content || []
+      applicationItems.value = refresh ? content : applicationItems.value.concat(content)
+      applicationCount.value = result.data?.totalElements || 0
+      updatePagination(result.data)
+    }
   } catch (error) {
     uni.showToast({ title: error instanceof Error ? error.message : '消息加载失败', icon: 'none' })
   } finally {
@@ -131,37 +162,38 @@ async function load(refresh = false): Promise<void> {
   }
 }
 
-async function refreshUnreadBreakdown(): Promise<void> {
+async function refreshMessageStats(): Promise<void> {
   const userid = userStore.userInfo?.id
   if (!userid) {
     receivedUnread.value = 0
-    sentUnread.value = 0
+    applicationCount.value = 0
     return
   }
   try {
-    const [received, sent] = await Promise.all([
+    const [received, applications] = await Promise.all([
       messageApi.getRecUnreadCount('1', userid),
-      messageApi.getSendUnreadCount('4', userid),
+      ypatApi.getMyApplicationList({ userid, page: 0, size: 1 }),
     ])
     receivedUnread.value = Number(received.data || 0)
-    sentUnread.value = Number(sent.data || 0)
+    applicationCount.value = Number(applications.data?.totalElements || 0)
   } catch {
     receivedUnread.value = 0
-    sentUnread.value = 0
+    applicationCount.value = 0
   }
 }
 
 function switchTab(value: 'received' | 'sent'): void {
   tab.value = value
-  items.value = []
-  load(true)
+  if (value === 'received') receivedItems.value = []
+  else applicationItems.value = []
+  void load(true)
 }
 
-async function openDetail(item: MessInfo): Promise<void> {
+async function openReceivedDetail(item: MessInfo): Promise<void> {
   const userid = userStore.userInfo?.id
   if (!userid) return
   const result = await resolveMessageNavigation({
-    tab: tab.value,
+    tab: 'received',
     item,
     getMessageDetail: async (messageId) => (await messageApi.getMessageDetail(messageId, userid)).data,
   })
@@ -170,6 +202,10 @@ async function openDetail(item: MessInfo): Promise<void> {
   } else {
     uni.showToast({ title: result.message, icon: 'none' })
   }
+}
+
+function openApplicationDetail(item: YpatInfo): void {
+  uni.navigateTo({ url: `/pages-sub/ypat/detail?id=${item.id}` })
 }
 
 async function enableSubscribe(): Promise<void> {
@@ -192,12 +228,12 @@ onShow(() => {
   if (userStore.isLoggedIn) {
     void preloadMessageSubscribeTemplates()
     userStore.refreshUnreadCount()
-    refreshUnreadBreakdown()
-    load(true)
+    void refreshMessageStats()
+    void load(true)
   }
 })
 onPullDownRefresh(async () => {
-  await Promise.all([load(true), userStore.refreshUnreadCount(), refreshUnreadBreakdown()])
+  await Promise.all([load(true), userStore.refreshUnreadCount(), refreshMessageStats()])
   uni.stopPullDownRefresh()
 })
 onReachBottom(() => load())
