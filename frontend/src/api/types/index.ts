@@ -487,10 +487,14 @@ export interface MemberOrder {
   updatedAt?: string
 }
 
+export type PpdBenefitScene = 'SUBMIT_YPAT' | 'APPLY_YPAT' | 'VIEW_CONTACT'
+
 export interface MemberBenefitQuote {
-  scene: string
+  scene: PpdBenefitScene
+  sceneName: string
   memberActive: boolean
   levelCode?: string
+  levelName?: string
   originalPpd: number
   discountPpd: number
   actualPpd: number
