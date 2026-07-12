@@ -59,7 +59,8 @@ public interface InternalTestResourceRepository extends JpaRepository<InternalTe
     @Query(value = "select r.group_no from t_internal_test_resource r "
             + "join (select group_no, count(*) total_count from t_internal_test_resource "
             + "where group_no is not null group by group_no) all_g on all_g.group_no = r.group_no "
-            + "where r.usage_type = 'work' and r.status = 'enabled' and r.used_flag = 0 "
+            + "where r.usage_type = 'work' and r.status = 'enabled' "
+            + "and (:usedFlag is null or r.used_flag = :usedFlag) "
             + "and r.group_no is not null "
             + "and (:mediaType is null or r.media_type = :mediaType) "
             + "and (:styleCode is null or r.style_code = :styleCode) "
@@ -84,13 +85,15 @@ public interface InternalTestResourceRepository extends JpaRepository<InternalTe
                                        @Param("area") String area,
                                        @Param("groupNo") String groupNo,
                                        @Param("keyword") String keyword,
+                                       @Param("usedFlag") Integer usedFlag,
                                        @Param("offset") int offset,
                                        @Param("limit") int limit);
 
     @Query(value = "select count(*) from (select r.group_no from t_internal_test_resource r "
             + "join (select group_no, count(*) total_count from t_internal_test_resource "
             + "where group_no is not null group by group_no) all_g on all_g.group_no = r.group_no "
-            + "where r.usage_type = 'work' and r.status = 'enabled' and r.used_flag = 0 "
+            + "where r.usage_type = 'work' and r.status = 'enabled' "
+            + "and (:usedFlag is null or r.used_flag = :usedFlag) "
             + "and r.group_no is not null "
             + "and (:mediaType is null or r.media_type = :mediaType) "
             + "and (:styleCode is null or r.style_code = :styleCode) "
@@ -113,10 +116,12 @@ public interface InternalTestResourceRepository extends JpaRepository<InternalTe
                               @Param("city") String city,
                               @Param("area") String area,
                               @Param("groupNo") String groupNo,
-                              @Param("keyword") String keyword);
+                              @Param("keyword") String keyword,
+                              @Param("usedFlag") Integer usedFlag);
 
     @Query(value = "select r.* from t_internal_test_resource r "
-            + "where r.usage_type = 'work' and r.status = 'enabled' and r.used_flag = 0 "
+            + "where r.usage_type = 'work' and r.status = 'enabled' "
+            + "and (:usedFlag is null or r.used_flag = :usedFlag) "
             + "and r.group_no is null and :groupNo is null "
             + "and (:mediaType is null or r.media_type = :mediaType) "
             + "and (:styleCode is null or r.style_code = :styleCode) "
@@ -138,11 +143,13 @@ public interface InternalTestResourceRepository extends JpaRepository<InternalTe
                                                             @Param("area") String area,
                                                             @Param("groupNo") String groupNo,
                                                             @Param("keyword") String keyword,
+                                                            @Param("usedFlag") Integer usedFlag,
                                                             @Param("offset") int offset,
                                                             @Param("limit") int limit);
 
     @Query(value = "select count(*) from t_internal_test_resource r "
-            + "where r.usage_type = 'work' and r.status = 'enabled' and r.used_flag = 0 "
+            + "where r.usage_type = 'work' and r.status = 'enabled' "
+            + "and (:usedFlag is null or r.used_flag = :usedFlag) "
             + "and r.group_no is null and :groupNo is null "
             + "and (:mediaType is null or r.media_type = :mediaType) "
             + "and (:styleCode is null or r.style_code = :styleCode) "
@@ -162,5 +169,6 @@ public interface InternalTestResourceRepository extends JpaRepository<InternalTe
                                        @Param("city") String city,
                                        @Param("area") String area,
                                        @Param("groupNo") String groupNo,
-                                       @Param("keyword") String keyword);
+                                       @Param("keyword") String keyword,
+                                       @Param("usedFlag") Integer usedFlag);
 }

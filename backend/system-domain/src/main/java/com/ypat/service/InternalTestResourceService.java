@@ -111,7 +111,6 @@ public class InternalTestResourceService {
         }
         qo.setUsageType(InternalTestResourceUsageType.work.value);
         qo.setStatus(InternalTestResourceStatus.enabled.value);
-        qo.setUsedFlag(0);
 
         int page = qo.getPage() == null || qo.getPage() < 0 ? 0 : qo.getPage();
         int size = qo.getSize() == null || qo.getSize() <= 0 ? 20 : qo.getSize();
@@ -123,23 +122,24 @@ public class InternalTestResourceService {
         String area = normalizeOptional(qo.getArea());
         String filterGroupNo = normalizeOptional(qo.getGroupNo());
         String keyword = normalizeOptional(qo.getKeyword());
+        Integer usedFlag = qo.getUsedFlag();
         long groupCount = valueOrZero(internalTestResourceRepository.countAvailableGroups(
-                mediaType, styleCode, profession, province, city, area, filterGroupNo, keyword));
+                mediaType, styleCode, profession, province, city, area, filterGroupNo, keyword, usedFlag));
         long singleCount = valueOrZero(internalTestResourceRepository.countAvailableSingleResources(
-                mediaType, styleCode, profession, province, city, area, filterGroupNo, keyword));
+                mediaType, styleCode, profession, province, city, area, filterGroupNo, keyword, usedFlag));
         long pageStart = (long) page * size;
         Map<String, List<InternalTestResourceQo>> groups = new LinkedHashMap<String, List<InternalTestResourceQo>>();
 
         int groupLimit = pageStart < groupCount ? (int) Math.min((long) size, groupCount - pageStart) : 0;
         if (groupLimit > 0 && pageStart <= Integer.MAX_VALUE) {
             List<String> groupNos = internalTestResourceRepository.findAvailableGroupNos(
-                    mediaType, styleCode, profession, province, city, area, filterGroupNo, keyword,
+                    mediaType, styleCode, profession, province, city, area, filterGroupNo, keyword, usedFlag,
                     (int) pageStart, groupLimit);
             Map<String, List<InternalTestResource>> fullGroups = groupResourcesByGroupNo(
                     internalTestResourceRepository.findByGroupNoIn(groupNos));
             for (String groupNo : groupNos) {
                 List<InternalTestResource> fullGroup = fullGroups.get(groupNo);
-                if (isCompleteAvailableGroup(fullGroup, fullGroup)) {
+                if (isCompleteAvailableGroup(fullGroup, fullGroup, usedFlag)) {
                     sortResourceGroup(fullGroup);
                     groups.put(groupNo, copyResourceGroup(fullGroup));
                 }
@@ -150,10 +150,10 @@ public class InternalTestResourceService {
         long singleOffset = pageStart < groupCount ? 0L : pageStart - groupCount;
         if (remaining > 0 && singleOffset < singleCount && singleOffset <= Integer.MAX_VALUE) {
             List<InternalTestResource> singles = internalTestResourceRepository.findAvailableSingleResources(
-                    mediaType, styleCode, profession, province, city, area, filterGroupNo, keyword,
+                    mediaType, styleCode, profession, province, city, area, filterGroupNo, keyword, usedFlag,
                     (int) singleOffset, remaining);
             for (InternalTestResource resource : singles) {
-                if (isAvailableWorkResource(resource) && CommonUtils.isNull(resource.getGroupNo())) {
+                if (isMatchingWorkResource(resource, usedFlag) && CommonUtils.isNull(resource.getGroupNo())) {
                     groups.put("single-" + resource.getId(), copyResourceGroup(singleResourceList(resource)));
                 }
             }
@@ -177,6 +177,7 @@ public class InternalTestResourceService {
         group.put("groupNo", groupNo);
         group.put("groupTitle", first == null ? null : first.getGroupTitle());
         group.put("mediaType", first == null ? null : first.getMediaType());
+        group.put("usedFlag", first == null ? null : first.getUsedFlag());
         group.put("resources", resources);
         return group;
     }
@@ -461,7 +462,9 @@ public class InternalTestResourceService {
         return groups;
     }
 
-    private boolean isCompleteAvailableGroup(List<InternalTestResource> fullGroup, List<InternalTestResource> candidateGroup) {
+    private boolean isCompleteAvailableGroup(List<InternalTestResource> fullGroup,
+                                             List<InternalTestResource> candidateGroup,
+                                             Integer usedFlag) {
         if (CommonUtils.isNull(fullGroup) || CommonUtils.isNull(candidateGroup) || fullGroup.size() != candidateGroup.size()) {
             return false;
         }
@@ -470,18 +473,18 @@ public class InternalTestResourceService {
             candidateKeys.add(resourceKey(resource));
         }
         for (InternalTestResource resource : fullGroup) {
-            if (!isAvailableWorkResource(resource) || !candidateKeys.contains(resourceKey(resource))) {
+            if (!isMatchingWorkResource(resource, usedFlag) || !candidateKeys.contains(resourceKey(resource))) {
                 return false;
             }
         }
         return true;
     }
 
-    private boolean isAvailableWorkResource(InternalTestResource resource) {
+    private boolean isMatchingWorkResource(InternalTestResource resource, Integer usedFlag) {
         return resource != null
                 && InternalTestResourceUsageType.work.value.equals(resource.getUsageType())
                 && InternalTestResourceStatus.enabled.value.equals(resource.getStatus())
-                && !Integer.valueOf(1).equals(resource.getUsedFlag());
+                && (usedFlag == null || usedFlag.equals(resource.getUsedFlag()));
     }
 
     private String resourceKey(InternalTestResource resource) {

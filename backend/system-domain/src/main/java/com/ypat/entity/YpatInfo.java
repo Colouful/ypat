@@ -57,6 +57,7 @@ public class YpatInfo implements java.io.Serializable{
     private User user;
     @OneToMany
     @JoinColumn(name = "ypatid")
+    @OrderBy("id ASC")
     @JsonIgnore
     private List<YpatImg> ypatImgs;
     private String recomflag;

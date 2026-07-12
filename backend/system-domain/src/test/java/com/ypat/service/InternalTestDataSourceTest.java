@@ -7,14 +7,27 @@ import com.ypat.InternalTestUserActionQo;
 import com.ypat.SysException;
 import com.ypat.entity.InternalTestResource;
 import com.ypat.entity.User;
+import com.ypat.entity.Work;
+import com.ypat.entity.WorkMedia;
+import com.ypat.entity.WorkTag;
+import com.ypat.entity.YpatImg;
+import com.ypat.entity.YpatInfo;
 import com.ypat.repository.InternalTestResourceRepository;
 import com.ypat.repository.UserImgRepository;
 import com.ypat.repository.UserRepository;
+import com.ypat.repository.WorkMediaRepository;
+import com.ypat.repository.WorkRepository;
+import com.ypat.repository.WorkTagRelRepository;
+import com.ypat.repository.WorkTagRepository;
+import com.ypat.repository.YpatImgRepository;
+import com.ypat.repository.YpatInfoRepository;
 import org.junit.Test;
 import org.springframework.data.domain.Sort;
 import org.springframework.test.util.ReflectionTestUtils;
+import org.springframework.transaction.annotation.Transactional;
 
 import javax.persistence.Column;
+import javax.persistence.OrderBy;
 import javax.persistence.Transient;
 import java.io.IOException;
 import java.lang.reflect.InvocationHandler;
@@ -35,6 +48,7 @@ import java.util.Map;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -71,6 +85,21 @@ public class InternalTestDataSourceTest {
         assertEntityMarkers("src/main/java/com/ypat/entity/User.java");
         assertEntityMarkers("src/main/java/com/ypat/entity/YpatInfo.java");
         assertEntityMarkers("src/main/java/com/ypat/entity/Work.java");
+    }
+
+    @Test
+    public void ypatImagesAreReadInGeneratedIdOrder() throws Exception {
+        Field ypatImages = YpatInfo.class.getDeclaredField("ypatImgs");
+        OrderBy orderBy = ypatImages.getAnnotation(OrderBy.class);
+
+        assertNotNull(orderBy);
+        assertEquals("id ASC", orderBy.value());
+
+        String source = read("src/main/java/com/ypat/entity/YpatInfo.java");
+        String association = methodBody(source,
+                "    @OneToMany",
+                "    private String recomflag;");
+        assertTrue(association.contains("@OrderBy(\"id ASC\")"));
     }
 
     @Test
@@ -336,6 +365,7 @@ public class InternalTestDataSourceTest {
     public void resourceServiceSupportsBatchImportGroupsUsageReleaseAndFilters() throws Exception {
         String service = read("backend/system-domain/src/main/java/com/ypat/service/InternalTestResourceService.java");
         String repo = read("backend/system-domain/src/main/java/com/ypat/repository/InternalTestResourceRepository.java");
+        String frontend = read("frontend-admin/src/api/modules/internal-test.ts");
 
         assertTrue(service.contains("public Map<String, Object> batchSave(InternalTestResourceQo qo)"));
         assertTrue(service.contains("public Map<String, Object> listAvailableGroups(InternalTestResourceQo qo)"));
@@ -358,14 +388,18 @@ public class InternalTestDataSourceTest {
         assertTrue(repo.contains("List<InternalTestResource> findByUsedBatchNo(String usedBatchNo);"));
         assertTrue(repo.contains("int markResourcesUsedIfAvailable("));
         assertTrue(repo.contains("int releaseByUsedBatchNo("));
-        assertTrue(repo.contains("List<String> findAvailableGroupNos("));
-        assertTrue(repo.contains("Long countAvailableGroups("));
-        assertTrue(repo.contains("List<InternalTestResource> findAvailableSingleResources("));
-        assertTrue(repo.contains("Long countAvailableSingleResources("));
+        assertAvailableResourceRepositoryMethod(repo, "findAvailableGroupNos");
+        assertAvailableResourceRepositoryMethod(repo, "countAvailableGroups");
+        assertAvailableResourceRepositoryMethod(repo, "findAvailableSingleResources");
+        assertAvailableResourceRepositoryMethod(repo, "countAvailableSingleResources");
         assertFalse(repo.contains("coalesce(r.used_flag"));
         assertFalse(repo.contains("select count(*) from t_internal_test_resource all_r"));
-        assertTrue(repo.contains("r.used_flag = 0"));
         assertTrue(repo.contains("join (select group_no, count(*) total_count"));
+
+        String resourceGroupType = methodBody(frontend,
+                "export interface InternalTestResourceGroup {",
+                "export interface InternalTestUserActionPayload {");
+        assertTrue(resourceGroupType.contains("usedFlag?: number"));
 
         String listAvailableGroups = methodBody(service,
                 "public Map<String, Object> listAvailableGroups(InternalTestResourceQo qo)",
@@ -380,6 +414,9 @@ public class InternalTestDataSourceTest {
         assertTrue(listAvailableGroups.contains("findByGroupNoIn"));
         assertTrue(listAvailableGroups.contains("isCompleteAvailableGroup"));
         assertTrue(listAvailableGroups.contains("calculateTotalPages"));
+        assertFalse(listAvailableGroups.contains("qo.setUsedFlag(0)"));
+        assertTrue(listAvailableGroups.contains("Integer usedFlag = qo.getUsedFlag()"));
+        assertTrue(listAvailableGroups.contains("group.put(\"usedFlag\""));
 
         String markResourcesUsed = methodBody(service,
                 "public void markResourcesUsed(List<InternalTestResource> resources",
@@ -454,8 +491,6 @@ public class InternalTestDataSourceTest {
         );
         RepositoryState state = new RepositoryState();
         state.groupNosPage = Arrays.asList("G1", "G2");
-        state.availableGroupCount = 1L;
-        state.availableSingleCount = 1L;
         state.singleResourcesPage = Collections.singletonList(resource(5L, null, "enabled", 0));
         ReflectionTestUtils.setField(service, "internalTestResourceRepository",
                 repositoryProxy(candidates, allGrouped, state));
@@ -463,6 +498,7 @@ public class InternalTestDataSourceTest {
         InternalTestResourceQo qo = new InternalTestResourceQo();
         qo.setPage(0);
         qo.setSize(10);
+        qo.setUsedFlag(0);
 
         Map<String, Object> result = service.listAvailableGroups(qo);
         List<Map<String, Object>> content = (List<Map<String, Object>>) result.get("content");
@@ -471,14 +507,99 @@ public class InternalTestDataSourceTest {
         assertFalse(containsGroupView(content, "G1"));
         assertTrue(containsGroupView(content, "G2"));
         assertEquals(2, groupViewSize(content, "G2"));
+        assertEquals(Integer.valueOf(0), groupViewUsedFlag(content, "G2"));
         assertTrue(containsGroupView(content, "single-5"));
         assertEquals(2, ((Number) result.get("totalElements")).intValue());
         assertEquals(1, ((Number) result.get("totalPages")).intValue());
         assertEquals(1, state.groupNoPageCallCount);
+        assertEquals(Integer.valueOf(0), state.findGroupNosUsedFlag);
+        assertEquals(Integer.valueOf(0), state.countGroupsUsedFlag);
+        assertEquals(Integer.valueOf(0), state.findSinglesUsedFlag);
+        assertEquals(Integer.valueOf(0), state.countSinglesUsedFlag);
 
         String source = read("backend/system-domain/src/main/java/com/ypat/service/InternalTestDataService.java");
         assertTrue(source.contains("groupNo.startsWith(\"single-\")"));
         assertTrue(source.contains("internalTestResourceRepository.findOne(resourceId)"));
+    }
+
+    @SuppressWarnings("unchecked")
+    @Test
+    public void listAvailableGroupsReturnsCompleteUsedGroupsWhenRequested() {
+        InternalTestResourceService service = new InternalTestResourceService();
+        List<InternalTestResource> allGrouped = Arrays.asList(
+                resource(6L, "G3", "enabled", 1),
+                resource(7L, "G3", "enabled", 1),
+                resource(8L, "G4", "enabled", 0)
+        );
+        RepositoryState state = new RepositoryState();
+        state.groupNosPage = Arrays.asList("G3", "G4");
+        state.singleResourcesPage = Arrays.asList(
+                resource(9L, null, "enabled", 1),
+                resource(10L, null, "enabled", 0)
+        );
+        ReflectionTestUtils.setField(service, "internalTestResourceRepository",
+                repositoryProxy(Collections.<InternalTestResource>emptyList(), allGrouped, state));
+
+        InternalTestResourceQo qo = new InternalTestResourceQo();
+        qo.setPage(0);
+        qo.setSize(10);
+        qo.setUsedFlag(1);
+
+        Map<String, Object> result = service.listAvailableGroups(qo);
+        List<Map<String, Object>> content = (List<Map<String, Object>>) result.get("content");
+
+        assertEquals(2, content.size());
+        assertTrue(containsGroupView(content, "G3"));
+        assertEquals(2, groupViewSize(content, "G3"));
+        assertEquals(Integer.valueOf(1), groupViewUsedFlag(content, "G3"));
+        assertTrue(containsGroupView(content, "single-9"));
+        assertFalse(containsGroupView(content, "G4"));
+        assertFalse(containsGroupView(content, "single-10"));
+        assertEquals(Integer.valueOf(1), state.findGroupNosUsedFlag);
+        assertEquals(Integer.valueOf(1), state.countGroupsUsedFlag);
+        assertEquals(Integer.valueOf(1), state.findSinglesUsedFlag);
+        assertEquals(Integer.valueOf(1), state.countSinglesUsedFlag);
+    }
+
+    @SuppressWarnings("unchecked")
+    @Test
+    public void listAvailableGroupsDoesNotFilterUsageWhenUsedFlagIsNull() {
+        InternalTestResourceService service = new InternalTestResourceService();
+        List<InternalTestResource> allGrouped = Arrays.asList(
+                resource(11L, "G5", "enabled", 0),
+                resource(12L, "G5", "enabled", 0),
+                resource(13L, "G6", "enabled", 1),
+                resource(14L, "G6", "enabled", 1)
+        );
+        RepositoryState state = new RepositoryState();
+        state.groupNosPage = Arrays.asList("G5", "G6");
+        state.singleResourcesPage = Arrays.asList(
+                resource(15L, null, "enabled", 0),
+                resource(16L, null, "enabled", 1)
+        );
+        ReflectionTestUtils.setField(service, "internalTestResourceRepository",
+                repositoryProxy(Collections.<InternalTestResource>emptyList(), allGrouped, state));
+
+        InternalTestResourceQo qo = new InternalTestResourceQo();
+        qo.setPage(0);
+        qo.setSize(10);
+
+        Map<String, Object> result = service.listAvailableGroups(qo);
+        List<Map<String, Object>> content = (List<Map<String, Object>>) result.get("content");
+
+        assertEquals(4, content.size());
+        assertEquals(Integer.valueOf(0), groupViewUsedFlag(content, "G5"));
+        assertEquals(Integer.valueOf(1), groupViewUsedFlag(content, "G6"));
+        assertTrue(containsGroupView(content, "single-15"));
+        assertTrue(containsGroupView(content, "single-16"));
+        assertEquals(1, state.groupNoPageCallCount);
+        assertEquals(1, state.countGroupsCallCount);
+        assertEquals(1, state.singlePageCallCount);
+        assertEquals(1, state.countSinglesCallCount);
+        assertNull(state.findGroupNosUsedFlag);
+        assertNull(state.countGroupsUsedFlag);
+        assertNull(state.findSinglesUsedFlag);
+        assertNull(state.countSinglesUsedFlag);
     }
 
     @Test
@@ -584,7 +705,328 @@ public class InternalTestDataSourceTest {
                 "public InternalTestBatchQo generate(InternalTestGenerateQo qo)",
                 "public Map<String, Object> listUsers(InternalTestGenerateQo qo)");
         assertTrue(generate.contains("markSingleResourceUsed"));
+        assertTrue(generate.contains("saveYpatImages(ypat, Collections.singletonList(resource))"));
         assertTrue(generate.contains("users.size()"));
+    }
+
+    @Test
+    public void workGenerationRequiresExactlyOneGroupAndDoesNotLoopGroups() throws Exception {
+        InternalTestDataService dataService = new InternalTestDataService();
+        InternalTestGenerateQo qo = validYpatQo();
+        qo.setGroupNos(Arrays.asList("G1", "G2"));
+
+        assertPrivateSysException(dataService, "validateWorkGeneration", qo, "一次只能选择一个作品组");
+
+        String service = read("backend/system-domain/src/main/java/com/ypat/service/InternalTestDataService.java");
+        String generateWorks = methodBody(service,
+                "public InternalTestBatchQo generateWorks(InternalTestGenerateQo qo)",
+                "public InternalTestBatchQo generateYpats(InternalTestGenerateQo qo)");
+        assertTrue(generateWorks.contains("String groupNo = qo.getGroupNos().get(0);"));
+        assertFalse(generateWorks.contains("for (String groupNo : qo.getGroupNos())"));
+
+        String validateWorks = methodBody(service,
+                "private void validateWorkGeneration(InternalTestGenerateQo qo)",
+                "private void bindWorkTags(Long workId, List<String> styleCodes)");
+        assertTrue(validateWorks.contains("qo.getGroupNos().size() != 1"));
+        assertTrue(validateWorks.contains("\"一次只能选择一个作品组\""));
+    }
+
+    @Test
+    public void workGenerationCreatesOneWorkWithAllGroupMediaAndMarksTheWholeGroupOnce() {
+        InternalTestDataService dataService = new InternalTestDataService();
+        final List<InternalTestResource> group = Arrays.asList(
+                resource(11L, "G-WORK", "enabled", 0),
+                resource(12L, "G-WORK", "enabled", 0));
+        ReflectionTestUtils.setField(dataService, "internalTestResourceRepository",
+                repositoryProxy(Collections.<InternalTestResource>emptyList(), group, new RepositoryState()));
+
+        User user = internalUser(7L);
+        ReflectionTestUtils.setField(dataService, "userRepository", internalUserRepository(user));
+
+        final List<Work> savedWorks = new ArrayList<Work>();
+        ReflectionTestUtils.setField(dataService, "workRepository", repositoryProxy(WorkRepository.class,
+                new InvocationHandler() {
+                    @Override
+                    public Object invoke(Object proxy, Method method, Object[] args) {
+                        if (method.getDeclaringClass().equals(Object.class)) {
+                            return objectMethod(proxy, method, args);
+                        }
+                        if ("save".equals(method.getName())) {
+                            Work work = (Work) args[0];
+                            work.setId(88L);
+                            savedWorks.add(work);
+                            return work;
+                        }
+                        return defaultValue(method.getReturnType());
+                    }
+                }));
+
+        final List<WorkMedia> savedMedia = new ArrayList<WorkMedia>();
+        ReflectionTestUtils.setField(dataService, "workMediaRepository", repositoryProxy(WorkMediaRepository.class,
+                new InvocationHandler() {
+                    @Override
+                    public Object invoke(Object proxy, Method method, Object[] args) {
+                        if (method.getDeclaringClass().equals(Object.class)) {
+                            return objectMethod(proxy, method, args);
+                        }
+                        if ("save".equals(method.getName())) {
+                            savedMedia.add((WorkMedia) args[0]);
+                            return args[0];
+                        }
+                        return defaultValue(method.getReturnType());
+                    }
+                }));
+
+        final WorkTag workTag = new WorkTag();
+        workTag.setId(9L);
+        workTag.setStatus(1);
+        ReflectionTestUtils.setField(dataService, "workTagRepository", repositoryProxy(WorkTagRepository.class,
+                new InvocationHandler() {
+                    @Override
+                    public Object invoke(Object proxy, Method method, Object[] args) {
+                        if (method.getDeclaringClass().equals(Object.class)) {
+                            return objectMethod(proxy, method, args);
+                        }
+                        if ("findByCode".equals(method.getName())) {
+                            return workTag;
+                        }
+                        return defaultValue(method.getReturnType());
+                    }
+                }));
+        ReflectionTestUtils.setField(dataService, "workTagRelRepository",
+                passThroughSaveRepository(WorkTagRelRepository.class));
+
+        RecordingResourceService resourceService = new RecordingResourceService();
+        ReflectionTestUtils.setField(dataService, "internalTestResourceService", resourceService);
+        InternalTestGenerateQo qo = validYpatQo();
+        qo.setBatchNo("BATCH-WORK-1");
+        qo.setGroupNos(Collections.singletonList("G-WORK"));
+        qo.setStyleCodes(Collections.singletonList("work-style"));
+
+        InternalTestBatchQo batch = dataService.generateWorks(qo);
+
+        assertEquals(1, batch.getWorkCount().intValue());
+        assertEquals(1, savedWorks.size());
+        assertEquals(2, savedMedia.size());
+        assertEquals(Arrays.asList("https://example.com/11.jpg", "https://example.com/12.jpg"),
+                workMediaUrls(savedMedia));
+        assertEquals(1, resourceService.markResourcesUsedCallCount);
+        assertEquals(Arrays.asList(11L, 12L), resourceIds(resourceService.resources));
+        assertEquals("BATCH-WORK-1", resourceService.batchNo);
+        assertEquals("work", resourceService.targetType);
+        assertEquals(Long.valueOf(88L), resourceService.targetId);
+    }
+
+    @Test
+    public void ypatGenerationRequiresOneToNineUniqueResourceIds() {
+        InternalTestDataService dataService = new InternalTestDataService();
+        InternalTestGenerateQo qo = validYpatQo();
+
+        qo.setYpatResourceIds(Collections.<Long>emptyList());
+        assertPrivateSysException(dataService, "validateYpatGeneration", qo, "约拍图片不能为空");
+
+        qo.setYpatResourceIds(Arrays.asList(1L, 2L, 3L, 4L, 5L, 6L, 7L, 8L, 9L, 10L));
+        assertPrivateSysException(dataService, "validateYpatGeneration", qo, "约拍图片最多选择9张");
+
+        qo.setYpatResourceIds(Arrays.asList(1L, 2L, 1L));
+        assertPrivateSysException(dataService, "validateYpatGeneration", qo, "约拍图片不能重复");
+    }
+
+    @Test
+    public void ypatMultiImageSourceContractIsScopedToGenerationMethods() throws Exception {
+        String service = read("backend/system-domain/src/main/java/com/ypat/service/InternalTestDataService.java");
+        assertTrue(service.contains("private static final int YPAT_RESOURCE_LIMIT = 9;"));
+
+        String generateYpats = methodBody(service,
+                "public InternalTestBatchQo generateYpats(InternalTestGenerateQo qo)",
+                "public InternalTestBatchQo generate(InternalTestGenerateQo qo)");
+        assertTrue(generateYpats.contains("loadSelectedYpatResources(qo.getYpatResourceIds())"));
+        assertTrue(generateYpats.contains("saveYpatImages(ypat, resources)"));
+        assertTrue(generateYpats.contains("markResourcesUsed(resources, batchNo, \"ypat\", ypat.getId())"));
+        assertFalse(generateYpats.contains("ensureResources("));
+        assertFalse(generateYpats.contains("qo.getStyleCode()"));
+        assertFalse(generateYpats.contains("pick("));
+        assertFalse(generateYpats.contains("usedResources"));
+
+        String createYpat = methodBody(service,
+                "private YpatInfo createYpat(User user, InternalTestResource resource, InternalTestGenerateQo qo, String batchNo)",
+                "private void saveYpatImages(YpatInfo ypat, List<InternalTestResource> resources)");
+        assertTrue(createYpat.contains("resource.getDescription()"));
+        assertFalse(createYpat.contains("ypatImgRepository.save"));
+
+        String loadResources = methodBody(service,
+                "private List<InternalTestResource> loadSelectedYpatResources(List<Long> resourceIds)",
+                "private boolean isValidYpatStyle(String styleCode)");
+        assertTrue(loadResources.contains("internalTestResourceRepository.findAll(resourceIds)"));
+        assertTrue(loadResources.contains("new HashMap<Long, InternalTestResource>()"));
+        assertFalse(loadResources.contains("styleCode"));
+    }
+
+    @Test
+    public void selectedYpatResourcesAreLoadedInRequestOrderWithoutStyleFiltering() {
+        InternalTestDataService dataService = new InternalTestDataService();
+        RepositoryState state = new RepositoryState();
+        state.selectedResources = Arrays.asList(
+                ypatResource(3L, "enabled", 0, "ypat", "image"),
+                ypatResource(1L, "enabled", 0, "ypat", "image"),
+                ypatResource(2L, "enabled", 0, "ypat", "image"));
+        ReflectionTestUtils.setField(dataService, "internalTestResourceRepository",
+                repositoryProxy(Collections.<InternalTestResource>emptyList(),
+                        Collections.<InternalTestResource>emptyList(), state));
+
+        List<InternalTestResource> loaded = ReflectionTestUtils.invokeMethod(
+                dataService, "loadSelectedYpatResources", Arrays.asList(2L, 1L, 3L));
+
+        assertEquals(Arrays.asList(2L, 1L, 3L), state.findAllResourceIds);
+        assertEquals(Arrays.asList(2L, 1L, 3L), resourceIds(loaded));
+    }
+
+    @Test
+    public void selectedYpatResourcesReportPreciseValidationErrors() {
+        assertSelectedYpatResourceError(Collections.<Long>singletonList(null),
+                Collections.<InternalTestResource>emptyList(),
+                "约拍资源不存在，请重新选择");
+        assertSelectedYpatResourceError(Arrays.asList(1L, 2L),
+                Collections.singletonList(ypatResource(1L, "enabled", 0, "ypat", "image")),
+                "约拍资源不存在，请重新选择");
+        assertSelectedYpatResourceError(Collections.singletonList(1L),
+                Collections.singletonList(ypatResource(1L, "disabled", 0, "ypat", "image")),
+                "约拍资源未启用，请重新选择");
+        assertSelectedYpatResourceError(Collections.singletonList(1L),
+                Collections.singletonList(ypatResource(1L, "enabled", 1, "ypat", "image")),
+                "约拍资源已被占用，请重新选择");
+        assertSelectedYpatResourceError(Collections.singletonList(1L),
+                Collections.singletonList(ypatResource(1L, "enabled", 0, "work", "image")),
+                "约拍资源用途错误");
+        assertSelectedYpatResourceError(Collections.singletonList(1L),
+                Collections.singletonList(ypatResource(1L, "enabled", 0, "ypat", "video")),
+                "约拍资源包含视频");
+    }
+
+    @Test
+    public void ypatGenerationCreatesOneYpatAndOrderedImagesThenMarksAllResourcesUsed() {
+        InternalTestDataService dataService = new InternalTestDataService();
+        RepositoryState resourceState = new RepositoryState();
+        resourceState.selectedResources = Arrays.asList(
+                ypatResource(3L, "enabled", 0, "ypat", "image"),
+                ypatResource(1L, "enabled", 0, "ypat", "image"),
+                ypatResource(2L, "enabled", 0, "ypat", "image"));
+        ReflectionTestUtils.setField(dataService, "internalTestResourceRepository",
+                repositoryProxy(Collections.<InternalTestResource>emptyList(),
+                        Collections.<InternalTestResource>emptyList(), resourceState));
+
+        final User user = new User();
+        user.setId(7L);
+        user.setDataFlag("internal_test");
+        user.setProvince("浙江省");
+        user.setCity("杭州市");
+        user.setArea("西湖区");
+        ReflectionTestUtils.setField(dataService, "userRepository", repositoryProxy(UserRepository.class,
+                new InvocationHandler() {
+                    @Override
+                    public Object invoke(Object proxy, Method method, Object[] args) {
+                        if (method.getDeclaringClass().equals(Object.class)) {
+                            return objectMethod(proxy, method, args);
+                        }
+                        if ("findOne".equals(method.getName())) {
+                            return user;
+                        }
+                        if ("save".equals(method.getName())) {
+                            return args[0];
+                        }
+                        return defaultValue(method.getReturnType());
+                    }
+                }));
+
+        final List<YpatInfo> savedYpats = new ArrayList<YpatInfo>();
+        ReflectionTestUtils.setField(dataService, "ypatInfoRepository", repositoryProxy(YpatInfoRepository.class,
+                new InvocationHandler() {
+                    @Override
+                    public Object invoke(Object proxy, Method method, Object[] args) {
+                        if (method.getDeclaringClass().equals(Object.class)) {
+                            return objectMethod(proxy, method, args);
+                        }
+                        if ("save".equals(method.getName())) {
+                            YpatInfo ypat = (YpatInfo) args[0];
+                            ypat.setId(99L);
+                            savedYpats.add(ypat);
+                            return ypat;
+                        }
+                        return defaultValue(method.getReturnType());
+                    }
+                }));
+
+        final List<YpatImg> savedImages = new ArrayList<YpatImg>();
+        ReflectionTestUtils.setField(dataService, "ypatImgRepository", repositoryProxy(YpatImgRepository.class,
+                new InvocationHandler() {
+                    @Override
+                    public Object invoke(Object proxy, Method method, Object[] args) {
+                        if (method.getDeclaringClass().equals(Object.class)) {
+                            return objectMethod(proxy, method, args);
+                        }
+                        if ("save".equals(method.getName())) {
+                            savedImages.add((YpatImg) args[0]);
+                            return args[0];
+                        }
+                        return defaultValue(method.getReturnType());
+                    }
+                }));
+
+        RecordingResourceService resourceService = new RecordingResourceService();
+        ReflectionTestUtils.setField(dataService, "internalTestResourceService", resourceService);
+        InternalTestGenerateQo qo = validYpatQo();
+        qo.setBatchNo("BATCH-YPAT-3");
+        qo.setYpatResourceIds(Arrays.asList(2L, 1L, 3L));
+        qo.setStyleCode("must-not-filter-selected-resources");
+
+        InternalTestBatchQo batch = dataService.generateYpats(qo);
+
+        assertEquals(1, batch.getYpatCount().intValue());
+        assertEquals(1, savedYpats.size());
+        assertEquals(3, savedImages.size());
+        assertEquals(Arrays.asList("https://example.com/2.jpg", "https://example.com/1.jpg", "https://example.com/3.jpg"),
+                imagePaths(savedImages));
+        assertEquals(1, resourceService.markResourcesUsedCallCount);
+        assertEquals(Arrays.asList(2L, 1L, 3L), resourceIds(resourceService.resources));
+        assertEquals("BATCH-YPAT-3", resourceService.batchNo);
+        assertEquals("ypat", resourceService.targetType);
+        assertEquals(Long.valueOf(99L), resourceService.targetId);
+    }
+
+    @Test
+    public void dataGenerationDeclaresRollbackForExceptions() {
+        Transactional transactional = InternalTestDataService.class.getAnnotation(Transactional.class);
+
+        assertNotNull(transactional);
+        assertTrue(Arrays.asList(transactional.rollbackFor()).contains(Exception.class));
+    }
+
+    @Test
+    public void ypatGenerationPropagatesResourceMarkingFailure() {
+        InternalTestDataService dataService = new InternalTestDataService();
+        RepositoryState resourceState = new RepositoryState();
+        resourceState.selectedResources = Collections.singletonList(
+                ypatResource(1L, "enabled", 0, "ypat", "image"));
+        ReflectionTestUtils.setField(dataService, "internalTestResourceRepository",
+                repositoryProxy(Collections.<InternalTestResource>emptyList(),
+                        Collections.<InternalTestResource>emptyList(), resourceState));
+        ReflectionTestUtils.setField(dataService, "userRepository", internalUserRepository(internalUser(7L)));
+        ReflectionTestUtils.setField(dataService, "ypatInfoRepository", ypatInfoRepositoryWithId(99L));
+        ReflectionTestUtils.setField(dataService, "ypatImgRepository",
+                passThroughSaveRepository(YpatImgRepository.class));
+
+        RecordingResourceService resourceService = new RecordingResourceService();
+        resourceService.markResourcesUsedException = new SysException(400, "mark failed");
+        ReflectionTestUtils.setField(dataService, "internalTestResourceService", resourceService);
+
+        try {
+            dataService.generateYpats(validYpatQo());
+        } catch (SysException e) {
+            assertEquals("mark failed", e.getMsg());
+            assertEquals(1, resourceService.markResourcesUsedCallCount);
+            return;
+        }
+        fail("Expected resource marking failure to propagate");
     }
 
     @Test
@@ -756,6 +1198,172 @@ public class InternalTestDataSourceTest {
         return source.substring(start, end);
     }
 
+    private void assertAvailableResourceRepositoryMethod(String source, String methodName) {
+        int methodIndex = source.indexOf(methodName + "(");
+        assertTrue("missing repository method: " + methodName, methodIndex >= 0);
+        int queryIndex = source.lastIndexOf("@Query(", methodIndex);
+        int methodEnd = source.indexOf(";", methodIndex);
+        assertTrue("missing query for repository method: " + methodName, queryIndex >= 0);
+        assertTrue("missing repository method end: " + methodName, methodEnd > methodIndex);
+
+        String block = source.substring(queryIndex, methodEnd + 1);
+        assertTrue(methodName + " must filter usedFlag",
+                block.contains("(:usedFlag is null or r.used_flag = :usedFlag)"));
+        assertTrue(methodName + " must declare usedFlag",
+                block.contains("@Param(\"usedFlag\") Integer usedFlag"));
+        assertTrue(methodName + " must place usedFlag after keyword",
+                block.indexOf("@Param(\"usedFlag\")") > block.indexOf("@Param(\"keyword\")"));
+    }
+
+    private InternalTestGenerateQo validYpatQo() {
+        InternalTestGenerateQo qo = new InternalTestGenerateQo();
+        qo.setUserId(7L);
+        qo.setYpatResourceIds(Collections.singletonList(1L));
+        qo.setPatdate("2099-01-01");
+        qo.setPatslice("全天");
+        qo.setProvince("浙江省");
+        qo.setCity("杭州市");
+        qo.setArea("西湖区");
+        qo.setDescrib("约拍要求");
+        qo.setWx("ypat-test");
+        qo.setMobile("13800138000");
+        qo.setStyleCodes(Collections.singletonList("0"));
+        qo.setTarget("0");
+        return qo;
+    }
+
+    private User internalUser(Long id) {
+        User user = new User();
+        user.setId(id);
+        user.setDataFlag("internal_test");
+        user.setProvince("浙江省");
+        user.setCity("杭州市");
+        user.setArea("西湖区");
+        return user;
+    }
+
+    private UserRepository internalUserRepository(final User user) {
+        return repositoryProxy(UserRepository.class, new InvocationHandler() {
+            @Override
+            public Object invoke(Object proxy, Method method, Object[] args) {
+                if (method.getDeclaringClass().equals(Object.class)) {
+                    return objectMethod(proxy, method, args);
+                }
+                if ("findOne".equals(method.getName())) {
+                    return user;
+                }
+                if ("save".equals(method.getName())) {
+                    return args[0];
+                }
+                return defaultValue(method.getReturnType());
+            }
+        });
+    }
+
+    private YpatInfoRepository ypatInfoRepositoryWithId(final Long id) {
+        return repositoryProxy(YpatInfoRepository.class, new InvocationHandler() {
+            @Override
+            public Object invoke(Object proxy, Method method, Object[] args) {
+                if (method.getDeclaringClass().equals(Object.class)) {
+                    return objectMethod(proxy, method, args);
+                }
+                if ("save".equals(method.getName())) {
+                    YpatInfo ypat = (YpatInfo) args[0];
+                    ypat.setId(id);
+                    return ypat;
+                }
+                return defaultValue(method.getReturnType());
+            }
+        });
+    }
+
+    private <T> T passThroughSaveRepository(Class<T> repositoryType) {
+        return repositoryProxy(repositoryType, new InvocationHandler() {
+            @Override
+            public Object invoke(Object proxy, Method method, Object[] args) {
+                if (method.getDeclaringClass().equals(Object.class)) {
+                    return objectMethod(proxy, method, args);
+                }
+                if ("save".equals(method.getName())) {
+                    return args[0];
+                }
+                return defaultValue(method.getReturnType());
+            }
+        });
+    }
+
+    private void assertPrivateSysException(InternalTestDataService service,
+                                           String methodName,
+                                           InternalTestGenerateQo qo,
+                                           String expectedMessage) {
+        try {
+            ReflectionTestUtils.invokeMethod(service, methodName, qo);
+        } catch (SysException e) {
+            assertEquals(expectedMessage, e.getMsg());
+            return;
+        }
+        fail("Expected SysException: " + expectedMessage);
+    }
+
+    private void assertSelectedYpatResourceError(List<Long> requestedIds,
+                                                 List<InternalTestResource> resources,
+                                                 String expectedMessage) {
+        InternalTestDataService service = new InternalTestDataService();
+        RepositoryState state = new RepositoryState();
+        state.selectedResources = resources;
+        ReflectionTestUtils.setField(service, "internalTestResourceRepository",
+                repositoryProxy(Collections.<InternalTestResource>emptyList(),
+                        Collections.<InternalTestResource>emptyList(), state));
+        try {
+            ReflectionTestUtils.invokeMethod(service, "loadSelectedYpatResources", requestedIds);
+        } catch (SysException e) {
+            assertEquals(expectedMessage, e.getMsg());
+            return;
+        }
+        fail("Expected SysException: " + expectedMessage);
+    }
+
+    private InternalTestResource ypatResource(Long id,
+                                              String status,
+                                              Integer usedFlag,
+                                              String usageType,
+                                              String mediaType) {
+        InternalTestResource resource = new InternalTestResource();
+        resource.setId(id);
+        resource.setStatus(status);
+        resource.setUsedFlag(usedFlag);
+        resource.setUsageType(usageType);
+        resource.setMediaType(mediaType);
+        resource.setStyleCode("resource-style-" + id);
+        resource.setDescription("resource-description-" + id);
+        resource.setUrl("https://example.com/" + id + ".jpg");
+        return resource;
+    }
+
+    private List<Long> resourceIds(List<InternalTestResource> resources) {
+        List<Long> ids = new ArrayList<Long>();
+        for (InternalTestResource resource : resources) {
+            ids.add(resource.getId());
+        }
+        return ids;
+    }
+
+    private List<String> imagePaths(List<YpatImg> images) {
+        List<String> paths = new ArrayList<String>();
+        for (YpatImg image : images) {
+            paths.add(image.getImgpath());
+        }
+        return paths;
+    }
+
+    private List<String> workMediaUrls(List<WorkMedia> mediaList) {
+        List<String> urls = new ArrayList<String>();
+        for (WorkMedia media : mediaList) {
+            urls.add(media.getUrl());
+        }
+        return urls;
+    }
+
     private InternalTestResource resource(Long id, String groupNo, String status, Integer usedFlag) {
         InternalTestResource resource = new InternalTestResource();
         resource.setId(id);
@@ -797,6 +1405,15 @@ public class InternalTestDataSourceTest {
         return 0;
     }
 
+    private Integer groupViewUsedFlag(List<Map<String, Object>> groups, String groupNo) {
+        for (Map<String, Object> group : groups) {
+            if (groupNo.equals(group.get("groupNo"))) {
+                return (Integer) group.get("usedFlag");
+            }
+        }
+        return null;
+    }
+
     @SuppressWarnings("unchecked")
     private InternalTestResourceRepository repositoryProxy(final List<InternalTestResource> candidates,
                                                           final List<InternalTestResource> allGrouped,
@@ -816,6 +1433,13 @@ public class InternalTestDataSourceTest {
                                 && args[1] instanceof Sort) {
                             return candidates;
                         }
+                        if ("findAll".equals(method.getName())
+                                && args != null
+                                && args.length == 1
+                                && args[0] instanceof List) {
+                            state.findAllResourceIds = new ArrayList<Long>((List<Long>) args[0]);
+                            return state.selectedResources;
+                        }
                         if ("findByGroupNoIn".equals(method.getName())) {
                             return filterByGroupNos(allGrouped, (List<String>) args[0]);
                         }
@@ -824,16 +1448,27 @@ public class InternalTestDataSourceTest {
                         }
                         if ("findAvailableGroupNos".equals(method.getName())) {
                             state.groupNoPageCallCount++;
-                            return state.groupNosPage;
+                            state.findGroupNosUsedFlag = (Integer) args[8];
+                            return page(filterGroupNosByUsedFlag(allGrouped, state.groupNosPage,
+                                    state.findGroupNosUsedFlag), (Integer) args[9], (Integer) args[10]);
                         }
                         if ("countAvailableGroups".equals(method.getName())) {
-                            return state.availableGroupCount;
+                            state.countGroupsCallCount++;
+                            state.countGroupsUsedFlag = (Integer) args[8];
+                            return Long.valueOf(filterGroupNosByUsedFlag(allGrouped, state.groupNosPage,
+                                    state.countGroupsUsedFlag).size());
                         }
                         if ("findAvailableSingleResources".equals(method.getName())) {
-                            return state.singleResourcesPage;
+                            state.singlePageCallCount++;
+                            state.findSinglesUsedFlag = (Integer) args[8];
+                            return page(filterResourcesByUsedFlag(state.singleResourcesPage,
+                                    state.findSinglesUsedFlag), (Integer) args[9], (Integer) args[10]);
                         }
                         if ("countAvailableSingleResources".equals(method.getName())) {
-                            return state.availableSingleCount;
+                            state.countSinglesCallCount++;
+                            state.countSinglesUsedFlag = (Integer) args[8];
+                            return Long.valueOf(filterResourcesByUsedFlag(state.singleResourcesPage,
+                                    state.countSinglesUsedFlag).size());
                         }
                         if ("markResourcesUsedIfAvailable".equals(method.getName())) {
                             state.markUsedCallCount++;
@@ -861,6 +1496,52 @@ public class InternalTestDataSourceTest {
             }
         }
         return result;
+    }
+
+    private List<String> filterGroupNosByUsedFlag(List<InternalTestResource> resources,
+                                                   List<String> groupNos,
+                                                   Integer usedFlag) {
+        List<String> result = new ArrayList<String>();
+        for (String groupNo : groupNos) {
+            boolean found = false;
+            boolean matches = true;
+            for (InternalTestResource resource : resources) {
+                if (groupNo.equals(resource.getGroupNo())) {
+                    found = true;
+                    if (!matchesUsedFlag(resource, usedFlag)) {
+                        matches = false;
+                    }
+                }
+            }
+            if (found && matches) {
+                result.add(groupNo);
+            }
+        }
+        return result;
+    }
+
+    private List<InternalTestResource> filterResourcesByUsedFlag(List<InternalTestResource> resources,
+                                                                  Integer usedFlag) {
+        List<InternalTestResource> result = new ArrayList<InternalTestResource>();
+        for (InternalTestResource resource : resources) {
+            if (matchesUsedFlag(resource, usedFlag)) {
+                result.add(resource);
+            }
+        }
+        return result;
+    }
+
+    private boolean matchesUsedFlag(InternalTestResource resource, Integer usedFlag) {
+        return resource != null
+                && "work".equals(resource.getUsageType())
+                && "enabled".equals(resource.getStatus())
+                && (usedFlag == null || usedFlag.equals(resource.getUsedFlag()));
+    }
+
+    private <T> List<T> page(List<T> values, int offset, int limit) {
+        int fromIndex = Math.min(offset, values.size());
+        int toIndex = Math.min(fromIndex + limit, values.size());
+        return new ArrayList<T>(values.subList(fromIndex, toIndex));
     }
 
     private Object objectMethod(Object proxy, Method method, Object[] args) {
@@ -894,11 +1575,42 @@ public class InternalTestDataSourceTest {
         private int markUsedCallCount;
         private int markUsedAffectedRows;
         private int groupNoPageCallCount;
+        private int countGroupsCallCount;
+        private int singlePageCallCount;
+        private int countSinglesCallCount;
         private List<String> groupNosPage = Collections.emptyList();
         private List<InternalTestResource> singleResourcesPage = Collections.emptyList();
-        private Long availableGroupCount = 0L;
-        private Long availableSingleCount = 0L;
+        private Integer findGroupNosUsedFlag;
+        private Integer countGroupsUsedFlag;
+        private Integer findSinglesUsedFlag;
+        private Integer countSinglesUsedFlag;
         private InternalTestResource findOneResource;
+        private List<Long> findAllResourceIds = Collections.emptyList();
+        private List<InternalTestResource> selectedResources = Collections.emptyList();
+    }
+
+    private static class RecordingResourceService extends InternalTestResourceService {
+        private List<InternalTestResource> resources = Collections.emptyList();
+        private String batchNo;
+        private String targetType;
+        private Long targetId;
+        private int markResourcesUsedCallCount;
+        private SysException markResourcesUsedException;
+
+        @Override
+        public void markResourcesUsed(List<InternalTestResource> resources,
+                                      String batchNo,
+                                      String targetType,
+                                      Long targetId) {
+            markResourcesUsedCallCount++;
+            this.resources = new ArrayList<InternalTestResource>(resources);
+            this.batchNo = batchNo;
+            this.targetType = targetType;
+            this.targetId = targetId;
+            if (markResourcesUsedException != null) {
+                throw markResourcesUsedException;
+            }
+        }
     }
 
     private void assertReadableWritable(Class<?> type, String fieldName, Class<?> fieldType) throws Exception {
