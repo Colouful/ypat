@@ -28,6 +28,26 @@ public class MemberBenefitCalculatorTest {
         MemberBenefitCalculator c = new MemberBenefitCalculator();
         MemberBenefitQuoteQo q = c.calculate("SUBMIT_YPAT", 5, activeMember(), rule(9, 2, "1", "1"));
         assertEquals(Integer.valueOf(2), q.getActualPpd());
+        assertEquals(Integer.valueOf(5), q.getDiscountPpd());
+    }
+
+    @Test
+    public void minimumAndActualNeverExceedOriginalPrice() {
+        MemberBenefitCalculator c = new MemberBenefitCalculator();
+        MemberBenefitQuoteQo q = c.calculate("SUBMIT_YPAT", 5, activeMember(), rule(2, 9, "1", "1"));
+        assertEquals(Integer.valueOf(5), q.getActualPpd());
+    }
+
+    @Test
+    public void activePlusMemberCanReceiveConfiguredDiscount() {
+        MemberBenefitCalculator c = new MemberBenefitCalculator();
+        UserMember member = activeMember();
+        member.setLevel("PLUS");
+        MemberBenefitRule plusRule = rule(2, 0, "1", "1");
+        plusRule.setLevelCode("PLUS");
+        MemberBenefitQuoteQo q = c.calculate("SUBMIT_YPAT", 5, member, plusRule);
+        assertTrue(q.getMemberActive());
+        assertEquals(Integer.valueOf(3), q.getActualPpd());
     }
 
     @Test

@@ -3,6 +3,7 @@ package com.ypat.service;
 import com.ypat.MemberBenefitQuoteQo;
 import com.ypat.entity.MemberBenefitRule;
 import com.ypat.entity.UserMember;
+import com.ypat.enums.MemberLevelCode;
 
 import java.util.Date;
 import java.util.Objects;
@@ -14,8 +15,9 @@ public class MemberBenefitCalculator {
     public MemberBenefitQuoteQo calculate(String scene, int originalPpd, UserMember member, MemberBenefitRule rule) {
         MemberBenefitQuoteQo q = new MemberBenefitQuoteQo();
         q.setScene(scene);
-        q.setOriginalPpd(originalPpd);
-        boolean memberActive = isActiveBasic(member);
+        int safeOriginalPpd = Math.max(0, originalPpd);
+        q.setOriginalPpd(safeOriginalPpd);
+        boolean memberActive = isActiveMember(member);
         q.setMemberActive(memberActive);
         q.setLevelCode(memberActive ? member.getLevel() : null);
         boolean ruleEffective = memberActive
@@ -26,16 +28,18 @@ public class MemberBenefitCalculator {
                 && "1".equals(rule.getEffective())
                 && "1".equals(rule.getStatus());
         q.setRuleEffective(ruleEffective);
-        int discount = ruleEffective && rule.getDiscountPpd() != null ? Math.max(0, rule.getDiscountPpd()) : 0;
-        int min = ruleEffective && rule.getMinActualPpd() != null ? Math.max(0, rule.getMinActualPpd()) : 0;
+        int discount = ruleEffective && rule.getDiscountPpd() != null
+                ? Math.min(safeOriginalPpd, Math.max(0, rule.getDiscountPpd())) : 0;
+        int min = ruleEffective && rule.getMinActualPpd() != null
+                ? Math.min(safeOriginalPpd, Math.max(0, rule.getMinActualPpd())) : 0;
         q.setDiscountPpd(discount);
-        q.setActualPpd(Math.max(min, Math.max(0, originalPpd - discount)));
+        q.setActualPpd(Math.min(safeOriginalPpd, Math.max(min, safeOriginalPpd - discount)));
         return q;
     }
 
-    private boolean isActiveBasic(UserMember member) {
+    private boolean isActiveMember(UserMember member) {
         return member != null
-                && LEVEL_BASIC.equals(member.getLevel())
+                && MemberLevelCode.fromCode(member.getLevel()) != null
                 && member.getExpireAt() != null
                 && member.getExpireAt().after(new Date());
     }
