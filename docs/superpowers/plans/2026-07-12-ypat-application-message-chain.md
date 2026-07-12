@@ -161,7 +161,7 @@ git commit -m "fix: restore ypat application list api"
 - Create（创建）: `frontend/src/pages-sub/ypat/my-apply.test.ts`
 - Modify（修改）: `frontend/src/pages-sub/ypat/my-apply.vue`
 
-- [ ] **Step 1（步骤 1）: 写页面失败契约测试**
+- [x] **Step 1（步骤 1）: 写页面失败契约测试**
 
 创建 `my-apply.test.ts`（我的申请页面测试）：
 
@@ -189,7 +189,7 @@ describe('my ypat application page contract', () => {
 })
 ```
 
-- [ ] **Step 2（步骤 2）: 运行页面测试确认按预期失败**
+- [x] **Step 2（步骤 2）: 运行页面测试确认按预期失败**
 
 Run（运行）:
 
@@ -199,7 +199,7 @@ cd frontend && /Users/lizhenwei/workspace/vueworkspace/ypat-workspace/frontend/n
 
 Expected（预期）: 页面仍调用 `getMySentList`（获取反馈消息列表）并使用 `MessInfo`（消息详情）。
 
-- [ ] **Step 3（步骤 3）: 切换数据源和页面模型**
+- [x] **Step 3（步骤 3）: 切换数据源和页面模型**
 
 在 `my-apply.vue`（我的申请页面）中：
 
@@ -227,7 +227,7 @@ function openDetail(item: YpatInfo): void {
 
 为 `.publisher`（发布者文本）补充与现有卡片一致的紧凑文字样式，不改动页面布局结构。
 
-- [ ] **Step 4（步骤 4）: 运行我的申请页面测试确认通过**
+- [x] **Step 4（步骤 4）: 运行我的申请页面测试确认通过**
 
 Run（运行）:
 
@@ -237,7 +237,7 @@ cd frontend && /Users/lizhenwei/workspace/vueworkspace/ypat-workspace/frontend/n
 
 Expected（预期）: 两个测试文件全部通过。
 
-- [ ] **Step 5（步骤 5）: 提交我的申请页面修复**
+- [x] **Step 5（步骤 5）: 提交我的申请页面修复**
 
 ```bash
 git add frontend/src/pages-sub/ypat/my-apply.vue frontend/src/pages-sub/ypat/my-apply.test.ts

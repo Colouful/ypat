@@ -5,11 +5,12 @@
     <view v-else-if="!items.length" class="state">暂无报名记录</view>
     <view v-else>
       <view v-for="item in items" :key="item.id" class="card" @tap="openDetail(item)">
-        <image class="cover" :src="item.imgpath || '/static/default-cover.png'" mode="aspectFill" />
+        <image class="cover" :src="item.pics?.[0] || '/static/default-cover.png'" mode="aspectFill" />
         <view class="body">
-          <text class="title">{{ item.nickname || '约拍报名' }}</text>
-          <text class="desc">{{ item.content || '已提交报名申请' }}</text>
-          <text class="meta">{{ item.city || '' }} {{ item.timeStr || formatTime(item.credate) }}</text>
+          <text class="title">{{ item.targetTxt || '约拍申请' }}</text>
+          <text class="publisher">{{ item.userQo?.nickname || '匿名用户' }}</text>
+          <text class="desc">{{ item.describ || '已提交约拍申请' }}</text>
+          <text class="meta">{{ [item.city, item.area].filter(Boolean).join(' · ') || '地点待沟通' }} {{ item.timeStr || formatTime(item.pubdate) }}</text>
         </view>
       </view>
     </view>
@@ -24,12 +25,10 @@ import { ref } from 'vue'
 import { onPullDownRefresh, onReachBottom, onShow } from '@dcloudio/uni-app'
 import { useUserStore } from '@/stores/user'
 import * as ypatApi from '@/api/modules/ypat'
-import * as messageApi from '@/api/modules/message'
-import { resolveMessageNavigation } from '@/utils/message-navigation'
-import type { MessInfo } from '@/api/types'
+import type { YpatInfo } from '@/api/types'
 
 const userStore = useUserStore()
-const items = ref<MessInfo[]>([])
+const items = ref<YpatInfo[]>([])
 const loading = ref(false)
 const loadingMore = ref(false)
 const hasMore = ref(true)
@@ -47,7 +46,7 @@ async function load(refresh = false): Promise<void> {
     loadingMore.value = true
   }
   try {
-    const result = await ypatApi.getMySentList({ userid, page: page.value, size })
+    const result = await ypatApi.getMyApplicationList({ userid, page: page.value, size })
     const content = result.data?.content || []
     items.value = refresh ? content : items.value.concat(content)
     const current = result.data?.number ?? page.value
@@ -68,22 +67,8 @@ function formatTime(value?: string): string {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
 }
 
-async function openDetail(item: MessInfo): Promise<void> {
-  const userid = userStore.userInfo?.id
-  if (!userid) {
-    uni.navigateTo({ url: '/pages/login/index' })
-    return
-  }
-  const result = await resolveMessageNavigation({
-    tab: 'sent',
-    item,
-    getMessageDetail: async (messageId) => {
-      const response = await messageApi.getMessageDetail(messageId, userid)
-      return response.data
-    },
-  })
-  if (result.type === 'navigate') uni.navigateTo({ url: result.url })
-  else uni.showToast({ title: result.message, icon: 'none' })
+function openDetail(item: YpatInfo): void {
+  uni.navigateTo({ url: `/pages-sub/ypat/detail?id=${item.id}` })
 }
 
 onShow(() => load(true))
@@ -99,8 +84,9 @@ onReachBottom(() => load())
 .card { display: flex; margin-bottom: 22rpx; padding: 22rpx; overflow: hidden; border-radius: $radius-keep-card; background: $color-bg-card; box-shadow: $shadow-keep-card; }
 .cover { width: 204rpx; height: 220rpx; border-radius: 24rpx; background: $color-bg-chip; }
 .body { flex: 1; min-width: 0; padding: 6rpx 0 6rpx 22rpx; }
-.title, .desc, .meta { display: block; }
+.title, .publisher, .desc, .meta { display: block; }
 .title { color: $color-text-primary; font-size: 30rpx; font-weight: 900; }
+.publisher { margin-top: 8rpx; color: $color-primary; font-size: 23rpx; font-weight: 800; }
 .desc { margin: 16rpx 0; color: $color-text-secondary; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .meta { color: $color-text-helper; font-size: 23rpx; font-weight: 700; }
 </style>
