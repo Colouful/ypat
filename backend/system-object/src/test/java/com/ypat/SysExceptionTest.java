@@ -7,6 +7,22 @@ import static org.junit.Assert.assertNull;
 
 public class SysExceptionTest {
     @Test
+    public void numericCodeConstructorBuildsEscapedJsonMessage() {
+        SysException exception = new SysException(1002, "参数\"错误\\请重试\n");
+
+        assertEquals("{\"code\":1002,\"msg\":\"参数\\\"错误\\\\请重试\\n\"}", exception.getMessage());
+        assertEquals("参数\"错误\\请重试\n", exception.getMsg());
+    }
+
+    @Test
+    public void responseCodeConstructorBuildsJsonMessage() {
+        SysException exception = new SysException(ResponseCode.FAIL_PARA);
+
+        assertEquals("{\"code\":1002,\"msg\":\"参数错误\"}", exception.getMessage());
+        assertEquals("参数错误", exception.getMsg());
+    }
+
+    @Test
     public void customMessageIsPreservedForCrossServiceErrors() {
         SysException exception = new SysException(ResponseCode.FAIL_PARA, "约拍资源已被占用，请重新选择");
 

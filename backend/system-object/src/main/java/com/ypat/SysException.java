@@ -7,28 +7,29 @@ public class SysException extends RuntimeException  {
     private ResponseCode responseCode;
 
     public SysException(int code, String msg) {
+        super(buildMessage(code, msg));
         this.code = code;
         this.msg = msg;
     }
 
     public SysException(ResponseCode responseCode) {
-        super(responseCode.toString());
+        super(buildMessage(responseCode.getCode(), responseCode.getMsg()));
         this.code = responseCode.getCode();
         this.msg = responseCode.getMsg();
         this.responseCode = responseCode;
     }
 
     public SysException(ResponseCode responseCode, String msg) {
-        super(buildMessage(responseCode, msg));
+        super(buildMessage(responseCode.getCode(), msg));
         this.code = responseCode.getCode();
         this.msg = msg;
         this.responseCode = responseCode;
     }
 
-    private static String buildMessage(ResponseCode responseCode, String msg) {
+    private static String buildMessage(int code, String msg) {
         StringBuilder message = new StringBuilder();
         message.append("{\"code\":")
-                .append(responseCode.getCode())
+                .append(code)
                 .append(",\"msg\":");
         if (msg == null) {
             message.append("null");

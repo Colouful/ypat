@@ -66,11 +66,30 @@ describe('internal test workbench source contracts', () => {
     expect(styleSelect).toContain('v-model="form.styleCodes"\n            multiple\n')
 
     const payload = page.slice(page.indexOf('function buildPayload'), page.indexOf('async function submitGenerate'))
-    expect(payload).toContain('groupNos: isCreateWorks.value')
-    expect(payload).toContain('[selectedWorkGroup.value.groupNo]')
-    expect(payload).toContain('ypatResourceIds: isCreateYpats.value')
+    expect(payload).toContain('if (isCreateUsers.value)')
+    expect(payload).toContain('if (isCreateWorks.value)')
+    expect(payload).toContain('if (isCreateYpats.value)')
+    expect(payload).toContain('groupNos: [selectedWorkGroup.value!.groupNo]')
+    expect(payload).toContain('ypatResourceIds: validSelectedYpatResourceIds.value')
     expect(payload).toContain('validSelectedYpatResourceIds.value')
-    expect(payload).toContain('validSelectedYpatResourceIds.value.length === selectedYpatResources.value.length')
+
+    const usersPayload = payload.slice(payload.indexOf('if (isCreateUsers.value)'), payload.indexOf('if (isCreateWorks.value)'))
+    const worksPayload = payload.slice(payload.indexOf('if (isCreateWorks.value)'), payload.indexOf('if (isCreateYpats.value)'))
+    const ypatsPayload = payload.slice(payload.indexOf('if (isCreateYpats.value)'))
+    for (const isolatedPayload of [usersPayload, worksPayload]) {
+      for (const field of ['patdate:', 'patslice:', 'describ:', 'target:', 'wx:', 'mobile:', 'ypatResourceIds:']) {
+        expect(isolatedPayload).not.toContain(field)
+      }
+    }
+    expect(usersPayload).not.toContain('groupNos:')
+    expect(worksPayload).toContain('groupNos: [selectedWorkGroup.value!.groupNo]')
+    for (const field of ['nicknamePrefix:', 'gender:', 'profess:', 'province:', 'city:', 'area:', 'styleCode:']) {
+      expect(worksPayload).not.toContain(field)
+    }
+    expect(ypatsPayload).not.toContain('groupNos:')
+    expect(ypatsPayload).not.toContain('styleCode:')
+    expect(ypatsPayload).toContain('ypatResourceIds: validSelectedYpatResourceIds.value')
+    expect(payload).toContain("throw new Error('不支持的生成动作')")
 
     const pickerStart = page.indexOf('<ResourcePickerDialog')
     const pickerEnd = page.indexOf('</ResourcePickerDialog>', pickerStart)

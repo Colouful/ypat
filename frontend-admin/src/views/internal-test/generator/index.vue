@@ -164,31 +164,49 @@ function validateBeforeSubmit(): string | null {
 }
 
 function buildPayload(): InternalTestGeneratePayload {
-  return {
-    actionType: form.actionType,
-    userCount: isCreateUsers.value ? form.userCount : undefined,
-    userId: form.userId,
-    nicknamePrefix: form.nicknamePrefix || undefined,
-    gender: form.gender,
-    profess: form.profess,
-    province: form.province,
-    city: form.city,
-    area: form.area,
-    styleCodes: form.styleCodes,
-    styleCode: form.styleCodes[0],
-    publishStatus: form.publishStatus,
-    groupNos: isCreateWorks.value && selectedWorkGroup.value ? [selectedWorkGroup.value.groupNo] : undefined,
-    ypatResourceIds: isCreateYpats.value
-      && validSelectedYpatResourceIds.value.length === selectedYpatResources.value.length
-      ? validSelectedYpatResourceIds.value
-      : undefined,
-    patdate: form.patdate,
-    patslice: isCreateYpats.value ? patTimeRange.value.join('-') : undefined,
-    describ: form.describ,
-    target: form.target,
-    wx: form.wx,
-    mobile: form.mobile,
+  if (isCreateUsers.value) {
+    return {
+      actionType: form.actionType,
+      userCount: form.userCount,
+      nicknamePrefix: form.nicknamePrefix || undefined,
+      gender: form.gender,
+      profess: form.profess,
+      province: form.province,
+      city: form.city,
+      area: form.area,
+    }
   }
+
+  if (isCreateWorks.value) {
+    return {
+      actionType: form.actionType,
+      userId: form.userId,
+      styleCodes: form.styleCodes,
+      publishStatus: form.publishStatus,
+      groupNos: [selectedWorkGroup.value!.groupNo],
+    }
+  }
+
+  if (isCreateYpats.value) {
+    return {
+      actionType: form.actionType,
+      userId: form.userId,
+      province: form.province,
+      city: form.city,
+      area: form.area,
+      styleCodes: form.styleCodes,
+      publishStatus: form.publishStatus,
+      ypatResourceIds: validSelectedYpatResourceIds.value,
+      patdate: form.patdate,
+      patslice: patTimeRange.value.join('-'),
+      describ: form.describ,
+      target: form.target,
+      wx: form.wx,
+      mobile: form.mobile,
+    }
+  }
+
+  throw new Error('不支持的生成动作')
 }
 
 async function submitGenerate(): Promise<void> {

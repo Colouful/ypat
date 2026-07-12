@@ -10,6 +10,7 @@ import {
 } from '@/api/modules/internal-test'
 import {
   InternalTestMediaType,
+  InternalTestResourceStatus,
   InternalTestResourceUsedFlag,
   InternalTestUsageType,
   getInternalTestResourceUsedFlagOptions,
@@ -113,12 +114,15 @@ function styleText(value?: string): string {
 
 function isWorkSelectable(group: InternalTestResourceGroup): boolean {
   return group.usedFlag !== InternalTestResourceUsedFlag.USED.value
+    && group.resources.length > 0
+    && group.resources.every((resource) => resource.status === InternalTestResourceStatus.ENABLED.value)
 }
 
 function isYpatSelectable(resource: InternalTestResource): boolean {
   if (
     activeMediaType.value !== InternalTestMediaType.IMAGE.value
     || resource.usedFlag === InternalTestResourceUsedFlag.USED.value
+    || resource.status !== InternalTestResourceStatus.ENABLED.value
   ) return false
 
   const selected = temporaryYpatResources.value.some((item) => sameResource(item, resource))
@@ -154,6 +158,7 @@ async function fetchResources(): Promise<void> {
       page: query.page,
       size: query.size,
       mediaType: activeMediaType.value,
+      status: InternalTestResourceStatus.ENABLED.value,
     }
     if (props.mode === 'work') {
       const response = await getInternalResourceGroups({

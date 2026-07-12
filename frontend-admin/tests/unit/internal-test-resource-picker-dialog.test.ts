@@ -150,6 +150,7 @@ function resource(id: number, overrides: Partial<InternalTestResource> = {}): In
     mediaType: 'image',
     usageType: 'ypat',
     title: `resource-${id}`,
+    status: 'enabled',
     usedFlag: 0,
     ...overrides,
   }
@@ -205,6 +206,13 @@ beforeEach(() => {
 })
 
 describe('ResourcePickerDialog', () => {
+  it('资源请求固定携带启用状态', async () => {
+    mountDialog()
+    await flushPromises()
+
+    expect(getInternalResourcesMock).toHaveBeenCalledWith(expect.objectContaining({ status: 'enabled' }))
+  })
+
   it('旧请求晚返回时不覆盖新标签请求的数据', async () => {
     const imageRequest = deferred<ReturnType<typeof page>>()
     const videoRequest = deferred<ReturnType<typeof page>>()
@@ -274,10 +282,11 @@ describe('ResourcePickerDialog', () => {
     expect(warningMock).toHaveBeenCalledOnce()
   })
 
-  it('已占用行与视频标签行不可选择', async () => {
+  it('已占用、停用行与视频标签行不可选择', async () => {
     const used = resource(1, { usedFlag: 1 })
     const unused = resource(2)
-    getInternalResourcesMock.mockResolvedValueOnce(page([used, unused])).mockResolvedValueOnce(page([unused]))
+    const disabled = resource(3, { status: 'disabled' })
+    getInternalResourcesMock.mockResolvedValueOnce(page([used, unused, disabled])).mockResolvedValueOnce(page([unused]))
     const wrapper = mountDialog()
     await flushPromises()
 
@@ -286,6 +295,7 @@ describe('ResourcePickerDialog', () => {
     const selectable = selectionColumn?.props('selectable') as (row: InternalTestResource) => boolean
     expect(selectable(used)).toBe(false)
     expect(selectable(unused)).toBe(true)
+    expect(selectable(disabled)).toBe(false)
 
     wrapper.findComponent({ name: 'ElTabs' }).vm.$emit('update:modelValue', 'video')
     await flushPromises()
@@ -326,6 +336,7 @@ describe('ResourcePickerDialog', () => {
       page: 0,
       size: 10,
       mediaType: 'image',
+      status: 'enabled',
       usageType: 'work',
     })
   })
