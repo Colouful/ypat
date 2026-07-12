@@ -27,6 +27,7 @@ import {
 } from './resource-picker-selection'
 
 type PickerMode = 'work' | 'ypat'
+type MediaTypeValue = (typeof InternalTestMediaType)[keyof typeof InternalTestMediaType]['value']
 type SelectionTable = {
   clearSelection: () => void
   toggleRowSelection: (row: InternalTestResource | InternalTestResourceGroup, selected?: boolean) => void
@@ -61,7 +62,7 @@ const localVisible = computed({
   get: () => props.visible,
   set: (visible: boolean) => emit('update:visible', visible),
 })
-const activeMediaType = ref(InternalTestMediaType.IMAGE.value)
+const activeMediaType = ref<MediaTypeValue>(InternalTestMediaType.IMAGE.value)
 const query = reactive<InternalTestResourceQuery>({
   keyword: '',
   styleCode: '',
@@ -106,6 +107,10 @@ function workGroupLabel(group: InternalTestResourceGroup): string {
 
 function previewResource(group: InternalTestResourceGroup): InternalTestResource | undefined {
   return group.resources?.[0]
+}
+
+function asWorkGroup(row: unknown): InternalTestResourceGroup {
+  return row as InternalTestResourceGroup
 }
 
 function styleText(value?: string): string {
@@ -379,14 +384,14 @@ watch([() => props.visible, () => props.mode], ([visible], previousValues) => {
       <el-table-column label="预览" width="100" align="center">
         <template #default="{ row }">
           <el-image
-            v-if="previewResource(row)?.mediaType === InternalTestMediaType.IMAGE.value && previewResource(row)?.url"
-            :src="previewResource(row)?.url"
+            v-if="previewResource(asWorkGroup(row))?.mediaType === InternalTestMediaType.IMAGE.value && previewResource(asWorkGroup(row))?.url"
+            :src="previewResource(asWorkGroup(row))?.url"
             fit="cover"
             class="resource-preview"
           />
           <video
-            v-else-if="previewResource(row)?.url"
-            :src="previewResource(row)?.url"
+            v-else-if="previewResource(asWorkGroup(row))?.url"
+            :src="previewResource(asWorkGroup(row))?.url"
             class="resource-preview"
             preload="metadata"
           />
@@ -394,7 +399,7 @@ watch([() => props.visible, () => props.mode], ([visible], previousValues) => {
         </template>
       </el-table-column>
       <el-table-column label="作品组" min-width="180" show-overflow-tooltip>
-        <template #default="{ row }">{{ workGroupLabel(row) }}</template>
+        <template #default="{ row }">{{ workGroupLabel(asWorkGroup(row)) }}</template>
       </el-table-column>
       <el-table-column prop="groupNo" label="组编号" min-width="160" show-overflow-tooltip />
       <el-table-column label="资源数" width="90" align="center">
@@ -405,7 +410,7 @@ watch([() => props.visible, () => props.mode], ([visible], previousValues) => {
       </el-table-column>
       <el-table-column label="操作" width="100" align="center">
         <template #default="{ row }">
-          <el-button link type="primary" @click="openDetail(row)">查看详情</el-button>
+          <el-button link type="primary" @click="openDetail(asWorkGroup(row))">查看详情</el-button>
         </template>
       </el-table-column>
     </el-table>
