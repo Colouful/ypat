@@ -17,6 +17,10 @@ public class Record {
     private Date credate;
     private Integer ppd;
     private Long userid;
+    @Column(length = 32)
+    private String scene;
+    @Column(length = 256)
+    private String description;
 
     public Long getId() {
         return id;
@@ -56,5 +60,21 @@ public class Record {
 
     public void setUserid(Long userid) {
         this.userid = userid;
+    }
+
+    public String getScene() {
+        return scene;
+    }
+
+    public void setScene(String scene) {
+        this.scene = scene;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
     }
 }
