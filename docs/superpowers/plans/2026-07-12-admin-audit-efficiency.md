@@ -232,8 +232,8 @@ git commit -m "feat: improve admin realname review workflow"
 
 - 修改：`frontend-admin/src/views/order/list/index.vue`
 - 修改：`frontend-admin/src/views/payment/order/index.vue`
-- 新增：`frontend-admin/src/views/order/list/index.test.ts`
-- 新增：`frontend-admin/src/views/payment/order/index.test.ts`
+- 新增：`frontend-admin/src/views/order/list/__tests__/index.test.ts`
+- 新增：`frontend-admin/src/views/payment/order/__tests__/index.test.ts`
 
 - [ ] **步骤 1：先补格式化失败测试**
 
@@ -258,7 +258,7 @@ expect(source).toContain('businessText(row.businessType)')
 - [ ] **步骤 2：运行测试并确认预期失败**
 
 ```bash
-pnpm exec vitest run src/views/order/list/index.test.ts src/views/payment/order/index.test.ts
+pnpm exec vitest run src/views/order/list/__tests__/index.test.ts src/views/payment/order/__tests__/index.test.ts
 ```
 
 预期：两个页面均因缺少目标格式化调用而失败。
@@ -369,8 +369,8 @@ git commit -m "fix: load complete ypat audit details"
 pnpm exec vitest run \
   src/views/manage/user-list/__tests__/index.test.ts \
   src/views/manage/user-list/__tests__/UserAuditDialog.test.ts \
-  src/views/order/list/index.test.ts \
-  src/views/payment/order/index.test.ts \
+  src/views/order/list/__tests__/index.test.ts \
+  src/views/payment/order/__tests__/index.test.ts \
   src/views/manage/ypat-list/__tests__/AuditDialog.test.ts
 ```
 
@@ -386,9 +386,9 @@ pnpm exec eslint \
   src/views/manage/user-list/__tests__/index.test.ts \
   src/views/manage/user-list/__tests__/UserAuditDialog.test.ts \
   src/views/order/list/index.vue \
-  src/views/order/list/index.test.ts \
+  src/views/order/list/__tests__/index.test.ts \
   src/views/payment/order/index.vue \
-  src/views/payment/order/index.test.ts \
+  src/views/payment/order/__tests__/index.test.ts \
   src/views/manage/ypat-list/AuditDialog.vue \
   src/views/manage/ypat-list/__tests__/AuditDialog.test.ts
 ```
