@@ -99,24 +99,29 @@
                    @update:selectedIds="form.selectedTagIds = $event" />
     </view>
 
-    <view v-if="memberQuote" class="appointment-publish-form__card appointment-publish-form__benefit">
-      <view class="appointment-publish-form__benefit-row">
-        <text>原价：</text>
-        <text>{{ memberQuote.originalPpd }} 拍拍豆</text>
-      </view>
-      <view v-if="memberQuote.discountPpd > 0" class="appointment-publish-form__benefit-row appointment-publish-form__benefit-row--discount">
-        <text>{{ memberQuote.levelCode || 'BASIC' }} 会员优惠：</text>
-        <text>-{{ memberQuote.discountPpd }} 拍拍豆</text>
-      </view>
-      <view class="appointment-publish-form__benefit-row appointment-publish-form__benefit-row--actual">
-        <text>本次实扣：</text>
-        <text>{{ memberQuote.actualPpd }} 拍拍豆</text>
-      </view>
-    </view>
-
     <view class="appointment-publish-form__bottom-spacer" />
     <view class="appointment-publish-form__submit">
-      <button class="appointment-publish-form__btn" :class="{ 'appointment-publish-form__btn--disabled': submitting }" :disabled="submitting" @tap="onSubmit">
+      <view class="appointment-publish-form__quote" @tap="retryQuote">
+        <text v-if="quoteLoading" class="appointment-publish-form__quote-status">费用加载中...</text>
+        <text v-else-if="quoteFailed" class="appointment-publish-form__quote-status appointment-publish-form__quote-status--error">
+          费用加载失败，点击重试
+        </text>
+        <template v-else-if="memberQuote">
+          <view class="appointment-publish-form__quote-main">
+            <text>本次实扣 </text>
+            <text class="appointment-publish-form__quote-amount">{{ memberQuote.actualPpd }}</text>
+            <text> 拍豆</text>
+          </view>
+          <view class="appointment-publish-form__quote-detail">
+            <text :class="{ 'appointment-publish-form__quote-original--discounted': memberQuote.discountPpd > 0 }">
+              原价 {{ memberQuote.originalPpd }}
+            </text>
+            <text v-if="memberQuote.discountPpd > 0">会员优惠 -{{ memberQuote.discountPpd }}</text>
+            <text v-else>暂无会员优惠</text>
+          </view>
+        </template>
+      </view>
+      <button class="appointment-publish-form__btn" :class="{ 'appointment-publish-form__btn--disabled': submitDisabled }" :disabled="submitDisabled" @tap="onSubmit">
         {{ submitting ? '提交中...' : '发布约拍' }}
       </button>
     </view>
@@ -152,6 +157,8 @@ const config = ref<YpatRoleConfig | null>(YPAT_ROLE_CONFIGS[props.target] || nul
 const memberStore = useMemberStore()
 const tagOptions = ref<WorkTag[]>([])
 const submitting = ref(false)
+const quoteLoading = ref(true)
+const quoteFailed = ref(false)
 const mediaItems = ref<MediaItem[]>([])
 const minPatdate = formatLocalDate()
 
@@ -175,11 +182,7 @@ watch(() => props.target, (v) => {
 
 onMounted(async () => {
   void preloadMessageSubscribeTemplates()
-  try {
-    await memberStore.refreshSubmitYpatQuote()
-  } catch {
-    // 报价失败不阻塞发布，提交接口仍会按后端实扣规则校验。
-  }
+  await loadMemberQuote()
   try {
     const res = await getWorkTags()
     const data = (res && res.data) || []
@@ -190,7 +193,8 @@ onMounted(async () => {
 })
 
 const chargewayText = computed(() => CHARGE_WAY_LABELS[form.chargeway] || '')
-const memberQuote = computed(() => memberStore.submitYpatQuote)
+const memberQuote = computed(() => memberStore.quotes.SUBMIT_YPAT ?? null)
+const submitDisabled = computed(() => submitting.value || quoteLoading.value || quoteFailed.value || !memberQuote.value)
 const creditText = computed(() => form.creditflag === '1' ? '要求对方存入保证金' : '不要求对方存入保证金')
 const regionValue = computed(() => (form.region ? [form.region.province, form.region.city, form.region.area] : []))
 const regionText = computed(() => {
@@ -198,6 +202,23 @@ const regionText = computed(() => {
   if (!form.region) return ''
   return [form.region.province, form.region.city, form.region.area].filter(Boolean).join(' / ')
 })
+
+async function loadMemberQuote() {
+  quoteLoading.value = true
+  quoteFailed.value = false
+  try {
+    const quote = await memberStore.refreshBenefitQuote('SUBMIT_YPAT')
+    quoteFailed.value = !quote
+  } catch {
+    quoteFailed.value = true
+  } finally {
+    quoteLoading.value = false
+  }
+}
+
+function retryQuote() {
+  if (quoteFailed.value && !quoteLoading.value) void loadMemberQuote()
+}
 
 function formatLocalDate(offsetDays = 0): string {
   const date = new Date()
@@ -243,7 +264,10 @@ function onPickCredit() {
 }
 
 async function onSubmit() {
-  if (submitting.value) return
+  if (submitDisabled.value) {
+    if (!submitting.value) uni.showToast({ title: '请等待费用加载完成', icon: 'none' })
+    return
+  }
   if (form.describ.length < 5) {
     uni.showToast({ title: '约拍要求至少 5 个字', icon: 'none' })
     return
@@ -450,41 +474,66 @@ async function onSubmit() {
     color: $color-text-primary;
     font-size: 28rpx;
   }
-  &__benefit {
-    background: rgba(35, 194, 104, 0.08);
-  }
-  &__benefit-row {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    color: $color-text-secondary;
-    font-size: 26rpx;
-    line-height: 1.6;
-    & + & {
-      margin-top: 8rpx;
-    }
-    &--discount {
-      color: $color-primary;
-      font-weight: 700;
-    }
-    &--actual {
-      color: $color-text-primary;
-      font-size: 30rpx;
-      font-weight: 800;
-    }
-  }
-  &__bottom-spacer { height: 200rpx; }
+  &__bottom-spacer { height: 180rpx; }
   &__submit {
     position: fixed;
     left: 0;
     right: 0;
     bottom: 0;
-    padding: 24rpx 32rpx calc(24rpx + env(safe-area-inset-bottom));
+    z-index: 20;
+    display: flex;
+    align-items: center;
+    padding: 18rpx 28rpx calc(18rpx + env(safe-area-inset-bottom));
     background: $color-bg-card;
+    box-shadow: 0 -8rpx 28rpx rgba(15, 23, 42, 0.08);
+  }
+  &__quote {
+    width: 55%;
+    min-width: 0;
+    padding-right: 20rpx;
+    box-sizing: border-box;
+  }
+  &__quote-main {
+    overflow: hidden;
+    color: $color-text-primary;
+    font-size: 27rpx;
+    font-weight: 700;
+    line-height: 1.35;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  &__quote-amount {
+    color: $color-primary;
+    font-size: 34rpx;
+    font-weight: 800;
+  }
+  &__quote-detail {
+    display: flex;
+    gap: 14rpx;
+    margin-top: 6rpx;
+    overflow: hidden;
+    color: $color-text-secondary;
+    font-size: 20rpx;
+    line-height: 1.3;
+    white-space: nowrap;
+  }
+  &__quote-original--discounted {
+    color: $color-text-helper;
+    text-decoration: line-through;
+  }
+  &__quote-status {
+    display: block;
+    color: $color-text-secondary;
+    font-size: 24rpx;
+    line-height: 1.4;
+    &--error {
+      color: $color-primary;
+    }
   }
   &__btn {
-    width: 100%;
+    width: 45%;
     height: 88rpx;
+    margin: 0;
     line-height: 88rpx;
     background: $color-primary;
     color: #FFFFFF;
