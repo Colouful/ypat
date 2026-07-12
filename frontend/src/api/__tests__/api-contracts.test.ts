@@ -54,6 +54,13 @@ describe('API contracts', () => {
     expect(requestMocks.get).toHaveBeenCalledWith('/order/status', { out_trade_no: 'ORDER-1' })
   })
 
+  it('realname payment uses the unified payment endpoints', async () => {
+    await paymentApi.createRealnameOrder('MINIAPP')
+    await paymentApi.getRealnameOrderStatus('REALNAME-1')
+    expect(requestMocks.post).toHaveBeenCalledWith('/realname/order/create', { channel: 'MINIAPP' })
+    expect(requestMocks.get).toHaveBeenCalledWith('/realname/order/status', { out_trade_no: 'REALNAME-1' })
+  })
+
   it('realname OCR posts cardfront to /oauth/ocr', async () => {
     await oauthApi.ocrIdCard('data:image/jpeg;base64,abc')
     expect(requestMocks.post).toHaveBeenCalledWith('/oauth/ocr', { cardfront: 'data:image/jpeg;base64,abc' })

@@ -19,7 +19,7 @@ public class SysException extends RuntimeException  {
     }
 
     public SysException(ResponseCode responseCode, String msg) {
-        super(responseCode.toString());
+        super("{code=" + responseCode.getCode() + ", msg='" + msg + "'}");
         this.code = responseCode.getCode();
         this.msg = msg;
         this.responseCode = responseCode;

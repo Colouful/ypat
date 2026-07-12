@@ -7,6 +7,7 @@ import com.ypat.entity.Record;
 import com.ypat.entity.User;
 import com.ypat.enums.OrderType;
 import com.ypat.enums.RecordType;
+import com.ypat.enums.UserStatus;
 import com.ypat.enums.YesNo;
 import com.ypat.repository.OrderRepository;
 import com.ypat.repository.ProductRepository;
@@ -67,6 +68,15 @@ public class OrderService {
         orderRepository.save(order);
     }
 
+    public void saveRealnamePaymentOrder(Order order) {
+        if (order == null || !OrderType.REAL.value.equals(order.getType())) {
+            throw new com.ypat.SysException(com.ypat.ResponseCode.FAIL_PARA);
+        }
+        order.setCredate(new Date());
+        order.setStatus(YesNo.no.value);
+        orderRepository.save(order);
+    }
+
     public Order get(Long id){
         return orderRepository.findById(id);
     }
@@ -109,6 +119,27 @@ public class OrderService {
         record.setUserid(order.getUserid());
         record.setType(RecordType.PAY.value);
         recordRepository.save(record);
+        return true;
+    }
+
+    public boolean markRealnamePaid(String outTradeNo) {
+        Order order = orderRepository.findByOut_trade_no(outTradeNo);
+        if (order == null) throw new com.ypat.SysException(com.ypat.ResponseCode.FAIL_NOT);
+        if (!OrderType.REAL.value.equals(order.getType())) {
+            throw new com.ypat.SysException(com.ypat.ResponseCode.FAIL_PARA);
+        }
+        if (YesNo.yes.value.equals(order.getStatus())) return false;
+
+        User user = userRepository.findByIdForUpdate(order.getUserid());
+        if (user == null) throw new com.ypat.SysException(com.ypat.ResponseCode.FAIL_NOT);
+
+        order.setStatus(YesNo.yes.value);
+        order.setReturn_code("SUCCESS");
+        order.setResult_code("SUCCESS");
+        orderRepository.save(order);
+
+        user.setStatus(UserStatus.zfcg.value);
+        userRepository.save(user);
         return true;
     }
 

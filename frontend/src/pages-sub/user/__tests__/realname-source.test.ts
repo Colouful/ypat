@@ -2,7 +2,7 @@ import fs from 'node:fs'
 import path from 'node:path'
 import { describe, expect, it } from 'vitest'
 
-describe('realname page legacy paid flow source', () => {
+describe('realname page paid flow source', () => {
   const source = fs.readFileSync(path.resolve(__dirname, '../realname.vue'), 'utf8')
 
   it('requires three photos and labels hand-held ID upload', () => {
@@ -13,12 +13,17 @@ describe('realname page legacy paid flow source', () => {
   })
 
   it('pays before first submission and waits for server confirmation', () => {
-    expect(source).toContain('createRealnameOrder')
+    expect(source).toContain('createRealnamePaymentOrder')
     expect(source).toContain('waitForRealnamePayment')
-    expect(source).toContain('getOrderStatus')
+    expect(source).toContain('getRealnameOrderStatus')
     expect(source).toContain('submitAfterPaymentConfirmed')
     expect(source).toContain('resumePendingRealnamePayment')
     expect(source).toContain('pendingOutTradeNo')
+    expect(source).toContain('getPaymentChannel')
+    expect(source).toContain('toMiniappPayParams')
+    expect(source).toContain('redirectToH5Pay')
+    expect(source).toContain('order.outTradeNo')
+    expect(source).not.toContain('paymentApi.createOrder({')
     expect(source).not.toContain('pics: [frontPath.value, backPath.value]')
     expect(source).not.toContain("order.result_code === 'SUCCESS'")
   })

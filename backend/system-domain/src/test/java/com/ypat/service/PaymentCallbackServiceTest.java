@@ -62,6 +62,19 @@ public class PaymentCallbackServiceTest {
         assertEquals("D1", orderService.lastOutTradeNo);
     }
 
+    @Test
+    public void firstRealnameNotificationUnlocksSubmission() {
+        FakePaymentOrderService payment = new FakePaymentOrderService(true, order("REALNAME", 2900));
+        FakeOrderService orderService = new FakeOrderService();
+        PaymentCallbackService service = service(payment, new FakeDepositService(), new FakeMemberService(), orderService);
+
+        boolean first = service.markPaid("D1", "tx1", 2900, new Date(), "event1", "digest1");
+
+        assertTrue(first);
+        assertEquals(1, orderService.realnameMarkCount);
+        assertEquals("D1", orderService.lastOutTradeNo);
+    }
+
     private static PaymentCallbackService service(PaymentOrderService payment,
                                                   DepositService deposit,
                                                   MemberService member) {
@@ -132,10 +145,17 @@ public class PaymentCallbackServiceTest {
 
     private static class FakeOrderService extends OrderService {
         int markCount;
+        int realnameMarkCount;
         String lastOutTradeNo;
 
         public boolean markPpdPaid(String outTradeNo) {
             markCount++;
+            lastOutTradeNo = outTradeNo;
+            return true;
+        }
+
+        public boolean markRealnamePaid(String outTradeNo) {
+            realnameMarkCount++;
             lastOutTradeNo = outTradeNo;
             return true;
         }

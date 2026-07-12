@@ -65,7 +65,7 @@ public class OauthController {
             if(response ==null){
                 throw new SysException(ResponseCode.FAIL_OCR);
             }
-            if(response.getError_code()==17){
+            if(response.getError_code()==17 || response.getError_code()==18){
                 throw new SysException(ResponseCode.FAIL_LIMIT);
             }
             if(!"normal".equals(response.getImage_status())){

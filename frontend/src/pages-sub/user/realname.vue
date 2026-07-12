@@ -54,8 +54,9 @@ import { computed, reactive, ref } from 'vue'
 import { onLoad, onUnload } from '@dcloudio/uni-app'
 import * as oauthApi from '@/api/modules/oauth'
 import * as paymentApi from '@/api/modules/payment'
+import { getPaymentChannel, redirectToH5Pay, toMiniappPayParams } from '@/services/payment-channel'
 import { useUserStore } from '@/stores/user'
-import type { OauthInfo, OrderInfo } from '@/api/types'
+import type { OauthInfo, OrderInfo, PaymentChannel, PaymentCreateResult } from '@/api/types'
 
 const REALNAME_PHOTO_COUNT = oauthApi.REALNAME_PHOTO_COUNT
 const PAYMENT_POLL_LIMIT = 20
@@ -161,18 +162,17 @@ async function confirmAndPay(): Promise<void> {
   paying.value = true
   pollingCancelled = false
   try {
-    const order = await createRealnameOrder()
-    pendingOutTradeNo = order.out_trade_no
-    await invokeWechatPayment({
-      timeStamp: order.timeStamp,
-      nonceStr: order.nonceStr,
-      package: order.package,
-      signType: order.signType || 'HMAC-SHA256',
-      paySign: order.paySign,
-    })
+    const channel = getPaymentChannel()
+    const order = await createRealnamePaymentOrder(channel)
+    pendingOutTradeNo = order.outTradeNo
+    if (channel === 'H5') {
+      redirectToH5Pay(order.h5Url)
+      return
+    }
+    await invokeWechatPayment(toMiniappPayParams(order))
 
     uni.showLoading({ title: '服务端确认中...' })
-    const paid = await waitForRealnamePayment(order.out_trade_no)
+    const paid = await waitForRealnamePayment(order.outTradeNo)
     uni.hideLoading()
     if (!paid) {
       await refreshRealnameState()
@@ -254,14 +254,9 @@ function confirmRealnamePayment(): Promise<boolean> {
   })
 }
 
-async function createRealnameOrder() {
-  const order = await paymentApi.createOrder({
-    type: oauthApi.REALNAME_ORDER_TYPE,
-    total_fee: oauthApi.REALNAME_AUDIT_FEE_YUAN,
-  })
-  if (!order.data?.package || !order.data.timeStamp || !order.data.nonceStr || !order.data.paySign || !order.data.out_trade_no) {
-    throw new Error('支付参数不完整')
-  }
+async function createRealnamePaymentOrder(channel: PaymentChannel): Promise<PaymentCreateResult> {
+  const order = await paymentApi.createRealnameOrder(channel)
+  if (!order.data?.outTradeNo) throw new Error('下单失败')
   return order.data
 }
 
@@ -279,7 +274,7 @@ function invokeWechatPayment(data: {
       timeStamp: data.timeStamp,
       nonceStr: data.nonceStr,
       package: data.package,
-      signType: data.signType as 'MD5' | 'HMAC-SHA256',
+      signType: data.signType as never,
       paySign: data.paySign,
       success: () => resolve(),
       fail: (error) => reject(new Error(error.errMsg || '支付失败')),
@@ -290,7 +285,7 @@ function invokeWechatPayment(data: {
 async function waitForRealnamePayment(outTradeNo: string): Promise<boolean> {
   for (let index = 0; index < PAYMENT_POLL_LIMIT && !pollingCancelled; index += 1) {
     try {
-      const result = await paymentApi.getOrderStatus(outTradeNo)
+      const result = await paymentApi.getRealnameOrderStatus(outTradeNo)
       const paid = (result.data?.content || []).some(isPaidRealnameOrder)
       if (paid) return true
     } catch {

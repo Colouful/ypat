@@ -41,6 +41,8 @@ public class PaymentCallbackService {
             memberService.markPaid(businessNo, txId, paidAt);
         } else if (PaymentBusinessType.PPD.value.equals(payment.getBusinessType())) {
             orderService.markPpdPaid(businessNo);
+        } else if (PaymentBusinessType.REALNAME.value.equals(payment.getBusinessType())) {
+            orderService.markRealnamePaid(businessNo);
         } else {
             throw new SysException(ResponseCode.FAIL_PARA);
         }

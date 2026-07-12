@@ -31,6 +31,14 @@ export function getPpdOrderStatus(outTradeNo: string): Promise<ApiResult<PageRes
   return get('/ppd/order/status', { out_trade_no: outTradeNo })
 }
 
+export function createRealnameOrder(channel: PaymentChannel): Promise<ApiResult<PaymentCreateResult>> {
+  return post('/realname/order/create', { channel })
+}
+
+export function getRealnameOrderStatus(outTradeNo: string): Promise<ApiResult<PageResult<OrderInfo>>> {
+  return get('/realname/order/status', { out_trade_no: outTradeNo })
+}
+
 export function getOrderStatus(outTradeNo: string): Promise<ApiResult<PageResult<OrderInfo>>> {
   return get('/order/status', { out_trade_no: outTradeNo })
 }

@@ -93,23 +93,22 @@ public class Idcard {
             return null;
         }
         Map map = GsonUtils.fromJson(json, Map.class);
+        IdcardResponse result = new IdcardResponse();
+        Number errorCode = (Number) map.get("error_code");
+        if (errorCode != null) {
+            result.setError_code(errorCode.intValue());
+            result.setError_msg((String) map.get("error_msg"));
+            return result;
+        }
         String image_status = (String) map.get("image_status");
         Map words_result = (Map) map.get("words_result");
         Map cert = (Map) words_result.get("公民身份号码");
         Map name = (Map) words_result.get("姓名");
         String cert_words = (String) cert.get("words");
         String name_words = (String) name.get("words");
-        int error_code = 0;
-        if(name.get("error_code")!=null) {
-            error_code = (Integer) name.get("error_code");
-        }
-        String error_msg = (String) name.get("error_msg");
-        IdcardResponse result = new IdcardResponse();
         result.setImage_status(image_status);
         result.setCert_words(cert_words);
         result.setName_words(name_words);
-        result.setError_code(error_code);
-        result.setError_msg(error_msg);
         return result;
     }
 }
