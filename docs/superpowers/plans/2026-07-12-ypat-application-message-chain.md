@@ -433,7 +433,7 @@ git commit -m "fix: show applications in message tab"
 **Files（文件）:**
 - Verify（验证）: 本计划所有修改文件
 
-- [ ] **Step 1（步骤 1）: 运行约拍与消息相关测试**
+- [x] **Step 1（步骤 1）: 运行约拍与消息相关测试**
 
 Run（运行）:
 
@@ -443,7 +443,7 @@ cd frontend && /Users/lizhenwei/workspace/vueworkspace/ypat-workspace/frontend/n
 
 Expected（预期）: 所有相关测试通过。
 
-- [ ] **Step 2（步骤 2）: 运行修改文件代码规范检查**
+- [x] **Step 2（步骤 2）: 运行修改文件代码规范检查**
 
 Run（运行）:
 
@@ -453,7 +453,7 @@ cd frontend && /Users/lizhenwei/workspace/vueworkspace/ypat-workspace/frontend/n
 
 Expected（预期）: 无输出，退出码为 0。
 
-- [ ] **Step 3（步骤 3）: 运行差异格式检查**
+- [x] **Step 3（步骤 3）: 运行差异格式检查**
 
 Run（运行）:
 
@@ -463,7 +463,7 @@ git diff --check
 
 Expected（预期）: 无输出，退出码为 0。
 
-- [ ] **Step 4（步骤 4）: 复核最终范围**
+- [x] **Step 4（步骤 4）: 复核最终范围**
 
 确认最终差异只包含申请列表接口、旧分页适配、两个页面的数据源与渲染、相关测试及计划状态；不包含后端、数据库、作品快捷约拍或页面整体视觉重构。
 
