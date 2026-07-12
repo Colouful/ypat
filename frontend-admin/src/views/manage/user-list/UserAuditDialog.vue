@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
 import { getUserDetail, type OauthQo } from '@/api/modules/user'
+import { getPaymentOrders } from '@/api/modules/payment'
+import type { PaymentOrder } from '@/api/types'
 import { AuditFlag, getUserStatusInfo } from '@/constants/enums'
 
 const props = defineProps<{
@@ -16,6 +18,24 @@ const emit = defineEmits<{
 
 const detailLoading = ref(false)
 const detail = ref<OauthQo | null>(null)
+const orderLoading = ref(false)
+const orderLoadFailed = ref(false)
+const orders = ref<PaymentOrder[]>([])
+
+const businessNameMap: Record<string, string> = {
+  DEPOSIT: '保证金',
+  MEMBER: '会员',
+  PPD: '拍拍豆',
+  REALNAME: '实名认证',
+}
+
+const paymentStatusMap: Record<string, string> = {
+  PENDING: '待支付',
+  PAID: '已支付',
+  CLOSED: '已关闭',
+  REFUNDED: '已退款',
+  FAILED: '支付失败',
+}
 
 function getUserId(user?: OauthQo | null): number | undefined {
   return user?.userid ?? user?.id
@@ -28,7 +48,7 @@ function getPhotoLabel(index: number): string {
 
 // 是否已审核（已审核状态隐藏审核按钮）
 const isAudited = computed(() => {
-  const status = detail.value?.status
+  const status = detail.value?.status ?? props.user?.status
   return status === AuditFlag.PASS || status === AuditFlag.REJECT
 })
 
@@ -37,23 +57,53 @@ async function loadDetail(): Promise<void> {
   if (!props.user) return
 
   detailLoading.value = true
-  try {
-    // 直接用列表传入的数据，或重新请求详情获取完整 pics
-    detail.value = props.user
+  orderLoading.value = true
+  orderLoadFailed.value = false
+  orders.value = []
+  detail.value = props.user
 
-    // 列表接口返回 id，详情接口返回 userid；统一取可用的用户 ID。
-    const userId = getUserId(props.user)
-    if (userId) {
-      const res = await getUserDetail(userId)
-      if (res.data) {
-        detail.value = res.data
-      }
-    }
-  } catch {
-    // 使用列表数据
-  } finally {
+  const userId = getUserId(props.user)
+  if (!userId) {
     detailLoading.value = false
+    orderLoading.value = false
+    return
   }
+
+  const [detailResult, orderResult] = await Promise.allSettled([
+    getUserDetail(userId),
+    getPaymentOrders({ userId, page: 0, size: 10 }),
+  ])
+  if (!props.visible || getUserId(props.user) !== userId) {
+    detailLoading.value = false
+    orderLoading.value = false
+    return
+  }
+
+  if (detailResult.status === 'fulfilled' && detailResult.value.data) {
+    detail.value = detailResult.value.data
+  }
+  if (orderResult.status === 'fulfilled') {
+    orders.value = orderResult.value.data.content || []
+  } else {
+    orderLoadFailed.value = true
+  }
+  detailLoading.value = false
+  orderLoading.value = false
+}
+
+function businessText(value?: string): string {
+  if (!value) return '-'
+  const name = businessNameMap[value]
+  return name ? `${name}(${value})` : value
+}
+
+function fenText(value?: number): string {
+  return Number.isFinite(value) ? `¥${(Number(value) / 100).toFixed(2)}` : '-'
+}
+
+function paymentStatusText(value?: string): string {
+  if (!value) return '-'
+  return paymentStatusMap[value] ? `${paymentStatusMap[value]}(${value})` : value
 }
 
 /** 关闭弹窗 */
@@ -81,7 +131,8 @@ watch(
   <el-dialog
     :model-value="visible"
     title="实名审核详情"
-    width="750px"
+    width="900px"
+    class="user-audit-dialog"
     :close-on-click-modal="false"
     @update:model-value="handleClose"
   >
@@ -146,6 +197,41 @@ watch(
             <span v-else>-</span>
           </el-descriptions-item>
         </el-descriptions>
+      </div>
+
+      <div class="order-section">
+        <h4 class="section-title">充值订单</h4>
+        <el-alert
+          v-if="orderLoadFailed"
+          title="订单信息加载失败，不影响当前审核操作"
+          type="warning"
+          :closable="false"
+          show-icon
+        />
+        <el-table
+          v-else
+          v-loading="orderLoading"
+          :data="orders"
+          size="small"
+          border
+          max-height="240"
+          empty-text="暂无充值订单"
+        >
+          <el-table-column label="业务" min-width="160">
+            <template #default="{ row }">{{ businessText(row.businessType) }}</template>
+          </el-table-column>
+          <el-table-column label="金额" width="110" align="right">
+            <template #default="{ row }">{{ fenText(row.amountFen) }}</template>
+          </el-table-column>
+          <el-table-column label="状态" min-width="150">
+            <template #default="{ row }">{{ paymentStatusText(row.status) }}</template>
+          </el-table-column>
+          <el-table-column prop="outTradeNo" label="商户单号" min-width="190" show-overflow-tooltip />
+          <el-table-column prop="createdAt" label="创建时间" min-width="170" />
+          <el-table-column prop="paidAt" label="支付时间" min-width="170">
+            <template #default="{ row }">{{ row.paidAt || '-' }}</template>
+          </el-table-column>
+        </el-table>
       </div>
     </div>
 
@@ -237,6 +323,14 @@ watch(
 
 .info-section {
   margin-bottom: $spacing-base;
+}
+
+.order-section {
+  margin-top: $spacing-xl;
+}
+
+:global(.user-audit-dialog) {
+  max-width: calc(100vw - 32px);
 }
 
 .dialog-footer {

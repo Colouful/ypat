@@ -42,6 +42,7 @@ export interface OauthQo {
   dataFlag?: string
   internalBatchNo?: string
   regisdate?: string
+  realnameSubmitAt?: string
 }
 
 /** 用户列表查询参数 */
@@ -50,6 +51,7 @@ export interface UserListQuery extends PageQuery {
   nickname?: string
   mobile?: string
   regisdate?: string
+  realnameSubmitDate?: string
   gender?: string
   id?: number
   dataFlag?: string

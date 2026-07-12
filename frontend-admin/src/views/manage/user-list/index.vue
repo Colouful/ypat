@@ -6,9 +6,16 @@ import UserAuditDialog from './UserAuditDialog.vue'
 import { getUserList, auditUser, type OauthQo, type UserListQuery } from '@/api/modules/user'
 import { getUserStatusOptions, AuditFlag } from '@/constants/enums'
 
+function getTodayText(): string {
+  const now = new Date()
+  const offset = now.getTimezoneOffset() * 60_000
+  return new Date(now.getTime() - offset).toISOString().slice(0, 10)
+}
+
 // 查询参数
 const queryParams = reactive<UserListQuery>({
   status: '',
+  realnameSubmitDate: getTodayText(),
   page: 0,
   size: 10,
 })
@@ -60,6 +67,7 @@ function handleSearch(): void {
 /** 重置按钮 */
 function handleReset(): void {
   queryParams.status = ''
+  queryParams.realnameSubmitDate = getTodayText()
   queryParams.page = 0
   fetchList()
 }
@@ -78,8 +86,8 @@ function handleSizeChange(size: number): void {
   fetchList()
 }
 
-/** 打开审核弹窗 */
-async function handleAudit(row: OauthQo): Promise<void> {
+/** 打开实名详情弹窗 */
+function openUserDialog(row: OauthQo): void {
   currentUser.value = row
   auditDialogVisible.value = true
 }
@@ -148,6 +156,16 @@ onMounted(() => {
             />
           </el-select>
         </el-form-item>
+        <el-form-item label="提交日期">
+          <el-date-picker
+            v-model="queryParams.realnameSubmitDate"
+            type="date"
+            value-format="YYYY-MM-DD"
+            placeholder="选择提交日期"
+            clearable
+            style="width: 180px"
+          />
+        </el-form-item>
         <el-form-item>
           <el-button type="primary" :icon="'Search'" @click="handleSearch">
             查询
@@ -196,18 +214,32 @@ onMounted(() => {
             {{ formatEmpty(row.regisdate) }}
           </template>
         </el-table-column>
+        <el-table-column prop="realnameSubmitAt" label="提交时间" min-width="170" show-overflow-tooltip>
+          <template #default="{ row }">
+            {{ formatEmpty(row.realnameSubmitAt) }}
+          </template>
+        </el-table-column>
         <el-table-column label="状态" width="120" align="center">
           <template #default="{ row }">
             <StatusTag :status="row.status || ''" />
           </template>
         </el-table-column>
-        <el-table-column label="操作" width="100" align="center" fixed="right">
+        <el-table-column label="操作" width="140" align="center" fixed="right">
           <template #default="{ row }">
             <el-button
               type="primary"
               link
               size="small"
-              @click="handleAudit(row as unknown as OauthQo)"
+              @click="openUserDialog(row as unknown as OauthQo)"
+            >
+              详情
+            </el-button>
+            <el-button
+              v-if="row.status === '1'"
+              type="warning"
+              link
+              size="small"
+              @click="openUserDialog(row as unknown as OauthQo)"
             >
               审核
             </el-button>

@@ -10,6 +10,10 @@ const total = ref(0)
 const loading = ref(false)
 const currentPage = computed(() => (query.page ?? 0) + 1)
 
+function fenText(value?: number): string {
+  return Number.isFinite(value) ? `¥${(Number(value) / 100).toFixed(2)}` : '-'
+}
+
 async function fetchList() {
   loading.value = true
   try {
@@ -39,7 +43,9 @@ onMounted(fetchList)
       <el-table-column prop="credate" label="创建时间" min-width="160"/>
       <el-table-column prop="userid" label="用户ID" width="100" align="center"/>
       <el-table-column prop="typeTxt" label="订单类型" min-width="120"/>
-      <el-table-column prop="total_fee" label="金额" width="100" align="center"/>
+      <el-table-column label="金额" width="110" align="right">
+        <template #default="{ row }">{{ fenText(row.total_fee) }}</template>
+      </el-table-column>
       <el-table-column label="支付状态" width="120" align="center"><template #default="{row}"><StatusTag :status="row.status" type="order"/></template></el-table-column>
     </el-table>
     <div class="pagination-wrapper"><el-pagination :current-page="currentPage" :page-size="query.size" :total="total" :page-sizes="[10,20,50]" layout="total,sizes,prev,pager,next,jumper" background @current-change="pageChange" @size-change="sizeChange"/></div>
