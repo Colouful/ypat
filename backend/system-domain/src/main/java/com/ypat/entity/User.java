@@ -49,9 +49,6 @@ public class User implements java.io.Serializable{
     @Column(name = "regisdate")
     @Temporal(TemporalType.TIMESTAMP)
     private Date regisdate;
-    @Column(name = "realname_submit_at")
-    @Temporal(TemporalType.TIMESTAMP)
-    private Date realnameSubmitAt;
     @ManyToMany(cascade = {},fetch = FetchType.LAZY)
     @JoinTable(name = "t_user_ypat",
             joinColumns = {@JoinColumn(name = "userid")},
@@ -264,14 +261,6 @@ public class User implements java.io.Serializable{
 
     public void setRegisdate(Date regisdate) {
         this.regisdate = regisdate;
-    }
-
-    public Date getRealnameSubmitAt() {
-        return realnameSubmitAt;
-    }
-
-    public void setRealnameSubmitAt(Date realnameSubmitAt) {
-        this.realnameSubmitAt = realnameSubmitAt;
     }
 
     public List<YpatInfo> getYpatInfos() {

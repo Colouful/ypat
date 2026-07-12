@@ -68,7 +68,6 @@ public class AdminUserController {
             @RequestParam(value = "nickname", required = false) String nickname,
             @RequestParam(value = "mobile", required = false) String mobile,
             @RequestParam(value = "regisdate", required = false) String regisdate,
-            @RequestParam(value = "realnameSubmitDate", required = false) String realnameSubmitDate,
             @RequestParam(value = "gender", required = false) String gender,
             @RequestParam(value = "id", required = false) Long id,
             @RequestParam(value = "dataFlag", required = false) String dataFlag,
@@ -85,7 +84,6 @@ public class AdminUserController {
         UserQo userQo = new UserQo();
         userQo.setPage(page);
         userQo.setSize(size);
-        userQo.setRealnameAuditSort(true);
         if (StringUtils.isNotBlank(status)) {
             userQo.setStatus(status);
         }
@@ -101,15 +99,6 @@ public class AdminUserController {
                 userQo.setRegisdate(sdf.parse(regisdate));
             } catch (java.text.ParseException e) {
                 logger.warn("注册日期格式错误：{}", regisdate);
-            }
-        }
-        if (StringUtils.isNotBlank(realnameSubmitDate)) {
-            try {
-                java.text.SimpleDateFormat sdf = new java.text.SimpleDateFormat("yyyy-MM-dd");
-                sdf.setLenient(false);
-                userQo.setRealnameSubmitAt(sdf.parse(realnameSubmitDate));
-            } catch (java.text.ParseException e) {
-                throw new SysException(ResponseCode.FAIL_PARA.getCode(), "实名认证提交日期格式错误");
             }
         }
         if (StringUtils.isNotBlank(gender)) {
