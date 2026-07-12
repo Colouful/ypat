@@ -171,6 +171,11 @@ public class UserServiceH5LoginTest {
         }
 
         @Override
+        public String myScCancel(Long userid, Long ypatid) {
+            return null;
+        }
+
+        @Override
         public String findByCityAndProfess(Long userid, String city) {
             return null;
         }
