@@ -1,6 +1,7 @@
 package com.ypat.controller;
 
 import com.ypat.MemberBenefitRuleQo;
+import com.ypat.MemberBenefitConfigQo;
 import com.ypat.MemberOperationLogQo;
 import com.ypat.MemberOrderQo;
 import com.ypat.MemberPlanQo;
@@ -54,6 +55,19 @@ public class AdminMemberController {
         if (qo == null) qo = new MemberBenefitRuleQo();
         qo.setId(id);
         return ResponseApiBody.success(memberServiceClient.saveRule(qo));
+    }
+
+    @GetMapping("/benefit-configs")
+    public ResponseApiBody benefitConfigs() {
+        return ResponseApiBody.success(memberServiceClient.adminBenefitConfigs());
+    }
+
+    @PutMapping("/benefit-configs/{scene}")
+    public ResponseApiBody updateBenefitConfig(@PathVariable String scene,
+                                               @RequestBody MemberBenefitConfigQo qo) {
+        if (qo == null) qo = new MemberBenefitConfigQo();
+        qo.setScene(scene);
+        return ResponseApiBody.success(memberServiceClient.saveBenefitConfig(qo));
     }
 
     @GetMapping("/users")

@@ -1,6 +1,7 @@
 package com.ypat.controller;
 
 import com.ypat.MemberBenefitQuoteQo;
+import com.ypat.MemberBenefitConfigQo;
 import com.ypat.MemberBenefitRuleQo;
 import com.ypat.MemberOperationLogQo;
 import com.ypat.MemberOrderQo;
@@ -91,6 +92,19 @@ public class MemberControllerTest {
         assertEquals(Long.valueOf(42), client.quoteUserId);
         assertEquals("SUBMIT_YPAT", client.quoteScene);
         assertEquals(Integer.valueOf(3), quote.getActualPpd());
+    }
+
+    @Test
+    public void quoteAllowsEverySupportedScene() {
+        controller.quote("SUBMIT_YPAT");
+        controller.quote("APPLY_YPAT");
+        controller.quote("VIEW_CONTACT");
+        assertEquals("VIEW_CONTACT", client.quoteScene);
+    }
+
+    @Test(expected = SysException.class)
+    public void quoteRejectsUnknownSceneBeforeCallingService() {
+        controller.quote("UNKNOWN");
     }
 
     @Test
@@ -267,6 +281,16 @@ public class MemberControllerTest {
 
         @Override
         public MemberBenefitRuleQo saveRule(MemberBenefitRuleQo qo) {
+            return qo;
+        }
+
+        @Override
+        public List<MemberBenefitConfigQo> adminBenefitConfigs() {
+            return java.util.Collections.emptyList();
+        }
+
+        @Override
+        public MemberBenefitConfigQo saveBenefitConfig(MemberBenefitConfigQo qo) {
             return qo;
         }
 

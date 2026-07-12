@@ -11,6 +11,7 @@ import com.ypat.SysException;
 import com.ypat.UserQo;
 import com.ypat.enums.PaymentBusinessType;
 import com.ypat.enums.PaymentChannel;
+import com.ypat.enums.PpdBenefitScene;
 import com.ypat.payment.WechatPaymentReconcileService;
 import com.ypat.payment.WechatPaymentService;
 import com.ypat.service.MemberServiceClient;
@@ -68,6 +69,7 @@ public class MemberController {
 
     @GetMapping("/member/benefit/quote")
     public MemberBenefitQuoteQo quote(@RequestParam String scene) {
+        if (PpdBenefitScene.fromCode(scene) == null) throw new SysException(ResponseCode.FAIL_PARA);
         Long userId = requireUserId();
         return memberServiceClient.quote(userId, scene);
     }

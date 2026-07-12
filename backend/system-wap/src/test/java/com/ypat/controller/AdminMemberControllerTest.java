@@ -1,6 +1,7 @@
 package com.ypat.controller;
 
 import com.ypat.MemberBenefitRuleQo;
+import com.ypat.MemberBenefitConfigQo;
 import com.ypat.MemberOperationLogQo;
 import com.ypat.MemberOrderQo;
 import com.ypat.MemberPlanQo;
@@ -53,8 +54,26 @@ public class AdminMemberControllerTest {
         assertEquals(Integer.valueOf(4800), result.getPriceFen());
     }
 
+    @Test
+    public void listsAggregatedBenefitConfigs() {
+        ResponseApiBody response = controller.benefitConfigs();
+        assertEquals(1, ((List<?>) response.getRes()).size());
+    }
+
+    @Test
+    public void updateBenefitConfigUsesPathScene() {
+        MemberBenefitConfigQo qo = new MemberBenefitConfigQo();
+        qo.setScene("SUBMIT_YPAT");
+
+        ResponseApiBody response = controller.updateBenefitConfig("APPLY_YPAT", qo);
+
+        assertEquals("APPLY_YPAT", client.lastSavedConfig.getScene());
+        assertEquals(qo, response.getRes());
+    }
+
     private static class FakeMemberServiceClient implements MemberServiceClient {
         MemberPlanQo lastSavedPlan;
+        MemberBenefitConfigQo lastSavedConfig;
 
         @Override
         public List<MemberPlanQo> plans() {
@@ -114,6 +133,19 @@ public class AdminMemberControllerTest {
 
         @Override
         public MemberBenefitRuleQo saveRule(MemberBenefitRuleQo qo) {
+            return qo;
+        }
+
+        @Override
+        public List<MemberBenefitConfigQo> adminBenefitConfigs() {
+            MemberBenefitConfigQo qo = new MemberBenefitConfigQo();
+            qo.setScene("SUBMIT_YPAT");
+            return java.util.Collections.singletonList(qo);
+        }
+
+        @Override
+        public MemberBenefitConfigQo saveBenefitConfig(MemberBenefitConfigQo qo) {
+            this.lastSavedConfig = qo;
             return qo;
         }
 
