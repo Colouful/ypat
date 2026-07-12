@@ -382,7 +382,7 @@ public class InternalTestDataSourceTest {
         assertTrue(service.contains("root.get(\"area\")"));
         assertTrue(service.contains("root.get(\"usedFlag\")"));
         assertTrue(service.contains("root.get(\"groupNo\")"));
-        assertTrue(repo.contains("InternalTestResource findByUrl(String url);"));
+        assertTrue(repo.contains("InternalTestResource findByUrlAndUsageType(String url, String usageType);"));
         assertTrue(repo.contains("List<InternalTestResource> findByGroupNoIn(List<String> groupNos);"));
         assertTrue(repo.contains("List<InternalTestResource> findByGroupNoInAndStatus(List<String> groupNos, String status);"));
         assertTrue(repo.contains("List<InternalTestResource> findByUsedBatchNo(String usedBatchNo);"));
@@ -629,6 +629,54 @@ public class InternalTestDataSourceTest {
             return;
         }
         fail("Expected SysException");
+    }
+
+    @Test
+    public void batchSaveAllowsSameUrlForDifferentUsageTypes() {
+        InternalTestResourceService service = new InternalTestResourceService();
+        RepositoryState state = new RepositoryState();
+        state.duplicateResource = new InternalTestResource();
+        state.duplicateResource.setUrl("https://example.com/shared.jpg");
+        state.duplicateResource.setUsageType("work");
+        ReflectionTestUtils.setField(service, "internalTestResourceRepository",
+                repositoryProxy(Collections.<InternalTestResource>emptyList(),
+                        Collections.<InternalTestResource>emptyList(), state));
+
+        InternalTestResourceQo qo = new InternalTestResourceQo();
+        qo.setMediaType("image");
+        qo.setUsageType("ypat");
+        qo.setUrls(Collections.singletonList("https://example.com/shared.jpg"));
+
+        Map<String, Object> result = service.batchSave(qo);
+
+        assertEquals(1, result.get("createdCount"));
+        assertEquals(0, result.get("duplicateCount"));
+        assertEquals(1, state.saveCount);
+        assertEquals("https://example.com/shared.jpg", state.duplicateLookupUrl);
+        assertEquals("ypat", state.duplicateLookupUsageType);
+    }
+
+    @Test
+    public void batchSaveRejectsSameUrlWithinUsageType() {
+        InternalTestResourceService service = new InternalTestResourceService();
+        RepositoryState state = new RepositoryState();
+        state.duplicateResource = new InternalTestResource();
+        state.duplicateResource.setUrl("https://example.com/ypat.jpg");
+        state.duplicateResource.setUsageType("ypat");
+        ReflectionTestUtils.setField(service, "internalTestResourceRepository",
+                repositoryProxy(Collections.<InternalTestResource>emptyList(),
+                        Collections.<InternalTestResource>emptyList(), state));
+
+        InternalTestResourceQo qo = new InternalTestResourceQo();
+        qo.setMediaType("image");
+        qo.setUsageType("ypat");
+        qo.setUrls(Collections.singletonList("https://example.com/ypat.jpg"));
+
+        Map<String, Object> result = service.batchSave(qo);
+
+        assertEquals(0, result.get("createdCount"));
+        assertEquals(1, result.get("duplicateCount"));
+        assertEquals(0, state.saveCount);
     }
 
     @Test
@@ -1446,6 +1494,16 @@ public class InternalTestDataSourceTest {
                         if ("findOne".equals(method.getName())) {
                             return state.findOneResource;
                         }
+                        if ("findByUrlAndUsageType".equals(method.getName())) {
+                            state.duplicateLookupUrl = (String) args[0];
+                            state.duplicateLookupUsageType = (String) args[1];
+                            if (state.duplicateResource != null
+                                    && state.duplicateLookupUrl.equals(state.duplicateResource.getUrl())
+                                    && state.duplicateLookupUsageType.equals(state.duplicateResource.getUsageType())) {
+                                return state.duplicateResource;
+                            }
+                            return null;
+                        }
                         if ("findAvailableGroupNos".equals(method.getName())) {
                             state.groupNoPageCallCount++;
                             state.findGroupNosUsedFlag = (Integer) args[8];
@@ -1585,6 +1643,9 @@ public class InternalTestDataSourceTest {
         private Integer findSinglesUsedFlag;
         private Integer countSinglesUsedFlag;
         private InternalTestResource findOneResource;
+        private InternalTestResource duplicateResource;
+        private String duplicateLookupUrl;
+        private String duplicateLookupUsageType;
         private List<Long> findAllResourceIds = Collections.emptyList();
         private List<InternalTestResource> selectedResources = Collections.emptyList();
     }

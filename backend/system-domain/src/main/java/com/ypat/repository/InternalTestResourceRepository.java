@@ -15,7 +15,7 @@ import java.util.List;
 public interface InternalTestResourceRepository extends JpaRepository<InternalTestResource, Long>, JpaSpecificationExecutor<InternalTestResource> {
     List<InternalTestResource> findByIdInAndStatus(List<Long> ids, String status);
 
-    InternalTestResource findByUrl(String url);
+    InternalTestResource findByUrlAndUsageType(String url, String usageType);
 
     List<InternalTestResource> findByGroupNoIn(List<String> groupNos);
 

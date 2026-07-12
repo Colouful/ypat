@@ -78,7 +78,7 @@ public class InternalTestResourceService {
                     : null;
             int sort = 0;
             for (String url : group) {
-                if (existsByUrl(url)) {
+                if (existsByUrl(url, qo.getUsageType())) {
                     duplicateCount++;
                     continue;
                 }
@@ -397,8 +397,8 @@ public class InternalTestResourceService {
                 + String.format("%03d", index);
     }
 
-    private boolean existsByUrl(String url) {
-        return internalTestResourceRepository.findByUrl(url) != null;
+    private boolean existsByUrl(String url, String usageType) {
+        return internalTestResourceRepository.findByUrlAndUsageType(url, usageType) != null;
     }
 
     private String defaultStatus(String status) {
