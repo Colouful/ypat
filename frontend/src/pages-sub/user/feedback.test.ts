@@ -25,4 +25,14 @@ describe('feedback page', () => {
     expect(source).toContain('previewFeedbackImage')
     expect(source).toContain('uploadFeedbackImage')
   })
+
+  it('keeps the submit area tappable and explains invalid form state', () => {
+    const file = fileURLToPath(new URL('./feedback.vue', import.meta.url))
+    const source = readFileSync(file, 'utf8')
+
+    expect(source).toContain('class="submit-section" @tap="handleSubmit"')
+    expect(source).not.toMatch(/\.submit-btn--disabled\s*\{[^}]*pointer-events:\s*none;/)
+    expect(source).toContain('getValidationMessage')
+    expect(source).toContain("uni.showToast({ title: validationMessage, icon: 'none' })")
+  })
 })

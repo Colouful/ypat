@@ -55,8 +55,8 @@
       <input v-model="contact" class="contact-input" placeholder="手机号、微信号或邮箱" />
     </view>
 
-    <view class="submit-section">
-      <view class="submit-btn" :class="{ 'submit-btn--disabled': !isValid || submitting }" @tap="handleSubmit">
+    <view class="submit-section" @tap="handleSubmit">
+      <view class="submit-btn" :class="{ 'submit-btn--disabled': !isValid || submitting }">
         <text class="submit-btn__text">{{ submitting ? '提交中...' : '提交反馈' }}</text>
       </view>
     </view>
@@ -96,15 +96,18 @@ const submitting = ref(false)
 
 const hasUploadingImage = computed(() => images.value.some((item) => item.uploading))
 const hasFailedImage = computed(() => images.value.some((item) => item.error))
-const isValid = computed(() => {
+const isValid = computed(() => !getValidationMessage())
+
+function getValidationMessage(): string {
   const trimmed = content.value.trim()
-  return Boolean(selectedType.value)
-    && trimmed.length >= 10
-    && trimmed.length <= 500
-    && contact.value.trim().length <= 100
-    && !hasUploadingImage.value
-    && !hasFailedImage.value
-})
+  if (!selectedType.value) return '请选择反馈类型'
+  if (trimmed.length < 10) return '反馈内容至少输入 10 个字'
+  if (trimmed.length > 500) return '反馈内容不能超过 500 个字'
+  if (contact.value.trim().length > 100) return '联系方式不能超过 100 个字'
+  if (hasUploadingImage.value) return '图片正在上传，请稍后再提交'
+  if (hasFailedImage.value) return '请删除上传失败的图片后再提交'
+  return ''
+}
 
 async function chooseFeedbackImages(): Promise<void> {
   const remain = 3 - images.value.length
@@ -141,7 +144,12 @@ function previewFeedbackImage(index: number): void {
 }
 
 async function handleSubmit(): Promise<void> {
-  if (!isValid.value || submitting.value) return
+  if (submitting.value) return
+  const validationMessage = getValidationMessage()
+  if (validationMessage) {
+    uni.showToast({ title: validationMessage, icon: 'none' })
+    return
+  }
   if (!userStore.isLoggedIn) {
     uni.showToast({ title: '请先登录', icon: 'none' })
     uni.navigateTo({ url: '/pages/login/index' })
@@ -191,6 +199,6 @@ async function handleSubmit(): Promise<void> {
 .image-grid__remove { position: absolute; top: 8rpx; right: 8rpx; width: 38rpx; height: 38rpx; border-radius: 50%; color: #fff; background: rgba(0, 0, 0, .5); font-size: 30rpx; line-height: 34rpx; text-align: center; }
 .contact-input { width: 100%; height: 88rpx; box-sizing: border-box; margin-top: 18rpx; padding: 0 22rpx; border-radius: 16rpx; background: $color-bg-page; line-height: 88rpx; }
 .submit-btn { margin-top: 40rpx; padding: 26rpx; border-radius: 999rpx; color: #fff; background: $color-primary; text-align: center; }
-.submit-btn--disabled { opacity: .45; pointer-events: none; }
+.submit-btn--disabled { opacity: .45; }
 .submit-btn__text { color: #fff; }
 </style>

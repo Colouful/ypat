@@ -13,6 +13,7 @@ public class DepositConfigQo implements Serializable {
     private String testEnabled;
     private Integer testAmountFen;
     private Integer displayAmountFen;
+    private Integer realnameAuditFeeFen;
     private Integer refundWaitDays;
     private Integer earlyRefundFeeRate;
     private String agreementSummary;
@@ -32,6 +33,8 @@ public class DepositConfigQo implements Serializable {
     public void setTestAmountFen(Integer testAmountFen) { this.testAmountFen = testAmountFen; }
     public Integer getDisplayAmountFen() { return displayAmountFen; }
     public void setDisplayAmountFen(Integer displayAmountFen) { this.displayAmountFen = displayAmountFen; }
+    public Integer getRealnameAuditFeeFen() { return realnameAuditFeeFen; }
+    public void setRealnameAuditFeeFen(Integer realnameAuditFeeFen) { this.realnameAuditFeeFen = realnameAuditFeeFen; }
     public Integer getRefundWaitDays() { return refundWaitDays; }
     public void setRefundWaitDays(Integer refundWaitDays) { this.refundWaitDays = refundWaitDays; }
     public Integer getEarlyRefundFeeRate() { return earlyRefundFeeRate; }

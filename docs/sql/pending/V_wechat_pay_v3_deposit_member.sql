@@ -17,6 +17,7 @@ CREATE TABLE IF NOT EXISTS `t_deposit_config` (
   `test_enabled`          VARCHAR(1)   NOT NULL DEFAULT '0'    COMMENT '0 关闭 1 开启测试金额',
   `test_amount_fen`       INT          NOT NULL DEFAULT 1      COMMENT '测试保证金金额（分）',
   `display_amount_fen`    INT          NOT NULL                COMMENT '前端展示金额（分）',
+  `realname_audit_fee_fen` INT         NOT NULL DEFAULT 1      COMMENT '实名认证审核费（分）',
   `refund_wait_days`      INT          NOT NULL DEFAULT 0      COMMENT '可退等待天数',
   `early_refund_fee_rate` INT          NOT NULL DEFAULT 0      COMMENT '提前退款手续费率，万分比',
   `agreement_summary`     VARCHAR(512) DEFAULT NULL            COMMENT '保证金协议摘要',
@@ -78,9 +79,9 @@ CREATE TABLE IF NOT EXISTS `t_payment_order` (
 
 INSERT INTO `t_deposit_config`
   (`id`, `enabled`, `amount_fen`, `test_enabled`, `test_amount_fen`, `display_amount_fen`,
-   `refund_wait_days`, `early_refund_fee_rate`, `agreement_summary`, `updated_at`)
+   `realname_audit_fee_fen`, `refund_wait_days`, `early_refund_fee_rate`, `agreement_summary`, `updated_at`)
 VALUES
-  (1, '1', 19900, '1', 1, 1, 90, 15, '保证金用于平台履约保障，满足协议约定后可按规则申请退还。', NOW())
+  (1, '1', 19900, '1', 1, 1, 1, 90, 15, '保证金用于平台履约保障，满足协议约定后可按规则申请退还。', NOW())
 ON DUPLICATE KEY UPDATE
   `updated_at` = NOW();
 

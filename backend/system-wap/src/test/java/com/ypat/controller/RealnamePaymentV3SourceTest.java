@@ -17,7 +17,10 @@ public class RealnamePaymentV3SourceTest {
 
         assertTrue(controller.contains("@PostMapping(\"/realname/order/create\")"));
         assertTrue(controller.contains("@GetMapping(\"/realname/order/status\")"));
-        assertTrue(controller.contains("REALNAME_AUDIT_FEE_FEN = 2900"));
+        assertTrue(controller.contains("DepositServiceClient depositServiceClient"));
+        assertTrue(controller.contains("getRealnameAuditFeeFen()"));
+        assertTrue(controller.contains("realnameAuditFeeFen"));
+        assertTrue(!controller.contains("REALNAME_AUDIT_FEE_FEN = 2900"));
         assertTrue(controller.contains("PaymentBusinessType.REALNAME.value"));
         assertTrue(controller.contains("wechatPaymentService.create(command)"));
         assertTrue(controller.contains("wechatPaymentReconcileService.syncPaidIfWechatSuccess(outTradeNo)"));

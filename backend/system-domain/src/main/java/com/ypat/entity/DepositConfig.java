@@ -36,6 +36,9 @@ public class DepositConfig implements Serializable {
     @Column(name = "display_amount_fen", nullable = false)
     private Integer displayAmountFen;
 
+    @Column(name = "realname_audit_fee_fen", nullable = false)
+    private Integer realnameAuditFeeFen;
+
     @Column(name = "refund_wait_days", nullable = false)
     private Integer refundWaitDays;
 
@@ -65,6 +68,8 @@ public class DepositConfig implements Serializable {
     public void setTestAmountFen(Integer testAmountFen) { this.testAmountFen = testAmountFen; }
     public Integer getDisplayAmountFen() { return displayAmountFen; }
     public void setDisplayAmountFen(Integer displayAmountFen) { this.displayAmountFen = displayAmountFen; }
+    public Integer getRealnameAuditFeeFen() { return realnameAuditFeeFen; }
+    public void setRealnameAuditFeeFen(Integer realnameAuditFeeFen) { this.realnameAuditFeeFen = realnameAuditFeeFen; }
     public Integer getRefundWaitDays() { return refundWaitDays; }
     public void setRefundWaitDays(Integer refundWaitDays) { this.refundWaitDays = refundWaitDays; }
     public Integer getEarlyRefundFeeRate() { return earlyRefundFeeRate; }

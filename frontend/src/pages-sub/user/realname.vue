@@ -43,7 +43,9 @@
       <button class="submit" :disabled="submitDisabled" :loading="busy" @tap="submit">
         {{ busy ? '处理中...' : (canSubmitWithoutPay ? '提交认证' : '支付并提交') }}
       </button>
-      <text class="privacy">实名认证审核费 29 元；审核失败后重新提交无需再次支付。页面退出后会清理本地临时资料。</text>
+      <text class="privacy">
+        {{ realnameAuditFeeText ? `实名认证审核费 ${realnameAuditFeeText} 元` : '实名认证审核费用暂不可用' }}；审核失败后重新提交无需再次支付。页面退出后会清理本地临时资料。
+      </text>
     </view>
   </view>
 </template>
@@ -54,6 +56,7 @@ import { computed, reactive, ref } from 'vue'
 import { onLoad, onUnload } from '@dcloudio/uni-app'
 import * as oauthApi from '@/api/modules/oauth'
 import * as paymentApi from '@/api/modules/payment'
+import { getDepositConfig } from '@/api/modules/deposit'
 import { getPaymentChannel, redirectToH5Pay, toMiniappPayParams } from '@/services/payment-channel'
 import { useUserStore } from '@/stores/user'
 import type { OauthInfo, OrderInfo, PaymentChannel, PaymentCreateResult } from '@/api/types'
@@ -67,6 +70,7 @@ const loading = ref(true)
 const submitting = ref(false)
 const paying = ref(false)
 const authInfo = ref<OauthInfo | null>(null)
+const realnameAuditFeeFen = ref<number | null>(null)
 const frontPath = ref('')
 const backPath = ref('')
 const handPath = ref('')
@@ -85,6 +89,11 @@ const formInvalid = computed(() => (
   || selectedPhotos.value.length !== REALNAME_PHOTO_COUNT
 ))
 const submitDisabled = computed(() => busy.value || formInvalid.value)
+const realnameAuditFeeText = computed(() => {
+  const amountFen = realnameAuditFeeFen.value
+  if (!Number.isInteger(amountFen) || amountFen === null || amountFen < 1) return ''
+  return (amountFen / 100).toFixed(2).replace(/\.00$/, '').replace(/(\.\d)0$/, '$1')
+})
 
 const maskedName = computed(() => {
   const value = authInfo.value?.name || ''
@@ -97,11 +106,29 @@ const maskedCode = computed(() => {
 })
 
 async function loadDetail(): Promise<void> {
-  loading.value = true
   try {
     authInfo.value = (await oauthApi.getAuthDetail()).data || null
   } catch {
     authInfo.value = null
+  }
+}
+
+async function loadRealnameAuditFee(): Promise<void> {
+  try {
+    const result = await getDepositConfig()
+    const amountFen = result.success ? result.data?.realnameAuditFeeFen : null
+    realnameAuditFeeFen.value = typeof amountFen === 'number' && Number.isInteger(amountFen) && amountFen >= 1
+      ? amountFen
+      : null
+  } catch {
+    realnameAuditFeeFen.value = null
+  }
+}
+
+async function loadPage(): Promise<void> {
+  loading.value = true
+  try {
+    await Promise.all([loadDetail(), loadRealnameAuditFee()])
   } finally {
     loading.value = false
   }
@@ -147,6 +174,10 @@ async function submit(): Promise<void> {
     return
   }
   if (needsPayment.value) {
+    if (!realnameAuditFeeText.value) {
+      uni.showToast({ title: '认证费用加载失败，请稍后重试', icon: 'none' })
+      return
+    }
     const resumed = await resumePendingRealnamePayment()
     if (resumed) return
     await confirmAndPay()
@@ -245,7 +276,7 @@ function confirmRealnamePayment(): Promise<boolean> {
   return new Promise((resolve) => {
     uni.showModal({
       title: '实名认证',
-      content: `实名信息需人工审核，将收取 ${oauthApi.REALNAME_AUDIT_FEE_YUAN} 元审核费。审核失败后重新提交无需再次支付。`,
+      content: `实名信息需人工审核，将收取 ${realnameAuditFeeText.value} 元审核费。审核失败后重新提交无需再次支付。`,
       confirmText: '去支付',
       cancelText: '取消',
       success: ({ confirm }) => resolve(Boolean(confirm)),
@@ -333,7 +364,7 @@ function clearForm(): void {
   pendingOutTradeNo = ''
 }
 
-onLoad(loadDetail)
+onLoad(loadPage)
 onUnload(() => {
   pollingCancelled = true
   clearForm()

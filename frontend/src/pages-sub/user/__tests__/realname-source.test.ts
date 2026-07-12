@@ -35,6 +35,15 @@ describe('realname page paid flow source', () => {
     )
   })
 
+  it('loads the configured audit fee and blocks payment when the fee is unavailable', () => {
+    expect(source).toContain('getDepositConfig')
+    expect(source).toContain('realnameAuditFeeFen')
+    expect(source).toContain('realnameAuditFeeText')
+    expect(source).toContain('认证费用加载失败，请稍后重试')
+    expect(source).not.toContain('实名认证审核费 29 元')
+    expect(source).not.toContain('REALNAME_AUDIT_FEE_YUAN')
+  })
+
   it('refreshes realname state on pending payment timeout without clearing the pending order first', () => {
     const confirmBody = source.slice(source.indexOf('async function confirmAndPay()'), source.indexOf('function confirmRealnamePayment()'))
     const pendingBranchStart = confirmBody.indexOf('if (!paid)')

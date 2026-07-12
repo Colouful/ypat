@@ -49,6 +49,7 @@ public class DepositService {
     public DepositConfigQo getConfig() {
         DepositConfig config = loadConfig();
         config.setDisplayAmountFen(effectiveAmountFen(config));
+        requireRealnameAuditFeeFen(config);
         return CopyUtil.copy(config, DepositConfigQo.class);
     }
 
@@ -58,6 +59,7 @@ public class DepositService {
         if (config == null) config = newDefaultConfig();
         CopyUtil.copyIgnoreNull(qo, config);
         config.setDisplayAmountFen(effectiveAmountFen(config));
+        requireRealnameAuditFeeFen(config);
         config.setUpdatedAt(new Date());
         return CopyUtil.copy(depositConfigRepository.save(config), DepositConfigQo.class);
     }
@@ -183,6 +185,7 @@ public class DepositService {
         config.setRefundWaitDays(90);
         config.setEarlyRefundFeeRate(15);
         config.setDisplayAmountFen(config.getTestAmountFen());
+        config.setRealnameAuditFeeFen(1);
         config.setUpdatedAt(new Date());
         return config;
     }
@@ -192,6 +195,13 @@ public class DepositService {
         Integer amount = "1".equals(config.getTestEnabled()) ? config.getTestAmountFen() : config.getAmountFen();
         if (amount == null || amount <= 0) throw new SysException(ResponseCode.FAIL_PAY_AMOUNT);
         return amount;
+    }
+
+    private Integer requireRealnameAuditFeeFen(DepositConfig config) {
+        if (config == null || config.getRealnameAuditFeeFen() == null || config.getRealnameAuditFeeFen() <= 0) {
+            throw new SysException(ResponseCode.FAIL_PAY_AMOUNT);
+        }
+        return config.getRealnameAuditFeeFen();
     }
 
     private String generateOutTradeNo(Long userId) {

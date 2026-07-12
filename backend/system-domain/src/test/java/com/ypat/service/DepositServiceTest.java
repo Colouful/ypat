@@ -2,6 +2,7 @@ package com.ypat.service;
 
 import com.ypat.DepositConfigQo;
 import com.ypat.DepositOrderQo;
+import com.ypat.SysException;
 import com.ypat.entity.DepositConfig;
 import com.ypat.entity.DepositOrder;
 import com.ypat.entity.User;
@@ -49,8 +50,20 @@ public class DepositServiceTest {
         assertEquals(Integer.valueOf(19900), qo.getAmountFen());
         assertEquals(Integer.valueOf(1), qo.getTestAmountFen());
         assertEquals(Integer.valueOf(1), qo.getDisplayAmountFen());
+        assertEquals(Integer.valueOf(1), qo.getRealnameAuditFeeFen());
         assertEquals(Integer.valueOf(90), qo.getRefundWaitDays());
         assertEquals(Integer.valueOf(15), qo.getEarlyRefundFeeRate());
+    }
+
+    @Test(expected = SysException.class)
+    public void saveConfigRejectsInvalidRealnameAuditFee() {
+        DepositService service = new DepositService();
+        ReflectionTestUtils.setField(service, "depositConfigRepository", depositConfigRepository(config("1", 19900, 1)));
+        DepositConfigQo qo = new DepositConfigQo();
+        qo.setId(1L);
+        qo.setRealnameAuditFeeFen(0);
+
+        service.saveConfig(qo);
     }
 
     @Test
@@ -120,6 +133,7 @@ public class DepositServiceTest {
         config.setAmountFen(amountFen);
         config.setTestEnabled(testEnabled);
         config.setTestAmountFen(testAmountFen);
+        config.setRealnameAuditFeeFen(1);
         config.setDisplayAmountFen(amountFen);
         config.setRefundWaitDays(90);
         config.setEarlyRefundFeeRate(15);

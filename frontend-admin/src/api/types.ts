@@ -118,6 +118,7 @@ export interface DepositConfig {
   testEnabled: string
   testAmountFen: number
   displayAmountFen?: number
+  realnameAuditFeeFen: number
   refundWaitDays?: number
   earlyRefundFeeRate?: number
   agreementSummary?: string

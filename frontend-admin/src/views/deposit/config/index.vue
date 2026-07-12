@@ -11,6 +11,7 @@ const form = reactive({
   amountFen: 19900,
   testEnabled: '1',
   testAmountFen: 1,
+  realnameAuditFeeFen: 1,
   refundWaitDays: 90,
   earlyRefundFeeRate: 15,
   agreementSummary: '',
@@ -26,6 +27,7 @@ function fenToYuan(value: number | undefined) {
 
 const amountYuan = ref(199)
 const testAmountYuan = ref(0.01)
+const realnameAuditFeeYuan = ref(0.01)
 
 async function loadConfig() {
   loading.value = true
@@ -34,6 +36,7 @@ async function loadConfig() {
     Object.assign(form, res.data)
     amountYuan.value = fenToYuan(res.data.amountFen)
     testAmountYuan.value = fenToYuan(res.data.testAmountFen)
+    realnameAuditFeeYuan.value = fenToYuan(res.data.realnameAuditFeeFen ?? 1)
   } finally {
     loading.value = false
   }
@@ -44,6 +47,7 @@ async function submit() {
   try {
     form.amountFen = yuanToFen(amountYuan.value)
     form.testAmountFen = yuanToFen(testAmountYuan.value)
+    form.realnameAuditFeeFen = yuanToFen(realnameAuditFeeYuan.value)
     await saveDepositConfig(form)
     ElMessage.success('保存成功')
     await loadConfig()
@@ -70,6 +74,10 @@ onMounted(loadConfig)
       </el-form-item>
       <el-form-item label="测试保证金">
         <el-input-number v-model="testAmountYuan" :min="0.01" :precision="2" :step="0.01"/>
+        <span class="hint">元</span>
+      </el-form-item>
+      <el-form-item label="实名认证审核费">
+        <el-input-number v-model="realnameAuditFeeYuan" :min="0.01" :precision="2" :step="0.01"/>
         <span class="hint">元</span>
       </el-form-item>
       <el-form-item label="退款等待天数">

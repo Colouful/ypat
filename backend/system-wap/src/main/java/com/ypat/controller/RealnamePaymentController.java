@@ -1,5 +1,6 @@
 package com.ypat.controller;
 
+import com.ypat.DepositConfigQo;
 import com.ypat.OrderQo;
 import com.ypat.PaymentCreateResult;
 import com.ypat.PaymentOrderQo;
@@ -13,6 +14,7 @@ import com.ypat.enums.UserStatus;
 import com.ypat.enums.YesNo;
 import com.ypat.payment.WechatPaymentReconcileService;
 import com.ypat.payment.WechatPaymentService;
+import com.ypat.service.DepositServiceClient;
 import com.ypat.service.OrderServiceClient;
 import com.ypat.service.PaymentOrderServiceClient;
 import com.ypat.service.RealnameOrderServiceClient;
@@ -33,10 +35,10 @@ import java.util.UUID;
 @RestController
 public class RealnamePaymentController {
 
-    private static final int REALNAME_AUDIT_FEE_FEN = 2900;
-
     @Autowired
     private OrderServiceClient orderServiceClient;
+    @Autowired
+    private DepositServiceClient depositServiceClient;
     @Autowired
     private RealnameOrderServiceClient realnameOrderServiceClient;
     @Autowired
@@ -55,22 +57,23 @@ public class RealnamePaymentController {
 
         Long userId = requireUserId();
         UserQo user = requireUnpaidUser(userId);
+        int realnameAuditFeeFen = requireRealnameAuditFeeFen();
         String outTradeNo = generateOutTradeNo(userId);
 
         OrderQo order = new OrderQo();
         order.setType(OrderType.REAL.value);
-        order.setTotal_fee(REALNAME_AUDIT_FEE_FEN);
+        order.setTotal_fee(realnameAuditFeeFen);
         order.setUserid(userId);
         order.setOut_trade_no(outTradeNo);
         realnameOrderServiceClient.addRealnamePayment(order);
 
-        ensurePaymentOrder(outTradeNo, userId, channel);
+        ensurePaymentOrder(outTradeNo, userId, channel, realnameAuditFeeFen);
         WechatPaymentService.WechatPaymentCommand command = new WechatPaymentService.WechatPaymentCommand();
         command.setBusinessType(PaymentBusinessType.REALNAME.value);
         command.setChannel(channel);
         command.setDescription("实名认证审核费");
         command.setOutTradeNo(outTradeNo);
-        command.setAmountFen(REALNAME_AUDIT_FEE_FEN);
+        command.setAmountFen(realnameAuditFeeFen);
         command.setClientIp(clientIp(request));
         if (PaymentChannel.MINIAPP.value.equals(channel)) command.setOpenid(requireOpenid(user));
 
@@ -114,11 +117,18 @@ public class RealnamePaymentController {
         return query;
     }
 
-    private void ensurePaymentOrder(String outTradeNo, Long userId, String channel) {
+    private void ensurePaymentOrder(String outTradeNo, Long userId, String channel, int realnameAuditFeeFen) {
         PaymentOrderQo existing = paymentOrderServiceClient.get(outTradeNo);
         if (existing != null) return;
         paymentOrderServiceClient.createPending(PaymentBusinessType.REALNAME.value, outTradeNo, outTradeNo,
-                userId, channel, REALNAME_AUDIT_FEE_FEN);
+                userId, channel, realnameAuditFeeFen);
+    }
+
+    private int requireRealnameAuditFeeFen() {
+        DepositConfigQo config = depositServiceClient.config();
+        Integer amountFen = config == null ? null : config.getRealnameAuditFeeFen();
+        if (amountFen == null || amountFen <= 0) throw new SysException(ResponseCode.FAIL_PAY_AMOUNT);
+        return amountFen;
     }
 
     private String extractPrepayId(PaymentCreateResult result) {

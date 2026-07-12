@@ -3,7 +3,6 @@ import { ensureImageDataUrl } from '@/utils/file-base64'
 import type { ApiResult, OauthInfo, OauthSubmitParams, OcrResult } from '../types'
 
 export const REALNAME_ORDER_TYPE = '1'
-export const REALNAME_AUDIT_FEE_YUAN = 29
 export const REALNAME_PHOTO_COUNT = 3
 
 // 后端 /oauth/ocr、/oauth/add 需要带 dataURL 头的 base64(见 backend MockTest)。
