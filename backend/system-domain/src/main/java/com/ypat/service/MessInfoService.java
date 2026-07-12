@@ -5,6 +5,7 @@ import com.ypat.entity.*;
 import com.ypat.entity.Record;
 import com.ypat.enums.MessagePushEventType;
 import com.ypat.enums.MessType;
+import com.ypat.enums.PpdBenefitScene;
 import com.ypat.enums.RecordType;
 import com.ypat.enums.UserImgType;
 import com.ypat.enums.YesNo;
@@ -42,6 +43,8 @@ public class MessInfoService {
     private UserRepository userRepository;
     @Autowired
     private RecordRepository recordRepository;
+    @Autowired
+    private MemberService memberService;
     @Autowired
     private MessagePushLogService messagePushLogService;
 
@@ -88,21 +91,27 @@ public class MessInfoService {
             throw new SysException(ResponseCode.FAIL_EXIST);
         }
 
-        //拍拍豆是否充足
-        if(user.getPpd()< Constant.APPLY_NEED_PPD){
+        MemberBenefitQuoteQo quote = memberService.quoteBenefit(userid, PpdBenefitScene.APPLY_YPAT.getCode());
+        int actualPpd = quote.getActualPpd() == null ? 0 : quote.getActualPpd();
+        int userPpd = user.getPpd() == null ? 0 : user.getPpd();
+        if(userPpd < actualPpd){
             throw new SysException(ResponseCode.FAIL_BALANCE);
         }
 
-        user.setPpd(user.getPpd()- Constant.APPLY_NEED_PPD);
+        user.setPpd(userPpd - actualPpd);
         userRepository.save(user);
 
         //增加收支记录
-        Record record0 = new Record();
-        record0.setCredate(new Date());
-        record0.setPpd(-1*Constant.APPLY_NEED_PPD);
-        record0.setUserid(user.getId());
-        record0.setType(RecordType.APP.value);
-        recordRepository.save(record0);
+        if (actualPpd > 0) {
+            Record record0 = new Record();
+            record0.setCredate(new Date());
+            record0.setPpd(-1 * actualPpd);
+            record0.setUserid(user.getId());
+            record0.setType(RecordType.APP.value);
+            record0.setScene(PpdBenefitScene.APPLY_YPAT.getCode());
+            record0.setDescription("发起约拍申请扣除拍豆");
+            recordRepository.save(record0);
+        }
 
         MessInfo messInfo = new MessInfo();
         messInfo.setCredate(new Date());

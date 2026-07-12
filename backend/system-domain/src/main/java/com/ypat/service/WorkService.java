@@ -1,6 +1,7 @@
 package com.ypat.service;
 
 import com.ypat.PageQo;
+import com.ypat.MemberBenefitQuoteQo;
 import com.ypat.ResponseCode;
 import com.ypat.SysException;
 import com.ypat.entity.MessInfo;
@@ -22,6 +23,7 @@ import com.ypat.entity.WorkTagRel;
 import com.ypat.entity.YpatInfo;
 import com.ypat.enums.InternalTestDataFlag;
 import com.ypat.enums.MessType;
+import com.ypat.enums.PpdBenefitScene;
 import com.ypat.enums.RecordType;
 import com.ypat.enums.UserProfess;
 import com.ypat.enums.YesNo;
@@ -83,6 +85,7 @@ public class WorkService {
     @Autowired private YpatInfoRepository ypatInfoRepository;
     @Autowired private MessInfoRepository messInfoRepository;
     @Autowired private RecordRepository recordRepository;
+    @Autowired private MemberService memberService;
 
     private static final Pattern MOBILE = Pattern.compile("(13[0-9]|14[01456879]|15[0-35-9]|16[2567]|17[0-8]|18[0-9]|19[0-35-9])\\d{8}");
     private static final Pattern WX = Pattern.compile("(?i)(wx|wechat|vx)[^a-z0-9]?[a-z][a-z0-9_-]{5,19}", Pattern.CASE_INSENSITIVE);
@@ -776,28 +779,34 @@ public class WorkService {
             throw new SysException(ResponseCode.FAIL_PARA, "请完善联系方式");
         }
         int userPpd = viewer.getPpd() == null ? 0 : viewer.getPpd();
-        if (userPpd < Constant.APPLY_NEED_PPD) {
-            throw new SysException(ResponseCode.FAIL_BALANCE);
-        }
         Long hasSent = messInfoRepository.countSendByWorkId(MessType.send.value, viewerId, workId);
         if (hasSent != null && hasSent > 0) {
             throw new SysException(ResponseCode.FAIL_EXIST);
         }
+        MemberBenefitQuoteQo quote = memberService.quoteBenefit(viewerId, PpdBenefitScene.APPLY_YPAT.getCode());
+        int actualPpd = quote.getActualPpd() == null ? 0 : quote.getActualPpd();
+        if (userPpd < actualPpd) {
+            throw new SysException(ResponseCode.FAIL_BALANCE);
+        }
 
         String target = mapProfessionToTarget(author.getProfess());
         YpatInfo ypatInfo = createQuickApplyYpat(work, author, target);
-        viewer.setPpd(userPpd - Constant.APPLY_NEED_PPD);
+        viewer.setPpd(userPpd - actualPpd);
         if (StringUtils.isBlank(viewer.getWx()) && StringUtils.isNotBlank(qo.getWx())) {
             viewer.setWx(qo.getWx());
         }
         userRepository.save(viewer);
 
-        Record record = new Record();
-        record.setCredate(new Date());
-        record.setPpd(-1 * Constant.APPLY_NEED_PPD);
-        record.setUserid(viewer.getId());
-        record.setType(RecordType.APP.value);
-        recordRepository.save(record);
+        if (actualPpd > 0) {
+            Record record = new Record();
+            record.setCredate(new Date());
+            record.setPpd(-1 * actualPpd);
+            record.setUserid(viewer.getId());
+            record.setType(RecordType.APP.value);
+            record.setScene(PpdBenefitScene.APPLY_YPAT.getCode());
+            record.setDescription("发起约拍申请扣除拍豆");
+            recordRepository.save(record);
+        }
 
         MessInfo messInfo = new MessInfo();
         messInfo.setCredate(new Date());

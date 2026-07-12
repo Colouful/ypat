@@ -52,6 +52,8 @@ public class UserService {
     private InviteService inviteService;
     @Autowired
     private MessagePushLogService messagePushLogService;
+    @Autowired
+    private MemberService memberService;
 
     /**
      *
@@ -441,11 +443,14 @@ public class UserService {
         MessInfo messInfo = messInfoRepository.findById(messid);
 
         if(messInfo.getLinkwayflag().equals(YesNo.no.value)){
-            if(user.getPpd()< Constant.VIEW_NEED_PPD){
+            MemberBenefitQuoteQo quote = memberService.quoteBenefit(id, PpdBenefitScene.VIEW_CONTACT.getCode());
+            int actualPpd = quote.getActualPpd() == null ? 0 : quote.getActualPpd();
+            int userPpd = user.getPpd() == null ? 0 : user.getPpd();
+            if(userPpd < actualPpd){
                 throw new SysException(ResponseCode.FAIL_BALANCE);
             }
             //余额扣除
-            user.setPpd(user.getPpd()- Constant.VIEW_NEED_PPD);
+            user.setPpd(userPpd - actualPpd);
             userRepository.save(user);
             messInfoRepository.updatelinkwayflag(YesNo.yes.value, messid);
 
@@ -466,12 +471,16 @@ public class UserService {
             }
 
             //增加收支记录
-            Record record = new Record();
-            record.setCredate(new Date());
-            record.setPpd(-1*Constant.VIEW_NEED_PPD);
-            record.setUserid(user.getId());
-            record.setType(RecordType.VIEW.value);
-            recordRepository.save(record);
+            if (actualPpd > 0) {
+                Record record = new Record();
+                record.setCredate(new Date());
+                record.setPpd(-1 * actualPpd);
+                record.setUserid(user.getId());
+                record.setType(RecordType.VIEW.value);
+                record.setScene(PpdBenefitScene.VIEW_CONTACT.getCode());
+                record.setDescription("查看联系方式扣除拍豆");
+                recordRepository.save(record);
+            }
         }
         //返回信息
         UserLinkWayQo userQo = new UserLinkWayQo();
