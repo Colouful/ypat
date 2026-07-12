@@ -25,4 +25,17 @@ describe('地区级联字段转换', () => {
       area: '',
     })
   })
+
+  it('级联组件清空为空值时应清空省市区', () => {
+    expect(toRegionFields(null)).toEqual({
+      province: '',
+      city: '',
+      area: '',
+    })
+    expect(toRegionFields(undefined)).toEqual({
+      province: '',
+      city: '',
+      area: '',
+    })
+  })
 })

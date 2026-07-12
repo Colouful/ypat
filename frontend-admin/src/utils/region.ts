@@ -10,8 +10,8 @@ export type RegionPath = string[]
 
 export const regionCascaderOptions = chinaRegionOptions
 
-export function toRegionFields(path: RegionPath): RegionFields {
-  const [province = '', city = '', area = ''] = path
+export function toRegionFields(path?: RegionPath | null): RegionFields {
+  const [province = '', city = '', area = ''] = path ?? []
 
   return {
     province,
