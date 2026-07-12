@@ -42,6 +42,20 @@ public class AdminUserAuditSourceTest {
         assertFalse(source.contains("JsonElement resData = JsonParser.parseString(result);"));
     }
 
+    @Test
+    public void adminUserListStrictlyParsesRealnameSubmitDate() throws IOException {
+        String source = readSource(
+                "src/main/java/com/ypat/controller/AdminUserController.java",
+                "backend/system-wap/src/main/java/com/ypat/controller/AdminUserController.java",
+                "AdminUserController.java should exist");
+
+        assertTrue(source.contains("realnameSubmitDate"));
+        assertTrue(source.contains("setLenient(false)"));
+        assertTrue(source.contains("userQo.setRealnameSubmitAt"));
+        assertTrue(source.contains("userQo.setRealnameAuditSort(true)"));
+        assertTrue(source.contains("throw new SysException(ResponseCode.FAIL_PARA"));
+    }
+
     private JsonElement invokeParseAuditResponse(AdminUserController controller, String result) throws Exception {
         Method method = AdminUserController.class.getDeclaredMethod("parseAuditResponse", String.class);
         method.setAccessible(true);

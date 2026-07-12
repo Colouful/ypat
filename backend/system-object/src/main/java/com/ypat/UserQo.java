@@ -48,6 +48,9 @@ public class UserQo extends PageQo implements java.io.Serializable{
     @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     private Date regisdate;
+    @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+    private Date realnameSubmitAt;
     private String password;
     private String imgpath;
 
@@ -65,6 +68,7 @@ public class UserQo extends PageQo implements java.io.Serializable{
     private String channelTxt;
     private String dataFlag;
     private String internalBatchNo;
+    private Boolean realnameAuditSort;
 
     public String getChannelTxt() {
         return UserOrigType.getNameByCode(this.channel);
@@ -88,6 +92,14 @@ public class UserQo extends PageQo implements java.io.Serializable{
 
     public void setDataFlag(String dataFlag) {
         this.dataFlag = dataFlag;
+    }
+
+    public Boolean getRealnameAuditSort() {
+        return realnameAuditSort;
+    }
+
+    public void setRealnameAuditSort(Boolean realnameAuditSort) {
+        this.realnameAuditSort = realnameAuditSort;
     }
 
     public String getInternalBatchNo() {
@@ -347,6 +359,14 @@ public class UserQo extends PageQo implements java.io.Serializable{
 
     public void setRegisdate(Date regisdate) {
         this.regisdate = regisdate;
+    }
+
+    public Date getRealnameSubmitAt() {
+        return realnameSubmitAt;
+    }
+
+    public void setRealnameSubmitAt(Date realnameSubmitAt) {
+        this.realnameSubmitAt = realnameSubmitAt;
     }
 
     public String getImgpath() {

@@ -17,7 +17,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -96,6 +95,7 @@ public class UserService {
         old.setCertcode(oauthQo.getCertcode());
         old.setRealnameflag(YesNo.no.value);
         old.setStatus(UserStatus.ytj.value);
+        old.setRealnameSubmitAt(new Date());
         userRepository.save(old);
         //删除历史证件
         List<UserImg> oldUserImgs = old.getUserImgs();
@@ -541,8 +541,7 @@ public class UserService {
      * @return
      */
     public Page<User> findPageByPredicate(UserQo queryQo){
-        Sort sort = new Sort(Sort.Direction.DESC, "id");
-        Pageable pageable  = new PageRequest(queryQo.getPage(), queryQo.getSize(), sort);
+        Pageable pageable  = new PageRequest(queryQo.getPage(), queryQo.getSize());
 
         return userRepository.findAll(new Specification<User>(){
             @Override
@@ -578,8 +577,24 @@ public class UserService {
                     Date endDay = TimeUtil.getEndDay(queryQo.getRegisdate());
                     predicatesList.add(criteriaBuilder.between(root.get("regisdate"), startDay, endDay));
                 }
+                if(CommonUtils.isNotNull(queryQo.getRealnameSubmitAt())){
+                    Date startDay = TimeUtil.getStartDay(queryQo.getRealnameSubmitAt());
+                    Date endDay = TimeUtil.getEndDay(queryQo.getRealnameSubmitAt());
+                    predicatesList.add(criteriaBuilder.between(root.get("realnameSubmitAt"), startDay, endDay));
+                }
                 applyDataFlagPredicate(predicatesList, criteriaBuilder, root, queryQo.getDataFlag());
                 query.where(predicatesList.toArray(new Predicate[predicatesList.size()]));
+                if (Boolean.TRUE.equals(queryQo.getRealnameAuditSort())) {
+                    CriteriaBuilder.Case<Integer> pendingOrder = criteriaBuilder.selectCase();
+                    pendingOrder.when(criteriaBuilder.equal(root.get("status"), UserStatus.ytj.value), 0).otherwise(1);
+                    query.orderBy(
+                            criteriaBuilder.asc(pendingOrder),
+                            criteriaBuilder.desc(root.get("realnameSubmitAt")),
+                            criteriaBuilder.desc(root.get("id"))
+                    );
+                } else {
+                    query.orderBy(criteriaBuilder.desc(root.get("id")));
+                }
                 return query.getRestriction();
             }
         }, pageable);
