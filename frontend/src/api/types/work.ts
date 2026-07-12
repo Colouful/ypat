@@ -112,6 +112,7 @@ export interface WorkListResult {
   page: number
   size: number
   total: number
+  hasMore?: boolean
   items: WorkListItem[]
 }
 

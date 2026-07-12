@@ -32,6 +32,11 @@ export function getMyWorks(params: { page?: number; size?: number; status?: stri
   return get<WorkListResult>('/work/my', params)
 }
 
+/** 收藏的作品 */
+export function getFavoriteWorks(params: { page?: number; size?: number }): Promise<ApiResult<WorkListResult>> {
+  return get<WorkListResult>('/work/favorites', params)
+}
+
 /** 下架 */
 export function offline(id: number): Promise<ApiResult<{ msg: string }>> {
   return put<{ msg: string }>('/work/offline', { id })
