@@ -14,7 +14,18 @@ const statusOptions = [
   { label: '已关闭', value: 'CLOSED' },
   { label: '已退款', value: 'REFUNDED' },
 ]
+const businessNameMap: Record<string, string> = {
+  DEPOSIT: '保证金',
+  MEMBER: '会员',
+  PPD: '拍拍豆',
+  REALNAME: '实名认证',
+}
 function fenText(value?: number) { return value == null ? '-' : `¥${(value / 100).toFixed(2)}` }
+function businessText(value?: string): string {
+  if (!value) return '-'
+  const name = businessNameMap[value]
+  return name ? `${name}(${value})` : value
+}
 function statusType(status: string) { return status === 'PAID' ? 'success' : status === 'PENDING' ? 'warning' : 'info' }
 async function fetchList() {
   loading.value = true
@@ -38,7 +49,7 @@ onMounted(fetchList)
     <div class="search-bar">
       <el-form :inline="true" :model="query" @submit.prevent>
         <el-form-item label="用户ID"><el-input-number v-model="query.userId" :min="1" controls-position="right"/></el-form-item>
-        <el-form-item label="业务"><el-select v-model="query.businessType" clearable placeholder="全部"><el-option label="保证金" value="DEPOSIT"/><el-option label="会员" value="MEMBER"/></el-select></el-form-item>
+        <el-form-item label="业务"><el-select v-model="query.businessType" clearable placeholder="全部"><el-option label="保证金(DEPOSIT)" value="DEPOSIT"/><el-option label="会员(MEMBER)" value="MEMBER"/><el-option label="拍拍豆(PPD)" value="PPD"/><el-option label="实名认证(REALNAME)" value="REALNAME"/></el-select></el-form-item>
         <el-form-item label="商户单号"><el-input v-model="query.outTradeNo" clearable placeholder="请输入"/></el-form-item>
         <el-form-item label="渠道"><el-select v-model="query.channel" clearable placeholder="全部"><el-option label="小程序" value="MINIAPP"/><el-option label="H5" value="H5"/></el-select></el-form-item>
         <el-form-item label="状态"><el-select v-model="query.status" clearable placeholder="全部"><el-option v-for="o in statusOptions" :key="o.value" :label="o.label" :value="o.value"/></el-select></el-form-item>
@@ -49,7 +60,7 @@ onMounted(fetchList)
       <el-table-column prop="id" label="ID" width="80" align="center"/>
       <el-table-column prop="paymentNo" label="支付流水号" min-width="190"/>
       <el-table-column prop="outTradeNo" label="商户单号" min-width="190"/>
-      <el-table-column prop="businessType" label="业务" width="100" align="center"/>
+      <el-table-column label="业务" min-width="170" align="center"><template #default="{row}">{{ businessText(row.businessType) }}</template></el-table-column>
       <el-table-column prop="userId" label="用户ID" width="100" align="center"/>
       <el-table-column label="金额" width="110" align="center"><template #default="{row}">{{ fenText(row.amountFen) }}</template></el-table-column>
       <el-table-column prop="channel" label="渠道" width="100" align="center"/>
