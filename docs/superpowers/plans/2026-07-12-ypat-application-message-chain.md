@@ -29,7 +29,7 @@
 - Modify（修改）: `frontend/src/api/adapters/index.ts`
 - Modify（修改）: `frontend/src/api/modules/ypat.ts`
 
-- [ ] **Step 1（步骤 1）: 写旧分页失败测试**
+- [x] **Step 1（步骤 1）: 写旧分页失败测试**
 
 在 `adapters.test.ts`（适配器测试）增加：
 
@@ -52,7 +52,7 @@ describe('normalizePageResult', () => {
 })
 ```
 
-- [ ] **Step 2（步骤 2）: 写申请接口失败测试**
+- [x] **Step 2（步骤 2）: 写申请接口失败测试**
 
 在 `api-contracts.test.ts`（接口契约测试）增加：
 
@@ -79,7 +79,7 @@ it('loads my applications from the legacy app endpoint and normalizes pagination
 })
 ```
 
-- [ ] **Step 3（步骤 3）: 运行测试确认按预期失败**
+- [x] **Step 3（步骤 3）: 运行测试确认按预期失败**
 
 Run（运行）:
 
@@ -89,7 +89,7 @@ cd frontend && /Users/lizhenwei/workspace/vueworkspace/ypat-workspace/frontend/n
 
 Expected（预期）: `normalizePageResult`（分页结果标准化方法）不接受第二个参数，且 `getMyApplicationList`（获取我的申请列表）不存在。
 
-- [ ] **Step 4（步骤 4）: 实现旧分页适配**
+- [x] **Step 4（步骤 4）: 实现旧分页适配**
 
 将 `normalizePageResult`（分页结果标准化方法）签名调整为：
 
@@ -119,7 +119,7 @@ return {
 
 空数据和其他分页分支也使用 `fallback.number`（回退页码）与 `fallback.size`（回退每页条数），但不改变已有标准响应结果。
 
-- [ ] **Step 5（步骤 5）: 实现我的申请接口**
+- [x] **Step 5（步骤 5）: 实现我的申请接口**
 
 在 `ypat.ts`（约拍接口模块）导入 `normalizePageResult`（分页结果标准化方法），增加：
 
@@ -138,7 +138,7 @@ export async function getMyApplicationList(
 }
 ```
 
-- [ ] **Step 6（步骤 6）: 运行接口与适配器测试确认通过**
+- [x] **Step 6（步骤 6）: 运行接口与适配器测试确认通过**
 
 Run（运行）:
 
@@ -148,7 +148,7 @@ cd frontend && /Users/lizhenwei/workspace/vueworkspace/ypat-workspace/frontend/n
 
 Expected（预期）: 两个测试文件全部通过。
 
-- [ ] **Step 7（步骤 7）: 提交接口层修复**
+- [x] **Step 7（步骤 7）: 提交接口层修复**
 
 ```bash
 git add frontend/src/api/adapters/index.ts frontend/src/api/__tests__/adapters.test.ts frontend/src/api/modules/ypat.ts frontend/src/api/__tests__/api-contracts.test.ts
