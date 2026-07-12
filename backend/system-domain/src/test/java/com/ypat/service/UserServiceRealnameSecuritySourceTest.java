@@ -25,6 +25,7 @@ import java.util.Arrays;
 import java.util.List;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
@@ -100,6 +101,7 @@ public class UserServiceRealnameSecuritySourceTest {
         assertEquals("110101199001011234", capture.savedUser.getCertcode());
         assertEquals(UserStatus.ytj.value, capture.savedUser.getStatus());
         assertEquals(YesNo.no.value, capture.savedUser.getRealnameflag());
+        assertNotNull(capture.savedUser.getRealnameSubmitAt());
         assertEquals(2, capture.deletedImages.size());
         assertEquals(oldFront, capture.deletedImages.get(0));
         assertEquals(oldBack, capture.deletedImages.get(1));
@@ -119,6 +121,23 @@ public class UserServiceRealnameSecuritySourceTest {
         assertTrue(capture.lockedLookupCalled);
         assertEquals(UserStatus.ytj.value, capture.savedUser.getStatus());
         assertEquals(3, capture.savedImages.size());
+    }
+
+    @Test
+    public void realnameSubmitTimeSupportsDateFilterAndPendingFirstSort() throws Exception {
+        String userService = read("backend/system-domain/src/main/java/com/ypat/service/UserService.java");
+        String migration = read("../../docs/sql/pending/V_realname_submit_time.sql");
+
+        assertTrue(userService.contains("old.setRealnameSubmitAt(new Date())"));
+        assertTrue(userService.contains("queryQo.getRealnameSubmitAt()"));
+        assertTrue(userService.contains("criteriaBuilder.selectCase()"));
+        assertTrue(userService.contains("root.get(\"realnameSubmitAt\")"));
+        assertTrue(userService.contains("Boolean.TRUE.equals(queryQo.getRealnameAuditSort())"));
+        assertTrue(userService.contains("criteriaBuilder.desc(root.get(\"id\"))"));
+        assertTrue(migration.contains("realname_submit_at"));
+        assertTrue(migration.contains("idx_user_realname_review"));
+        assertTrue(migration.contains("information_schema"));
+        assertTrue(!migration.toLowerCase().contains("update `t_user`"));
     }
 
     @Test
