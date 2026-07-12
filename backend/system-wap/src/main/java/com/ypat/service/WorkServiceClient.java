@@ -41,6 +41,11 @@ public interface WorkServiceClient {
     @GetMapping("/service/work/my")
     String my(@RequestParam("userId") String userId, @RequestParam("page") Integer page, @RequestParam("size") Integer size, @RequestParam(value = "status", required = false) String status);
 
+    @GetMapping("/service/work/favorites")
+    String favorites(@RequestParam("userId") String userId,
+                     @RequestParam("page") Integer page,
+                     @RequestParam("size") Integer size);
+
     @PutMapping("/service/work/offline")
     String offline(@RequestParam("id") String id, @RequestParam("userId") String userId);
 

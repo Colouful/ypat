@@ -55,6 +55,14 @@ public class WorkController {
         return workServiceClient.my(userId, page, size, status);
     }
 
+    @GetMapping("/work/favorites")
+    public String favorites(@RequestParam(value = "page", defaultValue = "1") Integer page,
+                            @RequestParam(value = "size", defaultValue = "10") Integer size) {
+        String userId = UserUtil.getUserId();
+        if (userId == null) throw new SysException(ResponseCode.FAIL_AUTH);
+        return workServiceClient.favorites(userId, page, size);
+    }
+
     @PutMapping("/work/offline")
     public String offline(@RequestParam("id") String id) {
         String userId = UserUtil.getUserId();

@@ -89,6 +89,14 @@ public class WorkController {
         return ResponseApiBody.success(res);
     }
 
+    @GetMapping("/favorites")
+    public ResponseApiBody favorites(@RequestParam("userId") String userId,
+                                     @RequestParam("page") Integer page,
+                                     @RequestParam("size") Integer size) {
+        return ResponseApiBody.success(
+            workService.favoriteWorks(Long.parseLong(userId), page, size));
+    }
+
     @PutMapping("/offline")
     public ResponseApiBody offline(@RequestParam("id") String id, @RequestParam("userId") String userId) {
         Long wid = Long.parseLong(id);

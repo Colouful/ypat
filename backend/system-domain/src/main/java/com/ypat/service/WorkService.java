@@ -566,6 +566,59 @@ public class WorkService {
     }
 
     /**
+     * 当前用户收藏的作品，按收藏时间倒序
+     */
+    public Map<String, Object> favoriteWorks(Long userId, Integer page, Integer size) {
+        if (userId == null) throw new SysException(ResponseCode.FAIL_AUTH);
+        int p = page == null || page < 1 ? 1 : page;
+        int s = size == null || size < 1 ? 10 : Math.min(size, 20);
+        Page<WorkFavorite> result = workFavoriteRepository.findByUserIdOrderByCreatedAtDesc(
+            userId, new PageRequest(p - 1, s));
+
+        List<WorkListItem> items = new ArrayList<>();
+        for (WorkFavorite favorite : result.getContent()) {
+            Work work = workRepository.findByIdAndStatusAndDeletedFlag(
+                favorite.getWorkId(), WorkStatus.shtg.value, 0);
+            if (work == null) continue;
+
+            WorkListItem item = new WorkListItem();
+            item.setId(work.getId());
+            item.setDescription(work.getDescription());
+            item.setMediaType(work.getMediaType());
+            item.setIsVideo("2".equals(work.getMediaType()) ? "1" : "0");
+            item.setReadCount(work.getReadCount());
+            item.setLikeCount(work.getLikeCount());
+            item.setFavoriteCount(work.getFavoriteCount());
+            item.setPublishTime(work.getPublishTime());
+
+            List<WorkMedia> medias = workMediaRepository
+                .findByWorkIdAndDeletedAtIsNullOrderBySortNoAsc(work.getId());
+            if (!medias.isEmpty()) item.setCoverUrl(medias.get(0).getUrl());
+
+            User user = userRepository.findById(work.getUserid());
+            if (user != null) {
+                item.setUserId(user.getId());
+                item.setNickname(user.getNickname());
+                item.setAvatar(user.getAvatarurl());
+                item.setGender(user.getGender());
+                item.setProfession(user.getProfess());
+                item.setCity(user.getCity());
+                item.setArea(user.getArea());
+            }
+            item.setTags(loadWorkTagNames(work.getId(), Collections.emptyList()));
+            items.add(item);
+        }
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("page", p);
+        response.put("size", s);
+        response.put("total", result.getTotalElements());
+        response.put("hasMore", result.hasNext());
+        response.put("items", items);
+        return response;
+    }
+
+    /**
      * 我的作品
      */
     public Map<String, Object> myWorks(Long userId, Integer page, Integer size, String status) {
