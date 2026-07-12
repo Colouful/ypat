@@ -75,6 +75,10 @@ export function addFavorite(userid: number, ypatid: number): Promise<ApiResult<n
   return put('/my/ypat/sc/add', { userid, ypatid })
 }
 
+export function removeFavorite(userid: number, ypatid: number): Promise<ApiResult<null>> {
+  return put('/my/ypat/sc/cancel', { userid, ypatid })
+}
+
 // 后端 MypatInfoController 这些列表均为 @GetMapping(query 绑定),必须用 GET,
 // 否则 405。见 docs/migration/frontend-parity/03-api-contract-matrix.md (GAP-API-01)。
 export function getMyPublishList(params: YpatMyListParams): Promise<ApiResult<PageResult<YpatInfo>>> {

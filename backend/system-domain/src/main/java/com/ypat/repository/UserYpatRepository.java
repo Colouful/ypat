@@ -7,6 +7,7 @@ import org.springframework.data.jpa.domain.Specification;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
@@ -17,6 +18,10 @@ public interface UserYpatRepository extends JpaRepository<UserYpat, Long>, JpaSp
 
     @Query("select count(uy.id) from UserYpat uy where uy.user.id= :userid and uy.ypatInfo.id= :ypatid ")
     int countByUseridAndYpatid(@Param("userid") Long userid, @Param("ypatid") Long ypatid);
+
+    @Modifying
+    @Query("delete from UserYpat uy where uy.user.id= :userid and uy.ypatInfo.id= :ypatid")
+    int deleteByUseridAndYpatid(@Param("userid") Long userid, @Param("ypatid") Long ypatid);
 
     @Override
     @EntityGraph(value = "UserYpat.all")

@@ -33,6 +33,11 @@ public class MypatInfoController {
         userService.myColAdd(userid, ypatid);
     }
 
+    @PutMapping("/service/my/ypat/sc/cancel")
+    public void myScCancel(Long userid, Long ypatid){
+        userService.myColCancel(userid, ypatid);
+    }
+
     @GetMapping("/service/my/ypat/rec/count")
     public Long myRecCount(String type, Long userid) {
         return messInfoService.count(type, userid);

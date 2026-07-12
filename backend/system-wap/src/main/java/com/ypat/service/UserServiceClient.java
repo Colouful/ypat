@@ -32,6 +32,9 @@ public interface UserServiceClient {
     @PutMapping("/service/my/ypat/sc/add")
     String myScAdd(@RequestParam("userid") Long userid, @RequestParam("ypatid") Long ypatid);
 
+    @PutMapping("/service/my/ypat/sc/cancel")
+    String myScCancel(@RequestParam("userid") Long userid, @RequestParam("ypatid") Long ypatid);
+
     @GetMapping("/service/user/findByCityAndProfess")
     String findByCityAndProfess(@RequestParam("userid") Long userid, @RequestParam("city") String city);
 }

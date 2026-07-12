@@ -160,6 +160,12 @@ public class MypatInfoController {
         return systemServiceClient.myScAdd(userid, ypatid);
     }
 
+    @PutMapping("/my/ypat/sc/cancel")
+    public String myScCancel(Long userid, Long ypatid){
+        userid = Long.parseLong(UserUtil.getUserId());
+        return systemServiceClient.myScCancel(userid, ypatid);
+    }
+
     @RequestMapping(value = "/my/ppd/sub", method = {RequestMethod.POST, RequestMethod.PUT})
     public String myPpdSub(Long userid){
         return null;

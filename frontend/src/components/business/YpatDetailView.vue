@@ -18,19 +18,23 @@
           class="detail-icon-button"
           @tap="back"
         >
-          <KeepIcon
-            name="chevron-left"
-            :size="42"
-          />
+          <view class="detail-icon-button__icon-wrap">
+            <KeepIcon
+              name="chevron-left"
+              :size="42"
+            />
+          </view>
         </view>
         <view
           class="detail-icon-button"
           @tap="copyShareLink"
         >
-          <KeepIcon
-            name="copy"
-            :size="38"
-          />
+          <view class="detail-icon-button__icon-wrap">
+            <KeepIcon
+              name="copy"
+              :size="38"
+            />
+          </view>
         </view>
       </view>
 
@@ -191,23 +195,30 @@
       <view class="detail-actions">
         <view
           class="detail-actions__mini"
+          :class="{ 'detail-actions__mini--active': favorited }"
           @tap="favorite"
         >
-          <KeepIcon
-            name="star"
-            :size="42"
-          />
-          <text>{{ favorited ? '已收藏' : '收藏' }}</text>
+          <view class="detail-actions__icon-wrap">
+            <KeepIcon
+              name="star"
+              :size="36"
+              :color="favorited ? '#23C268' : '#83888F'"
+            />
+          </view>
+          <text class="detail-actions__label">{{ favorited ? '已收藏' : '收藏' }}</text>
         </view>
         <view
           class="detail-actions__mini"
           @tap="goProfile"
         >
-          <KeepIcon
-            name="mail"
-            :size="42"
-          />
-          <text>主页</text>
+          <view class="detail-actions__icon-wrap">
+            <KeepIcon
+              name="mail"
+              :size="36"
+              color="#83888F"
+            />
+          </view>
+          <text class="detail-actions__label">主页</text>
         </view>
         <button
           class="detail-actions__primary"
@@ -351,14 +362,25 @@ function requireLogin(): boolean {
 }
 
 async function favorite(): Promise<void> {
-  if (!requireLogin() || !detail.value || favorited.value || actionLoading.value) return
+  if (!requireLogin() || !detail.value || actionLoading.value) return
+  const shouldRemove = favorited.value
   actionLoading.value = true
   try {
-    await ypatApi.addFavorite(userStore.userInfo!.id, detail.value.id)
-    favorited.value = true
-    uni.showToast({ title: '收藏成功', icon: 'success' })
+    if (shouldRemove) {
+      await ypatApi.removeFavorite(userStore.userInfo!.id, detail.value.id)
+    } else {
+      await ypatApi.addFavorite(userStore.userInfo!.id, detail.value.id)
+    }
+    favorited.value = !shouldRemove
+    uni.showToast({
+      title: shouldRemove ? '已取消收藏' : '收藏成功',
+      icon: shouldRemove ? 'none' : 'success',
+    })
   } catch (error) {
-    uni.showToast({ title: error instanceof Error ? error.message : '收藏失败', icon: 'none' })
+    uni.showToast({
+      title: error instanceof Error ? error.message : shouldRemove ? '取消收藏失败' : '收藏失败',
+      icon: 'none',
+    })
   } finally {
     actionLoading.value = false
   }
@@ -400,9 +422,17 @@ defineExpose({ load })
   @include flex-center;
   width: 72rpx;
   height: 72rpx;
+  padding: 0;
   border-radius: 50%;
   color: #fff;
   background: rgba(0, 0, 0, 0.34);
+  line-height: 1;
+}
+
+.detail-icon-button__icon-wrap {
+  @include flex-center;
+  width: 100%;
+  height: 100%;
 }
 
 .hero-wrap {
@@ -709,12 +739,36 @@ defineExpose({ load })
 }
 
 .detail-actions__mini {
+  width: 96rpx;
+  height: 88rpx;
   display: flex;
   flex-direction: column;
   align-items: center;
-  color: $color-text-secondary;
-  font-size: 22rpx;
+  justify-content: center;
+  gap: 6rpx;
+  border-radius: 24rpx;
+  transition: background-color 0.2s ease;
+}
+
+.detail-actions__mini--active .detail-actions__label {
+  color: $color-primary;
+  font-weight: 800;
+}
+
+.detail-actions__icon-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 42rpx;
+  height: 42rpx;
+}
+
+.detail-actions__label {
+  color: $color-text-helper;
+  font-size: 20rpx;
   font-weight: 700;
+  line-height: 1;
+  white-space: nowrap;
 }
 
 .detail-actions__primary {

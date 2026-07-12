@@ -297,6 +297,26 @@ public class UserService {
     }
 
     /**
+     * 取消收藏
+     */
+    public void myColCancel(Long userid, Long ypatid){
+        User user = get(userid);
+        YpatInfo ypatInfo = ypatInfoRepository.findById(ypatid);
+        if(user==null || ypatInfo==null){
+            throw new SysException(ResponseCode.FAIL_NOT);
+        }
+        if(userYpatRepository.countByUseridAndYpatid(userid, ypatid)<=0){
+            throw new SysException(ResponseCode.FAIL_NOT, "未收藏");
+        }
+
+        userYpatRepository.deleteByUseridAndYpatid(userid, ypatid);
+        user.setColtimes(Math.max(0, user.getColtimes()-1));
+        userRepository.save(user);
+        ypatInfo.setColtimes(Math.max(0, ypatInfo.getColtimes()-1));
+        ypatInfoRepository.save(ypatInfo);
+    }
+
+    /**
      * 发布+1
      * @param id
     public void myPubAdd(Long id){
