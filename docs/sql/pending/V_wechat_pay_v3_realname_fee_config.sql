@@ -12,3 +12,22 @@ SET @ddl := (
 PREPARE stmt FROM @ddl;
 EXECUTE stmt;
 DEALLOCATE PREPARE stmt;
+
+UPDATE `t_deposit_config`
+SET `realname_audit_fee_fen` = 1
+WHERE `realname_audit_fee_fen` IS NULL;
+
+SET @ddl := (
+  SELECT IF(COUNT(*) = 1,
+    'ALTER TABLE `t_deposit_config` MODIFY COLUMN `realname_audit_fee_fen` INT NOT NULL DEFAULT 1 COMMENT ''实名认证审核费（分）''',
+    'SELECT ''skip normalize t_deposit_config.realname_audit_fee_fen'''
+  )
+  FROM information_schema.COLUMNS
+  WHERE TABLE_SCHEMA = DATABASE()
+    AND TABLE_NAME = 't_deposit_config'
+    AND COLUMN_NAME = 'realname_audit_fee_fen'
+    AND (IS_NULLABLE <> 'NO' OR COLUMN_DEFAULT IS NULL OR COLUMN_DEFAULT <> '1')
+);
+PREPARE stmt FROM @ddl;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;

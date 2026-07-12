@@ -1,5 +1,5 @@
 <template>
-  <view class="realname-intro-page">
+  <view v-if="!checkingStatus" class="realname-intro-page">
     <KeepPageNav title="实名认证说明" />
 
     <view class="hero">
@@ -45,7 +45,12 @@ import { useUserStore } from '@/stores/user'
 
 const userStore = useUserStore()
 const redirect = ref('')
+const checkingStatus = ref(true)
 const verified = computed(() => userStore.userInfo?.realnameflag === '1' || userStore.userInfo?.status === '2')
+const realnameUrl = computed(() => {
+  const query = redirect.value ? `?redirect=${encodeURIComponent(redirect.value)}` : ''
+  return `/pages-sub/user/realname${query}`
+})
 
 const benefits = [
   { title: '可约拍优质模特', desc: '高信任合作更容易被作者接单。', icon: 'camera' },
@@ -55,12 +60,17 @@ const benefits = [
 ]
 
 function startRealname(): void {
-  const query = redirect.value ? `?redirect=${encodeURIComponent(redirect.value)}` : ''
-  uni.navigateTo({ url: `/pages-sub/user/realname${query}` })
+  uni.navigateTo({ url: realnameUrl.value })
 }
 
-onLoad((options) => {
+onLoad(async (options) => {
   redirect.value = typeof options?.redirect === 'string' ? options.redirect : ''
+  const latestUser = await userStore.updateUserInfo()
+  if (latestUser?.status === '1') {
+    uni.redirectTo({ url: realnameUrl.value })
+    return
+  }
+  checkingStatus.value = false
 })
 </script>
 

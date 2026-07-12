@@ -41,37 +41,7 @@
     </view>
 
     <template v-else>
-      <view class="section section--benefits">
-        <view class="section__head">
-          <text class="section__title">
-            会员权益
-          </text>
-          <text class="section__sub">
-            开通后立即生效
-          </text>
-        </view>
-        <view class="benefit-grid">
-          <view
-            v-for="item in benefitItems"
-            :key="item.title"
-            class="benefit-item"
-          >
-            <view class="benefit-item__icon">
-              {{ item.icon }}
-            </view>
-            <view class="benefit-item__content">
-              <text class="benefit-item__title">
-                {{ item.title }}
-              </text>
-              <text class="benefit-item__desc">
-                {{ item.desc }}
-              </text>
-            </view>
-          </view>
-        </view>
-      </view>
-
-      <view class="section">
+      <view class="section section--plans">
         <view class="section__head">
           <text class="section__title">
             选择套餐
@@ -88,19 +58,17 @@
             :class="{ 'plan-card--recommended': isRecommended(plan), 'plan-card--selected': selectedPlan?.id === plan.id }"
             @tap="selectPlan(plan)"
           >
+            <text
+              v-if="isRecommended(plan)"
+              class="plan-card__tag"
+            >
+              推荐
+            </text>
             <view class="plan-card__main">
               <view class="plan-card__info">
-                <view class="plan-card__title-row">
-                  <text class="plan-card__name">
-                    {{ plan.name }}
-                  </text>
-                  <text
-                    v-if="isRecommended(plan)"
-                    class="plan-card__tag"
-                  >
-                    推荐
-                  </text>
-                </view>
+                <text class="plan-card__name">
+                  {{ plan.name }}
+                </text>
                 <text class="plan-card__duration">
                   {{ plan.durationDays }} 天有效期
                 </text>
@@ -132,24 +100,39 @@
               </view>
             </view>
             <view
-              v-if="getPlanBenefits(plan).length > 0"
-              class="plan-card__benefits"
+              class="plan-card__check"
+              :class="{ 'plan-card__check--selected': selectedPlan?.id === plan.id }"
             >
-              <view
-                v-for="benefit in getPlanBenefits(plan)"
-                :key="benefit"
-                class="plan-card__benefit"
-              >
-                <text class="plan-card__dot">
-                  ✓
-                </text>
-                <text>{{ benefit }}</text>
-              </view>
+              <text>{{ selectedPlan?.id === plan.id ? '✓' : '' }}</text>
             </view>
-            <view class="plan-card__select">
-              <text>{{ selectedPlan?.id === plan.id ? '已选择当前套餐' : '点选此套餐' }}</text>
-              <text class="plan-card__select-icon">
-                {{ selectedPlan?.id === plan.id ? '✓' : '›' }}
+          </view>
+        </view>
+      </view>
+
+      <view class="section section--benefits">
+        <view class="section__head">
+          <text class="section__title">
+            会员权益
+          </text>
+          <text class="section__sub">
+            开通后立即生效
+          </text>
+        </view>
+        <view class="benefit-grid">
+          <view
+            v-for="item in benefitItems"
+            :key="item.title"
+            class="benefit-item"
+          >
+            <view class="benefit-item__icon">
+              {{ item.icon }}
+            </view>
+            <view class="benefit-item__content">
+              <text class="benefit-item__title">
+                {{ item.title }}
+              </text>
+              <text class="benefit-item__desc">
+                {{ item.desc }}
               </text>
             </view>
           </view>
@@ -232,14 +215,6 @@ function formatYuan(fen: number): string {
 
 function isRecommended(plan: MemberPlan): boolean {
   return plan.recommended === '1'
-}
-
-function getPlanBenefits(plan: MemberPlan): string[] {
-  if (!plan.benefits) return []
-  return plan.benefits
-    .split(/[、,，+＋]/)
-    .map((item) => item.trim())
-    .filter(Boolean)
 }
 
 async function loadPlans(): Promise<void> {
@@ -370,54 +345,52 @@ onLoad(async () => {
 <style scoped lang="scss">
 .page { min-height: 100vh; padding: 24rpx 28rpx calc(180rpx + env(safe-area-inset-bottom)); background: linear-gradient(180deg, #F5F7F9 0%, $color-bg-page 360rpx); }
 
-.hero { position: relative; overflow: hidden; padding: 34rpx 32rpx 36rpx; border-radius: 36rpx; color: #fff; background: linear-gradient(120deg, #252833 0%, #3C344B 58%, #315B4D 100%); box-shadow: 0 24rpx 58rpx rgba(43, 35, 30, 0.18); }
-.hero::before { content: ''; position: absolute; top: -110rpx; right: -80rpx; width: 260rpx; height: 260rpx; border-radius: 50%; background: rgba(255, 218, 130, 0.2); }
-.hero::after { content: ''; position: absolute; right: 34rpx; bottom: 28rpx; width: 126rpx; height: 126rpx; border: 2rpx solid rgba(255, 224, 138, 0.24); border-radius: 50%; }
+.hero { position: relative; overflow: hidden; padding: 26rpx 28rpx 28rpx; border-radius: $radius-keep-card; color: #fff; background: linear-gradient(120deg, #252833 0%, #3C344B 58%, #315B4D 100%); box-shadow: 0 18rpx 42rpx rgba(43, 35, 30, 0.16); }
+.hero::before { content: ''; position: absolute; top: -92rpx; right: -64rpx; width: 210rpx; height: 210rpx; border-radius: 50%; background: rgba(255, 218, 130, 0.2); }
+.hero::after { content: ''; position: absolute; right: 28rpx; bottom: 24rpx; width: 96rpx; height: 96rpx; border: 2rpx solid rgba(255, 224, 138, 0.24); border-radius: 50%; }
 .hero--active { background: linear-gradient(120deg, #18291F 0%, $color-primary-dark 56%, #B28333 100%); }
 .hero__top { position: relative; z-index: 1; display: flex; align-items: center; justify-content: space-between; }
-.hero__badge { padding: 8rpx 18rpx; border-radius: $radius-round; color: #5A3A00; background: linear-gradient(135deg, #FFE9A6, #F5B642); font-size: 22rpx; font-weight: 900; letter-spacing: 0; }
-.hero__state { color: rgba(255, 255, 255, 0.78); font-size: 24rpx; font-weight: 700; }
-.hero__label { position: relative; z-index: 1; display: block; margin-top: 46rpx; color: #fff; font-size: 42rpx; font-weight: 900; }
-.hero__line { position: relative; z-index: 1; display: block; margin-top: 14rpx; color: rgba(255, 255, 255, 0.76); font-size: 25rpx; font-weight: 700; }
-.hero__features { position: relative; z-index: 1; display: flex; flex-wrap: wrap; gap: 12rpx; margin-top: 28rpx; }
-.hero__features text { padding: 10rpx 18rpx; border: 1rpx solid rgba(255, 232, 174, 0.28); border-radius: $radius-round; color: #FFE8AE; background: rgba(255, 255, 255, 0.08); font-size: 22rpx; font-weight: 800; }
-.hero__hint { position: relative; z-index: 1; display: block; margin-top: 22rpx; color: rgba(255, 255, 255, 0.74); font-size: 24rpx; }
+.hero__badge { padding: 6rpx 16rpx; border-radius: $radius-round; color: #5A3A00; background: linear-gradient(135deg, #FFE9A6, #F5B642); font-size: 21rpx; font-weight: 900; letter-spacing: 0; }
+.hero__state { color: rgba(255, 255, 255, 0.78); font-size: 22rpx; font-weight: 700; }
+.hero__label { position: relative; z-index: 1; display: block; margin-top: 26rpx; color: #fff; font-size: 38rpx; font-weight: 900; }
+.hero__line { position: relative; z-index: 1; display: block; margin-top: 10rpx; color: rgba(255, 255, 255, 0.76); font-size: 23rpx; font-weight: 700; }
+.hero__features { position: relative; z-index: 1; display: flex; flex-wrap: wrap; gap: 10rpx; margin-top: 18rpx; }
+.hero__features text { padding: 8rpx 15rpx; border: 1rpx solid rgba(255, 232, 174, 0.28); border-radius: $radius-round; color: #FFE8AE; background: rgba(255, 255, 255, 0.08); font-size: 20rpx; font-weight: 800; }
+.hero__hint { position: relative; z-index: 1; display: block; margin-top: 16rpx; color: rgba(255, 255, 255, 0.74); font-size: 22rpx; }
 
 .loading { padding: 80rpx 0; color: $color-text-helper; font-size: 26rpx; text-align: center; }
 
-.section { margin-top: 28rpx; }
-.section--benefits { padding: 30rpx; border-radius: $radius-keep-card; background: #fff; box-shadow: $shadow-keep-card; }
-.section__head { display: flex; align-items: flex-end; justify-content: space-between; gap: 20rpx; margin-bottom: 22rpx; }
-.section__title { color: $color-text-primary; font-size: 32rpx; font-weight: 900; }
-.section__sub { flex: none; color: $color-text-helper; font-size: 22rpx; font-weight: 700; }
+.section { margin-top: 22rpx; }
+.section--benefits { padding: 24rpx; border-radius: $radius-keep-card; background: #fff; box-shadow: $shadow-keep-card; }
+.section__head { display: flex; align-items: flex-end; justify-content: space-between; gap: 18rpx; margin-bottom: 16rpx; }
+.section__title { color: $color-text-primary; font-size: 30rpx; font-weight: 900; }
+.section__sub { flex: none; color: $color-text-helper; font-size: 21rpx; font-weight: 700; }
 
-.benefit-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 18rpx; }
-.benefit-item { min-width: 0; padding: 22rpx 18rpx; border-radius: 24rpx; background: #F7FAF8; }
-.benefit-item__icon { display: flex; align-items: center; justify-content: center; width: 54rpx; height: 54rpx; border-radius: 18rpx; color: #6A4300; background: linear-gradient(135deg, #FFE8A8, #F4BD51); font-size: 24rpx; font-weight: 900; }
-.benefit-item__title { display: block; margin-top: 16rpx; color: $color-text-primary; font-size: 25rpx; font-weight: 900; }
-.benefit-item__desc { display: block; margin-top: 8rpx; color: $color-text-secondary; font-size: 21rpx; line-height: 1.45; }
+.benefit-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14rpx; }
+.benefit-item { min-width: 0; padding: 18rpx 16rpx; border-radius: $radius-keep-card; background: #F7FAF8; }
+.benefit-item__icon { display: flex; align-items: center; justify-content: center; width: 48rpx; height: 48rpx; border-radius: 14rpx; color: #6A4300; background: linear-gradient(135deg, #FFE8A8, #F4BD51); font-size: 22rpx; font-weight: 900; }
+.benefit-item__title { display: block; margin-top: 12rpx; color: $color-text-primary; font-size: 24rpx; font-weight: 900; }
+.benefit-item__desc { display: block; margin-top: 6rpx; color: $color-text-secondary; font-size: 20rpx; line-height: 1.45; }
 
-.plans { display: flex; flex-direction: column; gap: 18rpx; }
-.plan-card { position: relative; overflow: hidden; padding: 28rpx; border: 2rpx solid transparent; border-radius: $radius-keep-card; background: #fff; box-shadow: $shadow-keep-card; }
+.plans { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14rpx; }
+.plan-card { position: relative; min-width: 0; min-height: 196rpx; overflow: hidden; padding: 22rpx 20rpx 48rpx; border: 2rpx solid transparent; border-radius: $radius-keep-card; background: #fff; box-shadow: $shadow-keep-card; }
+.plan-card:last-child:nth-child(odd) { grid-column: 1 / -1; min-height: 150rpx; }
 .plan-card--recommended { border-color: rgba(245, 182, 66, 0.58); }
-.plan-card--selected { border-color: $color-primary; box-shadow: 0 18rpx 48rpx rgba(23, 168, 87, 0.16); }
-.plan-card__main { display: flex; justify-content: space-between; gap: 22rpx; }
-.plan-card__info { min-width: 0; flex: 1; }
-.plan-card__title-row { display: flex; align-items: center; gap: 12rpx; }
-.plan-card__name { display: block; color: $color-text-primary; font-size: 32rpx; font-weight: 900; }
-.plan-card__tag { flex: none; padding: 4rpx 14rpx; border-radius: $radius-round; color: #6A4300; background: #FFE8A8; font-size: 20rpx; font-weight: 900; }
-.plan-card__duration { display: block; margin-top: 10rpx; color: $color-text-secondary; font-size: 23rpx; font-weight: 700; }
-.plan-card__chips { display: flex; flex-wrap: wrap; gap: 10rpx; margin-top: 18rpx; }
-.plan-card__chip { padding: 8rpx 14rpx; border-radius: $radius-round; color: $color-primary-dark; background: rgba(23, 168, 87, 0.1); font-size: 21rpx; font-weight: 800; }
-.plan-card__price { flex: none; display: flex; flex-direction: column; align-items: flex-end; padding-top: 2rpx; }
-.plan-card__price-yuan { color: #D87B1D; font-size: 42rpx; font-weight: 900; }
-.plan-card__price-origin { margin-top: 6rpx; color: $color-text-helper; font-size: 23rpx; text-decoration: line-through; }
-.plan-card__benefits { display: flex; flex-wrap: wrap; gap: 10rpx 18rpx; margin-top: 24rpx; padding-top: 20rpx; border-top: 1rpx solid #F0F2F4; }
-.plan-card__benefit { display: flex; align-items: center; gap: 8rpx; max-width: 100%; color: $color-text-secondary; font-size: 23rpx; line-height: 1.45; }
-.plan-card__dot { flex: none; color: $color-primary-dark; font-size: 22rpx; font-weight: 900; }
-.plan-card__select { display: flex; align-items: center; justify-content: space-between; margin-top: 24rpx; height: 64rpx; padding: 0 24rpx; border-radius: 999rpx; color: $color-primary-dark; background: rgba(23, 168, 87, 0.1); font-size: 24rpx; font-weight: 900; }
-.plan-card--selected .plan-card__select { color: #fff; background: $color-primary; }
-.plan-card__select-icon { font-size: 30rpx; font-weight: 900; }
+.plan-card--selected { border-color: $color-primary; background: #F9FCFA; box-shadow: 0 14rpx 34rpx rgba(23, 168, 87, 0.14); }
+.plan-card__main { display: block; }
+.plan-card:last-child:nth-child(odd) .plan-card__main { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 24rpx; }
+.plan-card__info { min-width: 0; }
+.plan-card__name { display: block; padding-right: 62rpx; color: $color-text-primary; font-size: 27rpx; font-weight: 900; line-height: 1.25; }
+.plan-card__tag { position: absolute; top: 14rpx; right: 14rpx; z-index: 1; padding: 3rpx 10rpx; border-radius: $radius-round; color: #6A4300; background: #FFE8A8; font-size: 18rpx; font-weight: 900; }
+.plan-card__duration { display: block; margin-top: 8rpx; color: $color-text-secondary; font-size: 21rpx; font-weight: 700; }
+.plan-card__chips { display: flex; flex-wrap: wrap; gap: 8rpx; margin-top: 12rpx; }
+.plan-card__chip { padding: 6rpx 10rpx; border-radius: $radius-round; color: $color-primary-dark; background: rgba(23, 168, 87, 0.1); font-size: 18rpx; font-weight: 800; }
+.plan-card__price { display: flex; flex-direction: column; align-items: flex-start; margin-top: 14rpx; }
+.plan-card:last-child:nth-child(odd) .plan-card__price { align-items: flex-end; margin-top: 0; padding-right: 4rpx; }
+.plan-card__price-yuan { color: #C66F1A; font-size: 34rpx; font-weight: 900; }
+.plan-card__price-origin { margin-top: 3rpx; color: $color-text-helper; font-size: 19rpx; text-decoration: line-through; }
+.plan-card__check { position: absolute; right: 16rpx; bottom: 14rpx; display: flex; align-items: center; justify-content: center; width: 30rpx; height: 30rpx; border: 2rpx solid #C8D1CB; border-radius: 50%; color: transparent; background: #fff; font-size: 18rpx; font-weight: 900; }
+.plan-card__check--selected { border-color: $color-primary; color: #fff; background: $color-primary; }
 
 .agreement { margin-top: 32rpx; color: $color-text-helper; font-size: 22rpx; text-align: center; }
 .orders-link { margin-top: 24rpx; padding: 22rpx 0; color: $color-primary-dark; font-size: 26rpx; font-weight: 800; text-align: center; }
