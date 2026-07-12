@@ -52,3 +52,20 @@ describe('normalizeImageUrl', () => {
     )
   })
 })
+
+describe('normalizePageResult', () => {
+  it('normalizes legacy content pages and totals with caller pagination fallbacks', async () => {
+    const { normalizePageResult } = await loadAdapters()
+
+    expect(normalizePageResult(
+      { content: [{ id: 5 }], pages: 3, totals: 21 },
+      { number: 1, size: 10 },
+    )).toEqual({
+      content: [{ id: 5 }],
+      totalElements: 21,
+      totalPages: 3,
+      number: 1,
+      size: 10,
+    })
+  })
+})

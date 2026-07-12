@@ -1,4 +1,5 @@
 import { get, post, put } from '../request'
+import { normalizePageResult } from '../adapters'
 import type {
   ApiResult,
   MessInfo,
@@ -82,6 +83,19 @@ export function getMyPublishList(params: YpatMyListParams): Promise<ApiResult<Pa
 
 export function getMySentList(params: YpatMyListParams): Promise<ApiResult<PageResult<MessInfo>>> {
   return get('/my/ypat/send/list', { ...params })
+}
+
+export async function getMyApplicationList(
+  params: YpatMyListParams,
+): Promise<ApiResult<PageResult<YpatInfo>>> {
+  const result = await get<unknown>('/my/ypat/app/list', { ...params })
+  return {
+    ...result,
+    data: normalizePageResult<YpatInfo>(result.data, {
+      number: params.page,
+      size: params.size,
+    }),
+  }
 }
 
 export function getMyReceivedList(params: YpatMyListParams): Promise<ApiResult<PageResult<MessInfo>>> {

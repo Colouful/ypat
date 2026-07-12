@@ -24,35 +24,43 @@ export function normalizeImageUrl(path: string | null | undefined): string {
  * 标准化 Spring Data 分页结果为统一格式
  * 兼容后端返回的各种分页格式
  */
-export function normalizePageResult<T>(data: any): PageResult<T> {
+interface PageFallback {
+  number?: number
+  size?: number
+}
+
+export function normalizePageResult<T>(data: any, fallback: PageFallback = {}): PageResult<T> {
   if (!data) {
     return {
       content: [],
       totalElements: 0,
       totalPages: 0,
-      number: 0,
-      size: 10,
+      number: fallback.number ?? 0,
+      size: fallback.size ?? 10,
     }
   }
 
   // 标准 Spring Page 格式
   if (data.content !== undefined) {
+    const content = data.content || []
+    const totalElements = Number(data.totalElements ?? data.totals ?? content.length)
+    const size = Number(data.size ?? fallback.size ?? 10)
     return {
-      content: data.content || [],
-      totalElements: data.totalElements || 0,
-      totalPages: data.totalPages || 0,
-      number: data.number || 0,
-      size: data.size || 10,
+      content,
+      totalElements,
+      totalPages: Number(data.totalPages ?? data.pages ?? (size > 0 ? Math.ceil(totalElements / size) : 0)),
+      number: Number(data.number ?? fallback.number ?? 0),
+      size,
     }
   }
 
   // 兼容 records/list + total 格式
   if (data.records !== undefined || data.list !== undefined) {
     const list = data.records || data.list || []
-    const total = data.total || data.totalElements || 0
-    const size = data.size || data.pageSize || 10
-    const current = data.current || data.pageNum || data.number || 0
-    const pages = data.pages || data.totalPages || Math.ceil(total / size)
+    const total = Number(data.total ?? data.totalElements ?? 0)
+    const size = Number(data.size ?? data.pageSize ?? fallback.size ?? 10)
+    const current = Number(data.current ?? data.pageNum ?? data.number ?? fallback.number ?? 0)
+    const pages = Number(data.pages ?? data.totalPages ?? (size > 0 ? Math.ceil(total / size) : 0))
 
     return {
       content: list,
@@ -78,8 +86,8 @@ export function normalizePageResult<T>(data: any): PageResult<T> {
     content: [],
     totalElements: 0,
     totalPages: 0,
-    number: 0,
-    size: 10,
+    number: fallback.number ?? 0,
+    size: fallback.size ?? 10,
   }
 }
 

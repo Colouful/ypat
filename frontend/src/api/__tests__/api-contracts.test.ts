@@ -144,6 +144,27 @@ describe('API contracts', () => {
     expect(requestMocks.get).toHaveBeenCalledWith('/my/ypat/send/list', { ...p })
   })
 
+  it('loads my applications from the legacy app endpoint and normalizes pagination', async () => {
+    const p = { userid: 7, page: 1, size: 10 }
+    requestMocks.get.mockResolvedValueOnce({
+      success: true,
+      data: { content: [{ id: 5 }], pages: 2, totals: 11 },
+      code: '200',
+      message: '',
+    })
+
+    const result = await ypatApi.getMyApplicationList(p)
+
+    expect(requestMocks.get).toHaveBeenCalledWith('/my/ypat/app/list', { ...p })
+    expect(result.data).toEqual({
+      content: [{ id: 5 }],
+      totalElements: 11,
+      totalPages: 2,
+      number: 1,
+      size: 10,
+    })
+  })
+
   it('feedback add uses typed form endpoint', async () => {
     await feedbackApi.addFeedback({
       type: 'function',
