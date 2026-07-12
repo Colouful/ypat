@@ -2,7 +2,7 @@
 import { computed, ref, watch } from 'vue'
 import { ElMessage } from 'element-plus'
 import { Check, CloseBold, Picture, User } from '@element-plus/icons-vue'
-import { auditYpat, type YpatInfo } from '@/api/modules/ypat'
+import { auditYpat, getYpatDetail, type YpatInfo } from '@/api/modules/ypat'
 import { AuditFlag } from '@/constants/enums'
 
 const props = defineProps<{ visible: boolean; data: YpatInfo | null }>()
@@ -20,31 +20,55 @@ const localVisible = computed({
 
 const reason = ref('')
 const loading = ref(false)
-const styleTags = computed(() => (props.data ? getPatstyleList(props.data) : []))
-const previewImages = computed(() => props.data?.pics || [])
+const detailLoading = ref(false)
+const detail = ref<YpatInfo | null>(null)
+const displayData = computed(() => detail.value || props.data)
+const styleTags = computed(() => (displayData.value ? getPatstyleList(displayData.value) : []))
+const previewImages = computed(() => displayData.value?.pics || [])
 const detailRows = computed(() => {
-  if (!props.data) return []
+  if (!displayData.value) return []
+  const data = displayData.value
   return [
-    { label: '性别', value: props.data.genderTxt || '-' },
-    { label: '职业', value: props.data.professTxt || '-' },
-    { label: '约拍对象', value: props.data.targetTxt || '-' },
-    { label: '收费方式', value: props.data.chargewayTxt || '-' },
-    { label: '地区', value: getAreaText(props.data) },
-    { label: '关联作品ID', value: props.data.workId || '-' },
+    { label: '性别', value: data.genderTxt || '-' },
+    { label: '职业', value: data.professTxt || '-' },
+    { label: '约拍对象', value: data.targetTxt || '-' },
+    { label: '收费方式', value: data.chargewayTxt || '-' },
+    { label: '地区', value: getAreaText(data) },
+    { label: '关联作品ID', value: data.workId || '-' },
   ]
 })
+
+async function loadDetail(id: number): Promise<void> {
+  detail.value = null
+  detailLoading.value = true
+  try {
+    const result = await getYpatDetail(id)
+    if (props.visible && props.data?.id === id && result.data) {
+      detail.value = result.data
+      reason.value = result.data.reason || ''
+    }
+  } catch {
+    // 详情失败时继续使用列表行数据，审核入口保持可用。
+  } finally {
+    if (props.data?.id === id) detailLoading.value = false
+  }
+}
+
 watch(
   () => [props.visible, props.data?.id] as const,
-  ([visible]) => {
-    if (visible) {
+  ([visible, id]) => {
+    if (visible && id) {
       reason.value = props.data?.reason ?? ''
+      void loadDetail(id)
+    } else {
+      detail.value = null
     }
   },
 )
 
 async function handleAudit(flag: string) {
-  if (loading.value || !props.data) return
-  const ypatId = props.data.id
+  if (loading.value || !displayData.value) return
+  const ypatId = displayData.value.id
   loading.value = true
   try {
     await auditYpat(ypatId, flag, reason.value.trim() || undefined)
@@ -72,23 +96,23 @@ function getPatstyleList(data: YpatInfo): string[] {
   <el-dialog
     v-model="localVisible"
     title="约拍审核"
-    width="760px"
+    width="860px"
     class="ypat-audit-dialog"
     :close-on-click-modal="!loading"
     :close-on-press-escape="!loading"
     :show-close="!loading"
   >
-    <div v-if="data" class="audit-body">
+    <div v-if="displayData" v-loading="detailLoading" class="audit-body">
       <div class="audit-profile">
         <div class="avatar">
           <el-icon><User /></el-icon>
         </div>
         <div class="profile-main">
           <div class="profile-title">
-            <span class="nickname">{{ data.nickname || '-' }}</span>
-            <el-tag size="small" type="warning" effect="light">ID {{ data.id }}</el-tag>
+            <span class="nickname">{{ displayData.nickname || '-' }}</span>
+            <el-tag size="small" type="warning" effect="light">ID {{ displayData.id }}</el-tag>
           </div>
-          <div class="profile-sub">{{ data.pubdate || '暂无发布时间' }}</div>
+          <div class="profile-sub">{{ displayData.pubdate || '暂无发布时间' }}</div>
         </div>
       </div>
 
@@ -111,7 +135,7 @@ function getPatstyleList(data: YpatInfo): string[] {
 
       <div class="section">
         <div class="section-title">描述</div>
-        <div class="description">{{ data.describ || '-' }}</div>
+        <div class="description">{{ displayData.describ || '-' }}</div>
       </div>
 
       <div class="section">
@@ -176,6 +200,13 @@ function getPatstyleList(data: YpatInfo): string[] {
   display: flex;
   flex-direction: column;
   gap: $spacing-lg;
+  max-height: 68vh;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+:global(.ypat-audit-dialog) {
+  max-width: calc(100vw - 32px);
 }
 
 .audit-profile {
@@ -294,7 +325,7 @@ function getPatstyleList(data: YpatInfo): string[] {
 
 .image-list {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(92px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
   gap: $spacing-sm;
 }
 
