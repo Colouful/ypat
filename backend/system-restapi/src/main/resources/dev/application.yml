@@ -45,9 +45,12 @@ spring:
   jpa:
     database: MYSQL
     show-sql: true
-  ## Hibernate ddl auto (validate|create|create-drop|update)
+  ## Hibernate ddl auto (validate|create|create-drop|update|none)
+    ## PR-01a: switched from `update` to `none` to stop Hibernate
+    ## from auto-mutating dev schema. See
+    ## docs/architecture/schema-migration.md for the Flyway plan.
     hibernate:
-      ddl-auto: update
+      ddl-auto: none
       #naming-strategy: org.hibernate.cfg.ImprovedNamingStrategy
       naming.physical-strategy: org.hibernate.boot.model.naming.PhysicalNamingStrategyStandardImpl
     properties:
