@@ -1,0 +1,59 @@
+name: backend-v2 / ArchUnit
+
+# PR-06: package-structure discipline.
+# Runs the lightweight ArchUnit tests that backend-v2 carries
+# for the module skeleton. Fast (<5 s), no Spring context,
+# no DB. Fails the PR if a module is added without claiming it
+# or if someone reaches across module boundaries.
+
+on:
+  pull_request:
+    branches:
+      - main
+      - main2
+      - refactor/backend-arch-upgrade
+    paths:
+      - "backend-v2/**"
+      - ".github/workflows/backend-v2-archunit.yml"
+  push:
+    branches:
+      - main
+      - main2
+      - refactor/backend-arch-upgrade
+    paths:
+      - "backend-v2/**"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  archunit:
+    name: backend-v2 / ModulePackageStructureTest
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend-v2
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+          cache: maven
+
+      - name: Run ArchUnit tests only
+        # Surefire pattern: run only the architecture tests,
+        # not the full test suite (no other tests exist yet).
+        run: mvn -B -ntp -Dtest='com.ypat.architecture.*' -DfailIfNoTests=false test
+
+      - name: Report
+        if: always()
+        run: |
+          echo "ArchUnit run finished with exit status: ${{ job.status }}"
+          if [ -f target/surefire-reports/TEST-com.ypat.architecture.ModulePackageStructureTest.xml ]; then
+            echo "--- surefire summary ---"
+            grep -E '<testsuite|<testcase' target/surefire-reports/TEST-com.ypat.architecture.ModulePackageStructureTest.xml | head -20
+          fi
