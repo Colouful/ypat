@@ -53,7 +53,11 @@ public class EnvironmentConfigurationValidator implements EnvironmentPostProcess
             "YPAT_SSO_JWT_SIGNING_KEY",
             "YPAT_FDFS_PUBLIC_BASE_URL",
             "YPAT_LOCAL_MYSQL_ROOT_PASSWORD",
-            "YPAT_LOCAL_REDIS_PASSWORD"
+            "YPAT_LOCAL_REDIS_PASSWORD",
+            // PR-02: CORS origins must be explicit in any non-dev profile.
+            // Default `*` would let any browser call our endpoints with
+            // credentials when the env var is missing.
+            "YPAT_CORS_ORIGINS"
     ));
 
     private static final Set<String> REQUIRED_FOR_PRODUCTION = new HashSet<>(REQUIRED_FOR_STAGING);
@@ -90,6 +94,7 @@ public class EnvironmentConfigurationValidator implements EnvironmentPostProcess
         if (STAGING_PROFILE.equals(profile)) {
             validateRequired(env, REQUIRED_FOR_STAGING, "staging");
             validateNoProductionForbidden(env, profile);
+            validateCorsNotWildcard(env, profile);
             return;
         }
 
@@ -97,6 +102,7 @@ public class EnvironmentConfigurationValidator implements EnvironmentPostProcess
             validateRequired(env, REQUIRED_FOR_PRODUCTION, "production");
             validateNoProductionForbidden(env, profile);
             validateNoStagingHosts(env, profile);
+            validateCorsNotWildcard(env, profile);
             return;
         }
 
@@ -168,5 +174,37 @@ public class EnvironmentConfigurationValidator implements EnvironmentPostProcess
                 || trimmed.equalsIgnoreCase("TODO")
                 || trimmed.equalsIgnoreCase("<placeholder>")
                 || trimmed.endsWith(".example.invalid");
+    }
+
+    /**
+     * PR-02: refuse wildcard CORS in any non-dev profile.
+     * Rationale: a production build with YPAT_CORS_ORIGINS="*" exposes
+     * the API to every origin. Combined with cookie / Authorization
+     * headers this is the textbook CSRF / data-leak chain. Dev profile
+     * is intentionally exempt because local browsers all hit
+     * http://localhost:8081 from random origins during HMR.
+     */
+    private void validateCorsNotWildcard(ConfigurableEnvironment env, String profile) {
+        String value = env.getProperty("YPAT_CORS_ORIGINS");
+        if (value == null) {
+            // validateRequired already raised on null in staging/prod.
+            return;
+        }
+        String trimmed = value.trim();
+        // Reject pure wildcard, mixed lists that contain a wildcard token,
+        // or the literal "null" / "none" someone might add thinking it disables CORS.
+        if ("*".equals(trimmed)) {
+            throw new IllegalStateException(
+                    "YPAT EnvironmentConfigurationValidator: [" + profile + "] YPAT_CORS_ORIGINS='*' "
+                            + "is forbidden. Use an explicit comma-separated origin list.");
+        }
+        for (String token : trimmed.split(",")) {
+            String t = token.trim();
+            if ("*".equals(t) || t.isEmpty()) {
+                throw new IllegalStateException(
+                        "YPAT EnvironmentConfigurationValidator: [" + profile + "] YPAT_CORS_ORIGINS "
+                                + "must not contain a wildcard or empty token: '" + trimmed + "'");
+            }
+        }
     }
 }

@@ -1,0 +1,66 @@
+name: CodeQL
+
+# PR-03: Static security analysis.
+#
+# CodeQL ships free with GitHub Advanced Security / public repos.
+# It analyzes both Java (backend) and JavaScript / TypeScript (frontend)
+# on every PR and on a nightly cron, then surfaces results inline
+# in the PR review UI.
+#
+# Scope is intentionally minimal: just enable CodeQL on the two
+# languages YPAT actually ships. We do not add Trivy / OWASP /
+# CycloneDX here — those belong to PR-10 (image scanning) and
+# are heavier and need their own workflow.
+
+on:
+  push:
+    branches:
+      - main
+      - main2
+      - refactor/backend-arch-upgrade
+  pull_request:
+    branches:
+      - main
+      - main2
+      - refactor/backend-arch-upgrade
+  schedule:
+    # Nightly full scan, off-peak UTC. Cron format is 5-field,
+    # GitHub schedules in UTC.
+    - cron: "17 3 * * *"
+  workflow_dispatch:
+
+permissions:
+  # CodeQL needs read on contents plus security-events write so it
+  # can upload SARIF to the Security tab.
+  contents: read
+  security-events: write
+
+jobs:
+  analyze:
+    name: Analyze (${{ matrix.language }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - language: java
+            build-mode: none    # Java is built by backend-test job; CodeQL only needs the source
+          - language: javascript-typescript
+            build-mode: none
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v3
+        with:
+          languages: ${{ matrix.language }}
+          build-mode: ${{ matrix.build-mode }}
+          # queries: +security-and-quality gives both vuln patterns
+          # and the maintainability rules; default is +security only.
+          queries: security-and-quality
+
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v3
+        with:
+          category: "/language:${{ matrix.language }}"
