@@ -1,0 +1,40 @@
+extends: ["spectral:oas"]
+
+# YPAT backend API contract rules.
+#
+# Goal: catch breaking changes and missing metadata before merge.
+# Strict enough to be useful, lenient enough not to fight PR-04's
+# initial baseline generation.
+#
+# Custom functions (e.g. has-response-schema) are deferred to PR-04
+# when the real spec content arrives. Until then we lean entirely on
+# Spectral's built-in ruleset (spectral:oas).
+
+rules:
+  # ── Metadata ──────────────────────────────────────────────
+  info-contact: warn
+  info-license: off            # internal project, no public license yet
+  oas3-api-servers: warn
+  operation-tag-defined: error
+
+  # ── Path & operation hygiene ──────────────────────────────
+  operation-operationId: error
+  operation-description: warn
+  operation-summary: error
+  path-params: error
+
+  # ── Parameters & responses ─────────────────────────────────
+  operation-parameters: error
+  operation-success-response: error
+  operation-tags: error
+
+  # ── Forbidden patterns ────────────────────────────────────
+  no-inline-schemas-in-arrays: error
+
+formats:
+  - oas3
+  - oas2
+
+ignore:
+  - "node_modules/**"
+  - "**/*.generated.yaml"
