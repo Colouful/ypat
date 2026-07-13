@@ -1,0 +1,85 @@
+name: backend / legacy Java 17
+
+# PR-05: prove that the legacy backend/ tree (Spring Boot 1.5.9)
+# still builds under Java 17.
+#
+# Why this matters:
+#   PR-04 introduced backend-v2/ on Spring Boot 2.7.18 + Java 17.
+#   The plan requires the *legacy* backend/ to keep compiling
+#   under Java 17 too, so we can run both side-by-side during the
+#   cut-over. If the legacy tree ever loses Java 17 compatibility,
+#   we have to find out on a PR — not on cut-over day.
+#
+# The job runs `mvn -B -ntp -Pdev -DskipTests package` against
+# the existing multi-module layout (system-object → system-domain
+# → system-restapi / system-wap / system-web / system-sso /
+# system-security) under JDK 17. We do NOT run the tests here —
+# that lives in the existing backend-test job in ci.yml on JDK 8.
+# This job only proves the source compiles cleanly.
+#
+# When this PR lands, JDK 17 is the new default for any developer
+# who sets JAVA_HOME to a 17 install. JDK 8 stays in the matrix
+# so the legacy backend can still ship in its original form while
+# the upgrade is in flight.
+
+on:
+  pull_request:
+    branches:
+      - main
+      - main2
+      - refactor/backend-arch-upgrade
+    paths:
+      - "backend/**"
+      - ".github/workflows/backend-java17.yml"
+  push:
+    branches:
+      - main
+      - main2
+      - refactor/backend-arch-upgrade
+    paths:
+      - "backend/**"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  compile-java17:
+    name: backend / compile (JDK 17)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+          cache: maven
+
+      - name: Maven package (-DskipTests) on JDK 17
+        # Match the local verification command:
+        #   mvn -Pdev -DskipTests package
+        # -Pdev picks up application-dev.yml resources.
+        # -DskipTests because tests are not the goal of this PR.
+        run: mvn -B -ntp -Pdev -DskipTests package
+
+      - name: Confirm jars produced
+        run: |
+          set -euo pipefail
+          missing=0
+          for module in system-object system-domain system-restapi system-web system-wap system-sso system-security; do
+            jar="target/${module}/target/${module}-1.0-SNAPSHOT.jar"
+            if [ -f "$jar" ]; then
+              echo "  ✓ $jar"
+            else
+              echo "  ✗ MISSING: $jar"
+              missing=$((missing+1))
+            fi
+          done
+          if [ "$missing" -gt 0 ]; then
+            echo "ERROR: $missing module jar(s) missing"; exit 1
+          fi
