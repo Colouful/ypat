@@ -1,0 +1,61 @@
+name: backend-v2 / Modulith
+
+# PR-12: Spring Modulith boundary enforcement.
+#
+# Runs ApplicationModules.of(...).verify() and the component
+# diagram generator. Modulith is expensive (it scans the full
+# classpath) so this job is on a separate workflow from the
+# cheap ArchUnit-only job in PR-06.
+#
+# Triggered by every push to a protected branch and every PR
+# touching backend-v2/. The component diagram is uploaded as a
+# build artifact so reviewers can see the module graph change.
+
+on:
+  pull_request:
+    branches:
+      - main
+      - main2
+      - refactor/backend-arch-upgrade
+    paths:
+      - "backend-v2/**"
+      - ".github/workflows/backend-v2-modulith.yml"
+  push:
+    branches:
+      - main
+      - main2
+      - refactor/backend-arch-upgrade
+    paths:
+      - "backend-v2/**"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  modulith:
+    name: backend-v2 / ModulithStructureTest
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend-v2
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+          cache: maven
+
+      - name: Run ModulithStructureTest
+        run: mvn -B -ntp -Dtest=ModulithStructureTest test
+
+      - name: Upload component diagram
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-v2-modulith-docs
+          path: backend-v2/target/spring-modulith-docs/
+          if-no-files-found: ignore
