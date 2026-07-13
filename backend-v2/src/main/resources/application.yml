@@ -1,0 +1,15 @@
+# backend-v2 base configuration.
+#
+# PR-04 only — minimal so the Spring Boot context can boot cleanly.
+# Profile-specific overrides land in application-dev.yml /
+# application-staging.yml / application-prod.yml in later PRs.
+
+server:
+  port: 8082
+  # Backend-v2 listens on 8082 so the existing system-wap (8081)
+  # and system-restapi (9081) keep their ports during the cut-over.
+  # Nginx will start routing selected prefixes here in PR-11.
+
+spring:
+  application:
+    name: ypat-backend-v2

@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+
+  backend-v2 — YPAT modular monolith, Spring Boot 3.5 + Java 21 (target).
+
+  PR-04 lays down the bare skeleton:
+    * Spring Boot 2.7.18 parent  (Java 17, javax.* — the jump-board)
+    * Java 17 source / target
+    * spring-boot-starter-web only
+    * No business code yet
+    * No springdoc-openapi (PR-?? will add it once a Controller exists)
+    * No Modulith (PR-12 enables it on the Spring Boot 3.5 jump)
+
+  The jump-board strategy is two-step:
+    1. PR-04 + PR-05: boot 2.7.18, Java 17. Old backend/ still runs.
+    2. PR-12: parent → 3.5.x, Java → 21, jakarta.* migration, Modulith on.
+
+  Keeping this pom minimal on purpose: every new dependency is a
+  contract that has to be reviewed and (later) maintained.
+-->
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
+                             https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <groupId>com.ypat</groupId>
+    <artifactId>backend-v2</artifactId>
+    <version>1.0.0-SNAPSHOT</version>
+    <packaging>jar</packaging>
+    <name>YPAT Backend v2 (jump-board skeleton)</name>
+
+    <parent>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-parent</artifactId>
+        <version>2.7.18</version>
+        <relativePath/>
+    </parent>
+
+    <properties>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+        <java.version>17</java.version>
+        <maven.compiler.source>17</maven.compiler.source>
+        <maven.compiler.target>17</maven.compiler.target>
+        <!-- Pin to Java 17 across all plugin executions so any
+             developer or CI agent that picks a newer JDK still
+             compiles with the right bytecode level. -->
+        <maven.compiler.release>17</maven.compiler.release>
+    </properties>
+
+    <dependencies>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-web</artifactId>
+        </dependency>
+
+        <!-- Test scope only. JUnit 5 ships with Spring Boot 2.7.x
+             starter test, so no explicit junit-jupiter dep needed. -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-maven-plugin</artifactId>
+            </plugin>
+        </plugins>
+    </build>
+</project>
