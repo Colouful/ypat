@@ -1,0 +1,16 @@
+# backend-v2 runtime Dockerfile.
+#
+# Build context is backend-v2/. The Spring Boot fat jar is
+# produced by scripts/docker-build-backend-v2.sh on the host
+# and copied into the build context as app.jar before this
+# build runs. We don't reach Maven Central from inside Docker.
+
+FROM eclipse-temurin:21-jre-alpine
+WORKDIR /app
+
+COPY app.jar /app/app.jar
+
+ENV SPRING_PROFILES_ACTIVE=docker
+
+EXPOSE 8082
+ENTRYPOINT ["java", "-jar", "/app/app.jar"]

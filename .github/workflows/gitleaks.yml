@@ -1,0 +1,59 @@
+name: Gitleaks
+
+# PR-03: Secret scanner.
+#
+# Blocks any PR that introduces a credential, API key, private key
+# PEM block, or other high-entropy token. Runs in 'redact' mode so
+# a real leak (if it ever happens) gets sanitized in the PR diff
+# rather than echoed into the action logs.
+#
+# We do NOT scan full git history here. The previous upgrade cycle
+# left some legacy test fixtures that mention historical secrets by
+# name (e.g. SecretExternalizationSourceTest deliberately checks
+# those strings are gone from source). Scanning history would
+# surface those historical secrets as leaks, which is noise.
+# Redact mode + PR-only scope is enough for the live surface.
+#
+# Why a separate workflow from CodeQL:
+#   - Gitleaks fails faster and more loudly than CodeQL for
+#     secrets specifically.
+#   - CodeQL needs read+security-events; gitleaks only needs read.
+#   - Splitting them makes the failing log obvious in PR review.
+
+on:
+  pull_request:
+    branches:
+      - main
+      - main2
+      - refactor/backend-arch-upgrade
+  push:
+    branches:
+      - main
+      - main2
+      - refactor/backend-arch-upgrade
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  scan:
+    name: gitleaks / detect
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # Full history needed for the default gitleaks mode,
+          # but we pin depth so the action doesn't try to fetch
+          # gigabytes of unrelated branches.
+          fetch-depth: 0
+
+      - name: Run gitleaks
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # Upload SARIF so leaks also show up in the Security tab.
+          GITLEAKS_ENABLE_UPLOAD_ARTIFACT: true
+          GITLEAKS_ENABLE_SUMMARY_ARTIFACT: true
+          # Comment on PR with what was found and where (redacted).
+          GITHUB_PR_COMMENT: "true"

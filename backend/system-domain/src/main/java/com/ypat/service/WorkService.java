@@ -35,6 +35,7 @@ import com.ypat.enums.YpatTarget;
 import com.ypat.repository.MessInfoRepository;
 import com.ypat.repository.RecordRepository;
 import com.ypat.repository.UserRepository;
+import org.springframework.dao.DataIntegrityViolationException;
 import com.ypat.repository.WorkComplainRepository;
 import com.ypat.repository.WorkFavoriteRepository;
 import com.ypat.repository.WorkLikeRepository;
@@ -964,5 +965,97 @@ public class WorkService {
         if (WX.matcher(text).find()) return true;
         if (QQ.matcher(text).find()) return true;
         return false;
+    }
+
+    // ─────────────────────────────────────────────────────────────
+    // PR-09: idempotent like / favorite.
+    //
+    // The existing like(), unlike(), favorite(), unfavorite() above
+    // use a "check then act" pattern (existsByWorkIdAndUserId →
+    // save/delete → increment/decrement). Two concurrent requests
+    // can both see "not yet liked" and both INSERT; one wins, the
+    // loser hits DataIntegrityViolation and the user sees a 500.
+    //
+    // The methods below do not pre-check. They rely on the
+    // UNIQUE KEY (work_id, user_id) on t_work_like and
+    // t_work_favorite (see tools/ddl/V3__favorite_like_unique_keys.sql)
+    // and treat DataIntegrityViolationException as "already in that
+    // state" — i.e. success. This is the database-backed
+    // idempotency guarantee V1.1 §3.2 calls for.
+    //
+    // Why we keep the old methods:
+    //   The current controllers call like() / favorite() and expect
+    //   a SysException("already liked") for the duplicate case. The
+    //   controllers and the legacy error contract stay untouched in
+    //   PR-09. PR-09 just adds the safe methods. PR-13 (WorkService
+    //   split) + PR-15 (user migration) are when we actually swap
+    //   the controllers over to these new names and update the
+    //   error contract.
+    //
+    // Counters: the existing workRepository.incrLikeCount /
+    // decrLikeCount / incrFavoriteCount / decrFavoriteCount are
+    // SQL 'SET count = count ± 1'. They do NOT use GREATEST(., 0).
+    // That means a stray cancel of a never-liked work would push the
+    // counter negative. We accept this for PR-09 and track the fix
+    // in PR-13 / PR-15. Today's volume is small enough that the
+    // reconciliation script in docs/architecture/schema-migration.md
+    // can keep things tidy.
+    // ─────────────────────────────────────────────────────────────
+
+    /**
+     * Idempotent like. Caller can invoke any number of times; only
+     * the first call increments like_count.
+     */
+    public void likeIdempotent(Long workId, Long userId) {
+        if (workId == null || userId == null) throw new SysException(ResponseCode.FAIL_AUTH);
+        WorkLike like = new WorkLike();
+        like.setWorkId(workId);
+        like.setUserId(userId);
+        like.setCreatedAt(new Date());
+        try {
+            workLikeRepository.save(like);
+        } catch (DataIntegrityViolationException dup) {
+            // UNIQUE (work_id, user_id) on t_work_like — already liked, idempotent OK.
+            return;
+        }
+        workRepository.incrLikeCount(workId);
+    }
+
+    /**
+     * Idempotent unlike. Cancellation is a no-op when the user
+     * never liked the work; no error thrown.
+     */
+    public void unlikeIdempotent(Long workId, Long userId) {
+        if (workId == null || userId == null) throw new SysException(ResponseCode.FAIL_AUTH);
+        int deleted = workLikeRepository.deleteByWorkIdAndUserId(workId, userId);
+        if (deleted == 0) return;     // never liked — nothing to do
+        workRepository.decrLikeCount(workId);
+    }
+
+    /**
+     * Idempotent favorite. Mirrors {@link #likeIdempotent(Long, Long)}.
+     */
+    public void favoriteIdempotent(Long workId, Long userId) {
+        if (workId == null || userId == null) throw new SysException(ResponseCode.FAIL_AUTH);
+        WorkFavorite fav = new WorkFavorite();
+        fav.setWorkId(workId);
+        fav.setUserId(userId);
+        fav.setCreatedAt(new Date());
+        try {
+            workFavoriteRepository.save(fav);
+        } catch (DataIntegrityViolationException dup) {
+            return;
+        }
+        workRepository.incrFavoriteCount(workId);
+    }
+
+    /**
+     * Idempotent unfavorite. Mirrors {@link #unlikeIdempotent(Long, Long)}.
+     */
+    public void unfavoriteIdempotent(Long workId, Long userId) {
+        if (workId == null || userId == null) throw new SysException(ResponseCode.FAIL_AUTH);
+        int deleted = workFavoriteRepository.deleteByWorkIdAndUserId(workId, userId);
+        if (deleted == 0) return;
+        workRepository.decrFavoriteCount(workId);
     }
 }
