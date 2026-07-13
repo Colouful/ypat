@@ -395,7 +395,7 @@ onMounted(loadConfigs)
   align-items: center;
   justify-content: space-between;
   gap: $spacing-lg;
-  margin-bottom: $spacing-md;
+  margin-bottom: $spacing-base;
 
   h1 {
     margin: 0;
@@ -447,7 +447,7 @@ onMounted(loadConfigs)
 }
 
 .discount-alert {
-  margin-top: $spacing-md;
+  margin-top: $spacing-base;
 }
 
 .rule-section {
