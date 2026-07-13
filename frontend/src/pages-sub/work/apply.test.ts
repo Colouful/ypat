@@ -6,18 +6,21 @@ describe('work apply page bean cost contract', () => {
   const file = fileURLToPath(new URL('./apply.vue', import.meta.url))
   const source = readFileSync(file, 'utf8')
 
-  it('shows current balance and apply cost in the fixed bottom bar', () => {
+  it('shows balance, original price, discount and actual cost in the fixed bottom bar', () => {
     expect(source).toContain('class="bottom-bar__cost"')
     expect(source).toContain('剩余拍豆')
-    expect(source).toContain('本次消耗')
+    expect(source).toContain('本次实扣')
+    expect(source).toContain('原价')
+    expect(source).toContain('会员优惠')
     expect(source).toContain('{{ currentPpd }}')
     expect(source).toContain('{{ applyCost }}')
   })
 
-  it('uses the shared apply bean cost constant instead of hardcoded copy', () => {
-    expect(source).toContain('APPLY_PPD')
-    expect(source).toContain('const applyCost = APPLY_PPD')
-    expect(source).not.toContain('1 拍拍豆')
+  it('loads the APPLY_YPAT quote and uses actual cost', () => {
+    expect(source).toContain("refreshBenefitQuote('APPLY_YPAT')")
+    expect(source).toContain('memberStore.quotes.APPLY_YPAT')
+    expect(source).toContain('quote.value?.actualPpd')
+    expect(source).not.toContain('const applyCost = APPLY_PPD')
   })
 
   it('refreshes balance before submit and guides low-balance users to recharge', () => {
@@ -49,5 +52,11 @@ describe('work apply page bean cost contract', () => {
     expect(source.indexOf('const latestTarget =')).toBeLessThan(source.indexOf('await refreshPpdBalance()'))
     expect(source).not.toContain('sendperid: currentUserId')
     expect(source).not.toContain('recperid: publisherId')
+  })
+
+  it('uses a 45 percent submit button and the theme color for key values', () => {
+    expect(source).toMatch(/\.bottom-bar__submit\s*\{[\s\S]*?width:\s*45%/)
+    expect(source).toMatch(/\.bottom-bar__value\s*\{[\s\S]*?color:\s*\$color-primary/)
+    expect(source).not.toContain('.bottom-bar__value--cost')
   })
 })
