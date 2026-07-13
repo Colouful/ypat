@@ -11,4 +11,14 @@ describe('ypat detail refresh contract', () => {
     expect(source).toContain('onShow(() => {')
     expect(source).toContain('detailView.value?.load()')
   })
+
+  it('详情视图展示主题标签区域', () => {
+    const detailViewFile = fileURLToPath(new URL('../../components/business/YpatDetailView.vue', import.meta.url))
+    const detailViewSource = readFileSync(detailViewFile, 'utf8')
+
+    expect(detailViewSource).toContain('v-if="topicTags.length"')
+    expect(detailViewSource).toContain('class="topic-tags__title"')
+    expect(detailViewSource).toContain('主题标签')
+    expect(detailViewSource).toContain('v-for="tag in topicTags"')
+  })
 })

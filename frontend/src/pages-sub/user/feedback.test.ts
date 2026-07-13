@@ -26,6 +26,16 @@ describe('feedback page', () => {
     expect(source).toContain('uploadFeedbackImage')
   })
 
+  it('updates upload state through reactive image entries', () => {
+    const file = fileURLToPath(new URL('./feedback.vue', import.meta.url))
+    const source = readFileSync(file, 'utf8')
+
+    expect(source).toContain('const startIndex = images.value.length')
+    expect(source).toContain('const uploadingImages = images.value.slice(startIndex)')
+    expect(source).toContain('Promise.all(uploadingImages.map(uploadOneImage))')
+    expect(source).not.toContain('Promise.all(pending.map(uploadOneImage))')
+  })
+
   it('keeps the submit area tappable and explains invalid form state', () => {
     const file = fileURLToPath(new URL('./feedback.vue', import.meta.url))
     const source = readFileSync(file, 'utf8')

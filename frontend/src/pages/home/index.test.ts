@@ -22,4 +22,12 @@ describe('home default filters', () => {
     expect(source).not.toContain("item.realnameflag === '1' || item.userQo?.realnameflag === '1'")
     expect(source).not.toContain("item.creditflag === '1' || item.userQo?.creditflag === '1'")
   })
+
+  it('把约拍主题标签解析后传给首页卡片', () => {
+    const file = fileURLToPath(new URL('./index.vue', import.meta.url))
+    const source = readFileSync(file, 'utf8')
+
+    expect(source).toContain('resolveYpatTopicTags(item.patstyle, item.patstyleTxt, topicTagOptions.value)')
+    expect(source).toContain('tags:')
+  })
 })

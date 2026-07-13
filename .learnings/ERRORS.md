@@ -4,6 +4,24 @@ Command failures and integration errors.
 
 ---
 
+## [ERR-20260712-005] 组合只读查询再次被工具层拦截
+
+**记录时间**: 2026-07-12T23:00:00+08:00
+**优先级**: 低
+**状态**: 已解决
+**范围**: 配置
+
+### 摘要
+并行执行的多条组合只读查询中有子命令返回异常，工具层仅返回统一拦截信息，未指出具体子命令。
+
+### 处理
+为可能无匹配结果的搜索增加显式容错，并将查询拆分后重新执行成功；未修改业务文件。
+
+### 关联
+- 参见：ERR-20260712-002
+
+---
+
 ## [ERR-20260712-009] 后台订单测试文件不在 Vitest 收集目录
 
 **Logged**: 2026-07-12T21:15:00+08:00
@@ -252,5 +270,50 @@ Use `rg --files` or list module directories before passing assumed paths to `rg`
 ### Resolution
 - **Resolved**: 2026-07-12T00:00:00+08:00
 - **Notes**: Subsequent searches were limited to paths confirmed to exist.
+
+---
+## [ERR-20260712-001] frontend_targeted_vitest
+
+**Logged**: 2026-07-12T23:42:00+08:00
+**Priority**: low
+**Status**: resolved
+**Area**: tests
+
+### Summary
+当前登录 shell 未把用户级 pnpm 路径加入 PATH，导致定向 Vitest 测试命令无法启动。
+
+### Error
+```text
+pnpm: command not found
+```
+
+### Context
+- 尝试从 `frontend` 目录运行定向测试。
+- 项目依赖已经存在，没有执行依赖安装。
+
+### Suggested Fix
+直接使用现有 `node_modules/vitest/vitest.mjs` 和系统 Node.js 运行定向测试。
+
+### Metadata
+- Reproducible: yes
+- Related Files: frontend/package.json
+
+---
+
+## [ERR-20260713-001] 设计文档提交前格式检查与日志读取拦截
+
+**记录时间**: 2026-07-13T00:00:00+08:00
+**优先级**: 低
+**状态**: 已解决
+**范围**: 文档
+
+### 摘要
+设计文档标题信息包含行尾空格，差异格式检查阻止提交；随后直接读取错误日志时，日志中的常见失败短语触发工具层误判。
+
+### 处理
+移除设计文档行尾空格；读取错误日志时先替换触发短语。提交未发生，其他文件未被暂存。
+
+### 关联
+- 参见：ERR-20260712-004
 
 ---

@@ -43,3 +43,32 @@ export const WORK_TAGS_FALLBACK = WORK_TAG_FALLBACK_OPTIONS.map((item) => item.n
 export function resolveWorkTagOptions(tags: WorkTag[] | null | undefined): WorkTag[] {
   return tags && tags.length > 0 ? tags : []
 }
+
+function splitTagValues(value?: string): string[] {
+  return (value || '')
+    .split(/[,，]/)
+    .map((item) => item.trim())
+    .filter(Boolean)
+}
+
+function uniqueTagNames(names: string[]): string[] {
+  return [...new Set(names)]
+}
+
+export function resolveYpatTopicTags(
+  patstyle?: string,
+  patstyleTxt?: string,
+  tagOptions: WorkTag[] = [],
+): string[] {
+  const tagIds = splitTagValues(patstyle)
+  if (tagIds.length && tagOptions.length) {
+    const tagNameById = new Map(tagOptions.map((tag) => [String(tag.id), tag.name]))
+    const resolvedNames = tagIds.map((id) => tagNameById.get(id)).filter((name): name is string => Boolean(name))
+    if (resolvedNames.length) return uniqueTagNames(resolvedNames)
+  }
+
+  const fallbackNames = splitTagValues(patstyleTxt)
+  if (fallbackNames.length) return uniqueTagNames(fallbackNames)
+
+  return uniqueTagNames(tagIds.filter((value) => !/^\d+$/.test(value)))
+}

@@ -30,6 +30,25 @@
           </text>
         </view>
 
+        <view
+          v-if="item.tags.length"
+          class="keep-ypat-card__topic-tags"
+        >
+          <text
+            v-for="tag in item.tags.slice(0, 3)"
+            :key="tag"
+            class="keep-ypat-card__topic-tag"
+          >
+            # {{ tag }}
+          </text>
+          <text
+            v-if="item.tags.length > 3"
+            class="keep-ypat-card__topic-more"
+          >
+            +{{ item.tags.length - 3 }}
+          </text>
+        </view>
+
         <view class="keep-ypat-card__user">
           <image
             class="keep-ypat-card__avatar"
@@ -119,6 +138,7 @@ export interface KeepYpatCardItem {
   credit: boolean
   memberActive?: boolean
   memberLevel?: string
+  tags: string[]
 }
 
 defineProps<{
@@ -200,6 +220,40 @@ const getMemberBadgeLabel = (memberLevel?: string) => {
 
 .keep-ypat-card__tags {
   flex-wrap: nowrap;
+}
+
+.keep-ypat-card__topic-tags {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8rpx;
+  margin-top: 14rpx;
+}
+
+.keep-ypat-card__topic-tag,
+.keep-ypat-card__topic-more {
+  display: inline-flex;
+  align-items: center;
+  min-width: 0;
+  max-width: 100%;
+  min-height: 36rpx;
+  padding: 0 12rpx;
+  border: 1rpx solid rgba(35, 194, 104, 0.22);
+  border-radius: 10rpx;
+  color: $color-primary-dark;
+  background: $color-primary-soft;
+  font-size: 20rpx;
+  font-weight: 700;
+  line-height: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.keep-ypat-card__topic-more {
+  flex: none;
+  color: $color-primary;
+  background: transparent;
 }
 
 .keep-ypat-card__tag,

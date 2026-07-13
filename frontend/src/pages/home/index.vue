@@ -95,8 +95,10 @@ import { onPullDownRefresh, onReachBottom, onShow } from '@dcloudio/uni-app'
 import { useUserStore } from '@/stores/user'
 import { useAppStore } from '@/stores/app'
 import * as ypatApi from '@/api/modules/ypat'
+import { getWorkTags } from '@/api/modules/dict'
 import { normalizeImageUrl } from '@/api/adapters'
 import { CHARGE_WAY_LABELS, PHOTO_STYLES, TARGET_LABELS } from '@/constants/enums'
+import { resolveYpatTopicTags } from '@/constants/work-tags'
 import KeepFilterSheet, { type KeepFilterGroup } from '@/components/business/KeepFilterSheet.vue'
 import KeepIcon from '@/components/business/KeepIcon.vue'
 import KeepState from '@/components/business/KeepState.vue'
@@ -105,6 +107,7 @@ import KeepYpatCard, { type KeepYpatCardItem } from '@/components/business/KeepY
 import HomeBanner from '@/components/business/HomeBanner.vue'
 import SplashOverlay from '@/components/business/SplashOverlay.vue'
 import type { YpatInfo } from '@/api/types/index'
+import type { WorkTag } from '@/api/types/work'
 import { resolveYpatCreditFlag, resolveYpatRealnameFlag } from '@/utils/ypat-trust'
 
 type TabKey = 'recommend' | 'nearby' | 'latest'
@@ -120,6 +123,7 @@ const activeTab = ref<TabKey>('recommend')
 const activeChip = ref('all')
 const loading = ref(false)
 const list = ref<YpatInfo[]>([])
+const topicTagOptions = ref<WorkTag[]>([])
 const page = ref(0)
 const totalCount = ref(0)
 const hasMore = ref(true)
@@ -201,7 +205,17 @@ const cardItems = computed<KeepYpatCardItem[]>(() => list.value.map((item) => ({
   credit: resolveYpatCreditFlag(item.creditflag, item.userQo?.creditflag),
   memberActive: item.userQo?.memberActive === true,
   memberLevel: item.userQo?.memberLevel,
+  tags: resolveYpatTopicTags(item.patstyle, item.patstyleTxt, topicTagOptions.value),
 })))
+
+async function loadTopicTagOptions(): Promise<void> {
+  try {
+    const result = await getWorkTags()
+    topicTagOptions.value = result.data || []
+  } catch {
+    topicTagOptions.value = []
+  }
+}
 
 function buildParams() {
   const target = filterValue.value.target?.find((value) => value !== 'all')
@@ -361,6 +375,7 @@ async function getLocation() {
 
 onMounted(() => {
   loadList(true)
+  void loadTopicTagOptions()
   // 不要在 onMounted 自动调 uni.getLocation：开发者工具/真机都没授权时会卡死
   // 改成在用户切到"附近" tab 时按需请求（switchTab 中处理）
 })

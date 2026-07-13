@@ -119,4 +119,11 @@ describe('mp-weixin component styles', () => {
 
     expect(source).toMatch(/&__submit\s*\{[\s\S]*position:\s*fixed;[\s\S]*z-index:\s*\d+;/)
   })
+
+  it('reserves the bottom safe area so the ypat portfolio is not covered by fixed actions', () => {
+    const file = fileURLToPath(new URL('../YpatDetailView.vue', import.meta.url))
+    const source = readFileSync(file, 'utf8')
+
+    expect(source).toMatch(/\.detail-page\s*\{[^}]*padding-bottom:\s*calc\(168rpx \+ env\(safe-area-inset-bottom\)\);/s)
+  })
 })

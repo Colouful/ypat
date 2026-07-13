@@ -114,9 +114,11 @@ async function chooseFeedbackImages(): Promise<void> {
   if (remain <= 0) return
   try {
     const files = await chooseImages({ count: remain })
+    const startIndex = images.value.length
     const pending = files.map((file) => ({ localPath: file.path, uploading: true }))
     images.value = images.value.concat(pending)
-    await Promise.all(pending.map(uploadOneImage))
+    const uploadingImages = images.value.slice(startIndex)
+    await Promise.all(uploadingImages.map(uploadOneImage))
   } catch {
     uni.showToast({ title: '未选择图片', icon: 'none' })
   }

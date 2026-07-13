@@ -42,7 +42,9 @@
         <swiper
           class="hero-swiper"
           circular
+          :current="currentImageIndex"
           :indicator-dots="images.length > 1"
+          @change="changeHeroImage"
         >
           <swiper-item
             v-for="(image, index) in images"
@@ -56,7 +58,7 @@
           </swiper-item>
         </swiper>
         <view class="hero-count">
-          1 / {{ images.length || 1 }}
+          {{ currentImageIndex + 1 }} / {{ images.length || 1 }}
         </view>
       </view>
 
@@ -129,16 +131,21 @@
         </text>
 
         <view
-          v-if="styleTags.length"
-          class="style-tags"
+          v-if="topicTags.length"
+          class="topic-tags"
         >
-          <text
-            v-for="style in styleTags"
-            :key="style"
-            class="style-tag"
-          >
-            {{ style }}
+          <text class="topic-tags__title">
+            主题标签
           </text>
+          <view class="topic-tags__list">
+            <text
+              v-for="tag in topicTags"
+              :key="tag"
+              class="topic-tags__item"
+            >
+              # {{ tag }}
+            </text>
+          </view>
         </view>
 
         <view
@@ -237,12 +244,15 @@
 import { computed, ref, watch } from 'vue'
 import { useUserStore } from '@/stores/user'
 import * as ypatApi from '@/api/modules/ypat'
+import { getWorkTags } from '@/api/modules/dict'
 import { put } from '@/api/request'
 import { normalizeImageUrl } from '@/api/adapters'
 import { getProfessLabel, TARGET_LABELS } from '@/constants/enums'
+import { resolveYpatTopicTags } from '@/constants/work-tags'
 import KeepIcon from './KeepIcon.vue'
 import KeepState from './KeepState.vue'
 import type { YpatInfo } from '@/api/types'
+import type { WorkTag } from '@/api/types/work'
 import { goRootTab } from '@/utils/tab-navigation'
 import { resolveYpatCreditFlag, resolveYpatRealnameFlag } from '@/utils/ypat-trust'
 
@@ -252,16 +262,22 @@ const emit = defineEmits<{
 }>()
 const userStore = useUserStore()
 const detail = ref<YpatInfo | null>(null)
+const topicTagOptions = ref<WorkTag[]>([])
 const loading = ref(false)
 const actionLoading = ref(false)
 const errorMessage = ref('')
 const favorited = ref(false)
+const currentImageIndex = ref(0)
 const images = computed(() => detail.value?.pics?.map(normalizeImageUrl).filter(Boolean) || ['/static/default-cover.png'])
-const portfolioImages = computed(() => images.value.slice(0, 6).concat(Array(Math.max(0, 6 - images.value.length)).fill('/static/default-cover.png')))
+const portfolioImages = computed(() => images.value.slice(0, 6))
 const authorAvatar = computed(() => normalizeImageUrl(detail.value?.userQo?.imgpath || detail.value?.userQo?.avatarurl) || '/static/default-avatar.png')
 const detailTitle = computed(() => detail.value?.describ?.split('\n')[0] || detail.value?.targetTxt || '约拍详情')
 const cityText = computed(() => [detail.value?.city, detail.value?.area].filter(Boolean).join('·') || '同城')
-const styleTags = computed(() => (detail.value?.patstyleTxt || detail.value?.patstyle || '').split(/[,，\s]+/).filter(Boolean).slice(0, 6))
+const topicTags = computed(() => resolveYpatTopicTags(
+  detail.value?.patstyle,
+  detail.value?.patstyleTxt,
+  topicTagOptions.value,
+))
 const targetLabel = computed(() => detail.value ? TARGET_LABELS[detail.value.target] || '约拍' : '约拍')
 const authorName = computed(() => detail.value?.userQo?.nickname || '匿名用户')
 const publisherId = computed(() => Number(detail.value?.userid || detail.value?.userQo?.id || 0))
@@ -316,9 +332,11 @@ async function load(): Promise<void> {
   }
   loading.value = true
   errorMessage.value = ''
+  void loadTopicTagOptions()
   try {
     const result = await ypatApi.getDetail(props.id)
     detail.value = result.data
+    currentImageIndex.value = 0
     favorited.value = result.data?.colflag === '1'
     emit('share-meta', {
       title: detailTitle.value,
@@ -332,8 +350,22 @@ async function load(): Promise<void> {
   }
 }
 
+async function loadTopicTagOptions(): Promise<void> {
+  if (topicTagOptions.value.length) return
+  try {
+    const result = await getWorkTags()
+    topicTagOptions.value = result.data || []
+  } catch {
+    topicTagOptions.value = []
+  }
+}
+
 function preview(index: number): void {
   uni.previewImage({ current: index, urls: images.value })
+}
+
+function changeHeroImage(event: { detail: { current: number } }): void {
+  currentImageIndex.value = event.detail.current
 }
 
 function back(): void {
@@ -404,7 +436,7 @@ defineExpose({ load })
 
 .detail-page {
   min-height: 100vh;
-  padding-bottom: 168rpx;
+  padding-bottom: calc(168rpx + env(safe-area-inset-bottom));
   background: $color-bg-page;
 }
 
@@ -471,7 +503,7 @@ defineExpose({ load })
 }
 
 .detail-tags,
-.style-tags {
+.topic-tags__list {
   display: flex;
   flex-wrap: wrap;
   gap: 14rpx;
@@ -484,8 +516,7 @@ defineExpose({ load })
   min-width: 0;
 }
 
-.detail-tag,
-.style-tag {
+.detail-tag {
   display: inline-flex;
   align-items: center;
   gap: 6rpx;
@@ -593,8 +624,33 @@ defineExpose({ load })
   line-height: 1.75;
 }
 
-.style-tags {
+.topic-tags {
   margin-top: 28rpx;
+  padding: 24rpx 26rpx;
+  border: 1rpx solid rgba(35, 194, 104, 0.18);
+  border-radius: 20rpx;
+  background: $color-primary-soft;
+}
+
+.topic-tags__title {
+  display: block;
+  margin-bottom: 16rpx;
+  color: $color-primary-dark;
+  font-size: 24rpx;
+  font-weight: 900;
+}
+
+.topic-tags__item {
+  display: inline-flex;
+  align-items: center;
+  max-width: 100%;
+  padding: 10rpx 20rpx;
+  border: 1rpx solid rgba(35, 194, 104, 0.24);
+  border-radius: $radius-round;
+  color: $color-primary-dark;
+  background: rgba(255, 255, 255, 0.78);
+  font-size: 24rpx;
+  font-weight: 800;
 }
 
 .author-card {

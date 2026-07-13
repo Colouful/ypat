@@ -1,0 +1,91 @@
+<style>
+  .choices { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:22px; margin-top:20px; }
+  .choice { border:1px solid #dfe5e2; border-radius:8px; overflow:hidden; background:#fff; cursor:pointer; }
+  .choice.selected { border-color:#17a857; box-shadow:0 0 0 2px rgba(23,168,87,.14); }
+  .choice-head { display:flex; align-items:center; justify-content:space-between; padding:13px 15px; border-bottom:1px solid #edf1ef; }
+  .badge { padding:3px 8px; border-radius:4px; color:#137c43; background:#e8f7ef; font-size:12px; font-weight:700; }
+  .phones { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; padding:14px; background:#f2f4f3; }
+  .phone { position:relative; min-width:0; height:315px; overflow:hidden; border:5px solid #272b29; border-radius:24px; background:#f5f7f6; }
+  .phone-title { padding:16px 12px 8px; color:#242a27; font-size:11px; font-weight:800; text-align:center; }
+  .ghost { margin:8px 10px; height:44px; border-radius:7px; background:#fff; box-shadow:0 2px 8px rgba(35,45,40,.05); }
+  .ghost.tall { height:68px; }
+  .bottom { position:absolute; right:0; bottom:0; left:0; display:flex; align-items:center; gap:8px; padding:10px 10px 14px; border-top:1px solid #e4e9e6; background:rgba(255,255,255,.98); }
+  .summary { min-width:0; flex:1; padding:9px 10px; border:1px solid rgba(23,168,87,.16); border-radius:10px; background:#f2fbf6; }
+  .summary-top { display:flex; align-items:baseline; gap:5px; white-space:nowrap; }
+  .label { color:#65706a; font-size:9px; font-weight:700; }
+  .value { color:#17a857; font-size:18px; font-weight:900; line-height:1; }
+  .unit { color:#65706a; font-size:9px; font-weight:700; }
+  .detail { display:flex; align-items:center; gap:5px; margin-top:6px; color:#8a938e; font-size:8px; white-space:nowrap; }
+  .old { text-decoration:line-through; }
+  .discount { padding:2px 5px; border-radius:3px; color:#137c43; background:#dff5e8; font-weight:800; }
+  .button { display:flex; align-items:center; justify-content:center; width:72px; height:50px; flex:none; border-radius:25px; color:#fff; background:#17a857; font-size:11px; font-weight:900; }
+  .metric-wrap { display:flex; align-items:stretch; min-width:0; flex:1; padding:7px 6px; border:1px solid rgba(23,168,87,.16); border-radius:10px; background:#f2fbf6; }
+  .metric { min-width:0; flex:1; text-align:center; }
+  .metric + .metric { border-left:1px solid #dce8e1; }
+  .metric-name { color:#78817c; font-size:7px; }
+  .metric-number { margin-top:3px; color:#17a857; font-size:13px; font-weight:900; }
+  .metric-sub { margin-top:2px; color:#78817c; font-size:7px; }
+  .choice-note { padding:13px 15px; color:#6d7771; font-size:12px; line-height:1.55; }
+  @media (max-width:960px) { .choices { grid-template-columns:1fr; } }
+</style>
+
+<h2>小程序底部拍豆结算栏</h2>
+<p class="subtitle">两种方案都让费用信息与提交按钮处于同一行，并使用主题绿色突出实扣金额</p>
+
+<div class="choices">
+  <div class="choice" data-choice="stacked-summary" onclick="toggleSelect(this)">
+    <div class="choice-head"><strong>方案 A · 主次两层费用摘要</strong><span class="badge">推荐</span></div>
+    <div class="phones">
+      <div class="phone">
+        <div class="phone-title">发布约拍</div><div class="ghost tall"></div><div class="ghost"></div><div class="ghost tall"></div>
+        <div class="bottom">
+          <div class="summary">
+            <div class="summary-top"><span class="label">本次实扣</span><span class="value">1</span><span class="unit">拍豆</span></div>
+            <div class="detail"><span class="old">原价 3</span><span class="discount">会员优惠 -2</span></div>
+          </div>
+          <div class="button">发布约拍</div>
+        </div>
+      </div>
+      <div class="phone">
+        <div class="phone-title">发起约拍申请</div><div class="ghost"></div><div class="ghost tall"></div><div class="ghost"></div>
+        <div class="bottom">
+          <div class="summary">
+            <div class="summary-top"><span class="label">本次实扣</span><span class="value">1</span><span class="unit">拍豆</span></div>
+            <div class="detail"><span>余额 18</span><span class="old">原价 3</span><span class="discount">会员优惠 -2</span></div>
+          </div>
+          <div class="button">确认提交</div>
+        </div>
+      </div>
+    </div>
+    <div class="choice-note">先读“本次实扣”，再看余额、原价和优惠。层级明确，最长文案也能稳定放入小屏幕。</div>
+  </div>
+
+  <div class="choice" data-choice="three-metrics" onclick="toggleSelect(this)">
+    <div class="choice-head"><strong>方案 B · 三列数字指标</strong><span style="color:#89928d;font-size:12px">更密集</span></div>
+    <div class="phones">
+      <div class="phone">
+        <div class="phone-title">发布约拍</div><div class="ghost tall"></div><div class="ghost"></div><div class="ghost tall"></div>
+        <div class="bottom">
+          <div class="metric-wrap">
+            <div class="metric"><div class="metric-name">原价</div><div class="metric-number">3</div><div class="metric-sub">拍豆</div></div>
+            <div class="metric"><div class="metric-name">会员优惠</div><div class="metric-number">-2</div><div class="metric-sub">拍豆</div></div>
+            <div class="metric"><div class="metric-name">实扣</div><div class="metric-number">1</div><div class="metric-sub">拍豆</div></div>
+          </div>
+          <div class="button">发布约拍</div>
+        </div>
+      </div>
+      <div class="phone">
+        <div class="phone-title">发起约拍申请</div><div class="ghost"></div><div class="ghost tall"></div><div class="ghost"></div>
+        <div class="bottom">
+          <div class="metric-wrap">
+            <div class="metric"><div class="metric-name">余额</div><div class="metric-number">18</div><div class="metric-sub">拍豆</div></div>
+            <div class="metric"><div class="metric-name">优惠</div><div class="metric-number">-2</div><div class="metric-sub">拍豆</div></div>
+            <div class="metric"><div class="metric-name">实扣</div><div class="metric-number">1</div><div class="metric-sub">拍豆</div></div>
+          </div>
+          <div class="button">确认提交</div>
+        </div>
+      </div>
+    </div>
+    <div class="choice-note">数字并列便于对比，但在窄屏幕上标签较小，报名页也无法同时完整展示余额、原价、优惠和实扣。</div>
+  </div>
+</div>

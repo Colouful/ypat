@@ -6,6 +6,7 @@ import YpatDetailView from '../YpatDetailView.vue'
 
 const {
   getDetail,
+  getWorkTags,
   addFavorite,
   applyYpat,
   put,
@@ -20,6 +21,7 @@ const {
   showModal,
 } = vi.hoisted(() => ({
   getDetail: vi.fn(),
+  getWorkTags: vi.fn(),
   addFavorite: vi.fn(),
   applyYpat: vi.fn(),
   put: vi.fn(() => Promise.resolve({})),
@@ -38,6 +40,10 @@ vi.mock('@/api/modules/ypat', () => ({
   getDetail,
   addFavorite,
   applyYpat,
+}))
+
+vi.mock('@/api/modules/dict', () => ({
+  getWorkTags,
 }))
 
 vi.mock('@/api/request', () => ({
@@ -112,6 +118,8 @@ describe('YpatDetailView', () => {
 
   beforeEach(() => {
     getDetail.mockReset()
+    getWorkTags.mockReset()
+    getWorkTags.mockResolvedValue({ data: [] })
     addFavorite.mockReset()
     applyYpat.mockReset()
     put.mockClear()
@@ -142,6 +150,33 @@ describe('YpatDetailView', () => {
       showToast,
       showModal,
     })
+  })
+
+  it('作品区只渲染接口返回的真实图片，不使用默认封面补足数量', async () => {
+    const pics = [
+      'https://imgs.example.com/portfolio-1.jpg',
+      'https://imgs.example.com/portfolio-2.jpg',
+      'https://imgs.example.com/portfolio-3.jpg',
+    ]
+    const wrapper = await mountWithDetail(createDetail({ pics }))
+
+    const portfolioImages = wrapper.findAll('.portfolio-grid image')
+
+    expect(portfolioImages).toHaveLength(3)
+    expect(portfolioImages.map((image) => image.attributes('src'))).toEqual(pics)
+    expect(portfolioImages.some((image) => image.attributes('src') === '/static/default-cover.png')).toBe(false)
+  })
+
+  it('轮播切换后展示当前图片序号', async () => {
+    const wrapper = await mountWithDetail(createDetail({
+      pics: ['/upload/cover-1.jpg', '/upload/cover-2.jpg', '/upload/cover-3.jpg'],
+    }))
+
+    expect(wrapper.find('.hero-count').text()).toBe('1 / 3')
+
+    await wrapper.find('.hero-swiper').trigger('change', { detail: { current: 1 } })
+
+    expect(wrapper.find('.hero-count').text()).toBe('2 / 3')
   })
 
   it('为已认证已缴担保金会员作者展示主信息信任状态和会员徽标', async () => {
