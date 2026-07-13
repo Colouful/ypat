@@ -23,4 +23,9 @@ describe('消息详情联系方式报价', () => {
     )
     expect(source).toContain('费用加载失败，点击重试')
   })
+
+  it('restores already unlocked contact details without showing the paid action', () => {
+    expect(source).toContain("if (message.value?.linkwayflag === '1')")
+    expect(source).toContain('await revealContact()')
+  })
 })

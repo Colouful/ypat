@@ -97,6 +97,9 @@ async function loadDetail(): Promise<void> {
   loading.value = true
   try {
     message.value = (await messageApi.getMessageDetail(messageId.value, userStore.userInfo.id)).data
+    if (message.value?.linkwayflag === '1') {
+      await revealContact()
+    }
     void userStore.refreshUnreadCount()
   } catch (err) {
     error.value = err instanceof Error ? err.message : '消息加载失败'
