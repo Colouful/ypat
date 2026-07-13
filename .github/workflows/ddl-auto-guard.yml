@@ -1,0 +1,38 @@
+name: ddl-auto guard
+
+# PR-01a: blocks any PR that re-introduces `ddl-auto: update`
+# (or create / create-drop) in backend application*.yml files.
+# PR-01b will tighten this further once `validate` is the default.
+
+on:
+  pull_request:
+    branches:
+      - main
+      - main2
+      - refactor/backend-arch-upgrade
+    paths:
+      - "backend/**/application*.yml"
+      - "backend/**/application*.properties"
+      - "tools/check-ddl-auto.sh"
+      - ".github/workflows/ddl-auto-guard.yml"
+  push:
+    branches:
+      - main
+      - main2
+      - refactor/backend-arch-upgrade
+    paths:
+      - "backend/**/application*.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  guard:
+    name: ddl-auto / static check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Run ddl-auto guard
+        run: bash tools/check-ddl-auto.sh
