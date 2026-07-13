@@ -44,22 +44,24 @@
     </view>
 
     <view class="bottom-bar">
-      <view class="bottom-bar__cost" :class="{ 'bottom-bar__cost--warning': isBalanceInsufficient }">
-        <view class="cost-metric">
-          <text class="bottom-bar__label">剩余拍豆</text>
-          <view class="cost-metric__line">
-            <text class="bottom-bar__value">{{ currentPpd }}</text>
-            <text class="bottom-bar__unit">拍豆</text>
+      <view class="bottom-bar__cost" :class="{ 'bottom-bar__cost--warning': isBalanceInsufficient }" @tap="retryQuote">
+        <text v-if="quoteLoading" class="bottom-bar__quote-status">费用加载中...</text>
+        <text v-else-if="quoteFailed" class="bottom-bar__quote-status bottom-bar__quote-status--error">
+          费用加载失败，点击重试
+        </text>
+        <template v-else-if="quote">
+          <view class="bottom-bar__summary">
+            <text class="bottom-bar__balance">剩余拍豆 {{ currentPpd }}</text>
+            <text class="bottom-bar__actual">
+              本次实扣 <text class="bottom-bar__value">{{ applyCost }}</text> 拍豆
+            </text>
           </view>
-        </view>
-        <view class="bottom-bar__divider" />
-        <view class="cost-metric">
-          <text class="bottom-bar__label">本次消耗</text>
-          <view class="cost-metric__line">
-            <text class="bottom-bar__value bottom-bar__value--cost">{{ applyCost }}</text>
-            <text class="bottom-bar__unit">拍豆</text>
+          <view class="bottom-bar__detail">
+            <text :class="{ 'bottom-bar__original--discounted': discountPpd > 0 }">原价 {{ originalApplyCost }}</text>
+            <text v-if="discountPpd > 0">会员优惠 -{{ discountPpd }}</text>
+            <text v-else>暂无会员优惠</text>
           </view>
-        </view>
+        </template>
       </view>
       <button
         class="bottom-bar__submit"
@@ -85,7 +87,8 @@ import KeepPageNav from '@/components/business/KeepPageNav.vue'
 import { getDetail, quickApply } from '@/api/modules/work'
 import * as ypatApi from '@/api/modules/ypat'
 import { normalizeImageUrl } from '@/api/adapters'
-import { APPLY_PPD, getProfessLabel, TARGET_LABELS } from '@/constants/enums'
+import { getProfessLabel, TARGET_LABELS } from '@/constants/enums'
+import { useMemberStore } from '@/stores/member'
 import { useUserStore } from '@/stores/user'
 import { preloadMessageSubscribeTemplates, requestMessageSubscribe } from '@/utils/subscribe-message'
 import type { YpatInfo } from '@/api/types'
@@ -94,6 +97,7 @@ import type { WorkDetail } from '@/api/types/work'
 const SAFETY_KEY = 'ypat_work_apply_safety_until'
 
 const userStore = useUserStore()
+const memberStore = useMemberStore()
 const workId = ref(0)
 const ypatId = ref(0)
 const work = ref<WorkDetail | null>(null)
@@ -102,10 +106,15 @@ const reason = ref('')
 const mobile = ref('')
 const wx = ref('')
 const submitting = ref(false)
+const quoteLoading = ref(true)
+const quoteFailed = ref(false)
 
-const applyCost = APPLY_PPD
+const quote = computed(() => memberStore.quotes.APPLY_YPAT ?? null)
+const applyCost = computed(() => quote.value?.actualPpd ?? 0)
+const originalApplyCost = computed(() => quote.value?.originalPpd ?? 0)
+const discountPpd = computed(() => quote.value?.discountPpd ?? 0)
 const currentPpd = computed(() => Number(userStore.userInfo?.ppd || 0))
-const isBalanceInsufficient = computed(() => currentPpd.value < applyCost)
+const isBalanceInsufficient = computed(() => currentPpd.value < applyCost.value)
 const isAlreadyApplied = computed(() => ypatId.value ? ypat.value?.msgflag === '1' : work.value?.isApplied === true)
 const applyTarget = computed(() => {
   if (ypat.value) {
@@ -133,6 +142,9 @@ const authorMeta = computed(() => {
 })
 const submitDisabled = computed(() => (
   submitting.value
+  || quoteLoading.value
+  || quoteFailed.value
+  || !quote.value
   || isAlreadyApplied.value
   || reason.value.trim().length < 8
   || (!mobile.value.trim() && !wx.value.trim())
@@ -190,10 +202,27 @@ async function refreshPpdBalance(): Promise<number> {
   }
 }
 
+async function refreshApplyQuote(): Promise<void> {
+  quoteLoading.value = true
+  quoteFailed.value = false
+  try {
+    const result = await memberStore.refreshBenefitQuote('APPLY_YPAT')
+    quoteFailed.value = !result
+  } catch {
+    quoteFailed.value = true
+  } finally {
+    quoteLoading.value = false
+  }
+}
+
+function retryQuote(): void {
+  if (quoteFailed.value && !quoteLoading.value) void refreshApplyQuote()
+}
+
 function showRechargeGuide(balance = currentPpd.value): void {
   uni.showModal({
     title: '拍豆余额不足',
-    content: `当前剩余 ${balance} 拍豆，本次提交需要 ${applyCost} 拍豆。充值后再回来提交约拍申请吧。`,
+    content: `当前剩余 ${balance} 拍豆，本次提交需要 ${applyCost.value} 拍豆。充值后再回来提交约拍申请吧。`,
     confirmText: '去充值',
     cancelText: '稍后再说',
     success: ({ confirm }) => confirm && uni.navigateTo({ url: '/pages-sub/user/recharge' }),
@@ -214,7 +243,7 @@ async function submitApply(): Promise<void> {
       return
     }
     const latestPpd = await refreshPpdBalance()
-    if (latestPpd < applyCost) {
+    if (latestPpd < applyCost.value) {
       showRechargeGuide(latestPpd)
       return
     }
@@ -265,6 +294,7 @@ onLoad((options) => {
 
 onShow(() => {
   void refreshPpdBalance()
+  void refreshApplyQuote()
 })
 </script>
 
@@ -436,80 +466,81 @@ onShow(() => {
   z-index: 100;
   display: flex;
   align-items: center;
-  gap: 18rpx;
   padding: 18rpx 28rpx calc(18rpx + env(safe-area-inset-bottom));
   background: rgba(255, 255, 255, 0.96);
   box-shadow: 0 -10rpx 30rpx rgba(20, 24, 31, 0.08);
 }
 
 .bottom-bar__cost {
-  display: flex;
-  align-items: center;
-  flex: 1;
+  width: 55%;
   min-width: 0;
-  padding: 16rpx 18rpx;
+  box-sizing: border-box;
+  padding: 12rpx 18rpx 12rpx 0;
   border: 2rpx solid rgba(35, 194, 104, 0.14);
-  border-radius: 26rpx;
-  background: linear-gradient(135deg, rgba(35, 194, 104, 0.08), rgba(255, 255, 255, 0.96));
+  border-width: 0;
+  background: transparent;
 }
 
 .bottom-bar__cost--warning {
-  border-color: rgba(255, 143, 31, 0.28);
-  background: linear-gradient(135deg, rgba(255, 143, 31, 0.11), rgba(255, 255, 255, 0.96));
+  .bottom-bar__balance {
+    color: $color-accent-orange;
+  }
 }
 
-.cost-metric {
-  min-width: 0;
-  flex: 1;
-}
-
-.cost-metric__line {
+.bottom-bar__summary {
   display: flex;
-  align-items: baseline;
-  gap: 6rpx;
-  margin-top: 4rpx;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10rpx;
+  color: $color-text-primary;
+  font-size: 22rpx;
+  font-weight: 800;
   white-space: nowrap;
 }
 
-.bottom-bar__divider {
-  width: 2rpx;
-  height: 54rpx;
-  margin: 0 16rpx;
-  background: rgba(131, 136, 143, 0.16);
-}
-
-.bottom-bar__label {
-  display: block;
-  color: $color-text-helper;
-  font-size: 22rpx;
-  font-weight: 800;
-}
-
-.bottom-bar__value {
-  display: block;
-  max-width: 112rpx;
+.bottom-bar__balance,
+.bottom-bar__actual {
   overflow: hidden;
-  color: $color-accent-orange;
-  font-size: 30rpx;
-  font-weight: 900;
-  line-height: 1.1;
   text-overflow: ellipsis;
 }
 
-.bottom-bar__value--cost {
-  color: $color-text-primary;
+.bottom-bar__value {
+  color: $color-primary;
+  font-size: 30rpx;
+  font-weight: 900;
+  line-height: 1.1;
 }
 
-.bottom-bar__unit {
+.bottom-bar__detail {
+  display: flex;
+  gap: 14rpx;
+  margin-top: 7rpx;
+  overflow: hidden;
   color: $color-text-secondary;
   font-size: 20rpx;
-  font-weight: 800;
+  white-space: nowrap;
+}
+
+.bottom-bar__original--discounted {
+  color: $color-text-helper;
+  text-decoration: line-through;
+}
+
+.bottom-bar__quote-status {
+  display: block;
+  color: $color-text-secondary;
+  font-size: 23rpx;
+  line-height: 1.4;
+}
+
+.bottom-bar__quote-status--error {
+  color: $color-primary;
 }
 
 .bottom-bar__submit {
   @include flex-center;
   box-sizing: border-box;
-  width: 216rpx;
+  width: 45%;
   flex: none;
   min-width: 0;
   height: 88rpx;

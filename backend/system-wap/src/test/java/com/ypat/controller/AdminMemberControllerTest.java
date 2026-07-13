@@ -1,6 +1,7 @@
 package com.ypat.controller;
 
 import com.ypat.MemberBenefitRuleQo;
+import com.ypat.MemberBenefitConfigQo;
 import com.ypat.MemberOperationLogQo;
 import com.ypat.MemberOrderQo;
 import com.ypat.MemberPlanQo;
@@ -9,9 +10,13 @@ import com.ypat.MemberBenefitQuoteQo;
 import com.ypat.MemberUserAdminQo;
 import com.ypat.ResponseApiBody;
 import com.ypat.SysException;
+import com.ypat.model.SecurityUserDetails;
 import com.ypat.service.MemberServiceClient;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.util.HashMap;
@@ -30,6 +35,16 @@ public class AdminMemberControllerTest {
         controller = new AdminMemberController();
         client = new FakeMemberServiceClient();
         ReflectionTestUtils.setField(controller, "memberServiceClient", client);
+        SecurityUserDetails details = new SecurityUserDetails();
+        details.setUserId("9");
+        details.setUsername("admin-9");
+        SecurityContextHolder.getContext().setAuthentication(
+                new UsernamePasswordAuthenticationToken(details, null, details.getAuthorities()));
+    }
+
+    @After
+    public void tearDown() {
+        SecurityContextHolder.clearContext();
     }
 
     @Test(expected = SysException.class)
@@ -53,8 +68,27 @@ public class AdminMemberControllerTest {
         assertEquals(Integer.valueOf(4800), result.getPriceFen());
     }
 
+    @Test
+    public void listsAggregatedBenefitConfigs() {
+        ResponseApiBody response = controller.benefitConfigs();
+        assertEquals(1, ((List<?>) response.getRes()).size());
+    }
+
+    @Test
+    public void updateBenefitConfigUsesPathScene() {
+        MemberBenefitConfigQo qo = new MemberBenefitConfigQo();
+        qo.setScene("SUBMIT_YPAT");
+
+        ResponseApiBody response = controller.updateBenefitConfig("APPLY_YPAT", qo);
+
+        assertEquals("APPLY_YPAT", client.lastSavedConfig.getScene());
+        assertEquals(Long.valueOf(9L), client.lastSavedConfig.getOperatorId());
+        assertEquals(qo, response.getRes());
+    }
+
     private static class FakeMemberServiceClient implements MemberServiceClient {
         MemberPlanQo lastSavedPlan;
+        MemberBenefitConfigQo lastSavedConfig;
 
         @Override
         public List<MemberPlanQo> plans() {
@@ -114,6 +148,19 @@ public class AdminMemberControllerTest {
 
         @Override
         public MemberBenefitRuleQo saveRule(MemberBenefitRuleQo qo) {
+            return qo;
+        }
+
+        @Override
+        public List<MemberBenefitConfigQo> adminBenefitConfigs() {
+            MemberBenefitConfigQo qo = new MemberBenefitConfigQo();
+            qo.setScene("SUBMIT_YPAT");
+            return java.util.Collections.singletonList(qo);
+        }
+
+        @Override
+        public MemberBenefitConfigQo saveBenefitConfig(MemberBenefitConfigQo qo) {
+            this.lastSavedConfig = qo;
             return qo;
         }
 

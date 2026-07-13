@@ -9,6 +9,7 @@ import type {
   PageResult,
   PaymentChannel,
   PaymentCreateResult,
+  PpdBenefitScene,
 } from '../types'
 
 /** 套餐列表（公开接口，未登录也能调用）。 */
@@ -22,7 +23,7 @@ export function getMemberStatus(): Promise<ApiResult<MemberStatus>> {
 }
 
 /** 当前用户在指定场景下的会员权益报价。 */
-export function getMemberBenefitQuote(scene: 'SUBMIT_YPAT'): Promise<ApiResult<MemberBenefitQuote>> {
+export function getMemberBenefitQuote(scene: PpdBenefitScene): Promise<ApiResult<MemberBenefitQuote>> {
   return get('/member/benefit/quote', { scene })
 }
 

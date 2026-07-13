@@ -55,16 +55,39 @@ export interface MemberPlan {
   updatedAt?: string
 }
 
+export type PpdBenefitScene = 'SUBMIT_YPAT' | 'APPLY_YPAT' | 'VIEW_CONTACT'
+
 export interface MemberBenefitRule {
   id: number
   levelCode: string
-  scene: string
+  levelName: string
+  scene: PpdBenefitScene
+  sceneName: string
   benefitType: string
+  benefitTypeName: string
   discountPpd: number
   minActualPpd: number
   effective: string
   status: string
   description?: string
+}
+
+export interface PpdSceneConfig {
+  id?: number
+  scene: PpdBenefitScene
+  sceneName: string
+  originalPpd: number
+  description?: string
+  version: number
+}
+
+export interface MemberBenefitConfig {
+  scene: PpdBenefitScene
+  sceneName: string
+  originalPpd: number
+  description?: string
+  version: number
+  rules: MemberBenefitRule[]
 }
 
 export interface MemberUser {

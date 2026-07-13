@@ -1,14 +1,20 @@
 package com.ypat.service;
 
 import com.ypat.MemberBenefitQuoteQo;
+import com.ypat.MemberBenefitConfigQo;
+import com.ypat.MemberBenefitRuleQo;
+import com.ypat.ResponseCode;
+import com.ypat.SysException;
 import com.ypat.entity.MemberBenefitRule;
 import com.ypat.entity.MemberOrder;
+import com.ypat.entity.PpdSceneConfig;
 import com.ypat.entity.Record;
 import com.ypat.entity.User;
 import com.ypat.entity.UserMember;
 import com.ypat.repository.MemberBenefitRuleRepository;
 import com.ypat.repository.MemberOperationLogRepository;
 import com.ypat.repository.MemberOrderRepository;
+import com.ypat.repository.PpdSceneConfigRepository;
 import com.ypat.repository.RecordRepository;
 import com.ypat.repository.UserMemberRepository;
 import com.ypat.repository.UserRepository;
@@ -20,7 +26,9 @@ import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 import java.util.Calendar;
+import java.util.Collections;
 import java.util.Date;
+import java.util.List;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -35,6 +43,7 @@ public class MemberServiceBenefitTest {
         MemberBenefitRuleRepository rules = benefitRuleRepository(submitRule(2, 0, "1", "1"));
         ReflectionTestUtils.setField(service, "userMemberRepository", userMembers);
         ReflectionTestUtils.setField(service, "memberBenefitRuleRepository", rules);
+        ReflectionTestUtils.setField(service, "ppdSceneConfigRepository", ppdSceneConfigRepository(null));
 
         MemberBenefitQuoteQo quote = service.quoteBenefit(1L, "SUBMIT_YPAT");
 
@@ -42,6 +51,106 @@ public class MemberServiceBenefitTest {
         assertEquals(Integer.valueOf(2), quote.getDiscountPpd());
         assertEquals(Integer.valueOf(Math.max(0, Constant.PUB_NEED_PPD - 2)), quote.getActualPpd());
         assertTrue(quote.getMemberActive());
+    }
+
+    @Test
+    public void quoteApplyYpatUsesConfiguredOriginalPriceAndChineseNames() {
+        MemberService service = new MemberService();
+        String[] queriedScene = new String[1];
+        ReflectionTestUtils.setField(service, "userMemberRepository", userMemberRepository(activeMember(), null));
+        ReflectionTestUtils.setField(service, "memberBenefitRuleRepository",
+                benefitRuleRepository(rule("APPLY_YPAT", 2, 0, "1", "1"), queriedScene));
+        ReflectionTestUtils.setField(service, "ppdSceneConfigRepository",
+                ppdSceneConfigRepository(sceneConfig("APPLY_YPAT", 7, 3L)));
+
+        MemberBenefitQuoteQo quote = service.quoteBenefit(1L, "APPLY_YPAT");
+
+        assertEquals("APPLY_YPAT", queriedScene[0]);
+        assertEquals("发起约拍申请", quote.getSceneName());
+        assertEquals("基础会员", quote.getLevelName());
+        assertEquals(Integer.valueOf(7), quote.getOriginalPpd());
+        assertEquals(Integer.valueOf(2), quote.getDiscountPpd());
+        assertEquals(Integer.valueOf(5), quote.getActualPpd());
+    }
+
+    @Test
+    public void quoteViewContactUsesConfiguredPriceWhenRuleDisabled() {
+        MemberService service = new MemberService();
+        ReflectionTestUtils.setField(service, "userMemberRepository", userMemberRepository(activeMember(), null));
+        ReflectionTestUtils.setField(service, "memberBenefitRuleRepository",
+                benefitRuleRepository(rule("VIEW_CONTACT", 2, 0, "1", "0")));
+        ReflectionTestUtils.setField(service, "ppdSceneConfigRepository",
+                ppdSceneConfigRepository(sceneConfig("VIEW_CONTACT", 7, 4L)));
+
+        MemberBenefitQuoteQo quote = service.quoteBenefit(1L, "VIEW_CONTACT");
+
+        assertEquals(Integer.valueOf(0), quote.getDiscountPpd());
+        assertEquals(Integer.valueOf(7), quote.getActualPpd());
+    }
+
+    @Test
+    public void quoteUnknownSceneIsRejected() {
+        MemberService service = new MemberService();
+        try {
+            service.quoteBenefit(1L, "UNKNOWN");
+        } catch (SysException ex) {
+            assertEquals(ResponseCode.FAIL_PARA.getCode(), ex.getCode());
+            return;
+        }
+        throw new AssertionError("未知场景应被拒绝");
+    }
+
+    @Test
+    public void listsBenefitConfigsWithChineseRuleNames() {
+        MemberService service = new MemberService();
+        PpdSceneConfig apply = sceneConfig("APPLY_YPAT", 7, 3L);
+        ReflectionTestUtils.setField(service, "ppdSceneConfigRepository", ppdSceneConfigRepository(apply));
+        ReflectionTestUtils.setField(service, "memberBenefitRuleRepository",
+                benefitRuleRepository(rule("APPLY_YPAT", 2, 0, "1", "1")));
+
+        List<MemberBenefitConfigQo> configs = service.listBenefitConfigs();
+
+        assertEquals(3, configs.size());
+        MemberBenefitConfigQo applyConfig = configs.get(1);
+        assertEquals("发起约拍申请", applyConfig.getSceneName());
+        assertEquals(Integer.valueOf(7), applyConfig.getOriginalPpd());
+        assertEquals("基础会员", applyConfig.getRules().get(0).getLevelName());
+        assertEquals("拍豆减免", applyConfig.getRules().get(0).getBenefitTypeName());
+    }
+
+    @Test
+    public void savesAggregatedBenefitConfigWithMatchingVersion() {
+        MemberService service = new MemberService();
+        SaveCounter operationLogSaves = new SaveCounter();
+        PpdSceneConfig existing = sceneConfig("APPLY_YPAT", 3, 3L);
+        MemberBenefitRule existingRule = rule("APPLY_YPAT", 0, 0, "1", "1");
+        ReflectionTestUtils.setField(service, "ppdSceneConfigRepository", ppdSceneConfigRepository(existing));
+        ReflectionTestUtils.setField(service, "memberBenefitRuleRepository", benefitRuleRepository(existingRule));
+        ReflectionTestUtils.setField(service, "memberOperationLogRepository",
+                operationLogRepository(operationLogSaves));
+        MemberBenefitConfigQo input = new MemberBenefitConfigQo();
+        input.setScene("APPLY_YPAT");
+        input.setOriginalPpd(7);
+        input.setDescription("申请定价");
+        input.setVersion(3L);
+        input.setOperatorId(9L);
+        MemberBenefitRuleQo ruleInput = new MemberBenefitRuleQo();
+        ruleInput.setLevelCode("BASIC");
+        ruleInput.setScene("APPLY_YPAT");
+        ruleInput.setBenefitType("PPD_DISCOUNT");
+        ruleInput.setDiscountPpd(2);
+        ruleInput.setMinActualPpd(1);
+        ruleInput.setEffective("1");
+        ruleInput.setStatus("1");
+        input.setRules(Collections.singletonList(ruleInput));
+
+        MemberBenefitConfigQo saved = service.saveBenefitConfig(input);
+
+        assertEquals(Integer.valueOf(7), existing.getOriginalPpd());
+        assertEquals(Integer.valueOf(2), existingRule.getDiscountPpd());
+        assertEquals(Integer.valueOf(1), existingRule.getMinActualPpd());
+        assertEquals("发起约拍申请", saved.getSceneName());
+        assertEquals(1, operationLogSaves.count);
     }
 
     @Test
@@ -100,9 +209,13 @@ public class MemberServiceBenefitTest {
     }
 
     private static MemberBenefitRule submitRule(int discount, int minActualPpd, String effective, String status) {
+        return rule("SUBMIT_YPAT", discount, minActualPpd, effective, status);
+    }
+
+    private static MemberBenefitRule rule(String scene, int discount, int minActualPpd, String effective, String status) {
         MemberBenefitRule rule = new MemberBenefitRule();
         rule.setLevelCode("BASIC");
-        rule.setScene("SUBMIT_YPAT");
+        rule.setScene(scene);
         rule.setBenefitType("PPD_DISCOUNT");
         rule.setDiscountPpd(discount);
         rule.setMinActualPpd(minActualPpd);
@@ -135,15 +248,46 @@ public class MemberServiceBenefitTest {
     }
 
     private static MemberBenefitRuleRepository benefitRuleRepository(final MemberBenefitRule rule) {
+        return benefitRuleRepository(rule, null);
+    }
+
+    private static MemberBenefitRuleRepository benefitRuleRepository(final MemberBenefitRule rule,
+                                                                      final String[] queriedScene) {
         return proxy(MemberBenefitRuleRepository.class, new InvocationHandler() {
             @Override
             public Object invoke(Object proxy, Method method, Object[] args) {
                 if ("findByLevelCodeAndSceneAndBenefitType".equals(method.getName())) {
+                    if (queriedScene != null) queriedScene[0] = (String) args[1];
                     return rule;
                 }
+                if ("findBySceneAndBenefitTypeOrderByLevelCodeAsc".equals(method.getName())) {
+                    return rule == null ? Collections.emptyList() : Collections.singletonList(rule);
+                }
+                if ("save".equals(method.getName())) return args[0];
                 return defaultValue(method.getReturnType());
             }
         });
+    }
+
+    private static PpdSceneConfigRepository ppdSceneConfigRepository(final PpdSceneConfig config) {
+        return proxy(PpdSceneConfigRepository.class, new InvocationHandler() {
+            @Override
+            public Object invoke(Object proxy, Method method, Object[] args) {
+                if ("findByScene".equals(method.getName())) {
+                    return config != null && config.getScene().equals(args[0]) ? config : null;
+                }
+                if ("save".equals(method.getName())) return args[0];
+                return defaultValue(method.getReturnType());
+            }
+        });
+    }
+
+    private static PpdSceneConfig sceneConfig(String scene, int originalPpd, long version) {
+        PpdSceneConfig config = new PpdSceneConfig();
+        config.setScene(scene);
+        config.setOriginalPpd(originalPpd);
+        config.setVersion(version);
+        return config;
     }
 
     private static MemberOrderRepository memberOrderRepository(final int markPaidRows, final MemberOrder order) {

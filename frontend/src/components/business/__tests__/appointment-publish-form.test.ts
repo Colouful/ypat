@@ -21,4 +21,9 @@ describe('AppointmentPublishForm mini-program controls', () => {
     expect(source).not.toContain("await import('@/utils/file-base64')")
     expect(source).not.toContain('const { filePathToDataUrl }')
   })
+
+  it('reserves 45 percent of the action bar for the publish button', () => {
+    expect(source).toMatch(/&__btn\s*\{[\s\S]*?width:\s*45%/)
+    expect(source).not.toContain('appointment-publish-form__benefit"')
+  })
 })

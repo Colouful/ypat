@@ -12,4 +12,6 @@ public interface MemberBenefitRuleRepository extends JpaRepository<MemberBenefit
                                                             @Param("scene") String scene,
                                                             @Param("benefitType") String benefitType);
     List<MemberBenefitRule> findByLevelCodeOrderBySceneAsc(@Param("levelCode") String levelCode);
+    List<MemberBenefitRule> findBySceneAndBenefitTypeOrderByLevelCodeAsc(@Param("scene") String scene,
+                                                                         @Param("benefitType") String benefitType);
 }

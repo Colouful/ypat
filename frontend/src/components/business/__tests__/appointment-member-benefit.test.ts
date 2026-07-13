@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { mount } from '@vue/test-utils'
+import { flushPromises, mount } from '@vue/test-utils'
 import { describe, expect, it, vi } from 'vitest'
 import AppointmentPublishForm from '../AppointmentPublishForm.vue'
 
@@ -9,21 +9,37 @@ vi.mock('@/api/modules/dict', () => ({
 
 vi.mock('@/stores/member', () => ({
   useMemberStore: () => ({
-    submitYpatQuote: {
-      scene: 'SUBMIT_YPAT',
-      memberActive: true,
-      levelCode: 'BASIC',
-      originalPpd: 5,
-      discountPpd: 2,
-      actualPpd: 3,
-      ruleEffective: true,
+    quotes: {
+      SUBMIT_YPAT: {
+        scene: 'SUBMIT_YPAT',
+        sceneName: '发布约拍',
+        memberActive: true,
+        levelCode: 'BASIC',
+        levelName: '基础会员',
+        originalPpd: 3,
+        discountPpd: 2,
+        actualPpd: 1,
+        ruleEffective: true,
+      },
     },
-    refreshSubmitYpatQuote: vi.fn(() => Promise.resolve()),
+    refreshBenefitQuote: vi.fn(() =>
+      Promise.resolve({
+        scene: 'SUBMIT_YPAT',
+        sceneName: '发布约拍',
+        memberActive: true,
+        levelCode: 'BASIC',
+        levelName: '基础会员',
+        originalPpd: 3,
+        discountPpd: 2,
+        actualPpd: 1,
+        ruleEffective: true,
+      }),
+    ),
   }),
 }))
 
 describe('AppointmentPublishForm member benefit', () => {
-  it('shows member discount when quote is active', () => {
+  it('shows the member quote in the fixed action bar', async () => {
     const wrapper = mount(AppointmentPublishForm, {
       props: { target: '0' },
       global: {
@@ -35,9 +51,13 @@ describe('AppointmentPublishForm member benefit', () => {
         },
       },
     })
+    await flushPromises()
 
-    expect(wrapper.text()).toContain('原价：5 拍拍豆')
-    expect(wrapper.text()).toContain('BASIC 会员优惠：-2 拍拍豆')
-    expect(wrapper.text()).toContain('本次实扣：3 拍拍豆')
+    expect(wrapper.find('.appointment-publish-form__benefit').exists()).toBe(false)
+    const actionBar = wrapper.find('.appointment-publish-form__submit')
+    expect(actionBar.text()).toContain('本次实扣 1 拍豆')
+    expect(actionBar.text()).toContain('原价 3')
+    expect(actionBar.text()).toContain('会员优惠 -2')
+    expect(actionBar.text()).toContain('发布约拍')
   })
 })

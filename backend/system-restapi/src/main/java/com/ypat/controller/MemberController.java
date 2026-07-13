@@ -2,6 +2,7 @@ package com.ypat.controller;
 
 import com.ypat.MemberOrderCreateResult;
 import com.ypat.MemberBenefitQuoteQo;
+import com.ypat.MemberBenefitConfigQo;
 import com.ypat.MemberBenefitRuleQo;
 import com.ypat.MemberOperationLogQo;
 import com.ypat.MemberOrderQo;
@@ -106,6 +107,16 @@ public class MemberController {
     @PostMapping("/service/member/admin/rule/save")
     public MemberBenefitRuleQo saveRule(@RequestBody MemberBenefitRuleQo qo) {
         return memberService.saveBenefitRule(qo);
+    }
+
+    @GetMapping("/service/member/admin/benefit-configs")
+    public List<MemberBenefitConfigQo> adminBenefitConfigs() {
+        return memberService.listBenefitConfigs();
+    }
+
+    @PostMapping("/service/member/admin/benefit-config/save")
+    public MemberBenefitConfigQo saveBenefitConfig(@RequestBody MemberBenefitConfigQo qo) {
+        return memberService.saveBenefitConfig(qo);
     }
 
     @PostMapping("/service/member/admin/users")

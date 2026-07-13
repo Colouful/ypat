@@ -1,6 +1,7 @@
 import { get, post, put } from '../request'
 import type {
   ApiResult,
+  MemberBenefitConfig,
   MemberBenefitRule,
   MemberOperationLog,
   MemberOrder,
@@ -8,6 +9,7 @@ import type {
   MemberUser,
   PageQuery,
   PageResult,
+  PpdBenefitScene,
 } from '../types'
 
 export interface MemberPlanQuery extends PageQuery {
@@ -70,6 +72,17 @@ export function saveMemberBenefitRule(
   data: Partial<MemberBenefitRule>,
 ): Promise<ApiResult<MemberBenefitRule>> {
   return put<MemberBenefitRule>(`/admin/member/benefit-rules/${data.id}`, data)
+}
+
+export function getMemberBenefitConfigs(): Promise<ApiResult<MemberBenefitConfig[]>> {
+  return get<MemberBenefitConfig[]>('/admin/member/benefit-configs')
+}
+
+export function saveMemberBenefitConfig(
+  scene: PpdBenefitScene,
+  data: MemberBenefitConfig,
+): Promise<ApiResult<MemberBenefitConfig>> {
+  return put<MemberBenefitConfig>(`/admin/member/benefit-configs/${scene}`, data)
 }
 
 export function getMemberUsers(

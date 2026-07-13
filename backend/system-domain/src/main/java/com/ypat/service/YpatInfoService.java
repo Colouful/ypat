@@ -10,6 +10,7 @@ import com.ypat.entity.*;
 import com.ypat.entity.Record;
 import com.ypat.enums.InternalTestDataFlag;
 import com.ypat.enums.MessType;
+import com.ypat.enums.PpdBenefitScene;
 import com.ypat.enums.RecordType;
 import com.ypat.enums.UserImgType;
 import com.ypat.enums.YesNo;
@@ -94,12 +95,12 @@ public class YpatInfoService {
     public void submit(YpatInfoQo ypatInfo) {
 
         //扣除拍拍逗
-        User user = userRepository.findById(ypatInfo.getUserid());
+        User user = userRepository.findByIdForUpdate(ypatInfo.getUserid());
         if(user==null){
             throw new SysException(ResponseCode.FAIL_NOT);
         }
-        MemberBenefitQuoteQo quote = memberService.quoteBenefit(ypatInfo.getUserid(), "SUBMIT_YPAT");
-        int actualPpd = quote.getActualPpd() == null ? Constant.PUB_NEED_PPD : quote.getActualPpd();
+        MemberBenefitQuoteQo quote = memberService.quoteBenefit(ypatInfo.getUserid(), PpdBenefitScene.SUBMIT_YPAT.getCode());
+        int actualPpd = quote.getActualPpd() == null ? 0 : quote.getActualPpd();
         int userPpd = user.getPpd() == null ? 0 : user.getPpd();
         if(userPpd < actualPpd){
             throw new SysException(ResponseCode.FAIL_BALANCE);
@@ -123,12 +124,16 @@ public class YpatInfoService {
         userRepository.save(user);
 
         //增加收支记录
-        Record record = new Record();
-        record.setCredate(new Date());
-        record.setPpd(-1 * actualPpd);
-        record.setUserid(user.getId());
-        record.setType(RecordType.PUB.value);
-        recordRepository.save(record);
+        if (actualPpd > 0) {
+            Record record = new Record();
+            record.setCredate(new Date());
+            record.setPpd(-1 * actualPpd);
+            record.setUserid(user.getId());
+            record.setType(RecordType.PUB.value);
+            record.setScene(PpdBenefitScene.SUBMIT_YPAT.getCode());
+            record.setDescription("发布约拍扣除拍豆");
+            recordRepository.save(record);
+        }
 
     }
 

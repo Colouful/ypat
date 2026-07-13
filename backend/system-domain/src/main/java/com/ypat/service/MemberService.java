@@ -1,5 +1,6 @@
 package com.ypat.service;
 
+import com.ypat.MemberBenefitConfigQo;
 import com.ypat.MemberBenefitQuoteQo;
 import com.ypat.MemberBenefitRuleQo;
 import com.ypat.MemberOperationLogQo;
@@ -14,14 +15,18 @@ import com.ypat.entity.MemberBenefitRule;
 import com.ypat.entity.MemberOperationLog;
 import com.ypat.entity.MemberOrder;
 import com.ypat.entity.MemberPlan;
+import com.ypat.entity.PpdSceneConfig;
 import com.ypat.entity.Record;
 import com.ypat.entity.User;
 import com.ypat.entity.UserMember;
 import com.ypat.enums.RecordType;
+import com.ypat.enums.MemberLevelCode;
+import com.ypat.enums.PpdBenefitScene;
 import com.ypat.repository.MemberBenefitRuleRepository;
 import com.ypat.repository.MemberOperationLogRepository;
 import com.ypat.repository.MemberOrderRepository;
 import com.ypat.repository.MemberPlanRepository;
+import com.ypat.repository.PpdSceneConfigRepository;
 import com.ypat.repository.RecordRepository;
 import com.ypat.repository.UserMemberRepository;
 import com.ypat.repository.UserRepository;
@@ -66,9 +71,7 @@ public class MemberService {
 
     private static final String LEVEL_NONE = "NONE";
     private static final String LEVEL_BASIC = "BASIC";
-    private static final String SCENE_SUBMIT_YPAT = "SUBMIT_YPAT";
     private static final String BENEFIT_TYPE_PPD_DISCOUNT = "PPD_DISCOUNT";
-    private static final int SUBMIT_YPAT_ORIGINAL_PPD = Constant.PUB_NEED_PPD;
 
     @Autowired
     private MemberPlanRepository memberPlanRepository;
@@ -78,6 +81,8 @@ public class MemberService {
     private UserMemberRepository userMemberRepository;
     @Autowired
     private MemberBenefitRuleRepository memberBenefitRuleRepository;
+    @Autowired
+    private PpdSceneConfigRepository ppdSceneConfigRepository;
     @Autowired
     private MemberOperationLogRepository memberOperationLogRepository;
     @Autowired
@@ -119,7 +124,16 @@ public class MemberService {
     }
 
     public MemberBenefitQuoteQo quoteBenefit(Long userId, String scene) {
-        int originalPpd = SCENE_SUBMIT_YPAT.equals(scene) ? SUBMIT_YPAT_ORIGINAL_PPD : 0;
+        PpdBenefitScene supported = PpdBenefitScene.fromCode(scene);
+        if (supported == null) throw new SysException(ResponseCode.FAIL_PARA);
+        PpdSceneConfig config = ppdSceneConfigRepository.findByScene(scene);
+        int originalPpd;
+        if (config == null || config.getOriginalPpd() == null) {
+            logger.error("member.quote.config.missing scene={}", scene);
+            originalPpd = Constant.PUB_NEED_PPD;
+        } else {
+            originalPpd = config.getOriginalPpd();
+        }
         UserMember member = userId == null ? null : userMemberRepository.findOne(userId);
         String level = member == null ? MemberBenefitCalculator.LEVEL_BASIC : member.getLevel();
         MemberBenefitRule rule = memberBenefitRuleRepository.findByLevelCodeAndSceneAndBenefitType(
@@ -127,7 +141,122 @@ public class MemberService {
                 scene,
                 BENEFIT_TYPE_PPD_DISCOUNT
         );
-        return new MemberBenefitCalculator().calculate(scene, originalPpd, member, rule);
+        MemberBenefitQuoteQo quote = new MemberBenefitCalculator().calculate(scene, originalPpd, member, rule);
+        quote.setSceneName(supported.getLabel());
+        MemberLevelCode levelCode = MemberLevelCode.fromCode(quote.getLevelCode());
+        quote.setLevelName(levelCode == null ? null : levelCode.getLabel());
+        return quote;
+    }
+
+    public List<MemberBenefitConfigQo> listBenefitConfigs() {
+        List<MemberBenefitConfigQo> result = new ArrayList<>();
+        for (PpdBenefitScene scene : PpdBenefitScene.values()) {
+            result.add(buildBenefitConfig(scene));
+        }
+        return result;
+    }
+
+    public MemberBenefitConfigQo saveBenefitConfig(MemberBenefitConfigQo qo) {
+        PpdBenefitScene scene = validateBenefitConfig(qo);
+        PpdSceneConfig config = ppdSceneConfigRepository.findByScene(scene.getCode());
+        if (config == null) throw new SysException(ResponseCode.FAIL_NOT);
+        if (!config.getVersion().equals(qo.getVersion())) {
+            throw new SysException(ResponseCode.FAIL_EXIST, "配置已被其他管理员修改，请刷新后重试");
+        }
+        List<MemberBenefitRule> currentRules = memberBenefitRuleRepository
+                .findBySceneAndBenefitTypeOrderByLevelCodeAsc(scene.getCode(), BENEFIT_TYPE_PPD_DISCOUNT);
+        String beforeValue = benefitConfigSnapshot(config, currentRules);
+        config.setOriginalPpd(qo.getOriginalPpd());
+        config.setDescription(qo.getDescription());
+        config.setUpdatedAt(new Date());
+        ppdSceneConfigRepository.save(config);
+
+        for (MemberBenefitRuleQo ruleQo : qo.getRules()) {
+            MemberBenefitRule entity = memberBenefitRuleRepository.findByLevelCodeAndSceneAndBenefitType(
+                    ruleQo.getLevelCode(), scene.getCode(), BENEFIT_TYPE_PPD_DISCOUNT);
+            if (entity == null) throw new SysException(ResponseCode.FAIL_NOT);
+            entity.setDiscountPpd(ruleQo.getDiscountPpd());
+            entity.setMinActualPpd(ruleQo.getMinActualPpd());
+            entity.setEffective(ruleQo.getEffective());
+            entity.setStatus(ruleQo.getStatus());
+            entity.setDescription(ruleQo.getDescription());
+            entity.setUpdatedAt(new Date());
+            memberBenefitRuleRepository.save(entity);
+        }
+        String afterValue = benefitConfigSnapshot(config, currentRules);
+        saveOperationLog(qo.getOperatorId(), qo.getOperatorId(), "BENEFIT_CONFIG_UPDATE",
+                "更新" + scene.getLabel() + "权益配置", beforeValue, afterValue, scene.getCode());
+        return buildBenefitConfig(scene);
+    }
+
+    private MemberBenefitConfigQo buildBenefitConfig(PpdBenefitScene scene) {
+        PpdSceneConfig config = ppdSceneConfigRepository.findByScene(scene.getCode());
+        MemberBenefitConfigQo qo = new MemberBenefitConfigQo();
+        qo.setScene(scene.getCode());
+        qo.setSceneName(scene.getLabel());
+        qo.setOriginalPpd(config == null || config.getOriginalPpd() == null
+                ? Constant.PUB_NEED_PPD : config.getOriginalPpd());
+        if (config != null) {
+            qo.setDescription(config.getDescription());
+            qo.setVersion(config.getVersion());
+        }
+        List<MemberBenefitRule> entities = memberBenefitRuleRepository
+                .findBySceneAndBenefitTypeOrderByLevelCodeAsc(scene.getCode(), BENEFIT_TYPE_PPD_DISCOUNT);
+        List<MemberBenefitRuleQo> rules = entities == null ? new ArrayList<>() : entities.stream()
+                .map(rule -> toBenefitRuleQo(rule, scene))
+                .collect(Collectors.toList());
+        qo.setRules(rules);
+        return qo;
+    }
+
+    private MemberBenefitRuleQo toBenefitRuleQo(MemberBenefitRule rule, PpdBenefitScene scene) {
+        MemberBenefitRuleQo qo = CopyUtil.copy(rule, MemberBenefitRuleQo.class);
+        MemberLevelCode level = MemberLevelCode.fromCode(rule.getLevelCode());
+        qo.setLevelName(level == null ? "其他会员等级" : level.getLabel());
+        qo.setSceneName(scene.getLabel());
+        qo.setBenefitTypeName("拍豆减免");
+        return qo;
+    }
+
+    private PpdBenefitScene validateBenefitConfig(MemberBenefitConfigQo qo) {
+        if (qo == null || qo.getOriginalPpd() == null || qo.getOriginalPpd() < 0
+                || qo.getVersion() == null || qo.getOperatorId() == null || qo.getRules() == null) {
+            throw new SysException(ResponseCode.FAIL_PARA);
+        }
+        PpdBenefitScene scene = PpdBenefitScene.fromCode(qo.getScene());
+        if (scene == null) throw new SysException(ResponseCode.FAIL_PARA);
+        for (MemberBenefitRuleQo rule : qo.getRules()) {
+            if (rule == null || MemberLevelCode.fromCode(rule.getLevelCode()) == null
+                    || !scene.getCode().equals(rule.getScene())
+                    || !BENEFIT_TYPE_PPD_DISCOUNT.equals(rule.getBenefitType())
+                    || rule.getDiscountPpd() == null || rule.getDiscountPpd() < 0
+                    || rule.getMinActualPpd() == null || rule.getMinActualPpd() < 0
+                    || rule.getMinActualPpd() > qo.getOriginalPpd()
+                    || !isYesNo(rule.getEffective()) || !isYesNo(rule.getStatus())) {
+                throw new SysException(ResponseCode.FAIL_PARA);
+            }
+        }
+        return scene;
+    }
+
+    private String benefitConfigSnapshot(PpdSceneConfig config, List<MemberBenefitRule> rules) {
+        StringBuilder snapshot = new StringBuilder();
+        snapshot.append("originalPpd=").append(config.getOriginalPpd())
+                .append(",description=").append(config.getDescription() == null ? "" : config.getDescription());
+        if (rules != null) {
+            for (MemberBenefitRule rule : rules) {
+                snapshot.append(';').append(rule.getLevelCode())
+                        .append(':').append(rule.getDiscountPpd())
+                        .append(':').append(rule.getMinActualPpd())
+                        .append(':').append(rule.getEffective())
+                        .append(':').append(rule.getStatus());
+            }
+        }
+        return snapshot.toString();
+    }
+
+    private boolean isYesNo(String value) {
+        return "0".equals(value) || "1".equals(value);
     }
 
     /**

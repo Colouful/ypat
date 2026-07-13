@@ -2,6 +2,7 @@ package com.ypat.service;
 
 import com.ypat.MemberOrderCreateResult;
 import com.ypat.MemberBenefitQuoteQo;
+import com.ypat.MemberBenefitConfigQo;
 import com.ypat.MemberBenefitRuleQo;
 import com.ypat.MemberOperationLogQo;
 import com.ypat.MemberOrderQo;
@@ -63,6 +64,12 @@ public interface MemberServiceClient {
 
     @PostMapping("/service/member/admin/rule/save")
     MemberBenefitRuleQo saveRule(@RequestBody MemberBenefitRuleQo qo);
+
+    @GetMapping("/service/member/admin/benefit-configs")
+    List<MemberBenefitConfigQo> adminBenefitConfigs();
+
+    @PostMapping("/service/member/admin/benefit-config/save")
+    MemberBenefitConfigQo saveBenefitConfig(@RequestBody MemberBenefitConfigQo qo);
 
     @PostMapping("/service/member/admin/users")
     Map<String, Object> adminUsers(@RequestBody MemberUserAdminQo qo);
