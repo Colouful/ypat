@@ -29,8 +29,17 @@
         </view>
       </view>
 
-      <button v-if="!contactRevealed" class="action" :loading="revealing" @tap="handleViewContact">
-        查看联系方式（消耗 {{ VIEW_CONTACT_PPD }} 拍拍豆）
+      <button
+        v-if="!contactRevealed"
+        class="action"
+        :class="{ 'action--disabled': quoteLoading || revealing }"
+        :loading="revealing"
+        :disabled="quoteLoading || revealing"
+        @tap="handleViewContact"
+      >
+        <text v-if="quoteLoading">费用加载中...</text>
+        <text v-else-if="quoteFailed">费用加载失败，点击重试</text>
+        <text v-else-if="viewContactQuote">查看联系方式（实扣 {{ viewContactCost }} 拍豆）</text>
       </button>
     </template>
   </view>
@@ -41,13 +50,14 @@ import KeepPageNav from '@/components/business/KeepPageNav.vue'
 import { computed, ref } from 'vue'
 import { onLoad } from '@dcloudio/uni-app'
 import { useUserStore } from '@/stores/user'
+import { useMemberStore } from '@/stores/member'
 import * as messageApi from '@/api/modules/message'
 import * as userApi from '@/api/modules/user'
-import { VIEW_CONTACT_PPD } from '@/constants/enums'
 import type { LinkWay, MessInfo } from '@/api/types'
 import KeepIcon from '@/components/business/KeepIcon.vue'
 
 const userStore = useUserStore()
+const memberStore = useMemberStore()
 const loading = ref(false)
 const revealing = ref(false)
 const error = ref('')
@@ -55,6 +65,11 @@ const message = ref<MessInfo | null>(null)
 const contactRevealed = ref(false)
 const contactInfo = ref<LinkWay | null>(null)
 const messageId = ref(0)
+const quoteLoading = ref(true)
+const quoteFailed = ref(false)
+
+const viewContactQuote = computed(() => memberStore.quotes.VIEW_CONTACT ?? null)
+const viewContactCost = computed(() => viewContactQuote.value?.actualPpd ?? 0)
 
 const contactItems = computed(() => {
   const info = contactInfo.value
@@ -90,6 +105,19 @@ async function loadDetail(): Promise<void> {
   }
 }
 
+async function refreshContactQuote(): Promise<void> {
+  quoteLoading.value = true
+  quoteFailed.value = false
+  try {
+    const result = await memberStore.refreshBenefitQuote('VIEW_CONTACT')
+    quoteFailed.value = !result
+  } catch {
+    quoteFailed.value = true
+  } finally {
+    quoteLoading.value = false
+  }
+}
+
 function goYpatDetail(): void {
   if (message.value?.ypatid) uni.navigateTo({ url: `/pages-sub/ypat/detail?id=${message.value.ypatid}` })
 }
@@ -99,12 +127,17 @@ function handleViewContact(): void {
     uni.showToast({ title: '请先登录', icon: 'none' })
     return
   }
-  // 查看联系方式消耗 3 个拍拍豆(对齐后端 Constant.VIEW_NEED_PPD=3,旧版 linkway 亦为 3 豆)。
-  // 已解锁(后端 linkwayflag=yes)则不再扣费,由后端去重。
-  if ((userStore.userInfo.ppd || 0) < VIEW_CONTACT_PPD) {
+  if (quoteFailed.value) {
+    void refreshContactQuote()
+    return
+  }
+  const quote = viewContactQuote.value
+  if (!quote || quoteLoading.value) return
+  const currentPpd = Number(userStore.userInfo.ppd || 0)
+  if (currentPpd < viewContactCost.value) {
     uni.showModal({
       title: '余额不足',
-      content: `查看联系方式需要 ${VIEW_CONTACT_PPD} 个拍拍豆，是否前往充值？`,
+      content: `查看联系方式本次实扣 ${viewContactCost.value} 拍豆，是否前往充值？`,
       confirmText: '去充值',
       success: ({ confirm }) => confirm && uni.navigateTo({ url: '/pages-sub/user/recharge' }),
     })
@@ -112,7 +145,9 @@ function handleViewContact(): void {
   }
   uni.showModal({
     title: '确认查看',
-    content: `首次查看将消耗 ${VIEW_CONTACT_PPD} 个拍拍豆，已解锁则不再扣费。`,
+    content: quote.discountPpd > 0
+      ? `本次实扣 ${quote.actualPpd} 拍豆；原价 ${quote.originalPpd} 拍豆，${quote.levelName || '会员'}优惠 ${quote.discountPpd} 拍豆。`
+      : `本次实扣 ${quote.actualPpd} 拍豆；原价 ${quote.originalPpd} 拍豆，暂无会员优惠。`,
     success: ({ confirm }) => confirm && revealContact(),
   })
 }
@@ -138,7 +173,7 @@ async function revealContact(): Promise<void> {
 
 onLoad((query) => {
   messageId.value = Number(query?.id || 0)
-  loadDetail()
+  void Promise.all([loadDetail(), refreshContactQuote()])
 })
 </script>
 
@@ -158,5 +193,6 @@ onLoad((query) => {
 .section-title { display: block; margin-bottom: 20rpx; font-weight: 600; }
 .contact-row { padding: 18rpx 0; border-top: 1rpx solid $color-border; }
 .action { margin-top: 36rpx; color: #fff; background: $color-primary; border-radius: 999rpx; }
+.action--disabled { color: #A7ADB4; background: #EEF2F1; }
 .action::after { border: 0; }
 </style>
