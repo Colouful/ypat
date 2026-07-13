@@ -41,7 +41,10 @@ spring:
     database: mysql
     database-platform: org.hibernate.dialect.MySQL5Dialect
     hibernate:
-      ddl-auto: update
+      # PR-01a: `update` would auto-mutate schema. system-wap is
+      # controller-only and does not own JPA, but we keep this
+      # consistent with system-restapi to avoid future surprises.
+      ddl-auto: none
     properties:
       hibernate:
         dialect: org.hibernate.dialect.MySQL5Dialect
