@@ -67,6 +67,7 @@ public class AdminMemberController {
                                                @RequestBody MemberBenefitConfigQo qo) {
         if (qo == null) qo = new MemberBenefitConfigQo();
         qo.setScene(scene);
+        qo.setOperatorId(currentOperatorId());
         return ResponseApiBody.success(memberServiceClient.saveBenefitConfig(qo));
     }
 

@@ -95,7 +95,7 @@ public class YpatInfoService {
     public void submit(YpatInfoQo ypatInfo) {
 
         //扣除拍拍逗
-        User user = userRepository.findById(ypatInfo.getUserid());
+        User user = userRepository.findByIdForUpdate(ypatInfo.getUserid());
         if(user==null){
             throw new SysException(ResponseCode.FAIL_NOT);
         }

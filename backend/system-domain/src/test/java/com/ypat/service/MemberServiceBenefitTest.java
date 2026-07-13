@@ -121,15 +121,19 @@ public class MemberServiceBenefitTest {
     @Test
     public void savesAggregatedBenefitConfigWithMatchingVersion() {
         MemberService service = new MemberService();
+        SaveCounter operationLogSaves = new SaveCounter();
         PpdSceneConfig existing = sceneConfig("APPLY_YPAT", 3, 3L);
         MemberBenefitRule existingRule = rule("APPLY_YPAT", 0, 0, "1", "1");
         ReflectionTestUtils.setField(service, "ppdSceneConfigRepository", ppdSceneConfigRepository(existing));
         ReflectionTestUtils.setField(service, "memberBenefitRuleRepository", benefitRuleRepository(existingRule));
+        ReflectionTestUtils.setField(service, "memberOperationLogRepository",
+                operationLogRepository(operationLogSaves));
         MemberBenefitConfigQo input = new MemberBenefitConfigQo();
         input.setScene("APPLY_YPAT");
         input.setOriginalPpd(7);
         input.setDescription("申请定价");
         input.setVersion(3L);
+        input.setOperatorId(9L);
         MemberBenefitRuleQo ruleInput = new MemberBenefitRuleQo();
         ruleInput.setLevelCode("BASIC");
         ruleInput.setScene("APPLY_YPAT");
@@ -146,6 +150,7 @@ public class MemberServiceBenefitTest {
         assertEquals(Integer.valueOf(2), existingRule.getDiscountPpd());
         assertEquals(Integer.valueOf(1), existingRule.getMinActualPpd());
         assertEquals("发起约拍申请", saved.getSceneName());
+        assertEquals(1, operationLogSaves.count);
     }
 
     @Test

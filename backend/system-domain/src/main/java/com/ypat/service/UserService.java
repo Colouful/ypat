@@ -261,7 +261,7 @@ public class UserService {
      * @param id
      */
     public void myRecAdd(Long id){
-        User user = get(id);
+        User user = userRepository.findByIdForUpdate(id);
         if(user==null){
             throw new SysException(ResponseCode.FAIL_NOT);
         }

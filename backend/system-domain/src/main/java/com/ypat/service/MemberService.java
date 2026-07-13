@@ -163,6 +163,9 @@ public class MemberService {
         if (!config.getVersion().equals(qo.getVersion())) {
             throw new SysException(ResponseCode.FAIL_EXIST, "配置已被其他管理员修改，请刷新后重试");
         }
+        List<MemberBenefitRule> currentRules = memberBenefitRuleRepository
+                .findBySceneAndBenefitTypeOrderByLevelCodeAsc(scene.getCode(), BENEFIT_TYPE_PPD_DISCOUNT);
+        String beforeValue = benefitConfigSnapshot(config, currentRules);
         config.setOriginalPpd(qo.getOriginalPpd());
         config.setDescription(qo.getDescription());
         config.setUpdatedAt(new Date());
@@ -180,6 +183,9 @@ public class MemberService {
             entity.setUpdatedAt(new Date());
             memberBenefitRuleRepository.save(entity);
         }
+        String afterValue = benefitConfigSnapshot(config, currentRules);
+        saveOperationLog(qo.getOperatorId(), qo.getOperatorId(), "BENEFIT_CONFIG_UPDATE",
+                "更新" + scene.getLabel() + "权益配置", beforeValue, afterValue, scene.getCode());
         return buildBenefitConfig(scene);
     }
 
@@ -214,7 +220,7 @@ public class MemberService {
 
     private PpdBenefitScene validateBenefitConfig(MemberBenefitConfigQo qo) {
         if (qo == null || qo.getOriginalPpd() == null || qo.getOriginalPpd() < 0
-                || qo.getVersion() == null || qo.getRules() == null) {
+                || qo.getVersion() == null || qo.getOperatorId() == null || qo.getRules() == null) {
             throw new SysException(ResponseCode.FAIL_PARA);
         }
         PpdBenefitScene scene = PpdBenefitScene.fromCode(qo.getScene());
@@ -231,6 +237,22 @@ public class MemberService {
             }
         }
         return scene;
+    }
+
+    private String benefitConfigSnapshot(PpdSceneConfig config, List<MemberBenefitRule> rules) {
+        StringBuilder snapshot = new StringBuilder();
+        snapshot.append("originalPpd=").append(config.getOriginalPpd())
+                .append(",description=").append(config.getDescription() == null ? "" : config.getDescription());
+        if (rules != null) {
+            for (MemberBenefitRule rule : rules) {
+                snapshot.append(';').append(rule.getLevelCode())
+                        .append(':').append(rule.getDiscountPpd())
+                        .append(':').append(rule.getMinActualPpd())
+                        .append(':').append(rule.getEffective())
+                        .append(':').append(rule.getStatus());
+            }
+        }
+        return snapshot.toString();
     }
 
     private boolean isYesNo(String value) {

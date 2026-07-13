@@ -10,9 +10,13 @@ import com.ypat.MemberBenefitQuoteQo;
 import com.ypat.MemberUserAdminQo;
 import com.ypat.ResponseApiBody;
 import com.ypat.SysException;
+import com.ypat.model.SecurityUserDetails;
 import com.ypat.service.MemberServiceClient;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.util.HashMap;
@@ -31,6 +35,16 @@ public class AdminMemberControllerTest {
         controller = new AdminMemberController();
         client = new FakeMemberServiceClient();
         ReflectionTestUtils.setField(controller, "memberServiceClient", client);
+        SecurityUserDetails details = new SecurityUserDetails();
+        details.setUserId("9");
+        details.setUsername("admin-9");
+        SecurityContextHolder.getContext().setAuthentication(
+                new UsernamePasswordAuthenticationToken(details, null, details.getAuthorities()));
+    }
+
+    @After
+    public void tearDown() {
+        SecurityContextHolder.clearContext();
     }
 
     @Test(expected = SysException.class)
@@ -68,6 +82,7 @@ public class AdminMemberControllerTest {
         ResponseApiBody response = controller.updateBenefitConfig("APPLY_YPAT", qo);
 
         assertEquals("APPLY_YPAT", client.lastSavedConfig.getScene());
+        assertEquals(Long.valueOf(9L), client.lastSavedConfig.getOperatorId());
         assertEquals(qo, response.getRes());
     }
 

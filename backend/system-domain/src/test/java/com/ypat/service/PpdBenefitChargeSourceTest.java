@@ -21,6 +21,8 @@ public class PpdBenefitChargeSourceTest {
         assertTrue(messSource.contains("quoteBenefit(userid, PpdBenefitScene.APPLY_YPAT.getCode())"));
         assertTrue(workSource.contains("quoteBenefit(viewerId, PpdBenefitScene.APPLY_YPAT.getCode())"));
         assertTrue(userSource.contains("quoteBenefit(id, PpdBenefitScene.VIEW_CONTACT.getCode())"));
+        assertTrue(ypatSource.contains("userRepository.findByIdForUpdate(ypatInfo.getUserid())"));
+        assertTrue(userSource.contains("userRepository.findByIdForUpdate(id)"));
 
         assertFalse(ypatSource.contains("Constant.PUB_NEED_PPD"));
         assertFalse(messSource.contains("Constant.APPLY_NEED_PPD"));
