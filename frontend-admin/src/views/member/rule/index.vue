@@ -224,7 +224,7 @@ onMounted(loadConfigs)
             min-width="130"
           >
             <template #default="{ row }">
-              <span class="level-name">{{ displayLevelName(row) }}</span>
+              <span class="level-name">{{ displayLevelName(row as MemberBenefitRule) }}</span>
             </template>
           </el-table-column>
           <el-table-column
@@ -286,7 +286,7 @@ onMounted(loadConfigs)
                 type="primary"
                 link
                 :disabled="savingCurrent"
-                @click="openEdit(row)"
+                @click="openEdit(row as MemberBenefitRule)"
               >
                 编辑
               </el-button>
